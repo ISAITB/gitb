@@ -26,7 +26,7 @@ import scala.concurrent.Future
 @Singleton
 class OnStopHook @Inject()(lifecycle: ApplicationLifecycle, actorSystem: ActorSystem) {
 
-  private def logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   // Stop backend service.
   lifecycle.addStopHook(() => {

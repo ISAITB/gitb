@@ -16,7 +16,7 @@ export class DomainTagIndicatorComponent implements OnInit {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly conformanceService: ConformanceService,
-    private readonly dataService: DataService
+    protected readonly dataService: DataService
   ) {}
 
   tags?: TagData[]

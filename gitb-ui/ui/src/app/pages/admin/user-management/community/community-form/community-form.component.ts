@@ -199,4 +199,9 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     this.community.selfRegToken = token
   }
 
+  tagAdded(): void {
+    this.community.tagForCommunityAdmin = true
+    this.community.tagForTestBedAdmin = true
+  }
+
 }

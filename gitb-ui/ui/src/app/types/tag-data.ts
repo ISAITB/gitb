@@ -19,6 +19,8 @@ export interface TagData {
     description?: string
     foreground?: string
     background?: string
+    flag1?: boolean
+    flag2?: boolean
 
     id?: number
 }

@@ -59,7 +59,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                                config: Configuration)
                               (implicit ec: ExecutionContext) {
 
-  private def logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   onStart()
 

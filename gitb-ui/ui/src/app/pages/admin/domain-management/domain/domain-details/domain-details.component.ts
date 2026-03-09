@@ -433,6 +433,10 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
 	saveDomainChanges() {
     this.savePending = true
+    if (this.domain.tags && this.domain.tags.length > 0) {
+      this.domain.tags[0].flag1 = this.domain.tagForCommunityAdmin
+      this.domain.tags[0].flag2 = this.domain.tagForTestBedAdmin
+    }
 		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
     .subscribe(() => {
       this.copyTags(this.domain.tags)
@@ -693,6 +697,10 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       this.currentTags = undefined
     } else {
       this.currentTags = [...source].map(t => ({...t}))
+      if (source.length > 0) {
+        this.domain.tagForCommunityAdmin = source[0].flag1
+        this.domain.tagForTestBedAdmin = source[0].flag2
+      }
     }
     this.dataService.cacheDomainTags(this.domainId, this.currentTags)
   }

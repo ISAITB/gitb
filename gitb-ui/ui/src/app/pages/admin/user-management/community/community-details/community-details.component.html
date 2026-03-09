@@ -2,7 +2,7 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title">Community details</div>
-            @if (dataService.isSystemAdmin) {
+            @if (currentTags && currentTags.length == 1 && (currentTags[0].flag2 && dataService.isSystemAdmin)) {
                 <div class="ms-auto">
                     <app-tags-display [tags]="currentTags"></app-tags-display>
                 </div>

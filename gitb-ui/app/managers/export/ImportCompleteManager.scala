@@ -18,7 +18,7 @@ package managers.export
 import com.gitb.xml.export.{ReportType, SelfRegistrationRestriction => _, _}
 import config.Configurations
 import managers._
-import managers.`export`.ImportCompleteManager.SandboxImportResultWithHash
+import managers.`export`.ImportCompleteManager.{SandboxImportResultWithHash, logger}
 import managers.testsuite.TestSuitePaths
 import managers.triggers.TriggerHelper
 import models.Enums.ImportItemType.ImportItemType
@@ -47,6 +47,7 @@ import scala.util.Using
 object ImportCompleteManager {
 
   case class SandboxImportResultWithHash(result: Option[SandboxImportResult], hash: Option[String])
+  private val logger = LoggerFactory.getLogger("ImportCompleteManager")
 
 }
 
@@ -75,8 +76,6 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       userManager: UserManager,
                                       dbConfigProvider: DatabaseConfigProvider)
                                      (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
-
-  private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
   import dbConfig.profile.api._
 

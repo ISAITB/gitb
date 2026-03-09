@@ -61,5 +61,7 @@ export interface Community extends CommunityLimited {
   selfRegEnabled?: boolean;
   selfRegTokenEnabled?: boolean;
   selfRegInstructionsEnabled?: boolean;
+  tagForCommunityAdmin?: boolean;
+  tagForTestBedAdmin?: boolean;
 
 }

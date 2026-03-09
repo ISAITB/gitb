@@ -112,6 +112,10 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
         if (!this.community.selfRegInstructionsEnabled) {
           this.community.selfRegTokenHelpText = undefined
         }
+        if (this.community.tags && this.community.tags.length > 0) {
+          this.community.tags[0].flag1 = this.community.tagForCommunityAdmin
+          this.community.tags[0].flag2 = this.community.tagForTestBedAdmin
+        }
         this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email,
           this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
           this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,

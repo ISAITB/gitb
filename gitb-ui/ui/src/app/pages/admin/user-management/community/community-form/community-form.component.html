@@ -30,8 +30,8 @@
     <div class="col-auto" app-tooltip tbTooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></div>
 </div>
 @if (emailEnabled) {
-    <div class="mt-3 row pt-0">
-        <div class="col-8 col-md-6 offset-3">
+    <div class="row mt-3">
+        <div class="offset-3 col-9">
             @if (selfRegEnabled && community.selfRegEnabled) {
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="checkbox" id="selfRegNotification" name="selfRegNotification" [(ngModel)]="community.selfRegNotification">
@@ -58,7 +58,22 @@
                 [editable]="true"
                 [max]="1"
                 [tooltip]="`An optional tag for the community, displayed to community administrators in the Test Bed's banner. For the Test Bed administrator this tag is displayed in lists, and on all screens used to manage its configuration. This is not visible to ${dataService.labelOrganisationLower()} users.`"
+                (added)="tagAdded()"
             ></app-tags-display>
+        </div>
+    </div>
+</div>
+<div [ngbCollapse]="community.tags == undefined || community.tags.length == 0" [animation]="true">
+    <div class="row pt-3">
+        <div class="offset-3 col-9">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="tagForCommunityAdmin" name="tagForCommunityAdmin" [(ngModel)]="community.tagForCommunityAdmin">
+                <label class="form-check-label" for="tagForCommunityAdmin">For community administrators</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="tagForTestBedAdmin" name="tagForTestBedAdmin" [(ngModel)]="community.tagForTestBedAdmin">
+                <label class="form-check-label" for="tagForTestBedAdmin">For Test Bed administrators</label>
+            </div>
         </div>
     </div>
 </div>

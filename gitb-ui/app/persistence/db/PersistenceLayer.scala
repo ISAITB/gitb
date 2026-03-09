@@ -26,7 +26,7 @@ import scala.util.Using
 
 object PersistenceLayer {
 
-  private def logger = LoggerFactory.getLogger("PersistenceLayer")
+  private val logger = LoggerFactory.getLogger("PersistenceLayer")
 
   /**
    * Creates database if not exists. This must be called before applications starts,

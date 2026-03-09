@@ -25,4 +25,7 @@ export interface Domain extends EntityWithId {
   apiKey?: string
   tags?: TagData[]
 
+  tagForCommunityAdmin?: boolean;
+  tagForTestBedAdmin?: boolean;
+
 }

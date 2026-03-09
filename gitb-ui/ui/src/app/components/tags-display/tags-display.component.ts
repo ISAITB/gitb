@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {TagData} from 'src/app/types/tag-data';
 import {Constants} from '../../common/constants';
 import {CreateEditTagComponent} from '../../modals/create-edit-tag/create-edit-tag.component';
@@ -32,6 +32,7 @@ export class TagsDisplayComponent implements OnInit {
   @Input() editable? = false
   @Input() tooltip?: string
   @Input() max?: number
+  @Output() added = new EventEmitter<void>();
 
   private tagCounter = 0
 
@@ -85,6 +86,7 @@ export class TagsDisplayComponent implements OnInit {
         processedTag.id = this.tagCounter++
         this.tags.push(processedTag)
         this.tags.sort((a, b) => a.name.localeCompare(b.name))
+        this.added.emit()
       } else {
         // Update
         Utils.removeFromArray(this.tags, (tag) => tag.id == processedTag.id)

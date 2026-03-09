@@ -53,6 +53,10 @@ export class CreateDomainComponent extends BaseComponent implements AfterViewIni
 	createDomain() {
 		if (!this.saveDisabled()) {
       this.pending = true
+      if (this.domain.tags && this.domain.tags.length > 0) {
+        this.domain.tags[0].flag1 = this.domain.tagForCommunityAdmin
+        this.domain.tags[0].flag2 = this.domain.tagForTestBedAdmin
+      }
 			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' created.')

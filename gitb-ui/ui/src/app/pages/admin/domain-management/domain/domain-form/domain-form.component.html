@@ -31,7 +31,22 @@
                 [editable]="true"
                 [max]="1"
                 [tooltip]="`An optional tag to display for the ${dataService.labelDomainLower()} in lists, and on all screens used to manage its configuration. This is only displayed internally to Test Bed and community administrators.`"
+                (added)="tagAdded()"
             ></app-tags-display>
+        </div>
+    </div>
+</div>
+<div [ngbCollapse]="domain.tags == undefined || domain.tags.length == 0" [animation]="true">
+    <div class="row pt-3">
+        <div class="offset-3 col-9">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="tagForCommunityAdmin" name="tagForCommunityAdmin" [(ngModel)]="domain.tagForCommunityAdmin">
+                <label class="form-check-label" for="tagForCommunityAdmin">For community administrators</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="tagForTestBedAdmin" name="tagForTestBedAdmin" [(ngModel)]="domain.tagForTestBedAdmin">
+                <label class="form-check-label" for="tagForTestBedAdmin">For Test Bed administrators</label>
+            </div>
         </div>
     </div>
 </div>

@@ -49,7 +49,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                    dbConfigProvider: DatabaseConfigProvider)
                                   (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
-  private def logger = LoggerFactory.getLogger("TestResultManager")
+  private val logger = LoggerFactory.getLogger(classOf[TestResultManager])
   private var interactionNotificationFuture: Option[Cancellable] = None
 
   import dbConfig.profile.api._

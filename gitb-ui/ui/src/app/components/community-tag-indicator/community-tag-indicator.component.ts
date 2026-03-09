@@ -22,7 +22,7 @@ export class CommunityTagIndicatorComponent implements OnInit, OnDestroy {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly communityService: CommunityService,
-    protected readonly dataService: DataService
+    private readonly dataService: DataService
   ) {}
 
   ngOnInit(): void {
@@ -63,7 +63,11 @@ export class CommunityTagIndicatorComponent implements OnInit, OnDestroy {
       tags$ = of([])
     }
     tags$.subscribe(tags => {
-      this.tags = tags
+      if (tags && tags.length > 0 && (tags[0].flag1 && this.dataService.isCommunityAdmin || tags[0].flag2 && this.dataService.isSystemAdmin)) {
+        this.tags = tags
+      } else {
+        this.tags = []
+      }
     })
   }
 

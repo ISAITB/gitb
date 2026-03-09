@@ -23,7 +23,7 @@ import javax.inject.Singleton
 @Singleton
 class BeforeStartHook {
 
-  private def logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   // Load application configurations before the applications starts
   Configurations.loadConfigurations()

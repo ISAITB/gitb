@@ -29,4 +29,9 @@ export class DomainFormComponent {
 
   constructor(public readonly dataService: DataService) { }
 
+  tagAdded(): void {
+    this.domain.tagForCommunityAdmin = true
+    this.domain.tagForTestBedAdmin = true
+  }
+
 }

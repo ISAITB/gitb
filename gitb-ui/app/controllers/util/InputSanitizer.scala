@@ -38,7 +38,7 @@ import play.api.routing.Router
  */
 object InputSanitizer {
 
-  private def logger = LoggerFactory.getLogger("InputSanitizer")
+  private val logger = LoggerFactory.getLogger("InputSanitizer")
 
   def check[A](request: Request[A]): Unit = {
     if (Configurations.INPUT_SANITIZER_ENABLED && Configurations.INPUT_SANITIZER_METHODS_TO_CHECK.contains(request.method)) {

@@ -459,6 +459,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     if (!this.community.selfRegInstructionsEnabled) {
       this.community.selfRegTokenHelpText = undefined
     }
+    if (this.community.tags && this.community.tags.length > 0) {
+      this.community.tags[0].flag1 = this.community.tagForCommunityAdmin
+      this.community.tags[0].flag2 = this.community.tagForTestBedAdmin
+    }
     this.communityService.updateCommunity(this.communityId, this.community.sname!, this.community.fname!, this.community.email,
       this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
       this.community.interactionNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
@@ -494,6 +498,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.currentTags = undefined
     } else {
       this.currentTags = [...source].map(t => ({...t}))
+      if (source.length > 0) {
+        this.community.tagForCommunityAdmin = source[0].flag1
+        this.community.tagForTestBedAdmin = source[0].flag2
+      }
     }
     this.dataService.cacheCommunityTags(this.communityId, this.currentTags)
     this.dataService.signalCommunityUpdated()

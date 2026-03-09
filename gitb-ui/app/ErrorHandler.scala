@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager)
                              (implicit ec: ExecutionContext) extends HttpErrorHandler {
 
-  private def logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
     Future.successful {
