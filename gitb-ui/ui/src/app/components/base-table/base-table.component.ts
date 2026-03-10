@@ -20,6 +20,8 @@ import {TableColumnDefinition} from 'src/app/types/table-column-definition.type'
 import {PagingEvent} from '../paging-controls/paging-event';
 import {TableRowApi} from '../table-row/table-row-api';
 import {Constants} from '../../common/constants';
+import {Observable} from 'rxjs';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 
 @Component({
     template: '',
@@ -58,9 +60,14 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() clearSelection?: EventEmitter<void>
   @Input() refreshRows?: EventEmitter<void>
   @Input() supportPaging = false
+  @Input() optionsVisible: boolean = false
+  @Input() optionProvider?: (row: any) => Observable<CheckboxOption[][]>
+  @Input() optionsVisibleForRow?: (row: any) => boolean
+  @Input() optionPendingProperty = 'optionPending'
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()
+  @Output() onOption: EventEmitter<{data: any, option: string}> = new EventEmitter()
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
@@ -103,6 +110,10 @@ export abstract class BaseTableComponent extends BaseComponent {
       }
       this.onSort.emit(column)
     }
+  }
+
+  handleOption(event: { data: any, option: string }) {
+    this.onOption.emit(event)
   }
 
   handleAction(row: any) {

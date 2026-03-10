@@ -601,6 +601,13 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
+  def generateTestSessionDataArchive(archivePath: Path, sessionId: String): Future[Option[Path]] = {
+    for {
+      reportInfo <- testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(Constants.MimeTypeZIP), None, None)
+      report <- finaliseTestSessionReport(archivePath, reportInfo, Constants.MimeTypeZIP, None, None, ReportType.TestCaseReport)
+    } yield report
+  }
+
   def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[Path]] = {
     for {
       communityId <- {
@@ -675,6 +682,22 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             }
           }
         } yield pdfReport
+      } else if (contentType == Constants.MimeTypeZIP) {
+        // ZIP archive with all test data.
+        // Copy the XML report.
+        val tempFolder = reportPath.getParent.resolve("temp")
+        Files.createDirectories(tempFolder)
+        Files.copy(reportInfo.report.get, tempFolder.resolve("test_case.xml"))
+        val sourceData = repositoryUtils.getPathForTestSessionData(reportInfo.sessionFolderInfo.path, tempData = false)
+        val destinationData = tempFolder.resolve("data")
+        Using (Files.walk(sourceData)) { stream =>
+          stream.forEach { sourcePath =>
+            val destinationPath = destinationData.resolve(sourceData.relativize(sourcePath))
+            Files.copy(sourcePath, destinationPath)
+          }
+        }
+        new ZipArchiver(tempFolder, reportPath).zip()
+        Future.successful(Some(reportPath))
       } else {
         // XML reports are cached (i.e. keep the original).
         Files.copy(reportInfo.report.get, reportPath)

@@ -105,8 +105,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   unreadLogErrors: {[key: number]: boolean} = {}
   unreadLogWarnings: {[key: number]: boolean} = {}
   testCaseWithOpenLogView?: number
-  exportXmlPending: {[key: number]: boolean} = {}
-  exportPdfPending: {[key: number]: boolean} = {}
+  testCaseOperationPending: {[key: number]: boolean} = {}
 
   actor?: string
   session?: string
@@ -1278,34 +1277,34 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       || this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.STOPPED
   }
 
-  exportPdf(testCase: ConformanceTestCase) {
-    this.exportPdfPending[testCase.id] = true
-    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
-      .subscribe(() => {}).add(() => {
-      this.exportPdfPending[testCase.id] = false
+  exportTestData(testCase: ConformanceTestCase) {
+    this.testCaseOperationPending[testCase.id] = true
+    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/zip'});
+      saveAs(blobData, 'test_case_data.zip');
+    }).add(() => {
+      this.testCaseOperationPending[testCase.id] = false
     })
+  }
+
+  exportPdf(testCase: ConformanceTestCase) {
+    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
   }
 
   exportXml(testCase: ConformanceTestCase) {
     if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
-      this.exportXmlPending[testCase.id] = true
       this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-        .subscribe(() => {}).add(() => {
-        this.exportXmlPending[testCase.id] = false
-      })
     }
   }
 
-	private onExportTestCase(testCase: Partial<ConformanceTestCase>, contentType: string, fileName: string) {
-    return this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType)
-    .pipe(
-      mergeMap((data) => {
-        const blobData = new Blob([data], {type: contentType});
-        saveAs(blobData, fileName);
-        return of(data)
-      }),
-      share()
-    )
+	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fileName: string) {
+    this.testCaseOperationPending[testCase.id] = true
+    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType).subscribe((data) => {
+      const blobData = new Blob([data], {type: contentType});
+      saveAs(blobData, fileName);
+    }).add(() => {
+      this.testCaseOperationPending[testCase.id] = false
+    })
   }
 
   @HostListener('document:click', ['$event'])

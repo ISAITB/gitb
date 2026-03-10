@@ -75,6 +75,7 @@ object Constants {
   val defaultLimit = 10L
 
   val MimeTypeAny = "*/*"
+  val MimeTypeZIP = "application/zip"
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
   val MimeTypeJSON = "application/json"

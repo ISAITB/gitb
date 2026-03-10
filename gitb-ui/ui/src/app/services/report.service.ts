@@ -717,4 +717,15 @@ export class ReportService {
     }))
   }
 
+  exportTestSessionData(session: string) {
+    return this.restService.get<ArrayBuffer>(({
+      path: ROUTES.controllers.RepositoryService.exportTestSessionData().url,
+      params: {
+        session_id: session
+      },
+      authenticate: true,
+      arrayBuffer: true
+    }))
+  }
+
 }

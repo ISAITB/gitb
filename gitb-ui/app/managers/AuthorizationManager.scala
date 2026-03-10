@@ -1284,6 +1284,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
+  def canExportTestSessionData(request: RequestWithAttributes[_], sessionId: String): Future[Boolean] = {
+    canManageTestSession(request, sessionId, requireAdmin = true, requireOwnTestSessionIfNotAdmin = false)
+  }
+
   def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean, requireOwnTestSessionIfNotAdmin: Boolean): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {

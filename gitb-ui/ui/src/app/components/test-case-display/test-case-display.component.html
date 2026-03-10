@@ -63,7 +63,7 @@
                                                                [referenceItem]="testCase"
                                                                [optionProvider]="loadOptions(testCase)"
                                                                [singleSelection]="true"
-                                                               [pending]="exportXmlPending[testCase.id] || exportPdfPending[testCase.id]"
+                                                               [pending]="operationPending[testCase.id]"
                                                                (updated)="handleOption($event, testCase)"
                                                                (opening)="optionsOpening(testCase)"></app-checkbox-option-panel>
                                 }

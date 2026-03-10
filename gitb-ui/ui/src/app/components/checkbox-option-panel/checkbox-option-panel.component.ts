@@ -235,7 +235,9 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     if (this.singleSelection) {
       this.currentState = {}
       this.currentState[key] = true
-      this.updated.emit(this.currentState)
+      const event:CheckboxOptionState = {}
+      event[key] = true
+      this.updated.emit(event)
       this.close()
     }
   }

@@ -36,6 +36,8 @@ import {FieldInfo} from '../../types/field-info';
 import {TestResultData} from '../../types/test-result-data';
 import {SessionTableComponent} from '../../components/session-table/session-table.component';
 import {PagingEvent} from '../../components/paging-controls/paging-event';
+import {TestResult} from '../../types/test-result';
+import {CheckboxOption} from '../../components/checkbox-option-panel/checkbox-option';
 
 @Component({
   template: '',
@@ -44,6 +46,9 @@ import {PagingEvent} from '../../components/paging-controls/paging-event';
 export abstract class BaseSessionDashboardComponent implements OnInit, AfterViewInit {
 
   protected readonly Constants = Constants;
+  protected static EXPORT_PDF_OPTION = '0'
+  protected static EXPORT_XML_OPTION = '1'
+  protected static EXPORT_DATA_OPTION = '2'
 
   showActiveSessions = false
   showSessionNavigationControls = false
@@ -403,31 +408,63 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     this.getActiveTests(event)
   }
 
-  exportVisible(session: TestResultForDisplay) {
+  optionsVisibleForRow(session: TestResultForDisplay) {
     return session.obsolete == undefined || !session.obsolete
+  }
+
+  loadCompletedSessionOptionFactory() {
+    return (session: TestResultForDisplay) => {
+      const options: CheckboxOption[][] = []
+      const reportOptions: CheckboxOption[] = []
+      reportOptions.push({ key:  BaseSessionDashboardComponent.EXPORT_PDF_OPTION, label: "Download report", default: true, iconClass: Constants.BUTTON_ICON.REPORT_PDF })
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+        reportOptions.push({ key:  BaseSessionDashboardComponent.EXPORT_XML_OPTION, label: "Download report as XML", default: true, iconClass: Constants.BUTTON_ICON.REPORT_XML })
+      }
+      options.push(reportOptions)
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+        options.push([{ key:  BaseSessionDashboardComponent.EXPORT_DATA_OPTION, label: "Download test data", default: true, iconClass: Constants.BUTTON_ICON.REPORT_ZIP }])
+      }
+      return of(options)
+    }
+  }
+
+  handleOption(event: { data: TestResultForDisplay, option: string }) {
+    if (event.option === BaseSessionDashboardComponent.EXPORT_PDF_OPTION) {
+      this.onReportExportPdf(event.data)
+    } else if (event.option === BaseSessionDashboardComponent.EXPORT_XML_OPTION) {
+      this.onReportExportXml(event.data)
+    } else if (event.option === BaseSessionDashboardComponent.EXPORT_DATA_OPTION) {
+      this.onExportTestData(event.data)
+    }
   }
 
   onReportExportPdf(testResult: TestResultForDisplay) {
     if (!testResult.obsolete) {
+      testResult.optionPending = true
       testResult.exportPending = true
       this.onReportExport(testResult, 'application/pdf', 'report.pdf')
-        .subscribe(() => {}).add(() => {
-        testResult.exportPending = false
-      })
+        .subscribe(() => {})
+        .add(() => {
+          testResult.exportPending = false
+          testResult.optionPending = false
+        })
     }
   }
 
-  onReportExportXml(testResult: TestResultForDisplay) {
+  private onReportExportXml(testResult: TestResultForDisplay) {
     if (!testResult.obsolete && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true)) {
+      testResult.optionPending = true
       testResult.actionPending = true
       this.onReportExport(testResult, 'application/xml', 'report.xml')
-        .subscribe(() => {}).add(() => {
-        testResult.actionPending = false
-      })
+        .subscribe(() => {})
+        .add(() => {
+          testResult.actionPending = false
+          testResult.optionPending = false
+        })
     }
   }
 
-  onReportExport(testResult: TestResultForDisplay, contentType: string, fileName: string) {
+  private onReportExport(testResult: TestResultForDisplay, contentType: string, fileName: string) {
     return this.reportService.exportTestCaseReport(testResult.session, testResult.testCaseId!, contentType)
       .pipe(
         mergeMap((data) => {
@@ -437,6 +474,16 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
         }),
         share()
       )
+  }
+
+  private onExportTestData(testResult: TestResultForDisplay) {
+    testResult.optionPending = true
+    this.reportService.exportTestSessionData(testResult.session).subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/zip'});
+      saveAs(blobData, 'test_case_data.zip');
+    }).add(() => {
+      testResult.optionPending = false
+    })
   }
 
   exportCompletedSessionsToCsv() {

@@ -78,6 +78,7 @@
                         [exportVisible]="exportVisible"
                         [exportVisibleForRow]="exportVisibleForRow"
                         [checkboxEnabled]="checkboxEnabled"
+                        (onOption)="handleOption($event)"
                         (onAction)="handleAction($event)"
                         (onDelete)="handleDelete($event)"
                         (onExport)="handleExport($event)"
@@ -87,11 +88,16 @@
                         [actionPendingProperty]="actionPendingProperty"
                         [deletePendingProperty]="deletePendingProperty"
                         [exportPendingProperty]="exportPendingProperty"
+                        [optionPendingProperty]="optionPendingProperty"
                         [actionTooltip]="actionTooltip"
                         [deleteTooltip]="deleteTooltip"
                         [exportTooltip]="exportTooltip"
                         [expandableRowProperty]="expandableRowProperty"
-                        [refresh]="refreshRows"></tr>
+                        [refresh]="refreshRows"
+                        [optionsVisible]="optionsVisible"
+                        [optionsVisibleForRow]="optionsVisibleForRow"
+                        [optionProvider]="optionProvider"
+                    ></tr>
                 }
             }
         </tbody>

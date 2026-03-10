@@ -53,6 +53,12 @@ export class TableRowComponent implements OnInit, TableRowApi {
   @Input() expandableRowProperty?: string
   @Input() refresh?: EventEmitter<void>
 
+  @Input() optionsVisible: boolean = false
+  @Input() optionsVisibleForRow?: (row: any) => boolean
+  @Input() optionProvider?: (row: any) => Observable<CheckboxOption[][]>
+  @Input() optionPendingProperty = 'optionPending'
+
+  @Output() onOption: EventEmitter<{data: any, option: string}> = new EventEmitter()
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
@@ -110,9 +116,10 @@ export class TableRowComponent implements OnInit, TableRowApi {
         this.columnDataItemsAtLeft.push(columnDataItem)
       }
     }
-    this.showOptions = (this.actionVisible && (this.exportVisible || this.operationsVisible))
-      || (this.exportVisible && (this.actionVisible || this.operationsVisible))
-      || (this.operationsVisible && (this.actionVisible || this.exportVisible))
+    this.showOptions = (this.optionProvider != undefined && this.optionsVisible && (this.optionsVisibleForRow == undefined || this.optionsVisibleForRow(this.data)))
+        || (this.actionVisible && (this.exportVisible || this.operationsVisible))
+        || (this.exportVisible && (this.actionVisible || this.operationsVisible))
+        || (this.operationsVisible && (this.actionVisible || this.exportVisible))
   }
 
   delete() {
@@ -144,26 +151,34 @@ export class TableRowComponent implements OnInit, TableRowApi {
   }
 
   private loadAvailableOptions(): Observable<CheckboxOption[][]> {
-    const options: CheckboxOption[] = []
-    if (this.actionVisible && (!this.actionVisibleForRow || this.actionVisibleForRow(this.data))) {
-      options.push({ key: TableRowComponent.ACTION_OPTION, label: this.actionTooltip, default: true, iconClass: this.actionIcon })
+    if (this.optionProvider != undefined) {
+      return this.optionProvider(this.data)
+    } else {
+      const options: CheckboxOption[] = []
+      if (this.actionVisible && (!this.actionVisibleForRow || this.actionVisibleForRow(this.data))) {
+        options.push({ key: TableRowComponent.ACTION_OPTION, label: this.actionTooltip, default: true, iconClass: this.actionIcon })
+      }
+      if (this.exportVisible && (!this.exportVisibleForRow || this.exportVisibleForRow(this.data))) {
+        options.push({ key: TableRowComponent.EXPORT_OPTION, label: this.exportTooltip, default: true, iconClass: this.exportIcon })
+      }
+      if (this.operationsVisible && (!this.deleteVisibleForRow || this.deleteVisibleForRow(this.data))) {
+        options.push({ key: TableRowComponent.DELETE_OPTION, label: this.deleteTooltip, default: true, iconClass: this.deleteIcon })
+      }
+      return of([options])
     }
-    if (this.operationsVisible && (!this.deleteVisibleForRow || this.deleteVisibleForRow(this.data))) {
-      options.push({ key: TableRowComponent.DELETE_OPTION, label: this.deleteTooltip, default: true, iconClass: this.deleteIcon })
-    }
-    if (this.exportVisible && (!this.exportVisibleForRow || this.exportVisibleForRow(this.data))) {
-      options.push({ key: TableRowComponent.EXPORT_OPTION, label: this.exportTooltip, default: true, iconClass: this.exportIcon })
-    }
-    return of([options])
   }
 
   handleOption(event: CheckboxOptionState) {
-    if (event[TableRowComponent.ACTION_OPTION]) {
-      this.action()
-    } else if (event[TableRowComponent.DELETE_OPTION]) {
-      this.delete()
-    } else if (event[TableRowComponent.EXPORT_OPTION]) {
-      this.export()
+    if (this.onOption) {
+      this.onOption.emit({data: this.data, option: Object.keys(event)[0]})
+    } else {
+      if (event[TableRowComponent.ACTION_OPTION]) {
+        this.action()
+      } else if (event[TableRowComponent.DELETE_OPTION]) {
+        this.delete()
+      } else if (event[TableRowComponent.EXPORT_OPTION]) {
+        this.export()
+      }
     }
   }
 

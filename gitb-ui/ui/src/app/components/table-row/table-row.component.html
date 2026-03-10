@@ -26,12 +26,12 @@
                                        placement="left"
                                        [optionProvider]="loadAvailableOptionsFactory()"
                                        [singleSelection]="true"
-                                       [pending]="data[actionPendingProperty] || data[deletePendingProperty] || data[exportPendingProperty]"
+                                       [pending]="data[optionPendingProperty] || data[actionPendingProperty] || data[deletePendingProperty] || data[exportPendingProperty]"
                                        [smallButton]="true"
                                        (updated)="handleOption($event)"></app-checkbox-option-panel>
         </div>
     </td>
-} @else if (actionVisible || operationsVisible || exportVisible) {
+} @else if (optionsVisible || actionVisible || operationsVisible || exportVisible) {
     <td class="td-min centered">
         <div class="cell-content">
             <div class="btn-toolbar">

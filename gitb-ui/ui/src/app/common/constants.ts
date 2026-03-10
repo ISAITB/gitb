@@ -120,6 +120,7 @@ export class Constants {
     REPORT_CSV: 'fa-solid fa-file-csv',
     REPORT_PDF: 'fa-solid fa-file-pdf',
     REPORT_XML: 'fa-solid fa-file-code',
+    REPORT_ZIP: 'fa-solid fa-file-zipper',
     SAVE: 'fa-solid fa-floppy-disk',
     SEVERITY_ERROR: 'fa-solid fa-times-circle',
     SEVERITY_INFO: 'fa-solid fa-info-circle',

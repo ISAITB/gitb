@@ -38,6 +38,7 @@ import utils._
 
 import java.io._
 import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
 import javax.inject.Inject
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
@@ -1437,6 +1438,36 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
             ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")
           }
       }
+    }
+  }
+
+  def exportTestSessionData(): Action[AnyContent] = authorizedAction.async { request =>
+    val session = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SESSION_ID)
+    val archiveFolder = Path.of(repositoryUtils.getTempReportFolder().getAbsolutePath, UUID.randomUUID().toString)
+    authorizationManager.canExportTestSessionData(request, session).flatMap { _ =>
+      Files.createDirectories(archiveFolder)
+      val archiveFile = archiveFolder.resolve("test_data.zip")
+      reportManager.generateTestSessionDataArchive(archiveFile, session).map { resultingFile =>
+        if (resultingFile.isDefined) {
+          Ok.sendFile(
+            content = resultingFile.get.toFile,
+            fileName = _ => Some("test_data.zip"),
+            onClose = () => {
+              if (Files.exists(archiveFolder)) {
+                FileUtils.deleteQuietly(archiveFolder.toFile)
+              }
+            }
+          )
+        } else {
+          NotFound
+        }
+      }
+    }.recover {
+      case e: Exception =>
+        if (Files.exists(archiveFolder)) {
+          FileUtils.deleteQuietly(archiveFolder.toFile)
+        }
+        throw e
     }
   }
 

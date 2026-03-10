@@ -432,10 +432,16 @@ public class ReportGenerator {
     }
 
     public void writeTestCaseOverviewXmlReport(TestCaseOverviewReportType testCaseOverview, OutputStream outputStream) {
+        writeTestCaseOverviewXmlReport(testCaseOverview, outputStream, false);
+    }
+
+    public void writeTestCaseOverviewXmlReport(TestCaseOverviewReportType testCaseOverview, OutputStream outputStream, boolean keepStepContexts) {
         try {
             Marshaller marshaller = jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-            emptyTestStepContext(testCaseOverview);
+            if (!keepStepContexts) {
+                emptyTestStepContext(testCaseOverview);
+            }
             marshaller.marshal(new ObjectFactory().createTestCaseOverviewReport(testCaseOverview), outputStream);
         } catch(Exception e) {
             throw new IllegalStateException(e);

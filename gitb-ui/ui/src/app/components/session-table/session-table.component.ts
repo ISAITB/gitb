@@ -93,14 +93,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     this.splitColumns()
     this.columnCount = this.columns.length + 1 // PLus one for expandable.
     if (this.checkboxEnabled) this.columnCount += 1
-    if (this.actionVisible || this.operationsVisible || this.exportVisible) this.columnCount += 1
-    if (this.operationsVisible) {
-      // Session termination
-      this.deleteVisibleForRow = (row: TestResultForDisplay) => {
-        // This is needed because we may have refreshed a session in a table displaying active sessions that has completed.
-        return row.endTime == undefined
-      }
-    }
+    if (this.actionVisible || this.operationsVisible || this.exportVisible || this.optionsVisible) this.columnCount += 1
     if (this.refreshComplete) {
       this.refreshComplete.subscribe((report) => {
         this.refreshTestSession(report)

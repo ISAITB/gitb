@@ -14,7 +14,7 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {mergeMap, of, share} from 'rxjs';
+import {of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
 import {ReportService} from 'src/app/services/report.service';
@@ -31,7 +31,6 @@ import {TestResultStatusDisplayComponentApi} from '../test-result-status-display
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
-import {TagData} from '../../types/tag-data';
 
 @Component({
     selector: 'app-test-case-display',
@@ -65,10 +64,10 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
   protected static EXPORT_XML = '0'
   protected static EXPORT_PDF = '1'
   protected static VIEW_SESSIONS = '2'
+  protected static EXPORT_DATA = '3'
 
   Constants = Constants
-  exportXmlPending: {[key:number]: boolean } = {}
-  exportPdfPending: {[key:number]: boolean } = {}
+  operationPending: {[key:number]: boolean } = {}
   viewDocumentationPending: {[key:number]: boolean } = {}
 
   hasDescriptions = false
@@ -127,6 +126,9 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
           reportOptions.push({ key: TestCaseDisplayComponent.EXPORT_XML, label: "Download report as XML", default: true, iconClass: Constants.BUTTON_ICON.REPORT_XML})
         }
         options.push(reportOptions)
+        if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+          options.push([{ key: TestCaseDisplayComponent.EXPORT_DATA, label: "Download test data", default: true, iconClass: Constants.BUTTON_ICON.REPORT_ZIP}])
+        }
       }
       return of(options)
     }
@@ -139,6 +141,8 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
       this.onExportTestCaseXml(testCase)
     } else if (event[TestCaseDisplayComponent.VIEW_SESSIONS]) {
       this.doViewTestSessions(testCase)
+    } else if (event[TestCaseDisplayComponent.EXPORT_DATA]) {
+      this.onExportTestData(testCase)
     }
   }
 
@@ -188,32 +192,32 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
 
 	onExportTestCaseXml(testCase: ConformanceTestCase) {
     if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
-      this.exportXmlPending[testCase.id] = true
       this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-        .subscribe(() => {
-          this.exportXmlPending[testCase.id] = false
-        })
     }
   }
 
-	onExportTestCasePdf(testCase: ConformanceTestCase) {
-    this.exportPdfPending[testCase.id] = true
-    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
-    .subscribe(() => {
-      this.exportPdfPending[testCase.id] = false
+  onExportTestData(testCase: ConformanceTestCase) {
+    this.operationPending[testCase.id] = true
+    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/zip'});
+      saveAs(blobData, 'test_case_data.zip');
+    }).add(() => {
+      this.operationPending[testCase.id] = false
     })
   }
 
-	onExportTestCase(testCase: Partial<ConformanceTestCase>, contentType: string, fileName: string) {
-    return this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType)
-    .pipe(
-      mergeMap((data) => {
-        const blobData = new Blob([data], {type: contentType});
-        saveAs(blobData, fileName);
-        return of(data)
-      }),
-      share()
-    )
+  onExportTestCasePdf(testCase: ConformanceTestCase) {
+    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
+  }
+
+	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fileName: string) {
+    this.operationPending[testCase.id] = true
+    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id, contentType).subscribe((data) => {
+      const blobData = new Blob([data], {type: contentType});
+      saveAs(blobData, fileName);
+    }).add(() => {
+      this.operationPending[testCase.id] = false
+    })
   }
 
   groupTooltip(resultToShow: string | undefined): string {
