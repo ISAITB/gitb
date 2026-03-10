@@ -638,7 +638,6 @@ export class Constants {
 	public static readonly END_OF_TEST_STEP_EXTERNAL = "-2"
 	public static readonly LOG_EVENT_TEST_STEP = "-999"
 	public static readonly EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-	public static readonly DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static readonly VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 	public static readonly LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
 	public static readonly BADGE_PLACEHOLDER_REGEX = /(\$com\.gitb\.placeholder\.BadgeUrl\{[A-Z]+\|\-?\d+\|\-?\d+\|\-?\d+\|\-?\d+\})/g

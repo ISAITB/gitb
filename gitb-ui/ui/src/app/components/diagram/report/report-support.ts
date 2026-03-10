@@ -107,9 +107,9 @@ export abstract class ReportSupport extends BaseComponent {
       let valueToUse = value?.value; // Keep as-is if string
       if (value != undefined) {
         if (value.valueType == ValueType.base64) {
-          valueToUse = atob(value.value);
+          valueToUse = this.dataService.base64ToString(value.value);
         } else if (value.valueType == ValueType.dataURL) {
-          valueToUse = atob(this.dataService.base64FromDataURL(value.value));
+          valueToUse = this.dataService.base64ToString(this.dataService.base64FromDataURL(value.value));
         }
       } else {
         valueToUse = '';

@@ -121,11 +121,12 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   private toBlob(mimeType: string) {
+    let valueToUse = this.context.valueToUse??this.context.valueToUse
     let bb: Blob
     if (this.context!.embeddingMethod == 'BASE64' || this.dataService.isImageType(mimeType)) {
-      bb = this.dataService.b64toBlob(this.context.value!, mimeType)
+      bb = this.dataService.b64toBlob(valueToUse!, mimeType)
     } else {
-      bb = new Blob([this.context.value!], {type: mimeType})
+      bb = new Blob([valueToUse!], {type: mimeType})
     }
     return bb
   }

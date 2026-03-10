@@ -600,6 +600,11 @@ export class DataService {
     }
   }
 
+  base64ToString(base64: string) {
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
   dataUrlFromBase64(base64: string, mimeType: string) {
     return "data:"+mimeType+";base64,"+base64
   }
@@ -1135,8 +1140,8 @@ export class DataService {
     this.tests = undefined
   }
 
-  isDataURL(configuration: string) {
-   return Constants.DATA_URL_REGEX.test(configuration)
+  isDataURL(str: string) {
+    return str.startsWith('data:') && str.slice(0, 50).includes(';base64,');
   }
 
 	getFileInfo(blob: Blob, filename?: string): Observable<{type: string, extension: string, filename: string}> {

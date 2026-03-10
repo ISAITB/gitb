@@ -95,7 +95,7 @@ public class MimeUtil {
     }
 
     public static boolean isDataURL(String value) {
-        return value != null && value.startsWith("data:") && value.contains(";base64,");
+        return value != null && value.startsWith("data:") && value.substring(0, Math.min(50, value.length())).contains(";base64,");
     }
 
     public static String getExtensionFromMimeType(String mimeType) {

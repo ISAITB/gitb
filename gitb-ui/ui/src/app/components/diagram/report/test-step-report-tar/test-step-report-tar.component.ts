@@ -63,7 +63,7 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
     if (context.value != undefined) {
       context.valueToUse = context.value
       if (!this.isFileReference(context) && context.embeddingMethod == Constants.EMBEDDING_METHOD.BASE64) {
-        context.valueToUse = this.base64ToString(context.valueToUse)
+        context.valueToUse = this.dataService.base64ToString(context.valueToUse)
         context.embeddingMethod = 'STRING'
       }
     }
@@ -72,10 +72,6 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
         this.setContextValues(childContext)
       }
     }
-  }
-
-  private base64ToString(base64: string) {
-    return atob(base64)
   }
 
   private findContextEntryByName(context: AnyContent, nameToFind: string): AnyContent|undefined {
