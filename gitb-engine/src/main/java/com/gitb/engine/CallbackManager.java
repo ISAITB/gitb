@@ -142,7 +142,13 @@ public class CallbackManager {
             callToActorMap.remove(callId);
             var data = callToDataMap.remove(callId);
             if (data != null) {
-                systemToCallMap.remove(data.systemApiKey());
+                var calls = systemToCallMap.get(data.systemApiKey());
+                if (calls != null) {
+                    calls.remove(callId);
+                }
+                if (calls == null || calls.isEmpty()) {
+                    systemToCallMap.remove(data.systemApiKey());
+                }
             }
         }
     }
