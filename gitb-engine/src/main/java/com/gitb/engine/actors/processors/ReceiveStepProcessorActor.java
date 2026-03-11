@@ -331,7 +331,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
     }
 
 	public static ActorRef create(ActorContext context, com.gitb.tdl.Receive step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
-		return context.actorOf(props(ReceiveStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+		return create(ReceiveStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 
 	@Override

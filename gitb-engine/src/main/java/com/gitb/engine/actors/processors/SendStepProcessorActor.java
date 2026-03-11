@@ -194,7 +194,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
     }
 
 	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
-		return context.actorOf(props(SendStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+		return create(SendStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 
 	@Override

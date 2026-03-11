@@ -49,6 +49,6 @@ public class AssignStepProcessorActor extends AbstractProcessorActor<Assign> {
 	}
 
 	public static ActorRef create(ActorContext context, Assign step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception{
-		return context.actorOf(props(AssignStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+		return create(AssignStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 }

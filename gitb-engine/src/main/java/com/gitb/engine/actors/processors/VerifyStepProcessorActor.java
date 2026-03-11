@@ -50,7 +50,7 @@ public class VerifyStepProcessorActor extends AbstractProcessorActor<Verify> {
 	}
 
 	public static ActorRef create(ActorContext context, Verify step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
-		return context.actorOf(props(VerifyStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+		return create(VerifyStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 
 	@Override

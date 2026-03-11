@@ -187,7 +187,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
     }
 
     public static ActorRef create(ActorContext context, Listen step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
-        return context.actorOf(props(ListenStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+        return context.actorOf(props(ListenStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_IO_DISPATCHER), getName(NAME));
     }
 
     @Override
