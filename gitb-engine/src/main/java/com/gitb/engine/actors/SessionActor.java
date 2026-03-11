@@ -16,11 +16,6 @@
 package com.gitb.engine.actors;
 
 import com.gitb.PropertyConstants;
-import org.apache.pekko.actor.AbstractActor;
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.actor.PoisonPill;
-import org.apache.pekko.actor.Props;
-import org.apache.pekko.dispatch.Futures;
 import com.gitb.core.AnyContent;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
@@ -40,16 +35,19 @@ import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.XMLDateTimeUtils;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.PoisonPill;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnComplete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
-import scala.concurrent.Await;
-import scala.concurrent.duration.Duration;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.gitb.PropertyConstants.*;
@@ -257,19 +255,21 @@ public class SessionActor extends AbstractActor {
     private void handleSessionCleanupCommand(SessionCleanupCommand message) {
         var sessionEndEvent = (message.getSessionEndMessage() == null)?createSessionEndMessage(StepStatus.SKIPPED, null, false):message.getSessionEndMessage();
         logger.debug("Signalling end of session [{}]", getSessionId());
+        var blockingDispatcher = getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER);
         Futures.future(() -> {
-            try {
-                for (UpdateMessage msg: message.getPendingUpdates()) {
-                    sendUpdateSync(msg, false);
-                }
-            } finally {
-                Await.result(Futures.future(() -> {
-                    sendUpdateSync(sessionEndEvent, false);
-                    return null;
-                }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER)), Duration.apply(100, TimeUnit.MILLISECONDS));
+            for (UpdateMessage msg: message.getPendingUpdates()) {
+                sendUpdateSync(msg, false);
             }
             return null;
-        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+        }, blockingDispatcher).andThen(new OnComplete<>() {
+            @Override
+            public void onComplete(Throwable failure, Object success) {
+                Futures.future(() -> {
+                    sendUpdateSync(sessionEndEvent, false);
+                    return null;
+                }, blockingDispatcher);
+            }
+        }, blockingDispatcher);
         self().tell(PoisonPill.getInstance(), self());
     }
 
