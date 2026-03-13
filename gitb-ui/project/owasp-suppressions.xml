@@ -315,7 +315,7 @@
         <notes><![CDATA[
         file name: jetty-server-12.0.23.jar
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-server@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
         <cve>CVE-2026-1605</cve>
     </suppress>
     <suppress>
@@ -323,7 +323,7 @@
         <notes><![CDATA[
         file name: jetty-server-12.0.23.jar
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-server@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
         <cve>CVE-2025-11143</cve>
     </suppress>
 </suppressions>
