@@ -1,13 +1,13 @@
 @if (checkboxEnabled) {
     <td class="td-min centered" (click)="$event.stopPropagation();">
-        <div class="cell-content">
+        <div class="cell-content row-control">
             <input class="form-check-input" type="checkbox" [(ngModel)]="data.checked" (change)="check()">
         </div>
     </td>
 }
 @if (expandableRowProperty != undefined) {
     <td class="td-min centered">
-        <div class="cell-content">
+        <div class="cell-content row-control">
             <app-collapsing-icon [padded]="false" [isCollapsed]="data[expandableRowProperty] == undefined || !data[expandableRowProperty]"></app-collapsing-icon>
         </div>
     </td>
