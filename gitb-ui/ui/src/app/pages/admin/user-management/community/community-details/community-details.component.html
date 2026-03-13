@@ -15,7 +15,12 @@
                         <span>The community's self-registration settings require that users join existing {{dataService.labelOrganisationsLower()}}. For self-registration to be possible you must either configure a default {{dataService.labelOrganisationLower()}}, or enable {{dataService.labelOrganisationLower()}} tokens (or both).</span>
                     </div>
                 }
-                <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains" [validation]="validation"></app-community-form>
+                <app-community-form [community]="community"
+                                    [admin]="dataService.isSystemAdmin"
+                                    [domains]="domains"
+                                    [validation]="validation"
+                                    [animationsEnabled]="loaded"
+                ></app-community-form>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">

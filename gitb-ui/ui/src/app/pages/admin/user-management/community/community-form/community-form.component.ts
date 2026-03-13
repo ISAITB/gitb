@@ -40,6 +40,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   @Input() domains: Partial<Domain>[] = []
   @Input() admin = false
   @Input() validation!: ValidationState
+  @Input() animationsEnabled = true
   selfRegEnabled = false
   ssoEnabled = false
   emailEnabled = false

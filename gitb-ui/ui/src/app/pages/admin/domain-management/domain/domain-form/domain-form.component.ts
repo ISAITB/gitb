@@ -26,6 +26,7 @@ import {Domain} from 'src/app/types/domain';
 export class DomainFormComponent {
 
   @Input() domain!: Partial<Domain>
+  @Input() animationsEnabled = true
 
   constructor(public readonly dataService: DataService) { }
 

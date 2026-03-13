@@ -11,7 +11,7 @@
         <form (ngSubmit)="saveDomainChanges()">
             <div class="card-body" [pending]="!loaded" focus="shortName">
                 @if (domain) {
-                    <app-domain-form [domain]="domain"></app-domain-form>
+                    <app-domain-form [domain]="domain" [animationsEnabled]="loaded"></app-domain-form>
                 }
             </div>
             <div class="card-footer button-container">
