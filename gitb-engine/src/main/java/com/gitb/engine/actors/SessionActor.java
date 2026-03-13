@@ -20,6 +20,7 @@ import com.gitb.core.AnyContent;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
+import com.gitb.engine.TestEngine;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.processors.TestCaseProcessorActor;
 import com.gitb.engine.actors.supervisors.SessionSupervisor;
@@ -253,22 +254,30 @@ public class SessionActor extends AbstractActor {
     }
 
     private void handleSessionCleanupCommand(SessionCleanupCommand message) {
-        var sessionEndEvent = (message.getSessionEndMessage() == null)?createSessionEndMessage(StepStatus.SKIPPED, null, false):message.getSessionEndMessage();
+        var sessionEndEvent = message.getSessionEndMessage() == null
+                ? createSessionEndMessage(StepStatus.SKIPPED, null, false)
+                : message.getSessionEndMessage();
         logger.debug("Signalling end of session [{}]", getSessionId());
         var blockingDispatcher = getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER);
+        var pendingUpdates = message.getPendingUpdates();
+        var sessionId = getSessionId();
         Futures.future(() -> {
-            for (UpdateMessage msg: message.getPendingUpdates()) {
-                sendUpdateSync(msg, false);
+            try {
+                for (UpdateMessage msg: pendingUpdates) {
+                    sendUpdateSync(msg, false);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to send pending update for session [{}]", sessionId, e);
+            } finally {
+                try {
+                    sendUpdateSync(sessionEndEvent, false);
+                } catch (Exception e) {
+                    logger.error("Failed to send session end event for session [{}]", sessionId, e);
+                } finally {
+                    TestEngine.getInstance().getTbsCallbackHandle().releaseTestbedClient(sessionId);
+                }
             }
             return null;
-        }, blockingDispatcher).andThen(new OnComplete<>() {
-            @Override
-            public void onComplete(Throwable failure, Object success) {
-                Futures.future(() -> {
-                    sendUpdateSync(sessionEndEvent, false);
-                    return null;
-                }, blockingDispatcher);
-            }
         }, blockingDispatcher);
         self().tell(PoisonPill.getInstance(), self());
     }
@@ -317,9 +326,10 @@ public class SessionActor extends AbstractActor {
 
     private void stopTestSession(TestCaseContext context, State state, UpdateMessage sessionEndMessage) {
         context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
-        SessionManager.getInstance().endSession(getSessionId());
+        String sessionId = getSessionId();
+        SessionManager.getInstance().endSession(sessionId);
         updateState(state.newForCleanupPhase());
-        self().tell(new SessionCleanupCommand(sessionEndMessage, state.getEventOutbox().values()), self());
+        self().tell(new SessionCleanupCommand(sessionId, sessionEndMessage, state.getEventOutbox().values()), self());
     }
 
     private UpdateMessage createSessionEndMessage(StepStatus result, TestStepReportType report, boolean isExternallyTriggered) {

@@ -85,8 +85,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	private <T> T getXMLTestResource(String from, String testCaseId, Class<? extends T> clazz, String resourcePath) {
-		try {
-			InputStream inputStream = getTestResource(toLocationKey(from, testCaseId), resourcePath);
+		try (InputStream inputStream = getTestResource(toLocationKey(from, testCaseId), resourcePath)) {
 			if (inputStream != null) {
 				return XMLUtils.unmarshal(clazz, new StreamSource(inputStream));
 			} else {
@@ -99,12 +98,14 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	private TestCase getTestCaseResource(String testCaseId) {
-		try {
-			URLCodec codec = new URLCodec();
-			String uri = TestEngineConfiguration.TEST_CASE_REPOSITORY_URL.replace(":" + TestEngineConfiguration.TEST_ID_PARAMETER, codec.encode(testCaseId));
-
-			InputStream inputStream = retrieveRemoteTestResource(testCaseId, uri);
-
+		URLCodec codec = new URLCodec();
+        String uri;
+        try {
+            uri = TestEngineConfiguration.TEST_CASE_REPOSITORY_URL.replace(":" + TestEngineConfiguration.TEST_ID_PARAMETER, codec.encode(testCaseId));
+        } catch (EncoderException e) {
+            throw new GITBEngineInternalError("Error encoding test case identifier", e);
+        }
+        try (InputStream inputStream = retrieveRemoteTestResource(testCaseId, uri)) {
 			if (inputStream != null) {
                 return XMLUtils.unmarshal(TestCase.class, new StreamSource(inputStream));
 			} else {

@@ -112,7 +112,6 @@ public class SessionManager {
 
 	public void endSession(String sessionId) {
 		TestCaseContext testCaseContext = contexts.remove(sessionId);
-
 		if (testCaseContext != null) {
 			testCaseContext.destroy();
 		}
@@ -120,8 +119,7 @@ public class SessionManager {
 
 	public void destroy() {
 		Collection<String> sessionIds = contexts.keySet();
-
-		for(String sessionId : sessionIds) {
+		for (String sessionId : sessionIds) {
 			endSession(sessionId);
 		}
 	}

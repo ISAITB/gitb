@@ -108,7 +108,6 @@ public class TestbedService {
 		}
 	}
 
-
 	/**
 	 * Provide the expected user inputs to the test engine for the interaction step or preliminary phase
 	 *
@@ -206,7 +205,7 @@ public class TestbedService {
 		if (details.isEmpty()) {
 			message = "Error during test session configuration";
 		} else {
-			message = details.get(details.size() - 1);
+			message = details.getLast();
 		}
 
 		var request = new ConfigurationCompleteRequest();

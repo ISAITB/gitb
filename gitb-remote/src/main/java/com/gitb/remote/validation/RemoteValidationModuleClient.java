@@ -28,7 +28,7 @@ import com.gitb.vs.ValidationResponse;
 import com.gitb.vs.ValidationService;
 import com.gitb.vs.Void;
 import jakarta.xml.ws.soap.AddressingFeature;
-import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
 
 import java.net.URL;
 import java.util.List;
@@ -67,7 +67,10 @@ public class RemoteValidationModuleClient extends RemoteServiceClient implements
 	@Override
 	public ValidationModule getModuleDefinition() {
 		if (serviceModule == null) {
-			serviceModule = call(() -> Optional.ofNullable(getServiceClient().getModuleDefinition(new Void()).getModule()).orElseGet(ValidationModule::new));
+			serviceModule = call(
+					this::getServiceClient,
+					client -> Optional.ofNullable(client.getModuleDefinition(new Void()).getModule()).orElseGet(ValidationModule::new)
+			);
 		}
 		return serviceModule;
 	}
@@ -80,14 +83,17 @@ public class RemoteValidationModuleClient extends RemoteServiceClient implements
 		for(Map.Entry<String, DataType> input: inputs.entrySet()) {
 			validateRequest.getInput().add(DataTypeUtils.convertDataTypeToAnyContent(input.getKey(), input.getValue()));
 		}
-		ValidationResponse response = call(() -> getServiceClient().validate(validateRequest), stepIdMap(stepId));
+		ValidationResponse response = call(
+				this::getServiceClient,
+				client -> client.validate(validateRequest), stepIdMap(stepId)
+		);
 		return response.getReport();
 	}
 
 	private ValidationService getServiceClient() {
 		prepareRemoteServiceLookup(getCallProperties());
 		var client = new ValidationServiceClient(getServiceURL()).getValidationServicePort(new AddressingFeature(this.useAddressing));
-		prepareClient((Client)client);
+		prepareClient(ClientProxy.getClient(client));
 		return client;
 	}
 

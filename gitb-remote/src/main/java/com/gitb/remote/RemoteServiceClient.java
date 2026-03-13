@@ -21,6 +21,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
@@ -29,6 +30,7 @@ import java.net.http.HttpTimeoutException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public abstract class RemoteServiceClient {
@@ -81,28 +83,36 @@ public abstract class RemoteServiceClient {
         return serviceURL;
     }
 
-    protected <Y> Y call(Supplier<Y> supplier) {
-        return call(supplier, null);
+    protected <Y, X> Y call(Supplier<X> clientSupplier, Function<X, Y> actionSupplier) {
+        return call(clientSupplier, actionSupplier, null);
     }
 
-    protected <Y> Y call(Supplier<Y> supplier, Map<String, String> extraCallProperties) {
+    protected <Y, X> Y call(Supplier<X> clientSupplier, Function<X, Y> actionSupplier, Map<String, String> extraCallProperties) {
+        Client client = null;
         try {
+            X port = clientSupplier.get();
+            client = ClientProxy.getClient(port);
             var propertiesToUse = new Properties();
             propertiesToUse.putAll(getCallProperties());
             if (extraCallProperties != null) {
                 propertiesToUse.putAll(extraCallProperties);
             }
             RemoteCallContext.setCallProperties(propertiesToUse);
-            return supplier.get();
-        } catch (RuntimeException e) {
+            return actionSupplier.apply(port);
+        } catch (Exception e) {
             if (isTimeoutException(e)) {
                 throw new HandlerTimeoutException(e);
             } else {
-                throw e;
+                throw new RuntimeException(e);
             }
         } finally {
-            RemoteCallContext.clearCallProperties();
+            cleanUpSilent(client);
         }
+    }
+
+    private void cleanUpSilent(Client client) {
+        try { if (client != null) client.destroy(); } catch (Exception e) { /* Ignore */  }
+        try { RemoteCallContext.clearCallProperties(); } catch (Exception e) { /* Ignore */  }
     }
 
     private boolean isTimeoutException(Throwable cause) {

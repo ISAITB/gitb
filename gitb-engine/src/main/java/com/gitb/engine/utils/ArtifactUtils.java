@@ -51,17 +51,18 @@ public class ArtifactUtils {
 		ITestCaseRepository testCaseRepository = ModuleManager.getInstance().getTestCaseRepository();
 		DataType data = null;
 		if (testCaseRepository != null) {
-			InputStream inputStream = testCaseRepository.getTestArtifact(fromToConsider, context.getTestCase().getId(), pathToLookup);
-			if (inputStream != null) {
-				// Create data type from artifact.
-				data = DataTypeFactory.getInstance().create(
-						IOUtils.toByteArray(inputStream),
-						(artifact.getType() == null)?DataType.STRING_DATA_TYPE:artifact.getType(),
-						(artifact.getEncoding() == null)?"UTF-8":artifact.getEncoding());
-				// Set the location of the artifact if it is a schema type in order to resolve
-				// the location of other artifacts imported by this one.
-				data.setImportPath(pathToLookup);
-				data.setImportTestSuite(fromToConsider);
+			try (InputStream inputStream = testCaseRepository.getTestArtifact(fromToConsider, context.getTestCase().getId(), pathToLookup)) {
+				if (inputStream != null) {
+					// Create data type from artifact.
+					data = DataTypeFactory.getInstance().create(
+							IOUtils.toByteArray(inputStream),
+							(artifact.getType() == null)?DataType.STRING_DATA_TYPE:artifact.getType(),
+							(artifact.getEncoding() == null)?"UTF-8":artifact.getEncoding());
+					// Set the location of the artifact if it is a schema type in order to resolve
+					// the location of other artifacts imported by this one.
+					data.setImportPath(pathToLookup);
+					data.setImportTestSuite(fromToConsider);
+				}
 			}
 		}
 		return Pair.of(pathToLookup, data);

@@ -28,6 +28,7 @@ import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -71,14 +72,17 @@ public class LocalSchemaResolver implements ResourceLoader {
         return () -> {
             Map<String, ResourceInfo> entries = new HashMap<>();
             sharedSchemaInfo.schemaPaths().forEach(resourcePath -> {
-                InputStream resourceStream  = repository.getTestArtifact(sharedSchemaInfo.testSuiteId().orElse(null), sharedSchemaInfo.testCaseId(), resourcePath);
-                if (resourceStream != null) {
-                    String schemaId = readSchemaId(sharedSchemaInfo.testSuiteId(), resourcePath, resourceStream);
-                    if (schemaId != null) {
-                        entries.put(schemaIdToUse(schemaId), new ResourceInfo(sharedSchemaInfo.testSuiteId(), resourcePath));
+                try (InputStream resourceStream  = repository.getTestArtifact(sharedSchemaInfo.testSuiteId().orElse(null), sharedSchemaInfo.testCaseId(), resourcePath)) {
+                    if (resourceStream != null) {
+                        String schemaId = readSchemaId(sharedSchemaInfo.testSuiteId(), resourcePath, resourceStream);
+                        if (schemaId != null) {
+                            entries.put(schemaIdToUse(schemaId), new ResourceInfo(sharedSchemaInfo.testSuiteId(), resourcePath));
+                        }
+                    } else {
+                        throw new IllegalStateException("Unable to find shared schema at path [%s]%s".formatted(resourcePath, testSuiteReferenceForError(sharedSchemaInfo.testSuiteId())));
                     }
-                } else {
-                    throw new IllegalStateException("Unable to find shared schema at path [%s]%s".formatted(resourcePath, testSuiteReferenceForError(sharedSchemaInfo.testSuiteId())));
+                } catch (IOException e) {
+                    throw new IllegalStateException("IO error when reading shared schema at path [%s]%s".formatted(resourcePath, testSuiteReferenceForError(sharedSchemaInfo.testSuiteId())), e);
                 }
             });
             return entries;

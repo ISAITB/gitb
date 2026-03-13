@@ -58,6 +58,7 @@ public class TestbedServiceContextListener {
     public void contextDestroyed() {
         logger.info("Context destroyed...");
 	    TestEngine.getInstance().destroy();
+        TestbedServiceCallbackHandler.getInstance().destroy();
     }
 
     @EventListener

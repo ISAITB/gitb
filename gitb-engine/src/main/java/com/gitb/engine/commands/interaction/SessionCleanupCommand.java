@@ -15,15 +15,17 @@
 
 package com.gitb.engine.commands.interaction;
 
-import java.io.Serializable;
+import com.gitb.engine.commands.common.SessionCommand;
+
 import java.util.Collection;
 
-public class SessionCleanupCommand implements Serializable {
+public class SessionCleanupCommand extends SessionCommand {
 
     private final transient UpdateMessage sessionEndMessage;
     private final transient Collection<UpdateMessage> pendingUpdates;
 
-    public SessionCleanupCommand(UpdateMessage sessionEndMessage, Collection<UpdateMessage> pendingUpdates) {
+    public SessionCleanupCommand(String sessionId, UpdateMessage sessionEndMessage, Collection<UpdateMessage> pendingUpdates) {
+        super(sessionId);
         this.sessionEndMessage = sessionEndMessage;
         this.pendingUpdates = pendingUpdates;
     }

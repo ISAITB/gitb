@@ -84,8 +84,9 @@ public class TestbedServiceImpl implements TestbedService {
             result = TestEngineConfiguration.ROOT_CALLBACK_URL;
         } else {
             result = com.gitb.engine.TestbedService.healthCheck((msg) -> {
-                TestbedClient client = TestbedServiceCallbackHandler.createTestBedClient(wsc);
-                client.updateStatus(msg);
+                TestbedServiceCallbackHandler.getInstance()
+                        .createClient(wsc)
+                        .updateStatus(msg);
             });
         }
         // Prepare result
@@ -102,9 +103,7 @@ public class TestbedServiceImpl implements TestbedService {
             //Call the real TestbedService
             sessionId = com.gitb.engine.TestbedService.initiate(parameters.getTcId(), parameters.getTcInstanceId());
             //Save the WSAddressing properties so we can use callbacks
-            TestbedServiceCallbackHandler.
-                    getInstance().
-                    saveWSAddressingProperties(sessionId, wsc);
+            TestbedServiceCallbackHandler.getInstance().createClient(sessionId, wsc);
             //Construct Response
             InitiateResponse response = new InitiateResponse();
             response.setTcInstanceId(sessionId);

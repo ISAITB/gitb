@@ -28,7 +28,7 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.DataTypeUtils;
 import jakarta.xml.ws.soap.AddressingFeature;
-import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
 
 import java.net.URL;
 import java.util.*;
@@ -61,7 +61,10 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
     @Override
     public ProcessingModule getModuleDefinition() {
         if (serviceModule == null) {
-            serviceModule = call(() -> Optional.ofNullable(getServiceClient().getModuleDefinition(new Void()).getModule()).orElseGet(ProcessingModule::new));
+            serviceModule = call(
+                    this::getServiceClient,
+                    client -> Optional.ofNullable(client.getModuleDefinition(new Void()).getModule()).orElseGet(ProcessingModule::new)
+            );
         }
         return serviceModule;
     }
@@ -70,7 +73,10 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
     public String beginTransaction(String stepId, List<Configuration> config) {
         BeginTransactionRequest transactionRequest = new BeginTransactionRequest();
         transactionRequest.getConfig().addAll(config);
-        return call(() -> getServiceClient().beginTransaction(transactionRequest).getSessionId(), stepIdMap(stepId));
+        return call(
+                this::getServiceClient,
+                client -> client.beginTransaction(transactionRequest).getSessionId(), stepIdMap(stepId)
+        );
     }
 
     private String sessionIdToUse(String processingSessionId) {
@@ -87,7 +93,10 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
         processRequest.setSessionId(sessionIdToUse(processingSessionId));
         processRequest.setOperation(operation);
         processRequest.getInput().addAll(getInput(data));
-        ProcessResponse processResponse = call(() -> getServiceClient().process(processRequest), stepIdMap(stepId));
+        ProcessResponse processResponse = call(
+                this::getServiceClient,
+                client -> client.process(processRequest), stepIdMap(stepId)
+        );
         return new ProcessingReport(processResponse.getReport(), getOutput(processResponse.getOutput()));
     }
 
@@ -117,13 +126,16 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
     public void endTransaction(String processingSessionId, String stepId) {
         BasicRequest basicRequest = new BasicRequest();
         basicRequest.setSessionId(sessionIdToUse(processingSessionId));
-        call(() -> getServiceClient().endTransaction(basicRequest), stepIdMap(stepId));
+        call(
+                this::getServiceClient,
+                client -> client.endTransaction(basicRequest), stepIdMap(stepId)
+        );
     }
 
     private ProcessingService getServiceClient() {
         prepareRemoteServiceLookup(getCallProperties());
         var client = new ProcessingServiceClient(getServiceURL()).getProcessingServicePort(new AddressingFeature(this.useAddressing));
-        prepareClient((Client)client);
+        prepareClient(ClientProxy.getClient(client));
         return client;
     }
 
