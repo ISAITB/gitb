@@ -29,6 +29,7 @@ import models.Enums.{TriggerDataType, TriggerFireExpressionType, TriggerServiceT
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.lang3.StringUtils
+import org.apache.cxf.frontend.ClientProxy
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.Environment
@@ -1058,10 +1059,15 @@ class TriggerManager @Inject()(env: Environment,
   private def callProcessingService(url: String, fnCallOperation: ProcessingService => JAXBElement[_]): Future[ServiceTestResult] = {
     Future {
       val service = new ProcessingServiceService(URI.create(url).toURL)
-      val response = fnCallOperation.apply(service.getProcessingServicePort)
-      val bos = new ByteArrayOutputStream()
-      XMLUtils.marshalToStream(response, bos)
-      ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
+      val client = service.getProcessingServicePort
+      try {
+        val response = fnCallOperation.apply(client)
+        val bos = new ByteArrayOutputStream()
+        XMLUtils.marshalToStream(response, bos)
+        ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
+      } finally {
+        try { ClientProxy.getClient(client).destroy() } catch { case _: Exception => /* Ignore */ }
+      }
     }
   }
 
@@ -1364,8 +1370,12 @@ class TriggerManager @Inject()(env: Environment,
   private def callTriggerService(trigger: Triggers, request: ProcessRequest): Future[ProcessResponse] = {
     if (TriggerServiceType.apply(trigger.serviceType) == TriggerServiceType.GITB) {
       Future {
-        val service = new ProcessingServiceService(URI.create(trigger.url).toURL)
-        service.getProcessingServicePort.process(request)
+        val client = new ProcessingServiceService(URI.create(trigger.url).toURL).getProcessingServicePort
+        try {
+          client.process(request)
+        } finally {
+          try { ClientProxy.getClient(client).destroy() } catch { case _: Exception => /* Ignore */ }
+        }
       }
     } else {
       callHttpService(trigger.url, () => {
