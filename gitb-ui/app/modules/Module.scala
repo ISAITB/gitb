@@ -15,7 +15,7 @@
 
 package modules
 
-import actors.{SessionLaunchActor, SessionManagerActor, SessionUpdateActor, TriggerActor}
+import actors.{BulkTaskActor, SessionLaunchActor, SessionManagerActor, SessionUpdateActor, TriggerActor}
 import com.google.inject.AbstractModule
 import hooks.{BeforeStartHook, OnStopHook, PostStartHook}
 import play.api.libs.concurrent.PekkoGuiceSupport
@@ -31,6 +31,7 @@ class Module extends AbstractModule with PekkoGuiceSupport {
     // Apply any Flyway migrations not covered by the current baseline.
     bind(classOf[MigrationInitializer]).asEagerSingleton()
     // Bind top level actors - START
+    bindActor[BulkTaskActor](BulkTaskActor.actorName)
     bindActor[TriggerActor](TriggerActor.actorName)
     bindActor[SessionManagerActor](SessionManagerActor.actorName)
     bindActorFactory[SessionUpdateActor, SessionUpdateActor.Factory]

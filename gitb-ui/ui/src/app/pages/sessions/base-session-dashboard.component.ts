@@ -613,8 +613,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel', Constants.BUTTON_ICON.DELETE).subscribe(() => {
       this.deletePending = true
       this.deleteObsoleteOperation().subscribe(() => {
-        this.getCompletedTests(this.currentCompletedPagingInfo())
-        this.popupService.success('Obsolete test results deleted.')
+        this.popupService.success('Obsolete test results scheduled for deletion.')
       }).add(() => {
         this.deletePending = false
       })

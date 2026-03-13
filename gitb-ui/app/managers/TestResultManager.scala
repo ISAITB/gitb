@@ -271,13 +271,13 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     q1.update(None)
   }
 
-  def deleteObsoleteTestResultsForOrganisationWrapper(organisationId: Long): Future[Unit] = {
+  def deleteObsoleteTestResultsForOrganisationWrapper(organisationId: Long): Future[Int] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = deleteObsoleteTestResultsForOrganisation(organisationId, onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Future[Unit] = {
+  def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Future[Int] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = deleteObsoleteTestResultsForCommunity(communityId, onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
@@ -376,17 +376,17 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     toDBIO(actions)
   }
 
-  def deleteObsoleteTestResultsForOrganisation(organisationId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Unit] = {
+  def deleteObsoleteTestResultsForOrganisation(organisationId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Int] = {
     for  {
       sessions <- PersistenceSchema.testResults
         .filter(x => x.organizationId === organisationId &&
           (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.communityId.isEmpty || x.sutId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
         ).result
       _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
-    } yield ()
+    } yield sessions.size
   }
 
-  def deleteObsoleteTestResultsForCommunity(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Unit] = {
+  def deleteObsoleteTestResultsForCommunity(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Int] = {
     for {
       sessions <- PersistenceSchema.testResults
         .filter(x => x.communityId === communityId &&
@@ -394,10 +394,11 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         )
         .result
       _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
-    } yield ()
+    } yield sessions.size
   }
 
   private def deleteObsoleteTestSessions(sessions: Iterable[TestResult], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    logger.info("Starting deletion of {} obsolete test sessions", sessions.size)
     val actions = ListBuffer[DBIO[_]]()
     sessions.foreach { session =>
       actions += (
@@ -423,14 +424,14 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     toDBIO(actions)
   }
 
-  def deleteAllObsoleteTestResults(): Future[Unit] = {
+  def deleteAllObsoleteTestResults(): Future[Int] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       sessions <- PersistenceSchema.testResults
         .filter(x => x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
         .result
       _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
-    } yield ()
+    } yield sessions.size
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 

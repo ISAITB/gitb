@@ -15,6 +15,8 @@
 
 package controllers
 
+import actors.BulkTaskActor
+import actors.events.obsolete.{DeleteAllObsoleteSessions, DeleteObsoleteSessionsForCommunity, DeleteObsoleteSessionsForOrganisation}
 import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.ConformanceService.{KeystoreInfo, TestSuiteUploadInfo}
@@ -28,6 +30,7 @@ import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.RandomStringUtils
+import org.apache.pekko.actor.ActorSystem
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils._
@@ -83,6 +86,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
                                     parameterManager: ParameterManager,
                                     authorizationManager: AuthorizationManager,
                                     communityLabelManager: CommunityLabelManager,
+                                    actorSystem: ActorSystem,
                                     repositoryUtils: RepositoryUtils)
                                    (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
@@ -920,28 +924,25 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteAllObsoleteTestResults(): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canDeleteAllObsoleteTestResults(request).flatMap { _ =>
-      testResultManager.deleteAllObsoleteTestResults().map { _ =>
-        ResponseConstructor.constructEmptyResponse
-      }
+    authorizationManager.canDeleteAllObsoleteTestResults(request).map { _ =>
+      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteAllObsoleteSessions
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
   def deleteObsoleteTestResultsForOrganisation(): Action[AnyContent] = authorizedAction.async { request =>
     val organisationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ORGANIZATION_ID).toLong
-    authorizationManager.canDeleteObsoleteTestResultsForOrganisation(request, organisationId).flatMap { _ =>
-      testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(organisationId).map { _ =>
-        ResponseConstructor.constructEmptyResponse
-      }
+    authorizationManager.canDeleteObsoleteTestResultsForOrganisation(request, organisationId).map { _ =>
+      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteObsoleteSessionsForOrganisation(organisationId)
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
   def deleteObsoleteTestResultsForCommunity(): Action[AnyContent] = authorizedAction.async { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
-    authorizationManager.canDeleteObsoleteTestResultsForCommunity(request, communityId).flatMap { _ =>
-      testResultManager.deleteObsoleteTestResultsForCommunityWrapper(communityId).map { _ =>
-        ResponseConstructor.constructEmptyResponse
-      }
+    authorizationManager.canDeleteObsoleteTestResultsForCommunity(request, communityId).map { _ =>
+      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteObsoleteSessionsForCommunity(communityId)
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
