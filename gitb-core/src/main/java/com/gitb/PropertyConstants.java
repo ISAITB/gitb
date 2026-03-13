@@ -43,6 +43,7 @@ public class PropertyConstants {
     public static final String ACTOR_CONFIG_ORGANISATION = "com.gitb.ORGANISATION";
     public static final String ACTOR_CONFIG_SYSTEM = "com.gitb.SYSTEM";
     public static final String ACTOR_CONFIG_TEST_SERVICE = "com.gitb.TEST_SERVICE";
+    public static final String ACTOR_CONFIG_VARIABLES = "com.gitb.VARIABLES";
     public static final char ACTOR_CONFIG_TEST_SERVICE_SEPARATOR = '|';
 
     /**

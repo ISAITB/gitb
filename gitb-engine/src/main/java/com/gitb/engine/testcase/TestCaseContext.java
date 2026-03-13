@@ -39,6 +39,7 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.ActorUtils;
+import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
@@ -344,6 +345,29 @@ public class TestCaseContext {
 		testEngineVersion.setValue(TEST_ENGINE_VERSION);
 		map.addItem(SESSION_MAP_TEST_ENGINE_VERSION, testEngineVersion);
 		variable.setValue(map);
+	}
+
+	public void addInputs(List<AnyContent> inputs) {
+		if (inputs != null) {
+			for (var input: inputs) {
+				if (input != null) {
+					if (input.getName() == null) {
+						logger.warn("Session [{}] received input with no name", getSessionId());
+					} else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP)) {
+						logger.warn("Session [{}] received input with reserved name [{}]", getSessionId(), input.getName());
+					} else {
+						// Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables
+						var variable = getScope().getVariable(input.getName());
+						if (variable.isDefined()) {
+							input.setType(variable.getValue().getType()); // Make sure we don't change the declared variable type.
+						} else {
+							variable = getScope().createVariable(input.getName());
+						}
+						variable.setValue(DataTypeUtils.convertAnyContentToDataType(input));
+					}
+				}
+			}
+		}
 	}
 
     private void addRegisteredTestServices(List<ActorConfiguration> servicesConfiguration) {

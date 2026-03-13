@@ -15,9 +15,7 @@
 
 package com.gitb.engine.utils;
 
-import com.gitb.core.ActorConfiguration;
-import com.gitb.core.Documentation;
-import com.gitb.core.ErrorCode;
+import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionConfigurationData;
 import com.gitb.engine.expr.StaticExpressionHandler;
@@ -33,6 +31,8 @@ import com.gitb.tpl.*;
 import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
+import com.gitb.types.BooleanType;
+import com.gitb.types.DataType;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -81,7 +81,20 @@ public class TestCaseConverter {
         var context = new StaticTestCaseContext(testCase);
         var configData = new SessionConfigurationData(configs);
         context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration(), configData.getTestServiceConfigurations());
+        if (configData.getPredefinedVariables() != null) {
+            context.addInputs(readInputs(configData.getPredefinedVariables()));
+        }
         return context;
+    }
+
+    private List<AnyContent> readInputs(ActorConfiguration actorConfig) {
+        return actorConfig.getConfig().stream().map(config -> {
+           var input = new AnyContent();
+            input.setName(config.getName());
+            input.setValue(config.getValue());
+            input.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            return input;
+        }).toList();
     }
 
     public TestCase convertTestCase(String testCaseId) {
@@ -200,6 +213,18 @@ public class TestCaseConverter {
         return Objects.requireNonNullElse(result, defaultIfMissing);
     }
 
+    private Boolean asStaticBooleanExpression(Expression value) {
+        // Strip out anything besides the core expression
+        var cleanExpression = new Expression();
+        cleanExpression.setValue(value.getValue());
+        var result = getExpressionHandler().processExpression(cleanExpression, DataType.BOOLEAN_DATA_TYPE);
+        if (result != null) {
+            return ((BooleanType)result.convertTo(DataType.BOOLEAN_DATA_TYPE)).getValue();
+        } else {
+            return false;
+        }
+    }
+
     private String fixedOrVariableValueForActor(String originalValue) {
         var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, getExpressionHandler());
         if (actorIds == null) {
@@ -288,7 +313,7 @@ public class TestCaseConverter {
         if (description.isStatic()) {
             // The If is always hidden and its condition evaluated at load time to determine whether to include the then or else block.
             decision.setHidden(true);
-            var includeThenBlock = fixedOrVariableValueAsBoolean(description.getCond().getValue(), false);
+            var includeThenBlock = asStaticBooleanExpression(description.getCond());
             decision.getThen().setHidden(hiddenValueToUse(description.getThen().getHidden(), !includeThenBlock));
             if (description.getElse() != null) {
                 decision.getElse().setHidden(hiddenValueToUse(description.getElse().getHidden(), includeThenBlock));

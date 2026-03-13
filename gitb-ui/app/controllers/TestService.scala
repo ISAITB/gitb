@@ -122,7 +122,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         domainParameters = domainParameters,
         organisationParameters = None,
         systemParameters = None,
-        testServiceParameters = None
+        testServiceParameters = None,
+        predefinedVariables = None
       )
     }
   }
@@ -142,7 +143,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         domainParameters = x._2._1,
         organisationParameters = Some(x._2._2._1._2),
         systemParameters = Some(x._2._2._2._1),
-        testServiceParameters = x._2._2._2._2
+        testServiceParameters = x._2._2._2._2,
+        predefinedVariables = None
       )
     }
   }

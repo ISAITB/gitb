@@ -16,7 +16,6 @@
 package com.gitb.engine.actors;
 
 import com.gitb.PropertyConstants;
-import com.gitb.core.AnyContent;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
@@ -34,14 +33,12 @@ import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.PoisonPill;
 import org.apache.pekko.actor.Props;
 import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnComplete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -51,7 +48,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static com.gitb.PropertyConstants.*;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_EXTERNAL_STEP_ID;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_STEP_ID;
 import static com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum.*;
@@ -168,7 +164,7 @@ public class SessionActor extends AbstractActor {
                         ctx.message().getSystemConfiguration(),
                         ctx.message().getTestServiceConfigurations()
                 );
-                setInputsToSessionContext(context, ctx.message().getInputs());
+                context.addInputs(ctx.message().getInputs());
                 if (context.getTestCase().getPreliminary() != null) {
                     context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
                 } else {
@@ -296,24 +292,6 @@ public class SessionActor extends AbstractActor {
 
     private String getSessionId() {
         return self().path().name();
-    }
-
-    private void setInputsToSessionContext(TestCaseContext context, List<AnyContent> inputs) {
-        if (inputs != null) {
-            for (var input: inputs) {
-                if (input != null) {
-                    if (input.getName() == null) {
-                        logger.warn("Session [{}] received input with no name", getSessionId());
-                    } else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP)) {
-                        logger.warn("Session [{}] received input with reserved name [{}]", getSessionId(), input.getName());
-                    } else {
-                        // Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables
-                        var variable = context.getScope().createVariable(input.getName());
-                        variable.setValue(DataTypeUtils.convertAnyContentToDataType(input));
-                    }
-                }
-            }
-        }
     }
 
     private boolean shouldSignalLogEvent(LogCommand message, TestCaseContext context) {

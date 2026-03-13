@@ -145,7 +145,7 @@ class SessionLaunchState {
     pendingTestCases.head
   }
 
-  def getSessionConfigurationData(onlySimple: Boolean): SessionConfigurationData = {
+  def getSessionConfigurationData(onlySimple: Boolean, testCaseId: Long, includeInputs: Boolean): SessionConfigurationData = {
     if (onlySimple) {
       // Include only the configuration values that are simple texts
       SessionConfigurationData(
@@ -157,7 +157,8 @@ class SessionLaunchState {
         },
         organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
         systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == "SIMPLE"))),
-        testServiceParameters = data.get.testServiceParameters
+        testServiceParameters = data.get.testServiceParameters,
+        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None
       )
     } else {
       // Include all configuration values
@@ -166,7 +167,8 @@ class SessionLaunchState {
         domainParameters = data.get.domainParameters,
         organisationParameters = Some(data.get.organisationParameters),
         systemParameters = Some(data.get.systemParameters),
-        testServiceParameters = data.get.testServiceParameters
+        testServiceParameters = data.get.testServiceParameters,
+        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None
       )
     }
   }

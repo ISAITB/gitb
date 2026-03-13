@@ -259,7 +259,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
   private def testSessionInitialised(msg: TestSessionInitialised): Unit = {
     state.setConfiguredTestSession(msg.testCaseId, msg.assignedTestSession)
     val testCaseInputs = state.testCaseInputs(msg.testCaseId)
-    val testCaseConfiguration = state.getSessionConfigurationData(onlySimple = false)
+    val testCaseConfiguration = state.getSessionConfigurationData(onlySimple = false, msg.testCaseId, includeInputs = false)
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Initiated test session [{}] for test case [{}]. {}", msg.assignedTestSession, msg.testCaseId, state.statusText())
     webSocketActor.registerActiveTestSession(msg.assignedTestSession)
     // Send the configure request. The response will be returned asynchronously.
@@ -307,7 +307,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
         }
         if (proceedWithoutDelay) {
           state.setLoadingDefinitionForTestCase(testCaseId)
-          val configurationData = state.getSessionConfigurationData(onlySimple = true)
+          val configurationData = state.getSessionConfigurationData(onlySimple = true, testCaseId, includeInputs = true)
           queueTask(() => {
             testbedBackendClient.getTestCaseDefinition(testCaseId.toString, None, configurationData).map { result =>
               TaskCompleted(Some(TestCaseDefinitionLoaded(testCaseId, result.getTestcase)))

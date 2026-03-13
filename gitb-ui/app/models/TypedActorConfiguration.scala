@@ -15,4 +15,23 @@
 
 package models
 
+import com.gitb.PropertyConstants
+import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
+
+object TypedActorConfiguration {
+
+  def fromAnyContent(values: List[AnyContent]): TypedActorConfiguration = {
+    val configs = values
+      .filter(x => x.getEmbeddingMethod == ValueEmbeddingEnumeration.STRING)
+      .map { value =>
+        val config = new Configuration()
+        config.setName(value.getName)
+        config.setValue(value.getValue)
+        TypedConfiguration(config, "SIMPLE")
+      }
+    TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_VARIABLES, PropertyConstants.ACTOR_CONFIG_VARIABLES, configs)
+  }
+
+}
+
 case class TypedActorConfiguration(actor: String, endpoint: String, config: List[TypedConfiguration])
