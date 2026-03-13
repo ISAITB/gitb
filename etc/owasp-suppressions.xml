@@ -233,7 +233,23 @@
         <notes><![CDATA[
         file name: tomcat-embed-core-10.1.46.jar
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-core@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-24733</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- This affects tomcat-native which is not used (use of Tomcat is embedded via Spring Boot). -->
+        <notes><![CDATA[
+        file name: tomcat-embed-websocket-10.1.50.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-.*@.*$</packageUrl>
+        <cve>CVE-2026-24734</cve>
+    </suppress>
+    <suppress>
+        <!-- Not applicable as the embedded Tomcat does not define virtual hosts. -->
+        <notes><![CDATA[
+        file name: tomcat-embed-websocket-10.1.46.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-.*@.*$</packageUrl>
+        <cve>CVE-2025-66614</cve>
     </suppress>    
 </suppressions>
