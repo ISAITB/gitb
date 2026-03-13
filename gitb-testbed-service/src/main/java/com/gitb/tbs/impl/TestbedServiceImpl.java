@@ -191,10 +191,18 @@ public class TestbedServiceImpl implements TestbedService {
 
     @Override
     public Void stop(BasicCommand parameters) {
-        String sessionId = parameters.getTcInstanceId();
-        //Call the real TestbedService
-        com.gitb.engine.TestbedService.stop(sessionId);
-        //Construct Response
+        // The received string may be a request to terminate multiple sessions.
+        String[] signalledSessionIds = StringUtils.split(parameters.getTcInstanceId(), '|');
+        if (signalledSessionIds.length > 0) {
+            boolean isClosedConnectionSignal = "CONNECTION_CLOSED".equals(signalledSessionIds[0]);
+            int startIndex = 0;
+            if (isClosedConnectionSignal) {
+                startIndex = 1;
+            }
+            for (int i = startIndex; i < signalledSessionIds.length; i++) {
+                com.gitb.engine.TestbedService.stop(signalledSessionIds[i], isClosedConnectionSignal);
+            }
+        }
         return new Void();
     }
 

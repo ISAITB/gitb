@@ -23,8 +23,8 @@ import jaxws.TestbedService
 import managers._
 import managers.export.ImportCompleteManager
 import managers.ratelimit.RateLimitManager
-import models.{Constants, RestApiLimits}
 import models.Enums.UserRole
+import models.{Constants, RestApiLimits}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
@@ -415,24 +415,11 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
         () => {
           systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime).map { config =>
             if (config.isDefined && config.get.parameter.isDefined) {
-              testResultManager.getRunningTestResults.map { sessions =>
-                val terminationTasks = sessions.map { session =>
-                  val difference = TimeUtil.getTimeDifferenceInSeconds(session.startTime)
-                  if (difference >= config.get.parameter.get.toInt) {
-                    val sessionId = session.sessionId
-                    testExecutionManager.endSession(sessionId).map { _ =>
-                      logger.info("Terminated idle session [" + sessionId + "]")
-                    }
-                  } else {
-                    // Nothing to do
-                    Future.successful(())
-                  }
-                }
-                Future.sequence(terminationTasks).recover {
-                  case e: Exception =>
-                    logger.warn("Failure while terminating idle sessions", e)
-                    throw e
-                }
+              val threshold = config.get.parameter.get.toLong
+              testExecutionManager.endIdleRunningSessions(threshold).map(_ => ()).recover {
+                case e: Exception =>
+                  logger.warn("Failure while terminating idle sessions", e)
+                  throw e
               }
             }
           }

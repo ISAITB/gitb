@@ -268,14 +268,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   def stopAll(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageAnyTestSession(request).flatMap { _ =>
       actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, None, None))
-      testResultManager.getAllRunningSessions().flatMap { sessions =>
-        val stopTasks = sessions.map {sessionId =>
-          testExecutionManager.endSession(sessionId)
-        }
-        // Wait for all stop Futures to complete
-        Future.sequence(stopTasks).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      testExecutionManager.endAllRunningSessions().map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
@@ -283,13 +277,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   def stopAllCommunitySessions(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
       actorSystem.eventStream.publish(TerminateAllSessionsEvent(Some(communityId), None, None))
-      testResultManager.getRunningSessionsForCommunity(communityId).flatMap { sessions =>
-        val stopTasks = sessions.map { sessionId =>
-          testExecutionManager.endSession(sessionId)
-        }
-        Future.sequence(stopTasks).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      testExecutionManager.endRunningSessionsForCommunity(communityId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
@@ -297,13 +286,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   def stopAllOrganisationSessions(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOrganisation(request, organisationId).flatMap { _ =>
       actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, Some(organisationId), None))
-      testResultManager.getRunningSessionsForOrganisation(organisationId).flatMap { sessions =>
-        val stopTasks = sessions.map { sessionId =>
-          testExecutionManager.endSession(sessionId)
-        }
-        Future.sequence(stopTasks).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      testExecutionManager.endRunningSessionsForOrganisation(organisationId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }

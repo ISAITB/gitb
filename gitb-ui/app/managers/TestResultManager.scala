@@ -19,6 +19,7 @@ import com.gitb.core.StepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
 import config.Configurations
+import managers.TestResultManager.logger
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.io.FileUtils
@@ -42,6 +43,12 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
+object TestResultManager {
+
+  private val logger = LoggerFactory.getLogger(classOf[TestResultManager])
+
+}
+
 @Singleton
 class TestResultManager @Inject() (actorSystem: ActorSystem,
                                    repositoryUtils: RepositoryUtils,
@@ -49,9 +56,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                    dbConfigProvider: DatabaseConfigProvider)
                                   (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
-  private val logger = LoggerFactory.getLogger(classOf[TestResultManager])
   private var interactionNotificationFuture: Option[Cancellable] = None
-
   import dbConfig.profile.api._
 
   /**
@@ -178,35 +183,6 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
   def getRunningTestResults: Future[List[TestResult]] = {
     DB.run(
       PersistenceSchema.testResults.filter(_.endTime.isEmpty).result.map(_.toList)
-    )
-  }
-
-  def getAllRunningSessions(): Future[List[String]] = {
-    DB.run(
-      PersistenceSchema.testResults
-        .filter(_.endTime.isEmpty)
-        .map(x => x.testSessionId)
-        .result.map(_.toList)
-    )
-  }
-
-  def getRunningSessionsForCommunity(community: Long): Future[List[String]] = {
-    DB.run(
-      PersistenceSchema.testResults
-        .filter(_.communityId === community)
-        .filter(_.endTime.isEmpty)
-        .map(x => x.testSessionId)
-        .result.map(_.toList)
-    )
-  }
-
-  def getRunningSessionsForOrganisation(organisation: Long): Future[List[String]] = {
-    DB.run(
-      PersistenceSchema.testResults
-        .filter(_.organizationId === organisation)
-        .filter(_.endTime.isEmpty)
-        .map(x => x.testSessionId)
-        .result.map(_.toList)
     )
   }
 
@@ -604,6 +580,12 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     PersistenceSchema.testInteractions
       .filter(_.testSessionId === sessionId)
       .filterOpt(stepId)((q, id) => q.testStepId === id)
+      .delete
+  }
+
+  def deleteTestInteractions(sessionIds: Iterable[String]): DBIO[_] = {
+    PersistenceSchema.testInteractions
+      .filter(_.testSessionId inSet sessionIds)
       .delete
   }
 

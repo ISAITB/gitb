@@ -22,6 +22,7 @@ import com.gitb.PropertyConstants
 import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
+import managers.TestExecutionManager.{LOGGER, SessionCompletionData}
 import managers.triggers.TriggerHelper
 import models.Enums.{InputMappingMatchType, TestServiceAuthTokenPasswordType}
 import models._
@@ -35,6 +36,7 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils, TimeUtil}
 
+import java.sql.Timestamp
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -44,6 +46,13 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+
+object TestExecutionManager {
+
+  private val LOGGER = LoggerFactory.getLogger(classOf[TestExecutionManager])
+  case class SessionCompletionData(sessionId: String, result: String)
+
+}
 
 @Singleton
 class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient,
@@ -61,7 +70,6 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
                                      (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-  private val LOGGER = LoggerFactory.getLogger(classOf[TestExecutionManager])
   private var sessionManagerActor: Option[ActorRef] = None
   private final val reservedInputNames = Set(
     PropertyConstants.SYSTEM_MAP, PropertyConstants.ORGANISATION_MAP, PropertyConstants.DOMAIN_MAP,
@@ -97,9 +105,19 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def endSession(session:String): Future[Unit] = {
-    testbedClient.stop(session).flatMap { _ =>
-      setEndTimeNow(session)
+  private def signalStopSessions(sessions: Iterable[String]): Future[Unit] = {
+    testbedClient.stop(sessions.mkString("|"))
+      .map { _ =>
+        if (LOGGER.isInfoEnabled()) {
+          sessions.foreach { session =>
+            LOGGER.info("Terminated session {}", session)
+          }
+        }
+      }
+      .recoverWith {
+      case e =>
+        LOGGER.warn(s"Failed to terminate session(s), marking ended anyway", e)
+        Future.successful(()) // Always mark the sessions in the DB as terminated.
     }
   }
 
@@ -162,7 +180,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def loadTestServicesByDomainId(domainId: Long): Future[Option[List[TypedActorConfiguration]]] = {
+  private def loadTestServicesByDomainId(domainId: Long): Future[Option[List[TypedActorConfiguration]]] = {
     DB.run {
       PersistenceSchema.domainParameters
         .join(PersistenceSchema.testServices).on(_.id === _.parameter)
@@ -598,9 +616,9 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     val now = Some(TimeUtil.getCurrentTimestamp())
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
-      startTime <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.startTime).result.headOption
+      times <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map( x => (x.startTime, x.endTime)).result.headOption
       _ <- {
-        if (startTime.isDefined) {
+        if (times.exists(_._2.isEmpty)) {
           // Test session finalisation and cleanup actions.
           for {
             _ <- PersistenceSchema.testResults
@@ -617,7 +635,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             // Delete temporary test session data (used for user interactions).
             _ <- {
               onSuccessCalls += (() => {
-                val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected = true)
+                val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(sessionId, times.map(_._1), isExpected = true)
                 val tempDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = true)
                 FileUtils.deleteQuietly(tempDataFolder.toFile)
               })
@@ -629,7 +647,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           DBIO.successful(())
         }
       }
-    } yield startTime.isDefined
+    } yield times.map(_._1).isDefined
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).flatMap { sessionWasRecorded =>
       if (sessionWasRecorded) {
         // Triggers linked to test sessions: (communityID, systemID, actorID)
@@ -665,25 +683,101 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  private def setEndTimeNow(sessionId: String): Future[Unit] = {
-    val now = Some(TimeUtil.getCurrentTimestamp())
-    DB.run (
-      (for {
-        testSession <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
-        _ <- {
-          if (testSession.isDefined) {
-            for {
-              _ <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.endTime).update(now)
-              _ <- PersistenceSchema.conformanceResults.filter(_.testsession === sessionId).map(c => (c.result, c.updateTime)).update(testSession.get.result, now)
-              _ <- testResultManager.deleteTestInteractions(sessionId, None)
-            } yield ()
-          } else {
-            DBIO.successful(())
+  def endSession(session: String): Future[Unit] = {
+    endRunningSessions(() => getRunningSession(session))
+  }
+
+  def endIdleRunningSessions(maximumDifference: Long): Future[Unit] = {
+    endRunningSessions(() => getIdleRunningSessions(maximumDifference))
+  }
+
+  def endAllRunningSessions(): Future[Unit] = {
+    endRunningSessions(() => getAllRunningSessions())
+  }
+
+  def endRunningSessionsForCommunity(community: Long): Future[Unit] = {
+    endRunningSessions(() => getRunningSessionsForCommunity(community))
+  }
+
+  def endRunningSessionsForOrganisation(organisation: Long): Future[Unit] = {
+    endRunningSessions(() => getRunningSessionsForOrganisation(organisation))
+  }
+
+  private def endRunningSessions(sessionProvider: () => DBIO[Seq[SessionCompletionData]]): Future[Unit] = {
+    val now = TimeUtil.getCurrentTimestamp()
+    DB.run {
+      {
+        for {
+          sessionData <- sessionProvider.apply()
+          _ <- setEndTimeNow(sessionData, now)
+        } yield sessionData.map(_.sessionId)
+      }.transactionally
+    }.flatMap { sessionIds =>
+      signalStopSessions(sessionIds).map(_ => ())
+    }
+  }
+
+  private def getIdleRunningSessions(maximumThreshold: Long): DBIO[Seq[SessionCompletionData]] = {
+    PersistenceSchema.testResults
+      .filter(_.endTime.isEmpty)
+      .map(x => (x.testSessionId, x.result, x.startTime))
+      .result
+      .map { results =>
+        results.filter { result =>
+          val difference = TimeUtil.getTimeDifferenceInSeconds(result._3)
+          difference >= maximumThreshold
+        }.map(x => SessionCompletionData(x._1, x._2))
+      }
+  }
+
+  private def getRunningSession(sessionId: String): DBIO[Seq[SessionCompletionData]] = {
+    PersistenceSchema.testResults
+      .filter(_.endTime.isEmpty)
+      .filter(_.testSessionId === sessionId)
+      .map(x => (x.testSessionId, x.result))
+      .result
+      .map(_.map(x => SessionCompletionData(x._1, x._2)))
+  }
+
+  private def getAllRunningSessions(): DBIO[Seq[SessionCompletionData]] = {
+    PersistenceSchema.testResults
+      .filter(_.endTime.isEmpty)
+      .map(x => (x.testSessionId, x.result))
+      .result
+      .map(_.map(x => SessionCompletionData(x._1, x._2)))
+  }
+
+  private def getRunningSessionsForCommunity(community: Long): DBIO[Seq[SessionCompletionData]] = {
+      PersistenceSchema.testResults
+        .filter(_.communityId === community)
+        .filter(_.endTime.isEmpty)
+        .map(x => (x.testSessionId, x.result))
+        .result
+        .map(_.map(x => SessionCompletionData(x._1, x._2)))
+  }
+
+  private def getRunningSessionsForOrganisation(organisation: Long): DBIO[Seq[SessionCompletionData]] = {
+    PersistenceSchema.testResults
+      .filter(_.organizationId === organisation)
+      .filter(_.endTime.isEmpty)
+      .map(x => (x.testSessionId, x.result))
+      .result
+      .map(_.map(x => SessionCompletionData(x._1, x._2)))
+  }
+
+  private def setEndTimeNow(sessions: Iterable[SessionCompletionData], now: Timestamp): DBIO[Unit] = {
+    val sessionIds = sessions.map(_.sessionId)
+    for {
+      _ <- PersistenceSchema.testResults.filter(_.testSessionId inSet sessionIds).map(_.endTime).update(Some(now))
+      _ <- {
+        toDBIO {
+          sessions.map { sessionData =>
+            PersistenceSchema.conformanceResults.filter(_.testsession === sessionData.sessionId).map(c => (c.result, c.updateTime)).update((sessionData.result, Some(now)))
           }
         }
-      } yield ()
-      ).transactionally
-    )
+      }
+      _ <- testResultManager.deleteTestInteractions(sessionIds)
+    } yield ()
   }
 
 }

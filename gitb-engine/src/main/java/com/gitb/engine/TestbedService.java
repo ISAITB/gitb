@@ -143,12 +143,7 @@ public class TestbedService {
 	 * Stop the TestCase session execution
 	 *
      */
-	public static void stop(String sessionId) {
-		boolean isClosedConnectionSignal = false;
-		if (sessionId.startsWith("CONNECTION_CLOSED|")) {
-			sessionId = sessionId.substring(sessionId.indexOf('|')+1);
-			isClosedConnectionSignal = true;
-		}
+	public static void stop(String sessionId, boolean isClosedConnectionSignal) {
 		if (SessionManager.getInstance().exists(sessionId)) {
 			Object msg;
 			if (isClosedConnectionSignal) {
