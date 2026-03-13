@@ -326,4 +326,20 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
         <cve>CVE-2025-11143</cve>
     </suppress>
+    <suppress>
+        <!-- Jetty is not used to expose accessible endpoints. -->
+        <notes><![CDATA[
+        file name: jetty-ee10-servlet-12.0.23.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.ee10/.*@.*$</packageUrl>
+        <cve>CVE-2025-11143</cve>
+    </suppress>
+    <suppress>
+        <!-- Jetty is not used to expose accessible endpoints. -->
+        <notes><![CDATA[
+        file name: jetty-ee10-servlet-12.0.23.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.ee10/.*@.*$</packageUrl>
+        <cve>CVE-2026-1605</cve>
+    </suppress>
 </suppressions>
