@@ -12,6 +12,7 @@ val commonsTextVersion = "1.15.0"
 val mySqlConnectorVersion = "9.6.0"
 val pac4jVersion = "6.3.3"
 val nettyVersion = "4.1.130.Final"
+val pdfBoxVersion = "3.0.7"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -85,7 +86,8 @@ libraryDependencies ++= Seq(
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
-  "org.apache.pdfbox" % "pdfbox" % "3.0.6",
+  "org.apache.pdfbox" % "pdfbox" % pdfBoxVersion,
+  "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
