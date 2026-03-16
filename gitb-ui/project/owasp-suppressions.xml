@@ -294,4 +294,20 @@
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <cve>CVE-2026-0540</cve>
     </suppress>
+    <suppress>
+        <!-- False positive (CVE affects up to v3.0.6). -->
+        <notes><![CDATA[
+   file name: pdfbox-3.0.7.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/pdfbox.*@.*$</packageUrl>
+        <cve>CVE-2026-23907</cve>
+    </suppress>
+    <suppress>
+        <!-- False positive (CVE affects up to v3.0.6). -->
+        <notes><![CDATA[
+   file name: xmpbox-3.0.7.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/xmpbox.*@.*$</packageUrl>
+        <cve>CVE-2026-23907</cve>
+    </suppress>
 </suppressions>
