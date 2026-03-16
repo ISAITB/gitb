@@ -342,4 +342,20 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.ee10/.*@.*$</packageUrl>
         <cve>CVE-2026-1605</cve>
     </suppress>
+    <suppress>
+        <!-- Non-applicable and refers to an example. -->
+        <notes><![CDATA[
+   file name: pdfbox-3.0.7.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/pdfbox.*@.*$</packageUrl>
+        <cve>CVE-2026-23907</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable and refers to an example. -->
+        <notes><![CDATA[
+   file name: xmpbox-3.0.7.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/xmpbox.*@.*$</packageUrl>
+        <cve>CVE-2026-23907</cve>
+    </suppress>
 </suppressions>
