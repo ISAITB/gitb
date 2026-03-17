@@ -65,7 +65,7 @@ public class DisplayProcessor extends AbstractProcessingHandler {
                         createParameter(INPUT_PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to display."),
                         createParameter(INPUT_CONTENT_TYPES, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of content types to apply for the display of matching input parameters."),
                         createParameter(INPUT_REPORT_ITEMS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of report items to display as a detailed validation report."),
-                        createParameter(INPUT_REPORT_STEPS, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list of step identifiers to from which to source the current step's detailed validation report."),
+                        createParameter(INPUT_REPORT_STEPS, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list of step identifiers from which to source the current step's detailed validation report."),
                         createParameter(INPUT_SORT_REPORT_BY_SEVERITY, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether report items should be sorted based on severity first and then location (as opposed to location first).")
                 ),
                 Collections.emptyList()
