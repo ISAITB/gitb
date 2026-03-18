@@ -46,5 +46,13 @@
     "1114017": {
         "active": true,
         "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
+    },
+    "1114731": {
+        "active": true,
+        "notes": "Angular's i18n is never used in the way that would enable such attacks. In general i18n is not used currently."
+    },
+    "1114733": {
+        "active": true,
+        "notes": "Angular's i18n is never used in the way that would enable such attacks. In general i18n is not used currently."
     }
 }
