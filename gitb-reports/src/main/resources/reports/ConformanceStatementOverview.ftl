@@ -108,10 +108,12 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            <#if testCase.outputMessage??>
-                                                <div class="row output-message ${testCase.reportResult}">
-                                                    ${escape(testCase.outputMessage)}
-                                                </div>
+                                            <#if testCase.outputMessages??>
+                                                <div class="row output-message ${testCase.reportResult}"><#t>
+                                                    <#list testCase.outputMessages as message><#t>
+                                                        <div>${escape(message)}</div><#t>
+                                                    </#list><#t>
+                                                </div><#t>
                                             </#if>
                                         </div>
                                     </div>
