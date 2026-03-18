@@ -78,10 +78,12 @@ public class DomibusMessagingHandler extends AbstractNonWorkerMessagingHandler {
         if (headerToUse.getUserMessage().getPayloadInfo().getPartInfo().size() != payloads.size()) {
             throw new IllegalStateException("The number of payloads provided [%s] must match the number of payload parts in the header [%s]".formatted(payloads.size(), headerToUse.getUserMessage().getPayloadInfo().getPartInfo().size()));
         }
-        var client = new DomibusClient(getBackendInfo(message));
         // Build report.
         var messageForReport = new Message();
-        List<String> messageIds = client.sendToDomibus(headerToUse, payloads);
+        List<String> messageIds;
+        try (var client = new DomibusClient(getBackendInfo(message))) {
+            messageIds = client.sendToDomibus(headerToUse, payloads);
+        }
         if (!messageIds.isEmpty()) {
             messageForReport.getFragments().put("messageIdentifier", new StringType(messageIds.getFirst()));
         }
@@ -190,6 +192,7 @@ public class DomibusMessagingHandler extends AbstractNonWorkerMessagingHandler {
 
     private DeferredTask.Result<PollingState> completeWithReport(MessagingReport report, PollingState state) {
         CallbackManager.getInstance().callbackReceived(state.sessionId(), state.callId(), report);
+        state.client().close();
         return new DeferredTask.Result<>(report, null, null);
     }
 

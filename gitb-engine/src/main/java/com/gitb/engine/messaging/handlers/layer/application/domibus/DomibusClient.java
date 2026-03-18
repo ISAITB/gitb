@@ -9,11 +9,10 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.ws.Holder;
 import org.apache.cxf.attachment.ByteDataSource;
 import org.apache.cxf.configuration.security.AuthorizationPolicy;
+import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
 
 import javax.xml.namespace.QName;
@@ -24,15 +23,26 @@ import java.util.Objects;
 /**
  * Created by simatosc on 01/12/2016.
  */
-public class DomibusClient {
-
-    private static final Logger logger = LoggerFactory.getLogger(DomibusClient.class);
+public class DomibusClient implements AutoCloseable {
 
     private BackendInterface domibus;
     private final BackendInfo backend;
 
     public DomibusClient(BackendInfo backend) {
         this.backend = backend;
+    }
+
+    @Override
+    public void close() {
+        if (domibus != null) {
+            try {
+                Client client = ClientProxy.getClient(domibus);
+                client.destroy();
+                domibus = null;
+            } catch (Exception e) {
+                // Ignore.
+            }
+        }
     }
 
     public List<String> getPendingMessageIds() {
