@@ -3133,7 +3133,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                 val key = s"${systemId}_${relatedActorId.get}"
                                 if (!hasExisting(ImportItemType.Statement, key, ctx)) {
                                   for {
-                                    _ <- systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, setDefaultParameterValues = false)
+                                    _ <- systemManager.defineConformanceStatementIfNotExisting(systemId, relatedSpecId.get, relatedActorId.get, setDefaultParameterValues = false)
                                     key <- DBIO.successful(key)
                                   } yield key
                                 } else {
