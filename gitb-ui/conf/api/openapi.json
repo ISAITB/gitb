@@ -86,16 +86,6 @@
               }
             }
           },
-          "429": {
-            "description": "Call rate limit threshold exceeded for this operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
-          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
