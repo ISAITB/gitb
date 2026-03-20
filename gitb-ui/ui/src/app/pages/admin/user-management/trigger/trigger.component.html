@@ -62,7 +62,7 @@
                             <div [class.mt-3]="fireExpressions.length > 0">
                                 <div class="row align-items-center">
                                     <div class="col-auto">
-                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONDITION" class="btn btn-secondary" (click)="addFireCondition()">Add condition clause</button>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addFireCondition()">Add condition clause</button>
                                     </div>
                                     @if (fireExpressions.length == 0) {
                                         <div app-tooltip class="col-auto d-inline-flex" inlineType="button" [tbTooltip]="fireConditionsTooltip"></div>

@@ -57,7 +57,6 @@ export class Constants {
     COLLAPSE: 'fa-solid fa-angles-up',
     COMMUNITY: 'fa-solid fa-people-group',
     COMMUNITY_MANAGEMENT: 'fa-solid fa-people-group',
-    CONDITION: 'fa-solid fa-circle-question',
     CONFIGURATION_PROPERTIES: 'fa-solid fa-sliders',
     CONFORMANCE_CERTIFICATE: 'fa-solid fa-award',
     CONFORMANCE_DASHBOARD: 'fa-solid fa-gauge-simple-high',
