@@ -60,6 +60,7 @@ class UserManager @Inject() (accountManager: AccountManager,
     val queryBuilder = (forCount: Boolean) => {
       var baseQuery = PersistenceSchema.users
         .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .filter(_._1.role === UserRole.CommunityAdmin.id.toShort)
         .filter(_._2.community === communityId)
         .map(_._1)
       if (!forCount) {
