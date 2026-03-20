@@ -41,6 +41,7 @@ import {PagingEvent} from '../../../../../components/paging-controls/paging-even
 import {share} from 'rxjs/operators';
 import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {TableApi} from '../../../../../components/table/table-api';
 
 @Component({
     selector: 'app-test-suite-details',
@@ -51,6 +52,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
+  @ViewChild("linkedSpecificationsTable") linkedSpecificationsTable?: TableApi
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
 
   testSuite: Partial<TestSuiteWithTestCases> = {}
@@ -84,6 +86,9 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   moveSelectionConfig!: MultiSelectConfig<Specification>
   convertPending = false
   testCasesRefreshing = false
+  specificationsRefreshing = false
+  linkedSpecificationsPage = 1
+  linkedSpecificationsTotal = 0
 
   testCaseFilter?: string
   protected readonly PagingPlacement = PagingPlacement;
@@ -134,8 +139,11 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
-  testCasePageNavigation(pagingInfo: PagingEvent) {
-    this.loadTestCasesInternal(pagingInfo)
+  doTestCasePaging(event: PagingEvent) {
+    this.loadTestCasesInternal(event)
+    if (event.pageSizeChanged) {
+      this.specificationStatus.status = Constants.STATUS.NONE
+    }
   }
 
   loadInitialData(): void {
@@ -185,26 +193,47 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     return obs$
   }
 
+  doSpecificationPaging(event: PagingEvent) {
+    this.loadLinkedSpecificationsInternal(event)
+    if (event.pageSizeChanged) {
+      this.dataStatus.status = Constants.STATUS.NONE
+    }
+  }
+
   loadLinkedSpecifications(forceLoad?: boolean) {
     if (this.specificationStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.linkedSpecifications = []
-      this.unlinkedSpecifications = []
-      const loadLinked = this.testSuiteService.getLinkedSpecifications(this.testSuiteId)
-      const loadUnlinked = this.conformanceService.getDomainSpecifications(this.domainId)
-      forkJoin([loadLinked, loadUnlinked]).subscribe((results) => {
-        this.linkedSpecifications = results[0]
-        const currentIds = this.dataService.asSet(this.linkedSpecifications.map((x) => x.id))
-        const specs: Specification[] = []
-        for (let spec of results[1]) {
-          if (!currentIds[spec.id]) {
-            specs.push(spec)
-          }
-        }
-        this.unlinkedSpecifications = specs
-      }).add(() => {
-        this.specificationStatus.status = Constants.STATUS.FINISHED
-      })
+      this.refreshLinkedSpecifications()
+    } else {
+      this.updateLinkedSpecificationPaging(this.linkedSpecificationsPage, this.linkedSpecificationsTotal)
     }
+  }
+
+  private updateLinkedSpecificationPaging(page: number, count: number) {
+    this.linkedSpecificationsTable?.getPagingControls()?.updateStatus(page, count)
+    this.linkedSpecificationsPage = page
+    this.linkedSpecificationsTotal = count
+  }
+
+  refreshLinkedSpecifications() {
+    this.loadLinkedSpecificationsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+  }
+
+  loadLinkedSpecificationsInternal(pagingInfo: PagingEvent) {
+    if (this.specificationStatus.status == Constants.STATUS.FINISHED) {
+      this.specificationsRefreshing = true
+    } else {
+      this.specificationStatus.status = Constants.STATUS.PENDING
+    }
+    const loadLinked = this.testSuiteService.getLinkedSpecifications(this.testSuiteId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+    const loadUnlinked = this.conformanceService.getUnlinkedDomainSpecs(this.domainId, this.testSuiteId)
+    forkJoin([loadLinked, loadUnlinked]).subscribe((results) => {
+      this.linkedSpecifications = results[0].data
+      this.unlinkedSpecifications = results[1]
+      this.updateLinkedSpecificationPaging(pagingInfo.targetPage, results[0].count)
+    }).add(() => {
+      this.specificationsRefreshing = false
+      this.specificationStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
 	previewDocumentation() {

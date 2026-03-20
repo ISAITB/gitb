@@ -93,10 +93,14 @@ export class TestSuiteService {
     })
   }
 
-	getLinkedSpecifications(testSuiteId: number) {
-		return this.restService.get<Specification[]>({
+	getLinkedSpecifications(testSuiteId: number, page: number|undefined, limit: number|undefined) {
+		return this.restService.get<SearchResult<Specification>>({
 			path: ROUTES.controllers.TestSuiteService.getLinkedSpecifications(testSuiteId).url,
-			authenticate: true
+			authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
 	}
 

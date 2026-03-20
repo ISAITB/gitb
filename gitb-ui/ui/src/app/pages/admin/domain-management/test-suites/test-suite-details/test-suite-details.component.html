@@ -121,7 +121,7 @@
                                 </div>
                             }
                         }
-                        <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testCasePageNavigation($event)"></app-paging-controls>
+                        <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="doTestCasePaging($event)"></app-paging-controls>
                     </div>
                 </ng-template>
             </li>
@@ -142,7 +142,7 @@
                                 </div>
                             </div>
                             <div class="card">
-                                <div table-directive
+                                <div table-directive #linkedSpecificationsTable
                                      [columns]="specificationTableColumns"
                                      [data]="linkedSpecifications"
                                      [noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
@@ -150,6 +150,9 @@
                                      [allowSelect]="!selectingForUnlink"
                                      (onSelect)="onSpecificationSelect($event)"
                                      [checkboxEnabled]="selectingForUnlink"
+                                     [contentRefreshing]="specificationsRefreshing"
+                                     [supportPaging]="true"
+                                     (pageNavigation)="doSpecificationPaging($event)"
                                      [clearSelection]="clearLinkedSpecificationsSelection">
                                 </div>
                             </div>

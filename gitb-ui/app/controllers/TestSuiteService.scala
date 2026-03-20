@@ -201,8 +201,10 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 
 	def getLinkedSpecifications(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canManageTestSuite(request, testSuiteId).flatMap { _ =>
-			specificationManager.getSpecificationsLinkedToTestSuite(testSuiteId).map { specs =>
-				val json = JsonUtil.jsSpecifications(specs).toString()
+			val page = ParameterExtractor.extractPageNumber(request)
+			val limit = ParameterExtractor.extractPageLimit(request)
+			specificationManager.getSpecificationsLinkedToTestSuite(testSuiteId, page, limit).map { result =>
+				val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsSpecificationSearchResults).toString
 				ResponseConstructor.constructJsonResponse(json)
 			}
 		}

@@ -1097,6 +1097,10 @@ object JsonUtil {
     json
   }
 
+  def jsSpecificationSearchResults(list: Iterable[Specifications]):JsArray = {
+    jsSpecifications(list)
+  }
+
   /**
    * Converts a List of Specifications into Play!'s JSON notation
    * @return JsArray

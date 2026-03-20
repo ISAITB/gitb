@@ -165,10 +165,13 @@ export class ConformanceService {
     })
   }
 
-  getDomainSpecifications(domainId: number) {
+  getUnlinkedDomainSpecs(domainId: number, testSuiteId: number) {
     return this.restService.get<Specification[]>({
-      path: ROUTES.controllers.ConformanceService.getDomainSpecs(domainId).url,
-      authenticate: true
+      path: ROUTES.controllers.ConformanceService.getUnlinkedDomainSpecs(domainId).url,
+      authenticate: true,
+      params: {
+        test_suite_id: testSuiteId
+      }
     })
   }
 

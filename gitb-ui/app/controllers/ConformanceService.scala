@@ -362,9 +362,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets the specifications that are defined/tested in the platform
    */
-  def getDomainSpecs(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+  def getUnlinkedDomainSpecs(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewSpecificationsByDomainId(request, domainId).flatMap { _ =>
-      specificationManager.getSpecificationsWithGroups(domainId).map { specs =>
+      val testSuiteId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.TEST_SUITE_ID).toLong
+      specificationManager.getUnlinkedDomainSpecs(domainId, testSuiteId).map { specs =>
         val json = JsonUtil.jsSpecifications(specs).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
