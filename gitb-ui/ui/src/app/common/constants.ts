@@ -143,7 +143,6 @@ export class Constants {
     TEST_CASE: 'fa-solid fa-list-ul',
     TEST_SERVICE: 'fa-solid fa-play',
     TEST_SUITE: 'fa-solid fa-box-archive',
-    TEXT: 'fa-solid fa-align-center',
     THEME: 'fa-solid fa-palette',
     TIME: 'fa-solid fa-clock',
     TODAY: 'fa-solid fa-calendar-day',
