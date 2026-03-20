@@ -38,7 +38,7 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (!managingSpecificationOrder) {
-                                    <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="loadSpecifications()"></app-text-filter>
+                                    <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="loadSpecifications(true)"></app-text-filter>
                                     @if (specifications.length > 0) {
                                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
                                     }

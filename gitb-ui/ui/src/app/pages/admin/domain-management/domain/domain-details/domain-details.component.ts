@@ -198,8 +198,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.loadSharedTestSuitesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
-  loadSpecifications() {
-    if (this.specificationStatus.status == Constants.STATUS.NONE) {
+  loadSpecifications(forceLoad?: boolean) {
+    if (this.specificationStatus.status == Constants.STATUS.NONE || forceLoad) {
       this.loadSpecificationsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
     } else {
       this.updateSpecificationPaging(this.specificationPage, this.specificationTotal)
