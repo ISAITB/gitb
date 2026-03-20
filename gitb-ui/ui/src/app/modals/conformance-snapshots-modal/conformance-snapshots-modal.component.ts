@@ -41,8 +41,8 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   visibleSnapshots?: ConformanceSnapshot[]
   snapshotColumns: TableColumnDefinition[] = [
     { field: 'labelToDisplay', title: 'Label' },
-    { field: 'snapshotTime', title: 'Snapshot time', headerClass: 'th-min padding-right-large', order:'desc' },
-    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min centered' }
+    { field: 'snapshotTime', title: 'Snapshot time', headerClass: 'th-min centered', cellClass: 'td-min centered', order:'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME },
+    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   snapshotsStatus = {status: Constants.STATUS.NONE}
   snapshotToEdit?: Partial<ConformanceSnapshot>
@@ -77,7 +77,6 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
         label: Constants.LATEST_CONFORMANCE_STATUS_LABEL,
         publicLabel: data.latest,
         hidden: false,
-        snapshotTime: '-',
         latest: true
       })
       this.togglePublicView()

@@ -124,10 +124,12 @@ export class TableRowComponent implements OnInit, TableRowApi {
 
   delete() {
     this.onDelete.emit(this.data)
+    this.onOption.emit({data: this.data, option: TableRowComponent.DELETE_OPTION})
   }
 
   export() {
     this.onExport.emit(this.data)
+    this.onOption.emit({data: this.data, option: TableRowComponent.EXPORT_OPTION})
   }
 
   check() {
@@ -136,6 +138,7 @@ export class TableRowComponent implements OnInit, TableRowApi {
 
   action() {
     this.onAction.emit(this.data)
+    this.onOption.emit({data: this.data, option: TableRowComponent.ACTION_OPTION})
   }
 
   iconForAction(index: number): string {
@@ -169,16 +172,14 @@ export class TableRowComponent implements OnInit, TableRowApi {
   }
 
   handleOption(event: CheckboxOptionState) {
-    if (this.onOption) {
-      this.onOption.emit({data: this.data, option: Object.keys(event)[0]})
+    if (event[TableRowComponent.ACTION_OPTION]) {
+      this.action()
+    } else if (event[TableRowComponent.DELETE_OPTION]) {
+      this.delete()
+    } else if (event[TableRowComponent.EXPORT_OPTION]) {
+      this.export()
     } else {
-      if (event[TableRowComponent.ACTION_OPTION]) {
-        this.action()
-      } else if (event[TableRowComponent.DELETE_OPTION]) {
-        this.delete()
-      } else if (event[TableRowComponent.EXPORT_OPTION]) {
-        this.export()
-      }
+      this.onOption.emit({data: this.data, option: Object.keys(event)[0]})
     }
   }
 

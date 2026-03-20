@@ -18,7 +18,7 @@ export interface ConformanceSnapshot {
     id: number
     label: string
     publicLabel?: string
-    snapshotTime: string
+    snapshotTime?: string
     hidden?: boolean
     apiKey?: string
 
