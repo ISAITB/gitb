@@ -41,8 +41,12 @@ export class ReportSupportService {
   ) {}
 
   private showConformanceOverviewModal(communityId: number, systemId: number, identifier: number|undefined, reportLevel: 'all'|'domain'|'specification'|'group', snapshotId: number|undefined, settings: ConformanceOverviewCertificateSettings|undefined) {
+    this.dataService.setImplicitCommunity(communityId)
     const modal = this.modalService.open(ConformanceOverviewCertificateModalComponent, { size: 'lg' })
     const modalInstance = modal.componentInstance as ConformanceOverviewCertificateModalComponent
+    modal.hidden.subscribe(() => {
+      this.dataService.clearImplicitCommunity()
+    })
     modalInstance.settings = settings
     modalInstance.communityId = communityId
     modalInstance.systemId = systemId
@@ -52,8 +56,12 @@ export class ReportSupportService {
   }
 
   private showConformanceStatementModal(communityId: number, actorId: number, systemId: number, snapshotId: number|undefined, format: 'xml'|'pdf', settings: ConformanceCertificateSettings|undefined, certificateEnabled: boolean, testCaseCount: number|undefined) {
+    this.dataService.setImplicitCommunity(communityId)
     const modal = this.modalService.open(ConformanceCertificateModalComponent, { size: 'lg' })
     const modalInstance = modal.componentInstance as ConformanceCertificateModalComponent
+    modal.hidden.subscribe(() => {
+      this.dataService.clearImplicitCommunity()
+    })
     modalInstance.settings = settings
     modalInstance.communityId = communityId
     modalInstance.actorId = actorId
