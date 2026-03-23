@@ -399,29 +399,29 @@
                                                                 <div class="input-group-text">calls per minute</div>
                                                             </div>
                                                         </div>
-                                                        <div class="col-auto" app-tooltip tbTooltip="The maximum number of total calls allowed per minute for each provided API key. This limit is applied independently from any endpoint-specific limits."></div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The maximum number of total calls allowed per minute for each provided API key. This limit is applied independently from any operation-specific limits."></div>
                                                     </div>
                                                     <div class="row pt-3">
-                                                        <label class="col-3 col-form-label text-end" for="defaultEndpointLimit">* Per endpoint usage:</label>
+                                                        <label class="col-3 col-form-label text-end" for="defaultEndpointLimit">* Usage per operation:</label>
                                                         <div class="col-auto">
                                                             <div class="input-group minimum-width-number-grouped maximum-width-number-grouped">
                                                                 <input id="defaultEndpointLimit" name="defaultEndpointLimit" [(ngModel)]="restApiLimits!.defaultEndpointLimit" class="form-control" type="number">
                                                                 <div class="input-group-text">calls per minute</div>
                                                             </div>
                                                         </div>
-                                                        <div class="col-auto" app-tooltip tbTooltip="The maximum number of calls allowed per minute and per endpoint for each provided API key. This setting serves as the default for endpoints that are not configured with a specific limit."></div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The maximum number of calls allowed per minute and per operation for each provided API key. This setting serves as the default for operations that are not configured with a specific limit."></div>
                                                     </div>
                                                     <div class="row pt-3">
                                                         <div class="offset-3 col-auto">
                                                             <div class="btn-toolbar">
                                                                 <app-multi-select-filter [config]="restApiEndpointSelectConfig" (apply)="selectedRestApiEndpoint($event)"></app-multi-select-filter>
                                                                 @if (restApiLimits!.endpointLimits.length > 0) {
-                                                                    <button type="button" class="btn btn-secondary" (click)="removeAllRestApiEndpoints()">Remove all endpoint limits</button>
+                                                                    <button type="button" class="btn btn-secondary" (click)="removeAllRestApiEndpoints()">Remove all operation limits</button>
                                                                 }
                                                             </div>
                                                         </div>
                                                         <div class="col-auto">
-                                                            <app-tooltip tbTooltip="Add limits for specific endpoints to override the default setting."></app-tooltip>
+                                                            <app-tooltip tbTooltip="Add limits for specific operations to override the default setting."></app-tooltip>
                                                         </div>
                                                     </div>
                                                     <div class="pb-2">

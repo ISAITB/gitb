@@ -109,7 +109,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
     const modal = this.modalService.open(CommunityResourceBulkUploadModalComponent, { modalDialogClass: "modal-lg" })
     const modalInstance = modal.componentInstance as CommunityResourceBulkUploadModalComponent
     modalInstance.actions = this.actions
-    modal.result.then((updateMade: boolean) => {
+    modal.closed.subscribe((updateMade: boolean) => {
       if (updateMade) {
         this.refreshResources()
       }

@@ -71,6 +71,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
       replaceSelectedItems: new EventEmitter<Specification[]>(),
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      enableSelectAll: true,
       loader: () => of(this.availableSpecifications)
     }
     if (this.step == 'confirm') {

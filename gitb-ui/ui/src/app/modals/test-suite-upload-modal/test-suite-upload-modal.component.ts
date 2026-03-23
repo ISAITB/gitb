@@ -97,6 +97,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
       replaceSelectedItems: new EventEmitter<Specification[]>(),
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      enableSelectAll: true,
       loader: () => of(this.availableSpecifications)
     }
   }

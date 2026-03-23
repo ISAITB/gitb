@@ -1427,13 +1427,13 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         name: 'restApiEndpoints',
         textField: 'path',
         textDecorator: (item) => item.method.toUpperCase(),
-        filterLabel: 'Add limit for specific endpoint...',
+        filterLabel: 'Add limit for specific operation...',
         filterLabelIcon: Constants.BUTTON_ICON.NEW,
         squashItemsWithSameText: false,
-        noItemsMessage: 'All endpoints have been configured',
+        noItemsMessage: 'All operations have been configured',
         replaceItems: new EventEmitter<RestApiEndpointDescriptionWithId[]>(),
         replaceSelectedItems: new EventEmitter<RestApiEndpointDescriptionWithId[]>(),
-        searchPlaceholder: 'Search endpoints...',
+        searchPlaceholder: 'Search operations...',
         enableSelectAll: true,
         loader: () => this.getAvailableRestApiEndpoints()
       }
