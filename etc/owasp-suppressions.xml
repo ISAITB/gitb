@@ -267,5 +267,21 @@
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/xmpbox.*@.*$</packageUrl>
         <cve>CVE-2026-23907</cve>
+    </suppress>
+    <suppress>
+        <!-- Not applicable - we don't use enabled Java scripting. -->
+        <notes><![CDATA[
+        file name: spring-webmvc-6.2.15.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-webmvc@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-22737</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not applicable - we don't use SSE or WebSockets. -->
+        <notes><![CDATA[
+        file name: spring-webmvc-6.2.15.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-webmvc@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-22735</vulnerabilityName>
     </suppress>    
 </suppressions>
