@@ -6,7 +6,7 @@
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end">* Contact email:</label>
             <div class="col-7">
-                <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text" [invalid]="validation.get('email')">
+                <input ngbAutofocus id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text" [invalid]="validation.get('email')">
             </div>
             <div app-tooltip class="col-auto" tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>
@@ -36,7 +36,7 @@
                 }
                 <div class="col-7" [ngClass]="{'offset-3': !first}">
                     <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true" [validation]="validation.get('file'+index)">
-                        <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" tooltipClass="shortTooltip" ngbTooltip="Remove" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
                     </app-file-select>
                 </div>
             </div>
@@ -62,14 +62,17 @@
         }
         <div class="row">
             <div class="col-12">
-                <div class="alert alert-info rounded mb-0"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</div>
+                <div class="alert alert-info rounded mb-0">
+                    <span class="alert-label">Privacy note</span>
+                    The information you provide is never shared to other parties. The email you provide is used only to receive a response from the support team.
+                </div>
             </div>
         </div>
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="cancel()">Close</button>
-            <button class="btn btn-secondary" type="submit" (click)="send()" [disable]="sendDisabled()"[pending]="sendPending">Send feedback</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Close</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SEND" type="submit" (click)="send()" [disable]="sendDisabled()" [pending]="sendPending">Send</button>
         </div>
     </div>
 </form>

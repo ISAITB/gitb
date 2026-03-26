@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -50,6 +50,7 @@ export class ImportItemGroupPreviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.group = this.tbImportItemGroup
+    this.collapsed = !this.group.open
     this.calculateFlags()
   }
 
@@ -57,6 +58,7 @@ export class ImportItemGroupPreviewComponent implements OnInit {
     if (group.open) {
       this.closeGroup(group)
     } else {
+      this.collapsed = false
       group.open = true
     }
   }
@@ -66,18 +68,6 @@ export class ImportItemGroupPreviewComponent implements OnInit {
     for (let item of group.items) {
       this.closeItem(item)
     }
-  }
-
-  childrenCollapsed() {
-    setTimeout(() => {
-      this.collapsed = true
-    }, 1)
-  }
-
-  childrenExpanding() {
-    setTimeout(() => {
-      this.collapsed = false
-    }, 1)
   }
 
   closeItem(item: ImportItemState) {
@@ -137,6 +127,7 @@ export class ImportItemGroupPreviewComponent implements OnInit {
 
   expandAll() {
     this.group.open = true
+    this.collapsed = false
     for (let item of this.group.items) {
       this.expandItem(item)
     }

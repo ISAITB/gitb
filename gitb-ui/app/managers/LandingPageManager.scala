@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,11 +15,11 @@
 
 package managers
 
-import javax.inject.{Inject, Singleton}
 import models._
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -43,6 +43,24 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .sortBy(_._2.asc)
         .result
         .map(_.toList.map(x => new LandingPage(x._1, x._2, x._3, None, x._4)))
+    )
+  }
+
+  def searchLandingPagesByCommunityWithoutContent(communityId: Long, page: Long, limit: Long): Future[SearchResult[LandingPage]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.landingPages
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.default))
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_._2.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.toList.map(x => new LandingPage(x._1, x._2, x._3, None, x._4)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
     )
   }
 

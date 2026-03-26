@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,11 +15,12 @@
 
 import {Injectable} from '@angular/core';
 import {ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree} from '@angular/router';
-import {mergeMap, Observable, of} from 'rxjs';
+import {from, mergeMap, Observable, of, switchMap} from 'rxjs';
 import {AuthProviderService} from '../services/auth-provider.service';
 import {DataService} from '../services/data.service';
 import {RoutingService} from '../services/routing.service';
 import {ProfileResolver} from './profile-resolver';
+import {AuthenticationStatus} from '../types/authentication-status';
 
 @Injectable({
   providedIn: 'root'
@@ -33,24 +34,27 @@ export class RouteAuthenticationGuard  {
     private readonly profileResolver: ProfileResolver
   ) {}
 
-  canActivate(
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-      if (state.url === '/login') {
-        this.dataService.applyRequestedRoute()
-        if (this.authProviderService.isAuthenticated()) {
-          return this.goToStartForUser(state)
-        } else {
-          return true
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    return this.authProviderService.recoverAuthenticationStatus().pipe(
+      switchMap(authStatus => {
+        if (state.url === '/login' || state.url === '/home') {
+          this.dataService.applyRequestedRoute();
+          if (authStatus === AuthenticationStatus.AuthenticatedWithAccessToken) {
+            return this.goToStartForUser(state);
+          } else if (state.url === '/login') {
+            return of(true);
+          } else {
+            return from(this.routingService.toLogin());
+          }
         }
-      } else {
-        this.dataService.recordLocationDataOrRequestedRoute(state.url)
-        if (this.authProviderService.isAuthenticated()) {
-          return this.goToStartForUser(state)
-        } else {
-          return this.routingService.toLogin()
+        // Any other route
+        this.dataService.recordLocationDataOrRequestedRoute(state.url);
+        if (authStatus == AuthenticationStatus.AuthenticatedWithAccessToken) {
+          return of(true);
         }
-      }
+        return from(this.routingService.toLogin());
+      })
+    )
   }
 
   private goToStartForUser(state: RouterStateSnapshot): Observable<boolean> {
@@ -68,7 +72,7 @@ export class RouteAuthenticationGuard  {
       mergeMap((userId) => {
         const location = this.dataService.retrieveLocationData(userId)
         if (location == undefined) {
-          return this.routingService.toHome()
+          return this.routingService.toStartPage()
         } else if (location == state.url) {
           return of(true)
         } else {

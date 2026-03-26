@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -45,7 +45,15 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
     allowAutomationApi: false,
     allowCommunityView: false,
     allowUserManagement: true,
-    interactionNotification: false
+    allowXmlReports: true,
+    interactionNotification: false,
+    preferences: {
+      menuCollapsed: true,
+      statementsCollapsed: false,
+      pageSize: Constants.TABLE_PAGE_SIZE,
+      homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE
+    },
+    tags: []
   }
   domains: Domain[] = []
   savePending = false
@@ -70,7 +78,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   }
 
   saveDisabled() {
-    return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+    return this.savePending || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled ||
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
@@ -84,34 +92,49 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   }
 
   createCommunity() {
-    this.validation.clearErrors()
-    const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
-    if (!emailValid) {
-      this.validation.invalid("supportEmail", "Please enter a valid support email.")
-    }
-    const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
-    if (!notificationValid) {
-      this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
-    }
-    if (emailValid && notificationValid) {
-      let descriptionToUse: string|undefined
-      if (!this.community.sameDescriptionAsDomain) {
-        descriptionToUse = this.community.activeDescription
+    if (!this.saveDisabled()) {
+      this.validation.clearErrors()
+      const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
+      if (!emailValid) {
+        this.validation.invalid("supportEmail", "Please enter a valid support email.")
       }
-      this.savePending = true
-      this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email,
-        this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
-        this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
-        this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput,
-        this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
-        this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!, this.community.allowUserManagement!,
-        this.community.domain?.id)
-      .subscribe(() => {
-        this.cancelCreateCommunity()
-        this.popupService.success('Community created.')
-      }).add(() => {
-        this.savePending = false
-      })
+      const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
+      if (!notificationValid) {
+        this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
+      }
+      if (emailValid && notificationValid) {
+        let descriptionToUse: string|undefined
+        if (!this.community.sameDescriptionAsDomain) {
+          descriptionToUse = this.community.activeDescription
+        }
+        this.savePending = true
+        this.community.selfRegForceOrganisationTokenInput = this.community.selfRegJoinExisting && this.community.selfRegDefaultOrganisationEnabled != true && this.community.selfRegAllowOrganisationTokens == true
+        if (!this.community.selfRegInstructionsEnabled) {
+          this.community.selfRegTokenHelpText = undefined
+        }
+        if (this.community.tags && this.community.tags.length > 0) {
+          this.community.tags[0].flag1 = this.community.tagForCommunityAdmin
+          this.community.tags[0].flag2 = this.community.tagForTestBedAdmin
+        }
+        this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email,
+          this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
+          this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
+          this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput,
+          this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
+          this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
+          this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!, this.community.allowUserManagement!, this.community.allowXmlReports!,
+          this.community.domain?.id, this.community.preferences!, this.dataService.serializeTags(this.community.tags))
+          .subscribe(() => {
+            this.cancelCreateCommunity()
+            if (this.dataService.configuration.registrationEnabled && this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED && this.community.selfRegJoinExisting && !this.community.selfRegAllowOrganisationTokens) {
+              this.popupService.warning('Community created with warnings.')
+            } else {
+              this.popupService.success('Community created.')
+            }
+          }).add(() => {
+          this.savePending = false
+        })
+      }
     }
   }
 

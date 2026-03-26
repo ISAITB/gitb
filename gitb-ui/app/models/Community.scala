@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -32,6 +32,8 @@ case class Communities(
                         selfRegAllowOrganisationTokens: Boolean,
                         selfRegAllowOrganisationTokenManagement: Boolean,
                         selfRegForceOrganisationTokenInput: Boolean,
+                        selfRegJoinExisting: Boolean,
+                        selfRegJoinAsAdmin: Boolean,
                         allowCertificateDownload: Boolean,
                         allowStatementManagement: Boolean,
                         allowSystemManagement: Boolean,
@@ -41,8 +43,10 @@ case class Communities(
                         allowAutomationApi : Boolean,
                         allowCommunityView : Boolean,
                         allowUserManagement: Boolean,
+                        allowXmlReports: Boolean,
                         apiKey: String,
                         latestStatusLabel: Option[String],
+                        tags: Option[String],
                         domain: Option[Long]) {
 
   def withApiKey(apiKey: String): Communities = {
@@ -68,6 +72,8 @@ class Community(
                  _selfRegAllowOrganisationTokens: Boolean,
                  _selfRegAllowOrganisationTokenManagement: Boolean,
                  _selfRegForceOrganisationTokenInput: Boolean,
+                 _selfRegJoinExisting: Boolean,
+                 _selfRegJoinAsAdmin: Boolean,
                  _allowCertificateDownload: Boolean,
                  _allowStatementManagement: Boolean,
                  _allowSystemManagement: Boolean,
@@ -77,8 +83,12 @@ class Community(
                  _allowAutomationApi: Boolean,
                  _allowCommunityView: Boolean,
                  _allowUserManagement: Boolean,
+                 _allowXmlReports: Boolean,
                  _apiKey: String,
-                 _domain:Option[Domain]) {
+                 _domain:Option[Domain],
+                 _defaultSelfRegOrganisation: Option[Organizations],
+                 _defaultUserPreferences: Option[UserPreferenceDefaults],
+                 _tags: Option[String]) {
   var id:Long = _id
   var shortname:String = _shortname
   var fullname:String = _fullname
@@ -95,6 +105,8 @@ class Community(
   var selfRegAllowOrganisationTokens:Boolean = _selfRegAllowOrganisationTokens
   var selfRegAllowOrganisationTokenManagement:Boolean = _selfRegAllowOrganisationTokenManagement
   var selfRegForceOrganisationTokenInput:Boolean = _selfRegForceOrganisationTokenInput
+  var selfRegJoinExisting:Boolean = _selfRegJoinExisting
+  var selfRegJoinAsAdmin:Boolean = _selfRegJoinAsAdmin
   var allowCertificateDownload: Boolean = _allowCertificateDownload
   var allowStatementManagement: Boolean = _allowStatementManagement
   var allowSystemManagement: Boolean = _allowSystemManagement
@@ -104,10 +116,14 @@ class Community(
   var allowAutomationApi: Boolean = _allowAutomationApi
   var allowCommunityView: Boolean = _allowCommunityView
   var allowUserManagement: Boolean = _allowUserManagement
+  var allowXmlReports: Boolean = _allowXmlReports
   var apiKey: String  = _apiKey
   var domain:Option[Domain] = _domain
+  var defaultSelfRegOrganisation: Option[Organizations] = _defaultSelfRegOrganisation
+  var defaultUserPreferences: Option[UserPreferenceDefaults] = _defaultUserPreferences
+  var tags: Option[String] = _tags
 
-  def this(_case:Communities, _domain:Option[Domain]) =
+  def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations], _defaultUserPreferences: Option[UserPreferenceDefaults]) =
     this(
       _case.id,
       _case.shortname,
@@ -125,6 +141,8 @@ class Community(
       _case.selfRegAllowOrganisationTokens,
       _case.selfRegAllowOrganisationTokenManagement,
       _case.selfRegForceOrganisationTokenInput,
+      _case.selfRegJoinExisting,
+      _case.selfRegJoinAsAdmin,
       _case.allowCertificateDownload,
       _case.allowStatementManagement,
       _case.allowSystemManagement,
@@ -134,9 +152,16 @@ class Community(
       _case.allowAutomationApi,
       _case.allowCommunityView,
       _case.allowUserManagement,
+      _case.allowXmlReports,
       _case.apiKey,
-      _domain
+      _domain,
+      _defaultSelfRegOrganisation,
+      _defaultUserPreferences,
+      _case.tags
     )
+
+  def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations]) =
+    this(_case, _domain, _defaultSelfRegOrganisation, None)
 
   def toCaseObject:Communities = {
     val d = domain match {
@@ -160,6 +185,8 @@ class Community(
       selfRegAllowOrganisationTokens,
       selfRegAllowOrganisationTokenManagement,
       selfRegForceOrganisationTokenInput,
+      selfRegJoinExisting,
+      selfRegJoinAsAdmin,
       allowCertificateDownload,
       allowStatementManagement,
       allowSystemManagement,
@@ -169,8 +196,10 @@ class Community(
       allowAutomationApi,
       allowCommunityView,
       allowUserManagement,
+      allowXmlReports,
       apiKey,
       None,
+      tags,
       d
     )
   }

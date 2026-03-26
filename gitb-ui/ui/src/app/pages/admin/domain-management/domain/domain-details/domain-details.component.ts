@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,7 +15,6 @@
 
 import {Component, EventEmitter, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {
   CreateEditDomainParameterModalComponent
@@ -55,6 +54,9 @@ import {PagingPlacement} from '../../../../../components/paging-controls/paging-
 import {
   DomainSpecificationDisplayComponentApi
 } from '../../../../../components/domain-specification-display/domain-specification-display-component-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {UsageTipService} from '../../../../../services/usage-tip.service';
+import {TagData} from '../../../../../types/tag-data';
 
 @Component({
     selector: 'app-domain-details',
@@ -69,10 +71,13 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   private static readonly PROCESSING_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/process/
 
   @ViewChild("sharedTestSuiteTable") sharedTestSuiteTable?: TableApi
+  @ViewChild("servicesTable") servicesTable?: TableApi
   @ViewChild("specificationPagingControls") specificationPagingControls?: PagingControlsApi
+  @ViewChild("parameterPagingControls") parameterPagingControls?: PagingControlsApi
   @ViewChildren("specificationDisplayComponent") specificationDisplayComponents?: QueryList<DomainSpecificationDisplayComponentApi>
 
   domain: Partial<Domain> = {}
+  currentTags?: TagData[]
   domainSpecifications: DomainSpecification[] = []
   specifications: Specification[] = []
   hasGroups = false
@@ -85,6 +90,15 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   sharedTestSuiteStatus = {status: Constants.STATUS.NONE}
   parameterStatus = {status: Constants.STATUS.NONE}
   testServiceStatus = {status: Constants.STATUS.NONE}
+  specificationPage = 1
+  sharedTestSuitePage = 1
+  parameterPage = 1
+  testServicePage = 1
+  specificationTotal = 0
+  sharedTestSuiteTotal = 0
+  parameterTotal = 0
+  testServiceTotal = 0
+  shownTestServiceTip = false
   sharedTestSuiteTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
@@ -102,14 +116,18 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   saveOrderPending = false
   dragOngoing = false
   loaded = false
+  specificationsRefreshing = false
   sharedTestSuitesRefreshing = false
+  parametersRefreshing = false
+  servicesRefreshing = false
   sharedTestSuiteFilter?: string
+  parameterFilter?: string
+  testServiceFilter?: string
   domainParameterColumnCount = 4
   hasTestServices = false
   convertParameterSelectionConfig!: MultiSelectConfig<DomainParameter>
   convertPending = false
   specificationFilter?: string
-  specificationsRefreshing = false
   specificationGroupsLoaded = false
   managingSpecificationOrder = false
   hasMultipleSpecifications = false
@@ -121,9 +139,10 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     private readonly domainParameterService: DomainParameterService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly popupService: PopupService,
     private readonly routingService: RoutingService,
+    private readonly usageTipService: UsageTipService,
     route: ActivatedRoute,
     router: Router
   ) { super(router, route) }
@@ -145,6 +164,11 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.conformanceService.getDomain(this.domainId)
     .subscribe((data) => {
       this.domain = data
+      if (this.domain.tags == undefined) {
+        // Needed so that changes are propagated to the header display.
+        this.domain.tags = []
+      }
+      this.copyTags(this.domain.tags)
       this.routingService.domainBreadcrumbs(this.domainId, this.domain.sname!)
     }).add(() => {
       this.loaded = true
@@ -154,6 +178,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       textField: 'name',
       singleSelection: true,
       filterLabel: 'Register from parameter',
+      filterLabelIcon: Constants.BUTTON_ICON.NEW,
       noItemsMessage: 'No candidate parameters available.',
       searchPlaceholder: 'Search parameter...',
       clearItems: new EventEmitter(),
@@ -169,19 +194,47 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     }
   }
 
-  applySpecificationFilter() {
-    this.loadSpecifications()
+  refreshSharedTestSuites() {
+    this.loadSharedTestSuitesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
-  doSpecificationPaging(event: PagingEvent) {
-    this.loadSpecificationsInternal(event)
+  loadSpecifications(forceLoad?: boolean) {
+    if (this.specificationStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.loadSpecificationsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateSpecificationPaging(this.specificationPage, this.specificationTotal)
+    }
   }
 
-  loadSpecifications() {
-    this.loadSpecificationsInternal({ targetPage: 1, targetPageSize: 10 })
+  loadSharedTestSuites(forceLoad?: boolean) {
+    if (this.sharedTestSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.refreshSharedTestSuites()
+    } else {
+      this.updateTestSuitePaging(this.sharedTestSuitePage, this.sharedTestSuiteTotal)
+    }
   }
 
-  loadSpecificationsInternal(pagingInfo: PagingEvent) {
+  loadDomainParameters(forceLoad?: boolean) {
+    if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.loadDomainParametersInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, forceLoad)
+    } else {
+      this.updateParameterPaging(this.parameterPage, this.parameterTotal)
+    }
+  }
+
+  loadTestServices(forceLoad?: boolean) {
+    if (this.testServiceStatus.status == Constants.STATUS.NONE || forceLoad) {
+      if (!this.shownTestServiceTip) {
+        this.shownTestServiceTip = true
+        this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_SERVICES)
+      }
+      this.loadTestServicesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, forceLoad).subscribe(() => {})
+    } else {
+      this.updateTestServicePaging(this.testServicePage, this.testServiceTotal)
+    }
+  }
+
+  private loadSpecificationsInternal(pagingInfo: PagingEvent) {
     if (this.specificationStatus.status == Constants.STATUS.FINISHED) {
       this.specificationsRefreshing = true
     } else {
@@ -205,20 +258,14 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         this.hasMultipleSpecifications = results[0].count > 1
       }
       this.toggleSpecificationGroupCollapse(false)
-      this.specificationPagingControls?.updateStatus(pagingInfo.targetPage, results[0].count)
+      this.updateSpecificationPaging(pagingInfo.targetPage, results[0].count)
     }).add(() => {
       this.specificationsRefreshing = false
       this.specificationStatus.status = Constants.STATUS.FINISHED
     })
   }
 
-  loadSharedTestSuites(forceLoad?: boolean) {
-    if (this.sharedTestSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.refreshSharedTestSuites()
-    }
-  }
-
-  loadSharedTestSuitesInternal(pagingInfo: PagingEvent) {
+  private loadSharedTestSuitesInternal(pagingInfo: PagingEvent) {
     if (this.sharedTestSuiteStatus.status == Constants.STATUS.FINISHED) {
       this.sharedTestSuitesRefreshing = true
     } else {
@@ -227,36 +274,23 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.conformanceService.searchSharedTestSuites(this.domainId, this.sharedTestSuiteFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
         this.sharedTestSuites = data.data
-        this.updateSharedTestSuitePagination(pagingInfo.targetPage, data.count)
+        this.updateTestSuitePaging(pagingInfo.targetPage, data.count)
       }).add(() => {
       this.sharedTestSuitesRefreshing = false
       this.sharedTestSuiteStatus.status = Constants.STATUS.FINISHED
     })
   }
 
-  refreshSharedTestSuites() {
-    this.loadSharedTestSuitesInternal({ targetPage: 1, targetPageSize: this.sharedTestSuiteTable?.getPagingControls()?.getCurrentStatus().pageSize! })
-  }
-
-  doSharedTestSuitePaging(event: PagingEvent) {
-    this.loadSharedTestSuitesInternal(event)
-  }
-
-  applySharedTestSuiteFilter() {
-    this.refreshSharedTestSuites()
-  }
-
-  private updateSharedTestSuitePagination(page: number, count: number) {
-    this.sharedTestSuiteTable?.getPagingControls()?.updateStatus(page, count)
-  }
-
-  loadDomainParameters(forceLoad?: boolean) {
-    if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.domainParameters = []
+  private loadDomainParametersInternal(pagingInfo: PagingEvent, forceLoad?: boolean) {
+    if (this.parameterStatus.status == Constants.STATUS.FINISHED || forceLoad) {
+      this.parametersRefreshing = true
+    } else {
       this.parameterStatus.status = Constants.STATUS.PENDING
-      this.domainParameterService.getDomainParameters(this.domainId, true, false)
+    }
+    this.domainParameterService.searchDomainParameters(this.domainId, this.parameterFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        for (let parameter of data) {
+        this.domainParameters = data.data
+        for (let parameter of this.domainParameters) {
           if (parameter.kind == 'HIDDEN') {
             parameter.valueToShow = "*****"
           } else if (parameter.kind == 'BINARY') {
@@ -265,7 +299,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
           } else {
             parameter.valueToShow = parameter.value
           }
-          this.domainParameters.push(parameter)
         }
         this.hasTestServices = this.domainParameters.find(p => p.isTestService) != undefined
         if (this.hasTestServices) {
@@ -273,41 +306,102 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         } else {
           this.domainParameterColumnCount = 4
         }
+        this.updateParameterPaging(pagingInfo.targetPage, data.count)
       }).add(() => {
+        this.parametersRefreshing = false
         this.parameterStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private loadTestServicesInternal(pagingInfo: PagingEvent, forceLoad?: boolean): Observable<void> {
+    const completed$ = new ReplaySubject<void>(1);
+    if (this.testServiceStatus.status == Constants.STATUS.FINISHED || forceLoad) {
+      this.servicesRefreshing = true
+    } else {
+      this.testServiceStatus.status = Constants.STATUS.PENDING
+    }
+    this.domainParameterService.searchTestServices(this.domainId, this.testServiceFilter, pagingInfo.targetPage, pagingInfo.targetPageSize).pipe(
+      map((data) => {
+        this.testServices = data.data.map((service) => {
+          return {
+            serviceType: this.dataService.testServiceTypeLabel(service.service.serviceType),
+            apiType: this.dataService.testServiceApiTypeLabel(service.service.apiType),
+            name: service.parameter.name,
+            endpoint: service.parameter.value!,
+            description: service.parameter.description,
+            data: service
+          }
+        })
+        this.updateTestServicePaging(pagingInfo.targetPage, data.count)
+      }),
+      finalize(() => {
+        this.servicesRefreshing = false
+        this.testServiceStatus.status = Constants.STATUS.FINISHED
+        completed$.next()
+        completed$.complete()
       })
+    ).subscribe()
+    return completed$.asObservable()
+  }
+
+  private updateSpecificationPaging(page: number, count: number) {
+    this.specificationPagingControls?.updateStatus(page, count)
+    this.specificationPage = page
+    this.specificationTotal = count
+  }
+
+  private updateTestSuitePaging(page: number, count: number) {
+    this.sharedTestSuiteTable?.getPagingControls()?.updateStatus(page, count)
+    this.sharedTestSuitePage = page
+    this.sharedTestSuiteTotal = count
+  }
+
+  private updateParameterPaging(page: number, count: number) {
+    this.parameterPagingControls?.updateStatus(page, count)
+    this.parameterPage = page
+    this.parameterTotal = count
+  }
+
+  private updateTestServicePaging(page: number, count: number) {
+    this.servicesTable?.getPagingControls()?.updateStatus(page, count)
+    this.testServicePage = page
+    this.testServiceTotal = count
+  }
+
+  doSpecificationPaging(event: PagingEvent) {
+    this.loadSpecificationsInternal(event)
+    if (event.pageSizeChanged) {
+      this.sharedTestSuiteStatus.status = Constants.STATUS.NONE
+      this.testServiceStatus.status = Constants.STATUS.NONE
+      this.parameterStatus.status = Constants.STATUS.NONE
     }
   }
 
-  loadTestServices(forceLoad?: boolean): Observable<void> {
-    const completed$ = new ReplaySubject<void>(1);
-    if (this.testServiceStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.testServices = []
-      this.testServiceStatus.status = Constants.STATUS.PENDING
-      this.domainParameterService.getTestServices(this.domainId).pipe(
-        map((data) => {
-          for (let service of data) {
-            this.testServices.push({
-              serviceType: this.dataService.testServiceTypeLabel(service.service.serviceType),
-              apiType: this.dataService.testServiceApiTypeLabel(service.service.apiType),
-              name: service.parameter.name,
-              endpoint: service.parameter.value!,
-              description: service.parameter.description,
-              data: service
-            })
-          }
-        }),
-        finalize(() => {
-          this.testServiceStatus.status = Constants.STATUS.FINISHED
-          completed$.next()
-          completed$.complete()
-        })
-      ).subscribe()
-    } else {
-      completed$.next()
-      completed$.complete()
+  doSharedTestSuitePaging(event: PagingEvent) {
+    this.loadSharedTestSuitesInternal(event)
+    if (event.pageSizeChanged) {
+      this.specificationStatus.status = Constants.STATUS.NONE
+      this.parameterStatus.status = Constants.STATUS.NONE
+      this.testServiceStatus.status = Constants.STATUS.NONE
     }
-    return completed$.asObservable()
+  }
+
+  doParameterPaging(event: PagingEvent) {
+    this.loadDomainParametersInternal(event)
+    if (event.pageSizeChanged) {
+      this.specificationStatus.status = Constants.STATUS.NONE
+      this.sharedTestSuiteStatus.status = Constants.STATUS.NONE
+      this.testServiceStatus.status = Constants.STATUS.NONE
+    }
+  }
+
+  doServicePaging(event: PagingEvent) {
+    this.loadTestServicesInternal(event)
+    if (event.pageSizeChanged) {
+      this.specificationStatus.status = Constants.STATUS.NONE
+      this.sharedTestSuiteStatus.status = Constants.STATUS.NONE
+      this.parameterStatus.status = Constants.STATUS.NONE
+    }
   }
 
 	downloadParameter(parameter: DomainParameter) {
@@ -320,7 +414,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	deleteDomain() {
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelDomainLower()+"?", "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelDomainLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.conformanceService.deleteDomain(this.domainId)
@@ -339,8 +433,13 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
 	saveDomainChanges() {
     this.savePending = true
-		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata)
+    if (this.domain.tags && this.domain.tags.length > 0) {
+      this.domain.tags[0].flag1 = this.domain.tagForCommunityAdmin
+      this.domain.tags[0].flag2 = this.domain.tagForTestBedAdmin
+    }
+		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
     .subscribe(() => {
+      this.copyTags(this.domain.tags)
       this.popupService.success(this.dataService.labelDomain()+' updated.')
       this.dataService.breadcrumbUpdate({id: this.domainId, type: BreadcrumbType.domain, label: this.domain.sname!})
     }).add(() => {
@@ -371,42 +470,32 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
-    const modalRef = this.modalService.show(CreateEditDomainParameterModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        domainParameter: domainParameter,
-        domainId: this.domain.id
-      }
-    })
-    modalRef.content!.parametersUpdated.subscribe((updated: boolean) => {
-      if (updated) {
-        this.loadDomainParameters(true)
-      }
+    const modalRef = this.modalService.open(CreateEditDomainParameterModalComponent, { size: 'lg'})
+    const modalInstance = modalRef.componentInstance as CreateEditDomainParameterModalComponent
+    modalInstance.domainParameter = domainParameter
+    modalInstance.domainId = this.domain.id!
+    modalRef.closed.subscribe(() => {
+      this.loadDomainParameters(true)
     })
   }
 
   openTestServiceModal(testService: Partial<TestServiceWithParameter>, updateMatching: boolean) {
-    const modalRef = this.modalService.show(CreateEditTestServiceModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        testService: testService,
-        domainId: this.domain.id,
-        updateMatching: updateMatching
-      }
-    })
-    modalRef.content!.servicesUpdated.subscribe((updated: boolean) => {
-      if (updated) {
-        this.loadTestServices(true)
-        // Ensure that the next time we navigate to the domain parameters tab it is also updated
-        this.parameterStatus.status = Constants.STATUS.NONE
-      }
+    const modalRef = this.modalService.open(CreateEditTestServiceModalComponent, { size: 'lg' })
+    const modalInstance = modalRef.componentInstance as CreateEditTestServiceModalComponent
+    modalInstance.testService = testService
+    modalInstance.domainId = this.domain.id!
+    modalInstance.updateMatching = updateMatching
+    modalRef.closed.subscribe(() => {
+      this.loadTestServices(true)
+      // Ensure that the next time we navigate to the domain parameters tab it is also updated
+      this.parameterStatus.status = Constants.STATUS.NONE
     })
   }
 
 	onDomainParameterSelect(domainParameter: DomainParameter) {
     if (domainParameter.isTestService) {
       // Display the requested test service
-      this.loadTestServices().subscribe(() => {
+      this.loadTestServicesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, true).subscribe(() => {
         const selectedService = this.testServices.find(service => service.data.parameter.id == domainParameter.id)
         if (selectedService) {
           this.onTestServiceSelect(selectedService)
@@ -414,7 +503,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       })
       // Switch to the test services tab
       if (this.tabs) {
-        this.tabs.tabs[3].active = true
+        this.tabIdToShow = Constants.TAB.DOMAIN.TEST_SERVICES
       }
     } else {
       this.openParameterModal(domainParameter)
@@ -434,35 +523,24 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	uploadTestSuite() {
-    this.modalService.show(TestSuiteUploadModalComponent, {
-      class: 'modal-lg',
-      backdrop: 'static',
-      keyboard: false,
-      initialState: {
-        availableSpecifications: this.specifications,
-        testSuitesVisible: false,
-        domainId: this.domainId
-      }
-    })
+    const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
+    const modalInstance = modal.componentInstance as TestSuiteUploadModalComponent
+    modalInstance.availableSpecifications = this.specifications
+    modalInstance.testSuitesVisible = false
+    modalInstance.domainId = this.domainId
   }
 
   uploadSharedTestSuite() {
-    const modal = this.modalService.show(TestSuiteUploadModalComponent, {
-      class: 'modal-lg',
-      backdrop: 'static',
-      keyboard: false,
-      initialState: {
-        availableSpecifications: this.specifications,
-        sharedTestSuite: true,
-        domainId: this.domainId
-      }
-    })
-    modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
+    const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
+    const modalInstance = modal.componentInstance as TestSuiteUploadModalComponent
+    modalInstance.availableSpecifications = this.specifications
+    modalInstance.sharedTestSuite = true
+    modalInstance.domainId = this.domainId
+    modal.closed.subscribe((testSuitesUpdated?: boolean) => {
       if (testSuitesUpdated) {
         this.loadSharedTestSuites(true)
       }
     })
-
   }
 
 	createSpecification() {
@@ -477,7 +555,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     let page = this.specificationPagingControls?.getCurrentStatus().currentPage
     let pageSize = this.specificationPagingControls?.getCurrentStatus().pageSize
     if (page == undefined) page = 1
-    if (pageSize == undefined) pageSize = Constants.TABLE_PAGE_SIZE
+    if (pageSize == undefined) pageSize = this.dataService.defaultPagingTableSize
     this.loadSpecificationsInternal({ targetPage: page, targetPageSize: pageSize })
   }
 
@@ -573,6 +651,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         id: 0,
         serviceType: guessedServiceType,
         apiType: Constants.TEST_SERVICE_API_TYPE.SOAP,
+        monitor: true,
         parameter: parameter.id
       }
     }
@@ -611,6 +690,19 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.specificationDisplayComponents?.forEach((component) => {
       component.otherControlSelected(selectedId)
     })
+  }
+
+  private copyTags(source: TagData[]|undefined) {
+    if (source == undefined) {
+      this.currentTags = undefined
+    } else {
+      this.currentTags = [...source].map(t => ({...t}))
+      if (source.length > 0) {
+        this.domain.tagForCommunityAdmin = source[0].flag1
+        this.domain.tagForTestBedAdmin = source[0].flag2
+      }
+    }
+    this.dataService.cacheDomainTags(this.domainId, this.currentTags)
   }
 
 }

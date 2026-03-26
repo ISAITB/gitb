@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -61,6 +61,7 @@ import {TestSuiteMinimalInfo} from '../types/test-suite-minimal-info';
 import {Observable, tap} from 'rxjs';
 import {share} from 'rxjs/operators';
 import {PopupService} from './popup.service';
+import {TagData} from '../types/tag-data';
 
 @Injectable({
   providedIn: 'root'
@@ -72,6 +73,13 @@ export class ConformanceService {
     private readonly dataService: DataService,
     private readonly popupService: PopupService
   ) { }
+
+  getDomainTags(domainId: number) {
+    return this.restService.get<TagData[]>({
+      path: ROUTES.controllers.ConformanceService.getDomainTags(domainId).url,
+      authenticate: true
+    })
+  }
 
   getDomain(domainId: number) {
     return this.restService.get<Domain>({
@@ -157,10 +165,13 @@ export class ConformanceService {
     })
   }
 
-  getDomainSpecifications(domainId: number) {
+  getUnlinkedDomainSpecs(domainId: number, testSuiteId: number) {
     return this.restService.get<Specification[]>({
-      path: ROUTES.controllers.ConformanceService.getDomainSpecs(domainId).url,
-      authenticate: true
+      path: ROUTES.controllers.ConformanceService.getUnlinkedDomainSpecs(domainId).url,
+      authenticate: true,
+      params: {
+        test_suite_id: testSuiteId
+      }
     })
   }
 
@@ -543,20 +554,21 @@ export class ConformanceService {
     })
   }
 
-  updateDomain(domainId: number, shortName: string, fullName: string, description?: string, reportMetadata?: string) {
+  updateDomain(domainId: number, shortName: string, fullName: string, description?: string, reportMetadata?: string, tags?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.updateDomain(domainId).url,
       data: {
         sname: shortName,
         fname: fullName,
         description: description,
-        metadata: reportMetadata
+        metadata: reportMetadata,
+        tags: tags
       },
       authenticate: true
     })
   }
 
-  createDomain(shortName: string, fullName: string, description?: string, reportMetadata?: string) {
+  createDomain(shortName: string, fullName: string, description?: string, reportMetadata?: string, tags?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createDomain().url,
       authenticate: true,
@@ -564,7 +576,8 @@ export class ConformanceService {
         sname: shortName,
         fname: fullName,
         description: description,
-        metadata: reportMetadata
+        metadata: reportMetadata,
+        tags: tags
       }
     })
   }
@@ -628,10 +641,14 @@ export class ConformanceService {
     })
   }
 
-  getActorsWithSpecificationId(specId: number) {
-    return this.restService.get<Actor[]>({
-      path: ROUTES.controllers.ConformanceService.getSpecActors(specId).url,
-      authenticate: true
+  searchActorsWithSpecificationId(specId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Actor>>({
+      path: ROUTES.controllers.ConformanceService.searchSpecActors(specId).url,
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit,
+      }
     })
   }
 
@@ -1136,12 +1153,12 @@ export class ConformanceService {
         const placeholder: BadgePlaceholderInfo = {
           placeholder: match,
           status: parts[0],
-          systemId: parseInt(parts[1]),
-          specificationId: parseInt(parts[2]),
-          actorId: parseInt(parts[3])
+          systemId: Number.parseInt(parts[1]),
+          specificationId: Number.parseInt(parts[2]),
+          actorId: Number.parseInt(parts[3])
         }
         if (parts[4] != "0") {
-          placeholder.snapshotId = parseInt(parts[4])
+          placeholder.snapshotId = Number.parseInt(parts[4])
         }
         placeholders.push(placeholder)
       })
@@ -1199,13 +1216,11 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatement(system: number, actor: number, snapshotId?: number) {
-    let params: any = undefined
-    if (snapshotId != undefined) {
-      params = {
-        snapshot: snapshotId
-      }
-    }
+  getConformanceStatement(system: number, actor: number, snapshotId: number|undefined, page: number, limit: number) {
+    let params: any = {}
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    if (page != undefined) params.page = page
+    if (limit != undefined) params.limit = limit
     return this.restService.get<ConformanceStatementWithResults>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
       authenticate: true,

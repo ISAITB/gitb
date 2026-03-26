@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,19 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { Specification } from 'src/app/types/specification';
-import { PendingTestSuiteUploadChoice } from '../test-suite-upload-modal/pending-test-suite-upload-choice';
-import { SpecificationChoice } from '../test-suite-upload-modal/specification-choice';
-import { TestSuiteUploadResult } from '../test-suite-upload-modal/test-suite-upload-result';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { of } from 'rxjs';
-import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
-import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {Specification} from 'src/app/types/specification';
+import {PendingTestSuiteUploadChoice} from '../test-suite-upload-modal/pending-test-suite-upload-choice';
+import {SpecificationChoice} from '../test-suite-upload-modal/specification-choice';
+import {TestSuiteUploadResult} from '../test-suite-upload-modal/test-suite-upload-result';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {of} from 'rxjs';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-link-shared-test-suite-modal',
@@ -53,7 +54,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
 
   constructor(
     public readonly dataService: DataService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly conformanceService: ConformanceService,
     private readonly popupService: PopupService
   ) { super() }
@@ -70,6 +71,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
       replaceSelectedItems: new EventEmitter<Specification[]>(),
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      enableSelectAll: true,
       loader: () => of(this.availableSpecifications)
     }
     if (this.step == 'confirm') {
@@ -207,7 +209,8 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
 
   close(refreshNeeded?: boolean) {
     this.completed.emit(refreshNeeded)
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
+  protected readonly Constants = Constants;
 }

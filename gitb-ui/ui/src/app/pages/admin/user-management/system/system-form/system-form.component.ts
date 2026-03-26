@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -24,6 +24,7 @@ import {PopupService} from 'src/app/services/popup.service';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {map, Observable, of} from 'rxjs';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-system-form',
@@ -106,7 +107,7 @@ export class SystemFormComponent implements OnInit {
   }
 
   updateApiKey(): void {
-    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the API key value?", "Update", "Cancel")
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the API key value?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
     .subscribe(() => {
       this.apiKeyUpdatePending = true
       this.systemService.updateSystemApiKey(this.system.id!)

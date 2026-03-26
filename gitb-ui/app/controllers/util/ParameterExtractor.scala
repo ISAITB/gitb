@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -22,7 +22,7 @@ import controllers.util.ParameterNames
 import models.automation.TestServiceSearchCriteria
 import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
@@ -56,6 +56,32 @@ object ParameterExtractor {
       }
     }
     fileMap.iterator.toMap
+  }
+
+  private def extractHomePageType(request: Request[AnyContent]): Short = {
+    ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.HOME_PAGE_TYPE).map(x => HomePageType.apply(x).id.toShort).getOrElse(HomePageType.LANDING_PAGE.id.toShort)
+  }
+
+  def extractUserPreferences(request: Request[AnyContent]): UserPreferences = {
+    UserPreferences(
+      0L,
+      menuCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MENU_COLLAPSED).getOrElse(true),
+      statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
+      pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
+      homePageType = extractHomePageType(request),
+      0L
+    )
+  }
+
+  def extractUserPreferenceDefaults(request: Request[AnyContent]): UserPreferenceDefaults = {
+    UserPreferenceDefaults(
+      0L,
+      menuCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MENU_COLLAPSED).getOrElse(true),
+      statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
+      pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
+      homePageType = extractHomePageType(request),
+      0L
+    )
   }
 
   def extractConformanceStatementSearchCriteria(request: Request[AnyContent]): ConformanceStatementSearchCriteria = {
@@ -353,7 +379,7 @@ object ParameterExtractor {
         templateName = optionalBodyParameter(paramMap, ParameterNames.TEMPLATE_NAME)
       }
     }
-    Organizations(0L, shortName, fullName, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, None, None, communityId)
+    Organizations(0L, shortName, fullName, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, None, None, selfRegDefault = false, communityId)
   }
 
   def validCommunitySelfRegType(selfRegType: Short): Boolean = {
@@ -386,6 +412,7 @@ object ParameterExtractor {
     }
     val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
     val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
+    val allowXmlReports = requiredBodyParameter(request, ParameterNames.ALLOW_XML_REPORTS).toBoolean
     val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -397,6 +424,8 @@ object ParameterExtractor {
     var selfRegAllowOrganisationTokens: Boolean = false
     var selfRegAllowOrganisationTokenManagement: Boolean = false
     var selfRegForceOrganisationTokenInput: Boolean = false
+    var selfRegJoinExisting: Boolean = false
+    var selfRegJoinAsAdmin: Boolean = true
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
       if (!validCommunitySelfRegType(selfRegType)) {
@@ -413,7 +442,6 @@ object ParameterExtractor {
         }
       } else {
         selfRegToken = None
-        selfRegTokenHelpText = None
       }
       if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
         selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
@@ -429,18 +457,21 @@ object ParameterExtractor {
         if (Configurations.AUTHENTICATION_SSO_ENABLED) {
           selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_RESTRICTION).toShort
         }
+        selfRegJoinExisting = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_JOIN_EXISTING).toBoolean
+        selfRegJoinAsAdmin = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_JOIN_AS_ADMIN).toBoolean
       }
     } else {
       selfRegType = SelfRegistrationType.NotSupported.id.toShort
     }
-
+    val tags = ParameterExtractor.optionalBodyParameter(request, ParameterNames.TAGS)
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
     Communities(
       0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description,
-      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
+      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement,
+      selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
-      CryptoUtil.generateApiKey(), None, domainId
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
+      CryptoUtil.generateApiKey(), None, tags, domainId
     )
   }
 
@@ -518,12 +549,15 @@ object ParameterExtractor {
     Systems(0L, sname, fname, descr, version, CryptoUtil.generateApiKey(), "", owner)
   }
 
-	def extractDomain(request:Request[AnyContent]):Domain = {
-		val sname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
-		val fname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
-		val descr = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
-    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
-		Domain(0L, sname, fname, descr, reportMetadata, CryptoUtil.generateApiKey())
+	def extractDomain(request:Request[AnyContent]): Domain = {
+		Domain(
+      id = 0L,
+      shortname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME),
+      fullname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME),
+      description = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC),
+      reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA),
+      tags = ParameterExtractor.optionalBodyParameter(request, ParameterNames.TAGS),
+      apiKey = CryptoUtil.generateApiKey())
 	}
 
 	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {
@@ -1054,6 +1088,7 @@ object ParameterExtractor {
       authTokenUsername = authTokenUsername,
       authTokenPassword = authTokenPassword,
       authTokenPasswordType = authTokenPasswordType,
+      monitorHealth = optionalBooleanBodyParameter(request, ParameterNames.MONITOR).getOrElse(true),
       parameter = parameter.id
     )
     TestServiceWithParameter(service, parameter)

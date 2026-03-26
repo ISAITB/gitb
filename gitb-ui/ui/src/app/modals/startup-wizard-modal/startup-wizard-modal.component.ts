@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,12 +14,13 @@
  */
 
 import {Component} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {WizardStep} from './wizard-step';
 import {StartupWizardOptions} from '../../types/startup-wizard-options';
 import {DataService} from '../../services/data.service';
 import {SystemConfigurationService} from '../../services/system-configuration.service';
 import {PopupService} from '../../services/popup.service';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-startup-wizard-modal',
@@ -43,7 +44,7 @@ export class StartupWizardModalComponent {
   protected readonly WizardStep = WizardStep;
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     public readonly dataService: DataService,
     private readonly systemConfigurationService: SystemConfigurationService,
     private readonly popupService: PopupService
@@ -59,7 +60,7 @@ export class StartupWizardModalComponent {
       this.popupService.success("Configuration completed.")
     }).add(() => {
       this.pending = false
-      this.modalInstance.hide()
+      this.modalInstance.dismiss()
     })
   }
 
@@ -88,4 +89,5 @@ export class StartupWizardModalComponent {
     }
   }
 
+  protected readonly Constants = Constants;
 }

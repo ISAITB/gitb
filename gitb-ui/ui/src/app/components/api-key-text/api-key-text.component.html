@@ -1,21 +1,47 @@
-<div class="input-group">
-    @if (label) {
-        <span class="input-group-text">{{label}}</span>
+@if ((key == undefined || key.length == 0) && !editing) {
+    @if (supportCreate) {
+        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="doCreate()" [pending]="createPending">{{createLabel}}</button>
     }
-    <input [name]="name" [attr.id]="idName" [(ngModel)]="key" class="form-control" readonly="true" [style.width]="inputWidth">
-    @if (supportUpdate) {
-        <button class="btn btn-secondary" type="button" (click)="doUpdate()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" container="body" tooltip="Reset" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-            <i class="fa-solid fa-refresh" aria-hidden="true"></i>
-        </button>
-    }
-    @if (supportDelete) {
-        <button class="btn btn-secondary" type="button" (click)="doDelete()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" container="body" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-            <i class="fa-solid fa-trash" aria-hidden="true"></i>
-        </button>
-    }
-    @if (supportCopy) {
-        <button class="btn btn-secondary" type="button" (click)="copy()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" container="body" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-            <i class="fa-solid fa-clipboard" aria-hidden="true"></i>
-        </button>
-    }
-</div>
+} @else {
+    <div class="input-group">
+        @if (label) {
+            <span class="input-group-text">{{label}}</span>
+        }
+        @if (editing) {
+            <input #tempKeyField [name]="name" [attr.id]="idName" [(ngModel)]="keyTemp" class="form-control" [style.width]="inputWidth">
+        } @else {
+            <input [name]="name" [attr.id]="idName" [(ngModel)]="key" class="form-control" readonly="readonly" [style.width]="inputWidth">
+        }
+        @if (supportEdit) {
+            @if (editing) {
+                <button class="btn btn-secondary" type="button" (click)="editConfirm()" [disabled]="key == undefined || key.length == 0" tooltipClass="shortTooltip" container="body" ngbTooltip="Confirm" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                    <i [class]="Constants.BUTTON_ICON.CONFIRM" aria-hidden="true"></i>
+                </button>
+                <button class="btn btn-secondary" type="button" (click)="editCancel()" tooltipClass="shortTooltip" container="body" ngbTooltip="Cancel" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                    <i [class]="Constants.BUTTON_ICON.CANCEL" aria-hidden="true"></i>
+                </button>
+            } @else {
+                <button class="btn btn-secondary" type="button" (click)="editStart()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Edit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                    <i [class]="Constants.BUTTON_ICON.EDIT" aria-hidden="true"></i>
+                </button>
+            }
+        }
+        @if (!editing) {
+            @if (supportUpdate) {
+                <button class="btn btn-secondary" type="button" (click)="doUpdate()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Reset" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                    <i [class]="Constants.BUTTON_ICON.RESET" aria-hidden="true"></i>
+                </button>
+            }
+            @if (supportDelete) {
+                <button class="btn btn-secondary" type="button" (click)="doDelete()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                    <i [class]="Constants.BUTTON_ICON.DELETE" aria-hidden="true"></i>
+                </button>
+            }
+            @if (supportCopy) {
+                <button class="btn btn-secondary" type="button" (click)="copy()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Copy" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                    <i [class]="Constants.BUTTON_ICON.CLIPBOARD" aria-hidden="true"></i>
+                </button>
+            }
+        }
+    </div>
+}

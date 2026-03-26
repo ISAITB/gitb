@@ -6,23 +6,24 @@
                 @if (listView) {
                     <app-filter-control #filterControl (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
                     @if (showExport) {
-                        <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_CSV" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
                     }
                 }
-                <div class="btn-group me-0" dropdown [isDisabled]="initialisingSnapshots || selectedCommunityId == undefined" placement="bottom right">
-                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">
+                <div class="btn-group me-0" ngbDropdown>
+                    <button id="button-snapshot" ngbDropdownToggle type="button" [disabled]="initialisingSnapshots || selectedCommunityId == undefined" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">
                         <div class="me-2 d-inline-flex">
+                            <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.SNAPSHOT"></i></span>
                             {{snapshotButtonLabel}}
                             @if (initialisingSnapshots) {
-                                <span class="ms-2"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
+                                <span class="ms-2"><i [class]="Constants.BUTTON_ICON.PENDING"></i></span>
                             }
                         </div>
                     </button>
-                    <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
-                      <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
-                      <li class="divider dropdown-divider"></li>
-                      <li role="menuitem"><a class="dropdown-item" href (click)="manageConformanceSnapshots();$event.preventDefault()">Manage conformance snapshots</a></li>
-                    </ul>
+                    <div id="dropdown-snapshot" ngbDropdownMenu aria-labelledby="button-snapshot">
+                      <button ngbDropdownItem type="button" (click)="viewLatestConformanceSnapshot()">{{latestSnapshotButtonLabel}}</button>
+                      <div class="divider dropdown-divider"></div>
+                      <button ngbDropdownItem type="button" (click)="manageConformanceSnapshots()">Manage conformance snapshots</button>
+                    </div>
                 </div>
                 <div class="extra-control-container">
                     <div class="btn input-switch">
@@ -83,19 +84,21 @@
                                 </div>
                                 <div class="status-filter">
                                     <app-checkbox-option-panel
+                                        #showStatementFilter
                                         label="Show statements..."
+                                        [labelIcon]="Constants.BUTTON_ICON.FILTER"
                                         [options]="statusOptions"
                                         (updated)="filterByStatus($event)"></app-checkbox-option-panel>
                                 </div>
-                                <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || exportOverviewPending" placement="bottom right">
-                                    <button type="button" [disable]="selectedSystemId == undefined || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary text-nowrap" (click)="exportOverview('pdf')">Download report</button>
-                                    <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                <div class="btn-group export-group" ngbDropdown>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="selectedSystemId == undefined || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary text-nowrap" (click)="exportOverview('pdf')">Download report</button>
+                                    <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || exportOverviewPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Download report</span>
                                     </button>
-                                    <ul id="dropdown-export" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-export">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
-                                    </ul>
+                                    <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
+                                        <button ngbDropdownItem type="button" (click)="exportOverview('xml')">Download report as XML</button>
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -145,6 +148,7 @@
                                     [snapshotId]="activeConformanceSnapshot?.id"
                                     (selectionChanged)="onStatementSelect($event)"
                                     (export)="onExportConformanceItem($event)"
+                                    (testStatusOpened)="manageTestStatusOpened($event)"
                                 ></app-conformance-statement-items-display>
                             </div>
                         }

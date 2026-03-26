@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,11 +14,13 @@
  */
 
 import {Component, Input} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {ReportService} from 'src/app/services/report.service';
 import {StepReport} from '../report/step-report';
 import {StepData} from '../step-data';
 import {saveAs} from 'file-saver';
+import {Constants} from '../../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {DataService} from '../../../services/data.service';
 
 @Component({
     selector: 'app-test-step-report-modal',
@@ -36,8 +38,9 @@ export class TestStepReportModalComponent {
   exportXmlPending = false
 
   constructor(
-    private readonly modalRef: BsModalRef,
-    private readonly reportService: ReportService
+    private readonly modalRef: NgbActiveModal,
+    private readonly reportService: ReportService,
+    protected readonly dataService: DataService
   ) { }
 
   exportPdf() {
@@ -66,7 +69,8 @@ export class TestStepReportModalComponent {
   }
 
   close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
+  protected readonly Constants = Constants;
 }

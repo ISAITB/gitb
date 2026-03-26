@@ -1,17 +1,23 @@
-<div class="child" [ngClass]="classValue()">
-    <div class="actor-container">
-        @for (actor of actors; track $index) {
-            <app-sequence-diagram-actor [actor]="actor" [actorInfo]="actorInfo!"></app-sequence-diagram-actor>
-        }
-    </div>
-    <div class="lifeline-container">
-        @for (actor of actors; track $index) {
-            <div class="lifeline"></div>
-        }
-    </div>
-    <div class="message-container">
-        @for (message of messages; track $index) {
-            <app-sequence-diagram-message [message]="message" [events]="events"></app-sequence-diagram-message>
-        }
+<div class="diagram-container-outer">
+    <div class="diagram-container" [ngClass]="'actors-'+actorStyleCount">
+        <div class="diagram-container-inner" [ngClass]="'sequence-diagram actor-diagram-'+actorStyleCount">
+            <div class="actor-container">
+                @for (actor of actors!; track $index) {
+                    <app-sequence-diagram-actor [actor]="actor" [index]="$index"></app-sequence-diagram-actor>
+                }
+            </div>
+            <div class="lifeline-container" [ngClass]="'actor-diagram-'+actorStyleCount">
+                <div class="lifeline-container-inner">
+                    @for (actor of actors; track $index) {
+                        <div class="lifeline"></div>
+                    }
+                </div>
+                <div class="message-container">
+                    @for (message of messages; track $index) {
+                        <app-sequence-diagram-message [message]="message" [events]="events"></app-sequence-diagram-message>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 </div>

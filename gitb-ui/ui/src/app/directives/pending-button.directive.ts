@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,18 +14,21 @@
  */
 
 import {AfterViewInit, Directive, ElementRef, Input, Renderer2} from '@angular/core';
+import {Constants} from '../common/constants';
 
 @Directive({
-    selector: 'button[pending]',
+    selector: 'button[pending], button[labelIcon]',
     standalone: false
 })
 export class PendingButtonDirective implements AfterViewInit {
 
   @Input() icon = false
+  @Input() labelIcon?: string
 
   private _disable: boolean = false
   private _pending: boolean = false
   private pendingSpan: any
+  private labelIconSpan: any
   private originalContent: any
   private rendered = false
 
@@ -46,8 +49,20 @@ export class PendingButtonDirective implements AfterViewInit {
     this.pendingSpan = this.renderer.createElement('span')
     if (!this.icon) {
       this.renderer.addClass(this.pendingSpan, 'mini-tab')
+      this.renderer.addClass(this.pendingSpan, 'label-icon')
+      if (this.labelIcon != undefined) {
+        // Create label icon span
+        this.labelIconSpan = this.renderer.createElement('span')
+        this.renderer.addClass(this.labelIconSpan, 'mini-tab')
+        this.renderer.addClass(this.labelIconSpan, 'label-icon')
+        this.labelIconSpan.innerHTML = `<i class="${this.labelIcon}"></i>`
+      }
     }
-    this.pendingSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin-override fa-lg"></i>'
+    this.pendingSpan.innerHTML = `<i class="${Constants.BUTTON_ICON.PENDING_SMALL}"></i>`
+    if (this.labelIcon != undefined) {
+      // Add icon label span.
+      this.renderer.appendChild(this.elementRef.nativeElement, this.labelIconSpan)
+    }
     // Add pending span followed by original content wrapper
     this.renderer.appendChild(this.elementRef.nativeElement, this.pendingSpan)
     this.renderer.appendChild(this.elementRef.nativeElement, this.originalContent)
@@ -71,7 +86,10 @@ export class PendingButtonDirective implements AfterViewInit {
         this.renderer.setAttribute(this.elementRef.nativeElement, 'disabled', 'disabled')
       }
       if (this._pending) {
-        this.renderer.addClass(this.elementRef.nativeElement, 'pending')
+        // this.renderer.addClass(this.elementRef.nativeElement, 'pending')
+        if (this.labelIconSpan) {
+          this.renderer.addClass(this.labelIconSpan, 'hidden')
+        }
         this.renderer.removeClass(this.pendingSpan, 'hidden')
         this.renderer.setAttribute(this.elementRef.nativeElement, 'disabled', 'disabled')
         if (this.icon) {
@@ -79,7 +97,10 @@ export class PendingButtonDirective implements AfterViewInit {
           this.renderer.addClass(this.originalContent, 'hidden')
         }
       } else {
-        this.renderer.removeClass(this.elementRef.nativeElement, 'pending')
+        // this.renderer.removeClass(this.elementRef.nativeElement, 'pending')
+        if (this.labelIconSpan) {
+          this.renderer.removeClass(this.labelIconSpan, 'hidden')
+        }
         this.renderer.addClass(this.pendingSpan, 'hidden')
         if (this.icon) {
           // Show the original content

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -714,6 +714,17 @@ export class ReportService {
       authenticate: true,
       arrayBuffer: true,
       accept: contentType
+    }))
+  }
+
+  exportTestSessionData(session: string) {
+    return this.restService.get<ArrayBuffer>(({
+      path: ROUTES.controllers.RepositoryService.exportTestSessionData().url,
+      params: {
+        session_id: session
+      },
+      authenticate: true,
+      arrayBuffer: true
     }))
   }
 

@@ -1,8 +1,8 @@
 <div class="rootDiv">
     @if (icon) {
-        <button #button id="button-options" #pop="bs-tooltip" type="button" [pending]="pending" [icon]="true" [class.open]="open" class="btn btn-secondary text-nowrap" (click)="pop.hide(); buttonClicked(); $event.stopPropagation()" containerClass="shortTooltip" container="body" [tooltip]="label" [triggers]="'mouseover:mouseout'" [delay]="Constants.TOOLTIP_DELAY"><i [class]="icon"></i></button>
+        <button #button id="button-options" #pop="ngbTooltip" type="button" [pending]="pending" [icon]="true" [class.open]="open" [class.btn-sm]="smallButton" class="btn btn-secondary text-nowrap" (click)="buttonClicked(pop); $event.stopPropagation()" tooltipClass="shortTooltip" container="body" [ngbTooltip]="label" [triggers]="'mouseover:mouseout'" [openDelay]="Constants.TOOLTIP_DELAY"><i [class]="icon"></i></button>
     } @else {
-        <button #button id="button-options" type="button" [class.open]="open" [pending]="pending" class="btn btn-secondary text-nowrap dropdown-toggle" (click)="buttonClicked(); $event.stopPropagation()"><span class="me-2">{{label}}</span></button>
+        <button #button id="button-options" type="button" [class.open]="open" [class.btn-sm]="smallButton" [labelIcon]="labelIcon" [pending]="pending" class="btn btn-secondary text-nowrap dropdown-toggle" (click)="buttonClicked(); $event.stopPropagation()"><span class="me-2">{{label}}</span></button>
     }
     <ng-template #popupTemplate>
         <div class="optionForm" [class.singleSelection]="singleSelection">

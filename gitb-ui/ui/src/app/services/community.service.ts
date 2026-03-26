@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -34,6 +34,8 @@ import {CustomProperty} from '../types/custom-property.type';
 import {FileParam} from '../types/file-param.type';
 import {SearchResult} from '../types/search-result';
 import {CommunityLimited} from '../types/community-limited';
+import {UserPreferences} from '../types/user-preferences';
+import {TagData} from '../types/tag-data';
 
 @Injectable({
   providedIn: 'root'
@@ -54,6 +56,13 @@ export class CommunityService {
       path: ROUTES.controllers.CommunityService.getCommunities().url,
       authenticate: true,
       params: params
+    })
+  }
+
+  getCommunityTags(communityId: number) {
+    return this.restService.get<TagData[]>({
+      path: ROUTES.controllers.CommunityService.getCommunityTags(communityId).url,
+      authenticate: true
     })
   }
 
@@ -89,7 +98,7 @@ export class CommunityService {
     })
   }
 
-  selfRegister(communityId: number, token:string|undefined, newOrganisation: boolean, organisationToken:string|undefined, organisationShortName: string|undefined, organisationFullName: string|undefined, templateId: number|undefined, organisationProperties: CustomProperty[]|undefined, userName?: string, userEmail?: string, userPassword?: string) {
+  selfRegister(communityId: number, token:string|undefined, organisationChoice: 'new'|'token'|'default', organisationToken:string|undefined, organisationShortName: string|undefined, organisationFullName: string|undefined, templateId: number|undefined, organisationProperties: CustomProperty[]|undefined, userName?: string, userEmail?: string, userPassword?: string) {
     let data: any = {
       community_id: communityId
     }
@@ -98,15 +107,17 @@ export class CommunityService {
     if (userEmail != undefined) data.user_email = userEmail
     if (userPassword != undefined) data.password = userPassword
     let files: FileParam[]|undefined
-    if (newOrganisation) {
+    if (organisationChoice === 'new') {
       if (organisationShortName != undefined) data.vendor_sname = organisationShortName
       if (organisationFullName != undefined) data.vendor_fname = organisationFullName
       if (templateId != undefined) data.template_id = templateId
       const props = this.dataService.customPropertiesForPost(organisationProperties)
       data.properties = props.parameterJson
       files = props.files
-    } else {
+    } else if (organisationChoice === 'token') {
       if (organisationToken != undefined) data.vendor_token = organisationToken
+    } else {
+      data.community_selfreg_default_organisation = true
     }
     return this.restService.post<ErrorDescription|{id: number}|ActualUserInfo>({
       path: ROUTES.controllers.CommunityService.selfRegister().url,
@@ -156,9 +167,10 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
+    selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
-    domainId: number|undefined) {
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
+    domainId: number|undefined, userPreferences: UserPreferences, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -172,7 +184,13 @@ export class CommunityService {
       allow_post_test_stm_update: allowPostTestStatementUpdate,
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
-      interaction_notification: interactionNotification
+      allow_xml_reports: allowXmlReports,
+      interaction_notification: interactionNotification,
+      menu_collapsed: userPreferences.menuCollapsed,
+      statements_collapsed: userPreferences.statementsCollapsed,
+      page_size: userPreferences.pageSize,
+      home_page_type: userPreferences.homePageType,
+      tags: tags
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -181,6 +199,8 @@ export class CommunityService {
       if (selfRegAllowOrganisationTokens == undefined) selfRegAllowOrganisationTokens = false
       if (selfRegAllowOrganisationTokenManagement == undefined) selfRegAllowOrganisationTokenManagement = false
       if (selfRegForceOrganisationTokenInput == undefined) selfRegForceOrganisationTokenInput = false
+      if (selfRegJoinExisting == undefined) selfRegJoinExisting = false
+      if (selfRegJoinAsAdmin == undefined) selfRegJoinAsAdmin = true
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
@@ -190,6 +210,8 @@ export class CommunityService {
       data.community_selfreg_allow_org_tokens = selfRegAllowOrganisationTokens
       data.community_selfreg_allow_org_token_management = selfRegAllowOrganisationTokenManagement
       data.community_selfreg_force_org_token_input = selfRegForceOrganisationTokenInput
+      data.community_selfreg_join_existing = selfRegJoinExisting
+      data.community_selfreg_join_as_admin = selfRegJoinAsAdmin
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
@@ -210,9 +232,10 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
+    selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
-    domainId: number|undefined) {
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
+    domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -226,7 +249,14 @@ export class CommunityService {
       allow_post_test_stm_update: allowPostTestStatementUpdate,
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
-      interaction_notification: interactionNotification
+      allow_xml_reports: allowXmlReports,
+      interaction_notification: interactionNotification,
+      menu_collapsed: userPreferences.menuCollapsed,
+      statements_collapsed: userPreferences.statementsCollapsed,
+      page_size: userPreferences.pageSize,
+      home_page_type: userPreferences.homePageType,
+      force_preferences: forceUserPreferenceUpdate,
+      tags: tags
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -235,6 +265,8 @@ export class CommunityService {
       if (selfRegAllowOrganisationTokens == undefined) selfRegAllowOrganisationTokens = false
       if (selfRegAllowOrganisationTokenManagement == undefined) selfRegAllowOrganisationTokenManagement = false
       if (selfRegForceOrganisationTokenInput == undefined) selfRegForceOrganisationTokenInput = false
+      if (selfRegJoinExisting == undefined) selfRegJoinExisting = false
+      if (selfRegJoinAsAdmin == undefined) selfRegJoinAsAdmin = true
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
@@ -244,6 +276,9 @@ export class CommunityService {
       data.community_selfreg_allow_org_tokens = selfRegAllowOrganisationTokens
       data.community_selfreg_allow_org_token_management = selfRegAllowOrganisationTokenManagement
       data.community_selfreg_force_org_token_input = selfRegForceOrganisationTokenInput
+      data.community_selfreg_default_organisation = selfRegDefaultOrganisation
+      data.community_selfreg_join_existing = selfRegJoinExisting
+      data.community_selfreg_join_as_admin = selfRegJoinAsAdmin
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
@@ -267,10 +302,14 @@ export class CommunityService {
     })
   }
 
-  getCommunityById(communityId: number) {
+  getCommunityById(communityId: number, withSelfRegDefaultOrganisation: boolean, withDefaultUserPreferences: boolean) {
     return this.restService.get<Community>({
       path: ROUTES.controllers.CommunityService.getCommunityById(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: {
+        community_selfreg_default_organisation: withSelfRegDefaultOrganisation,
+        preferences: withDefaultUserPreferences
+      }
     })
   }
 

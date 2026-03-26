@@ -1,0 +1,1 @@
+ALTER TABLE `testservices` ADD COLUMN `monitor_health` TINYINT DEFAULT 1 NOT NULL;

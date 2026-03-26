@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,12 +17,7 @@
 
 .tabPanel {
     & > div:last-child {
-        margin-bottom: 0px;
-    }
-    .endpointPanelContainer {
-        .endpointPanel:last-child {
-            margin-bottom: 0px;
-        }
+        margin-bottom: 0;
     }
 }
 
@@ -30,12 +25,6 @@
     background: @white;
     border: 1px solid @gray-dark-1;
     border-radius: @border-radius;
-}
-
-.endpointPanel {
-    &.card {
-        margin-bottom: 5px;
-    }
 }
 
 .tabControls {
@@ -96,7 +85,7 @@
     }
     .statusLabel {
         font-weight: bold;
-        margin-left: 0px;
+        margin-left: 0;
     }
     .lastUpdateLabel, .resultsLabel {
         font-weight: bold;
@@ -151,5 +140,75 @@
     }
     .partyValue {
         align-self: center;
+    }
+}
+.option-button {
+    display: flex;
+    .option-icon {
+        display: flex;
+        min-width: 22px;
+        margin-right: 8px;
+        justify-content: center;
+    }
+}
+.action-container {
+    flex-wrap: nowrap;
+    .btn {
+        white-space: nowrap;
+    }
+    padding-right: 20px;
+    margin-right: 20px;
+    border-right: 1px solid @gray-dark-1;
+    opacity: 0;
+    transition: opacity 100ms ease, transform 100ms ease;
+    pointer-events: none; /* prevents clicking when hidden */
+    &.action-container-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+.statement-header-container {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    .card-title {
+        display: flex;
+        flex-grow: 1;
+        min-width: 0;
+        .card-title-parts {
+            position: relative;
+            display: flex;
+            flex-grow: 1;
+            min-width: 0;
+            .card-title-collapsed {
+                align-items: center;
+                min-width: 0;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-right: 10px;
+            }
+            .card-title-expanded {
+                align-items: center;
+                position: absolute;
+            }
+            .container-part {
+                inset: 0;
+                transition: opacity 100ms ease, transform 100ms ease;
+                &.container-hidden {
+                    opacity: 0;
+                    pointer-events: none;
+                }
+                &.container-visible {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+            }
+        }
+    }
+    .card-title-controls {
+        display: flex;
+        align-items: center;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -61,6 +61,7 @@ class ConformanceStatementFull(
     val testSuiteSpecDescription: Option[String],
     val testSuiteSpecLink: Option[String],
     val testSuiteVersion: String,
+    val testSuiteOrder: Option[Short],
     val testCaseId: Option[Long],
     val testCaseName: Option[String],
     val testCaseDescription: Option[String],
@@ -143,6 +144,7 @@ class ConformanceStatementFull(
       this.testSuiteSpecDescription,
       this.testSuiteSpecLink,
       this.testSuiteVersion,
+      this.testSuiteOrder,
       this.testCaseId,
       this.testCaseName,
       this.testCaseDescription,

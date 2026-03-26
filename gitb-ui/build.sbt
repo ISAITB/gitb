@@ -1,15 +1,18 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
-scalaVersion := "2.13.16"
-val pekkoVersion = "1.2.1"
-val jacksonVersion = "2.20.0"
-val jacksonAnnotationsVersion = "2.20"
-val cxfVersion = "4.1.3"
-val gitbCommonsVersion = "1.28.5"
-val gitbTypesVersion = "1.28.5"
-val bouncyCastleVersion = "1.82"
-val commonsTextVersion = "1.14.0"
-val mySqlConnectorVersion = "9.4.0"
+scalaVersion := "2.13.18"
+val pekkoVersion = "1.4.0"
+val jacksonVersion = "2.21.1"
+val jacksonAnnotationsVersion = "2.21"
+val cxfVersion = "4.2.0"
+val gitbCommonsVersion = "1.29.0"
+val gitbTypesVersion = "1.29.0"
+val bouncyCastleVersion = "1.83"
+val commonsTextVersion = "1.15.0"
+val mySqlConnectorVersion = "9.6.0"
+val pac4jVersion = "6.3.3"
+val nettyVersion = "4.1.130.Final"
+val pdfBoxVersion = "3.0.7"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -44,10 +47,17 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
-  "org.pac4j" %% "play-pac4j" % "12.0.2-PLAY3.0",
-  "org.pac4j" % "pac4j-cas" % "6.1.3" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  "org.pac4j" % "pac4j-oidc" % "6.1.3",
-  "org.apache.commons" % "commons-lang3" % "3.19.0",
+  "org.pac4j" %% "play-pac4j" % "13.0.2-PLAY3.0",
+  "org.pac4j" % "pac4j-cas" % pac4jVersion exclude("org.bouncycastle", "bcpkix-jdk15on"),
+  "org.pac4j" % "pac4j-oidc" % pac4jVersion,
+  "org.pac4j" % "pac4j-http" % pac4jVersion,
+  "org.pac4j" % "pac4j-ldap" % pac4jVersion,
+  // Override the netty version used to establish connections. These should be aligned with the major version brought in by ldaptive (dependency of pac4j-ldap) - START
+  "io.netty" % "netty-handler" % nettyVersion,
+  "io.netty" % "netty-transport-native-epoll" % nettyVersion,
+  "io.netty" % "netty-transport-native-kqueue" % nettyVersion,
+  // - END.
+  "org.apache.commons" % "commons-lang3" % "3.20.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
@@ -63,26 +73,31 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.2.3",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.28.1",
-  "com.sun.mail" % "jakarta.mail" % "2.0.2",
+  "org.webjars" % "swagger-ui" % "5.32.0",
+  "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
+  "org.eclipse.angus" % "angus-mail" % "2.0.5",
+  "org.eclipse.angus" % "angus-activation" % "2.0.3",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
-  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
+  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.3",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.4",
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5",
   "com.sun.xml.bind" % "jaxb-impl" % "4.0.6",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
-  "org.apache.pdfbox" % "pdfbox" % "3.0.5",
+  "org.apache.pdfbox" % "pdfbox" % pdfBoxVersion,
+  "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "11.13.2",
-  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
-  "net.lingala.zip4j" % "zip4j" % "2.11.5",
-  "com.nimbusds" % "nimbus-jose-jwt" % "10.5",
-  "org.apache.commons" % "commons-text" % commonsTextVersion
+  "org.flywaydb" % "flyway-mysql" % "12.0.2", // 12.0.3+ brings in Jackson 3
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260102.1",
+  "net.lingala.zip4j" % "zip4j" % "2.11.6",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.8",
+  "org.apache.commons" % "commons-text" % commonsTextVersion,
+  "com.bucket4j" % "bucket4j_jdk17-core" % "8.16.1",
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.2.3"
 )
 
 // Deactivate repeatable builds to speed up via parallelization
@@ -128,6 +143,12 @@ licenseOverrides := {
   case DepModuleInfo("org.hamcrest", "hamcrest-core", "1.3") => LicenseInfo(LicenseCategory.BSD, LicenseCategory.BSD.name, "")
   case DepModuleInfo("xml-resolver", "xml-resolver", "1.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
   case DepModuleInfo("com.google.code.findbugs", "findbugs-annotations", "3.0.1") => LicenseInfo(LicenseCategory.LGPL, LicenseCategory.LGPL.name, "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "cupv10k-runtime", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Proprietary, "CUP Parser Generator Copyright Notice, License, and Disclaimer", "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "icu4j", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Proprietary, "ICU 1.8.1 and later", "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "org.eclipse.wst.xml.xpath2.processor_1.2.1", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.EPL, LicenseCategory.EPL.name, "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "xercesImpl", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("xalan", "serializer", "2.7.3") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("xml-apis", "xml-apis", "2.0.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
 }
 licenseDepExclusions := {
   case DepModuleInfo("com.gitb", _, _) => true
@@ -141,6 +162,8 @@ licenseDepExclusions := {
 licenseCheckExclusions := {
   case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => true
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => true
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "cupv10k-runtime", "2.12.2-xsd11") => true
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "icu4j", "2.12.2-xsd11") => true
 }
 licenseReportNotes := {
   case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => "The Universal FOSS Exception allows its usage as it is used unchanged."

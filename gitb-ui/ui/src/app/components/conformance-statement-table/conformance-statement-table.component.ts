@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
@@ -27,6 +27,9 @@ import {BaseComponent} from '../../pages/base-component.component';
 import {ReportSupportService} from '../../services/report-support.service';
 import {FilterState} from '../../types/filter-state';
 import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
+import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
+import {TestStatusBase} from '../test-status-base/test-status-base';
 
 @Component({
   selector: 'app-conformance-statement-table',
@@ -45,6 +48,8 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   @Output() communityChange = new EventEmitter<number|undefined>()
   @Output() select = new EventEmitter<ConformanceResultFullWithTestSuites>
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChildren("testStatusDisplay") testStatusDisplay?: QueryList<TestStatusBaseApi>
+  @ViewChildren("optionButtons") optionButtons?: QueryList<StatementOptionsButtonApi<ConformanceResultFullWithTestSuites>>
 
   readonly Constants = Constants
   dataStatus = {status: Constants.STATUS.PENDING}
@@ -115,7 +120,7 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   }
 
   getConformanceStatements() {
-    this.selectPage({ targetPage: 1, targetPageSize: this.pagingControls?.getCurrentStatus().pageSize! })
+    this.selectPage({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doPageNavigation(event: PagingEvent) {
@@ -320,4 +325,23 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     this.select.emit(statement)
   }
 
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.testStatusDisplay?.forEach((component) => component.documentClick(event))
+    this.optionButtons?.forEach((component) => component.documentClick(event))
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.testStatusDisplay?.forEach((component) => component.documentEscape())
+    this.optionButtons?.forEach((component) => component.documentEscape())
+  }
+
+  expandedStatusIcons(source: TestStatusBase) {
+    this.testStatusDisplay?.forEach((component) => {
+      if (component !== source) {
+        component.close()
+      }
+    })
+  }
 }

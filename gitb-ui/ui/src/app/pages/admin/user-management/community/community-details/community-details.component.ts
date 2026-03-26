@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {CommunityService} from 'src/app/services/community.service';
@@ -39,13 +39,16 @@ import {Trigger} from 'src/app/types/trigger';
 import {User} from 'src/app/types/user.type';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
-import {Observable, of} from 'rxjs';
+import {concatMap, EMPTY, Observable, of} from 'rxjs';
 import {ResourceActions} from '../../../../../components/resource-management-tab/resource-actions';
 import {FileData} from '../../../../../types/file-data.type';
 import {CommunityResourceService} from '../../../../../services/community-resource.service';
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../../../components/table/table-api';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
+import {ResourceState} from '../../../../../components/resource-management-tab/resource-state';
+import {UserPreferences} from '../../../../../types/user-preferences';
+import {TagData} from '../../../../../types/tag-data';
 
 @Component({
     selector: 'app-community-details',
@@ -56,8 +59,14 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
   @ViewChild("organisationTable") organisationTable?: TableApi
+  @ViewChild("adminsTable") adminsTable?: TableApi
+  @ViewChild("landingPagesTable") landingPagesTable?: TableApi
+  @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
+  @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
+  @ViewChild("triggersTable") triggersTable?: TableApi
 
   community!: Community
+  currentTags?: TagData[]
   adminStatus = {status: Constants.STATUS.NONE}
   organisationStatus = {status: Constants.STATUS.NONE}
   landingPageStatus = {status: Constants.STATUS.NONE}
@@ -77,24 +86,24 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   landingPagesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   legalNoticesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   errorTemplatesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   triggerColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'eventTypeLabel', title: 'Event type' },
-    { field: 'active', title: 'Active' },
-    { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult }
+    { field: 'active', title: 'Active', headerClass: 'th-min centered', cellClass: 'td-min centered' },
+    { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   domains: Domain[] = []
   admins: User[] = []
@@ -103,9 +112,31 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
   triggers: Trigger[] = []
-  testBedLegalNotice?: LegalNotice
+  adminsPage = 1
+  organizationsPage = 1
+  landingPagesPage = 1
+  legalNoticesPage = 1
+  errorTemplatesPage = 1
+  triggersPage = 1
+  adminsTotal = 0
+  organizationsTotal = 0
+  landingPagesTotal = 0
+  legalNoticesTotal = 0
+  errorTemplatesTotal = 0
+  triggersTotal = 0
+  resourceState: ResourceState = {
+    resources: [],
+    total: 0,
+    page: 1,
+    status: Constants.STATUS.NONE
+  }
+
   testBedLandingPage?: LandingPage
+  testBedLegalNotice?: LegalNotice
   testBedErrorTemplate?: ErrorTemplate
+  testBedLandingPageLoaded = false
+  testBedLegalNoticeLoaded = false
+  testBedErrorTemplateLoaded = false
 
   organisationFilter?: string
   organisationSortOrder = 'asc'
@@ -121,10 +152,16 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   sortByCreationOrder = this.sortByCreationOrderNone
 
   organisationsRefreshing = false
+  adminsRefreshing = false
+  landingPagesRefreshing = false
+  legalNoticesRefreshing = false
+  errorTemplatesRefreshing = false
+  triggersRefreshing = false
+  selfRegistrationWarningActive = false
 
   resourceActions!: ResourceActions
-  resourceEmitter = new EventEmitter<void>()
   validation = new ValidationState()
+  initialUserPreferences!: UserPreferences
 
   constructor(
     public readonly dataService: DataService,
@@ -148,7 +185,16 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   ngOnInit(): void {
     this.community = this.route.snapshot.data['community']
+    if (this.community.selfRegDefaultOrganisationEnabled == undefined) {
+      this.community.selfRegDefaultOrganisationEnabled = this.community.selfRegDefaultOrganisation != undefined
+    }
+    if (this.community.tags == undefined) {
+      // Needed so that changes are propagated to the header display.
+      this.community.tags = []
+    }
     this.communityId = this.community.id
+    this.copyTags(this.community.tags)
+    this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
       this.routingService.toSystemAdministration()
     }
@@ -160,11 +206,12 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     } else {
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
-    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
+    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
     this.resourceActions = this.createCommunityResourceActions()
+    this.initialUserPreferences = { ...this.community.preferences! }
     this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
     let domains$: Observable<Domain[]> = of([])
     if (this.dataService.isSystemAdmin) {
@@ -198,9 +245,55 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
+  private resetSelfRegistrationWarning() {
+    this.selfRegistrationWarningActive = this.dataService.configuration.registrationEnabled && this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED && this.community.selfRegJoinExisting == true && (this.community.selfRegDefaultOrganisationEnabled != true || this.community.selfRegDefaultOrganisation == undefined) && this.community.selfRegAllowOrganisationTokens != true
+  }
+
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
       this.refreshOrganisations()
+    } else {
+      this.updateOrganisationPagination(this.organizationsPage, this.organizationsTotal)
+    }
+  }
+
+  showAdministrators() {
+    if (this.adminStatus.status == Constants.STATUS.NONE) {
+      this.queryAdministrators({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateAdminPagination(this.adminsPage, this.adminsTotal)
+    }
+  }
+
+  showLandingPages() {
+    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
+      this.queryLandingPages({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateLandingPagesPagination(this.landingPagesPage, this.landingPagesTotal)
+    }
+  }
+
+  showLegalNotices() {
+    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
+      this.queryLegalNotices({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateLegalNoticePagination(this.legalNoticesPage, this.legalNoticesTotal)
+    }
+  }
+
+  showErrorTemplates() {
+    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
+      this.queryErrorTemplates({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateErrorTemplatePagination(this.errorTemplatesPage, this.errorTemplatesTotal)
+    }
+  }
+
+  showTriggers() {
+    if (this.triggerStatus.status == Constants.STATUS.NONE) {
+      this.queryTriggers({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateTriggerPagination(this.triggersPage, this.triggersTotal)
     }
   }
 
@@ -221,75 +314,104 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
-  showAdministrators() {
-    if (this.adminStatus.status == Constants.STATUS.NONE) {
+  private queryAdministrators(pagingInfo: PagingEvent) {
+    if (this.adminStatus.status == Constants.STATUS.FINISHED) {
+      this.adminsRefreshing = true
+    } else {
       this.adminStatus.status = Constants.STATUS.PENDING
-      this.userService.getCommunityAdministrators(this.communityId)
+    }
+    this.userService.getCommunityAdministrators(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        for (let admin of data) {
+        this.admins = data.data
+        for (let admin of this.admins) {
           admin.ssoStatusText = this.dataService.userStatus(admin.ssoStatus)
         }
-        this.admins = data
+        this.updateAdminPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
-        this.adminStatus.status = Constants.STATUS.FINISHED
-      })
-    }
+      this.adminsRefreshing = false
+      this.adminStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showLandingPages() {
-    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
+  private queryLandingPages(pagingInfo: PagingEvent) {
+    if (this.landingPageStatus.status == Constants.STATUS.FINISHED) {
+      this.landingPagesRefreshing = true
+    } else {
       this.landingPageStatus.status = Constants.STATUS.PENDING
+    }
+    if (!this.testBedLandingPageLoaded) {
+      this.testBedLandingPageLoaded = true
       this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
-      .subscribe((data) => {
-        if (data.exists) this.testBedLandingPage = data
-      })
-      this.landingPageService.getLandingPagesByCommunity(this.communityId)
-      .subscribe((data) => {
-        this.landingPages = data
-      }).add(() => {
-        this.landingPageStatus.status = Constants.STATUS.FINISHED
-      })
+        .subscribe((data) => {
+          if (data.exists) this.testBedLandingPage = data
+        })
     }
+    this.landingPageService.searchLandingPagesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.landingPages = data.data
+        this.updateLandingPagesPagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.landingPagesRefreshing = false
+      this.landingPageStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showLegalNotices() {
-    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
+  private queryLegalNotices(pagingInfo: PagingEvent) {
+    if (this.legalNoticeStatus.status == Constants.STATUS.FINISHED) {
+      this.legalNoticesRefreshing = true
+    } else {
       this.legalNoticeStatus.status = Constants.STATUS.PENDING
+    }
+    if (!this.testBedLegalNoticeLoaded) {
+      this.testBedLegalNoticeLoaded = true
       this.legalNoticeService.getTestBedDefaultLegalNotice()
-      .subscribe((data) => {
-        if (data.exists) this.testBedLegalNotice = data
-      })
-      this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
-      .subscribe((data) => {
-        this.legalNotices = data
-      }).add(() => {
-        this.legalNoticeStatus.status = Constants.STATUS.FINISHED
-      })
+        .subscribe((data) => {
+          if (data.exists) this.testBedLegalNotice = data
+        })
     }
+    this.legalNoticeService.searchLegalNoticesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.legalNotices = data.data
+        this.updateLegalNoticePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.legalNoticesRefreshing = false
+      this.legalNoticeStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showErrorTemplates() {
-    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
+  private queryErrorTemplates(pagingInfo: PagingEvent) {
+    if (this.errorTemplateStatus.status == Constants.STATUS.FINISHED) {
+      this.errorTemplatesRefreshing = true
+    } else {
       this.errorTemplateStatus.status = Constants.STATUS.PENDING
-      this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
-      .subscribe((data) => {
-        if (data.exists) this.testBedErrorTemplate = data
-      })
-      this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-      .subscribe((data) => {
-        this.errorTemplates = data
-      }).add(() => {
-        this.errorTemplateStatus.status = Constants.STATUS.FINISHED
-      })
     }
+    if (!this.testBedErrorTemplateLoaded) {
+      this.testBedErrorTemplateLoaded = true
+      this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
+        .subscribe((data) => {
+          if (data.exists) this.testBedErrorTemplate = data
+        })
+    }
+    this.errorTemplateService.searchErrorTemplatesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.errorTemplates = data.data
+        this.updateErrorTemplatePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.errorTemplatesRefreshing = false
+      this.errorTemplateStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showTriggers() {
-    if (this.triggerStatus.status == Constants.STATUS.NONE) {
+  private queryTriggers(pagingInfo: PagingEvent) {
+    if (this.triggerStatus.status == Constants.STATUS.FINISHED) {
+      this.triggersRefreshing = true
+    } else {
       this.triggerStatus.status = Constants.STATUS.PENDING
-      this.triggerService.getTriggersByCommunity(this.communityId)
+    }
+    this.triggerService.getTriggersByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        for (let trigger of data) {
+        this.triggers = data.data
+        for (let trigger of this.triggers) {
           trigger.eventTypeLabel = this.dataService.triggerEventTypeLabel(trigger.eventType)
           if (trigger.latestResultOk != undefined) {
             if (trigger.latestResultOk) {
@@ -301,24 +423,25 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
             trigger.statusText = Constants.TEST_CASE_RESULT.UNDEFINED
           }
         }
-        this.triggers = data
+        this.updateTriggerPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
-        this.triggerStatus.status = Constants.STATUS.FINISHED
-      })
-    }
+      this.triggersRefreshing = false
+      this.triggerStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
   showResources() {
-    this.resourceEmitter.emit()
+    // No action needed.
   }
 
   saveDisabled() {
-    return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+    return !this.loaded || this.deletePending || this.savePending || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled ||
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
             (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) &&
-            (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email)))
+            (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email))) &&
+            (!this.community.selfRegDefaultOrganisationEnabled || this.community.selfRegDefaultOrganisation)
           )
         )
       ) &&
@@ -326,58 +449,113 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     )
   }
 
-  private updateCommunityInternal(descriptionToUse?: string) {
+  private updateCommunityInternal(descriptionToUse: string|undefined, forceUserPreferenceUpdate: boolean) {
     this.savePending = true
+    let selfRegDefaultOrganisationId = this.community.selfRegDefaultOrganisation?.id
+    if (!this.community.selfRegDefaultOrganisationEnabled) {
+      selfRegDefaultOrganisationId = undefined
+    }
+    this.community.selfRegForceOrganisationTokenInput = this.community.selfRegJoinExisting && this.community.selfRegDefaultOrganisationEnabled != true && this.community.selfRegAllowOrganisationTokens == true
+    if (!this.community.selfRegInstructionsEnabled) {
+      this.community.selfRegTokenHelpText = undefined
+    }
+    if (this.community.tags && this.community.tags.length > 0) {
+      this.community.tags[0].flag1 = this.community.tagForCommunityAdmin
+      this.community.tags[0].flag2 = this.community.tagForTestBedAdmin
+    }
     this.communityService.updateCommunity(this.communityId, this.community.sname!, this.community.fname!, this.community.email,
       this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
       this.community.interactionNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
-      this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput,
+      this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput, selfRegDefaultOrganisationId,
+      this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
-      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement,
-      this.community.domain?.id)
+      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement, this.community.allowXmlReports,
+      this.community.domain?.id, this.community.preferences!, forceUserPreferenceUpdate, this.dataService.serializeTags(this.community!.tags))
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id
-      this.popupService.success('Community updated.')
+      this.resetSelfRegistrationWarning()
+      this.initialUserPreferences = { ...this.community.preferences! }
+      if (forceUserPreferenceUpdate && this.communityId == this.dataService.community?.id) {
+        this.dataService.setMenuVisibility(!this.community.preferences!.menuCollapsed)
+        this.dataService.setConformanceStatementDetailVisibility(!this.community.preferences!.statementsCollapsed)
+        this.dataService.setDefaultPageSize(this.community.preferences!.pageSize)
+        this.dataService.setHomePageType(this.community.preferences!.homePageType)
+      }
+      this.copyTags(this.community.tags)
+      if (this.selfRegistrationWarningActive) {
+        this.popupService.warning('Community updated with warnings.')
+      } else {
+        this.popupService.success('Community updated.')
+      }
       this.dataService.breadcrumbUpdate({id: this.communityId, type: BreadcrumbType.community, label: this.community.sname!})
     }).add(() => {
       this.savePending = false
     })
   }
 
-  updateCommunity() {
-    this.validation.clearErrors()
-    const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
-    if (!emailValid) {
-      this.validation.invalid("supportEmail", "Please enter a valid support email.")
-    }
-    const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
-    if (!notificationValid) {
-      this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
-    }
-    if (emailValid && notificationValid) {
-      let descriptionToUse: string|undefined
-      if (!this.community.sameDescriptionAsDomain) {
-        descriptionToUse = this.community.activeDescription
+  private copyTags(source: TagData[]|undefined) {
+    if (source == undefined) {
+      this.currentTags = undefined
+    } else {
+      this.currentTags = [...source].map(t => ({...t}))
+      if (source.length > 0) {
+        this.community.tagForCommunityAdmin = source[0].flag1
+        this.community.tagForTestBedAdmin = source[0].flag2
       }
-      if ((this.originalDomainId == undefined && this.community.domain?.id != undefined) || (this.originalDomainId != undefined && this.community.domain?.id != undefined && this.originalDomainId != this.community.domain?.id)) {
-        let confirmationMessage: string
-        if (this.originalDomainId == undefined) {
-          confirmationMessage = "Setting the "+this.dataService.labelDomainLower()+" will remove existing conformance statements linked to other "+this.dataService.labelDomainsLower()+". Are you sure you want to proceed?"
-        } else {
-          confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
+    }
+    this.dataService.cacheCommunityTags(this.communityId, this.currentTags)
+    this.dataService.signalCommunityUpdated()
+  }
+
+  updateCommunity() {
+    if (!this.saveDisabled()) {
+      this.validation.clearErrors()
+      const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
+      if (!emailValid) {
+        this.validation.invalid("supportEmail", "Please enter a valid support email.")
+      }
+      const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
+      if (!notificationValid) {
+        this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
+      }
+      if (emailValid && notificationValid) {
+        let descriptionToUse: string|undefined
+        if (!this.community.sameDescriptionAsDomain) {
+          descriptionToUse = this.community.activeDescription
         }
-        this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel")
-        .subscribe(() => {
-          this.updateCommunityInternal(descriptionToUse)
+        this.confirmDomainChangeIfNeeded().pipe(
+          concatMap(result => result ? this.confirmUserPreferenceUpdateIfNeeded() : EMPTY),
+        ).subscribe(forcePreferenceUpdate => {
+          this.updateCommunityInternal(descriptionToUse, forcePreferenceUpdate)
         })
-      } else {
-        this.updateCommunityInternal(descriptionToUse)
       }
     }
   }
 
+  private confirmDomainChangeIfNeeded(): Observable<boolean> {
+    if ((this.originalDomainId == undefined && this.community.domain?.id != undefined) || (this.originalDomainId != undefined && this.community.domain?.id != undefined && this.originalDomainId != this.community.domain?.id)) {
+      let confirmationMessage: string
+      if (this.originalDomainId == undefined) {
+        confirmationMessage = "Setting the "+this.dataService.labelDomainLower()+" will remove existing conformance statements linked to other "+this.dataService.labelDomainsLower()+". Are you sure you want to proceed?"
+      } else {
+        confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
+      }
+      return this.confirmationDialogService.confirmDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel", Constants.BUTTON_ICON.SAVE).asObservable()
+    } else {
+      return of(true)
+    }
+  }
+
+  private confirmUserPreferenceUpdateIfNeeded(): Observable<boolean> {
+    if (this.userPreferencesChanged()) {
+      return this.confirmationDialogService.confirm("User preferences update", "You have changed the default user preferences. Besides applying for new users, should these also override existing users' preferences?", "Override existing preferences", "Apply only for new users", Constants.BUTTON_ICON.RESET, Constants.BUTTON_ICON.SAVE, false, true).asObservable()
+    } else {
+      return of(false)
+    }
+  }
+
   deleteCommunity() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this community?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this community?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.communityService.deleteCommunity(this.communityId)
@@ -456,14 +634,123 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   doOrganisationPaging(event: PagingEvent) {
     this.queryOrganisations(event)
+    if (event.pageSizeChanged) {
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doAdminPaging(event: PagingEvent) {
+    this.queryAdministrators(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doLandingPagePaging(event: PagingEvent) {
+    this.queryLandingPages(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doLegalNoticePaging(event: PagingEvent) {
+    this.queryLegalNotices(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doErrorTemplatePaging(event: PagingEvent) {
+    this.queryErrorTemplates(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doTriggerPaging(event: PagingEvent) {
+    this.queryTriggers(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  resourceTabPageSizeChange() {
+    this.organisationStatus.status = Constants.STATUS.NONE
+    this.adminStatus.status = Constants.STATUS.NONE
+    this.landingPageStatus.status = Constants.STATUS.NONE
+    this.legalNoticeStatus.status = Constants.STATUS.NONE
+    this.errorTemplateStatus.status = Constants.STATUS.NONE
+    this.triggerStatus.status = Constants.STATUS.NONE
   }
 
   refreshOrganisations() {
-    this.queryOrganisations({ targetPage: 1, targetPageSize: this.organisationTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    this.queryOrganisations({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   private updateOrganisationPagination(page: number, count: number) {
     this.organisationTable?.getPagingControls()?.updateStatus(page, count)
+    this.organizationsPage = page
+    this.organizationsTotal = count
+  }
+
+  private updateAdminPagination(page: number, count: number) {
+    this.adminsTable?.getPagingControls()?.updateStatus(page, count)
+    this.adminsPage = page
+    this.adminsTotal = count
+  }
+
+  private updateLandingPagesPagination(page: number, count: number) {
+    this.landingPagesTable?.getPagingControls()?.updateStatus(page, count)
+    this.landingPagesPage = page
+    this.landingPagesTotal = count
+  }
+
+  private updateLegalNoticePagination(page: number, count: number) {
+    this.legalNoticesTable?.getPagingControls()?.updateStatus(page, count)
+    this.legalNoticesPage = page
+    this.legalNoticesTotal = count
+  }
+
+  private updateErrorTemplatePagination(page: number, count: number) {
+    this.errorTemplatesTable?.getPagingControls()?.updateStatus(page, count)
+    this.errorTemplatesPage = page
+    this.errorTemplatesTotal = count
+  }
+
+  private updateTriggerPagination(page: number, count: number) {
+    this.triggersTable?.getPagingControls()?.updateStatus(page, count)
+    this.triggersPage = page
+    this.triggersTotal = count
   }
 
   sortOrganisations(column: TableColumnDefinition) {
@@ -540,5 +827,14 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       systemScope: false
     }
   }
+
+  private userPreferencesChanged() {
+    return this.community.preferences?.menuCollapsed != this.initialUserPreferences.menuCollapsed ||
+      this.community.preferences?.statementsCollapsed != this.initialUserPreferences.statementsCollapsed ||
+      this.community.preferences?.pageSize != this.initialUserPreferences.pageSize ||
+      this.community.preferences?.homePageType != this.initialUserPreferences.homePageType
+  }
+
+  protected readonly Constants = Constants;
 
 }

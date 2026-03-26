@@ -1,0 +1,2 @@
+ALTER TABLE `testsuites` ADD COLUMN `order` SMALLINT DEFAULT 0 NOT NULL;
+ALTER TABLE `conformancesnapshottestsuites` ADD COLUMN `order` SMALLINT DEFAULT 0 NOT NULL;

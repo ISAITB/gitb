@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -27,12 +27,17 @@
     & > .content-name {
         padding-top: 3px;
         font-weight: bold;
+        display: flex;
         &.with-items {
             padding-top: 8px;
             padding-bottom: 8px;
         }
         &.break-texts {
             word-break: break-all;
+        }
+        .not-inline-help-text {
+            font-weight: normal;
+            opacity: 0.5;
         }
     }
     & > .content-value {
@@ -56,28 +61,33 @@
     min-height: 50px;
     margin-left: 10px;
 }
-
+.any-content-view-root {
+    padding-bottom: 10px;
+    &.root {
+        padding-bottom: 0;
+    }
+}
 .any-content-view {
     &.no-border {
-        padding: 0;
-        border: 0;
+        padding: 0 !important;
+        border: 0 !important;
     }
     &.hovering {
-        background-color: @white-hover;
+        &:not(.alert) {
+            background-color: @white-hover;
+        }
         cursor: pointer;
     }
-    background-color: @white;
-    padding: 0 10px;
-    margin: 10px 0;
-    &.no-margin {
-        margin: 0;
+    &.alert {
+        margin-bottom: 0;
+        padding-top: 0;
+        padding-bottom: 0;
     }
-    border: 1px solid @gray-light;
+    &:not(.alert) {
+        background-color: @white;
+        border: 1px solid @gray-light;
+    }
+    padding-right: 10px;
+    padding-left: 10px;
     border-radius: @border-radius;
-}
-
-.content-items {
-    &.with-name {
-        margin-top: -4px;
-    }
 }

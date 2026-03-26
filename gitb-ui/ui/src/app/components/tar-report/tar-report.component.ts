@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,6 +15,7 @@
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { AssertionReport } from '../diagram/assertion-report';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-tar-report',
@@ -32,6 +33,10 @@ export class TarReportComponent implements OnInit {
   messages = 0
   collapsed = false
   withSummaryBorder = true
+  showErrors = true
+  showWarnings = true
+  showMessages = true
+  reportsToShow: AssertionReport[] = []
 
   ngOnInit(): void {
     for (let report of this.reports) {
@@ -43,6 +48,11 @@ export class TarReportComponent implements OnInit {
         this.errors += 1
       }
     }
+    let trackingId = 0
+    this.reports.forEach(report => {
+      report.trackingId = trackingId++
+    })
+    this.reportsToShow = this.reports
   }
 
   selectedItem(item: AssertionReport) {
@@ -54,5 +64,28 @@ export class TarReportComponent implements OnInit {
       this.withSummaryBorder = true
     }, 1)
   }
+  errorsToggled(on: boolean) {
+    this.showErrors = on
+    this.filterReports()
+  }
 
+  warningsToggled(on: boolean) {
+    this.showWarnings = on
+    this.filterReports()
+  }
+
+  messagesToggled(on: boolean) {
+    this.showMessages = on
+    this.filterReports()
+  }
+
+  filterReports() {
+    this.reportsToShow = this.reports.filter(report => {
+      return (report.type == 'info' && this.showMessages)
+        || (report.type == 'error' && this.showErrors)
+        || (report.type == 'warning' && this.showWarnings)
+    })
+  }
+
+  protected readonly Constants = Constants;
 }

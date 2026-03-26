@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -22,23 +22,139 @@ export class Constants {
 	public static readonly THEME_FAVICON_LINK_ID = "themeFaviconLink"
 
   public static readonly TABLE_PAGE_SIZE = 10
-  public static readonly DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static readonly DEFAULT_COMMUNITY_ID = 0
 	public static readonly TOOLTIP_DELAY = 500
+  public static readonly SUPPORTED_PAGE_SIZES: number[] = [10, 25, 50, 100]
+  public static readonly PREPARE_FOR_SHUTDOWN_ERROR_CODE = "402"
 
-	public static readonly TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
+  public static readonly TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
 	public static readonly ACCESS_TOKEN_COOKIE_KEY = 'tat'
 
 	public static readonly TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
 	public static readonly TESTER_ACTOR_ID = 'com.gitb.Operator'
 	public static readonly ADMINISTRATOR_ACTOR_ID = 'com.gitb.Administrator'
 	public static readonly TEST_ENGINE_ACTOR_NAME = 'Test Engine'
-	public static readonly TESTER_ACTOR_NAME = 'Operator'
 	public static readonly ADMINISTRATOR_ACTOR_NAME = 'Administrator'
 
 	public static readonly LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
   public static readonly SESSION_DATA = {
-    FROM_DASHBOARD: 'dashboard'
+    FROM_DASHBOARD: 'dashboard',
+    CACHED_TAGS_DOMAIN_ID: 'cachedTagsDomainId',
+    CACHED_TAGS_DOMAIN_VALUE: 'cachedTagsDomainValue',
+    CACHED_TAGS_COMMUNITY_ID: 'cachedTagsCommunityId',
+    CACHED_TAGS_COMMUNITY_VALUE: 'cachedTagsCommunityValue'
+  }
+
+  public static readonly BUTTON_ICON = {
+    ACTIONS: 'fa-solid fa-bars',
+    ACTIVATE: 'fa-solid fa-circle-check',
+    ACTOR: 'fa-solid fa-circle-user',
+    ALL: 'fa-solid fa-circle-check',
+    API_KEY: 'fa-solid fa-key',
+    BACK: 'fa-solid fa-arrow-left',
+    CANCEL: 'fa-solid fa-xmark',
+    CLIPBOARD: 'fa-solid fa-clipboard',
+    COLLAPSE: 'fa-solid fa-angles-up',
+    COMMUNITY: 'fa-solid fa-people-group',
+    COMMUNITY_MANAGEMENT: 'fa-solid fa-people-group',
+    CONFIGURATION_PROPERTIES: 'fa-solid fa-sliders',
+    CONFORMANCE_CERTIFICATE: 'fa-solid fa-award',
+    CONFORMANCE_DASHBOARD: 'fa-solid fa-gauge-simple-high',
+    CONFORMANCE_STATEMENT: 'fa-solid fa-award',
+    CONFIRM: 'fa-solid fa-check',
+    COPY: 'fa-solid fa-clone',
+    COPY_LINK: 'fa-solid fa-link',
+    CUSTOM_TEST_SERVICES: 'fa-solid fa-gears',
+    DATE: 'fa-solid fa-calendar',
+    DELETE: 'fa-solid fa-trash',
+    DISABLED: 'fa-solid fa-ban',
+    DOCUMENTATION: 'fa-solid fa-info-circle',
+    DOMAIN: 'fa-solid fa-sitemap',
+    DOWNLOAD: 'fa-solid fa-download',
+    DISCONNECT: 'fa-solid fa-power-off',
+    EDIT: 'fa-solid fa-pencil',
+    ENABLED: 'fa-solid fa-circle-check',
+    ERROR_TEMPLATE: 'fa-solid fa-bug',
+    EXECUTE: 'fa-solid fa-play',
+    EXECUTION_OPTIONS: 'fa-solid fa-cog',
+    EXPAND: 'fa-solid fa-angles-down',
+    FILTER: 'fa-solid fa-filter',
+    FILTER_CLEAR: 'fa-solid fa-filter-circle-xmark',
+    GO: 'fa-solid fa-arrow-up-right-from-square',
+    HEALTH_DASHBOARD: 'fa-solid fa-heart-pulse',
+    HELP: 'fa-solid fa-question-circle',
+    LABELS: 'fa-solid fa-tag',
+    LANDING_PAGE: 'fa-solid fa-house',
+    LEGAL_NOTICE: 'fa-solid fa-scale-balanced',
+    LINK_ACCOUNT: 'fa-solid fa-user-plus',
+    LOGIN: 'fa-solid fa-arrow-right-to-bracket',
+    LOGOUT: 'fa-solid fa-power-off',
+    MANAGE_TESTS: 'fa-solid fa-award',
+    MAXIMIZE: 'fa-solid fa-up-right-and-down-left-from-center',
+    MESSAGING_SERVICE: 'fa-solid fa-paper-plane',
+    MINIMIZE: 'fa-solid fa-down-left-and-up-right-to-center',
+    MY_SESSION_DASHBOARD: 'fa-regular fa-rectangle-list',
+    MORE: 'fa-solid fa-plus-circle',
+    MOVE: 'fa-solid fa-arrow-right',
+    NEW: 'fa-solid fa-plus',
+    NEXT: 'fa-solid fa-arrow-right',
+    NONE: 'fa-regular fa-square',
+    OPTIONAL: 'fa-regular fa-circle',
+    ORGANISATION: 'fa-solid fa-building',
+    PASSWORD: 'fa-solid fa-key',
+    PENDING: 'fa-solid fa-spinner fa-spin-override fa-lg',
+    PENDING_SMALL: 'fa-solid fa-spinner fa-spin-override',
+    PLAY: 'fa-solid fa-play',
+    PREVIEW: 'fa-solid fa-magnifying-glass',
+    PROCESS: 'fa-solid fa-gear',
+    PROCESSING_SERVICE: 'fa-solid fa-gear',
+    PROFILE: 'fa-solid fa-user-pen',
+    REMOVE: 'fa-solid fa-minus',
+    REORDER: 'fa-solid fa-arrows-up-down',
+    REQUIRED: 'fa-regular fa-circle-dot',
+    RESET: 'fa-solid fa-arrows-rotate',
+    RESOURCE: 'fa-solid fa-image',
+    REPLACE: 'fa-solid fa-arrow-right-arrow-left',
+    REPORT: 'fa-solid fa-file-lines',
+    REPORT_CSV: 'fa-solid fa-file-csv',
+    REPORT_PDF: 'fa-solid fa-file-pdf',
+    REPORT_XML: 'fa-solid fa-file-code',
+    REPORT_ZIP: 'fa-solid fa-file-zipper',
+    SAVE: 'fa-solid fa-floppy-disk',
+    SEVERITY_ERROR: 'fa-solid fa-times-circle',
+    SEVERITY_INFO: 'fa-solid fa-info-circle',
+    SEVERITY_WARNING: 'fa-solid fa-warning',
+    SELECT: 'fa-regular fa-square-check',
+    SEND: 'fa-solid fa-paper-plane',
+    SESSION_DASHBOARD: 'fa-solid fa-rectangle-list',
+    SIGNATURE: 'fa-solid fa-file-signature',
+    SKIP: 'fa-solid fa-ban',
+    SNAPSHOT: 'fa-solid fa-flag',
+    SORT: 'fa-solid fa-sort',
+    SORT_ASCENDING: 'fa-solid fa-caret-up',
+    SORT_DESCENDING: 'fa-solid fa-caret-down',
+    SPECIFICATION: 'fa-solid fa-list-check',
+    STOP: 'fa-solid fa-stop',
+    SYSTEM: 'fa-solid fa-cube',
+    SYSTEM_ADMINISTRATION: 'fa-solid fa-gear',
+    TAIL: 'fa-solid fa-arrow-down-wide-short',
+    TEST: 'fa-solid fa-circle-check',
+    TEST_CASE: 'fa-solid fa-list-ul',
+    TEST_SERVICE: 'fa-solid fa-play',
+    TEST_SUITE: 'fa-solid fa-box-archive',
+    THEME: 'fa-solid fa-palette',
+    TIME: 'fa-solid fa-clock',
+    TODAY: 'fa-solid fa-calendar-day',
+    TRIGGER: 'fa-solid fa-bolt',
+    UNGROUP: 'fa-solid fa-arrow-up-from-bracket',
+    USER: 'fa-solid fa-user',
+    VALIDATION_SERVICE: 'fa-solid fa-award',
+    VIEW: 'fa-solid fa-magnifying-glass',
+    VIEW_INTERACTIONS: 'fa-solid fa-user',
+    VIEW_LOG: 'fa-solid fa-file-lines',
+    UNLINK_ACCOUNT: 'fa-solid fa-user-minus',
+    UPLOAD: 'fa-solid fa-upload',
+    WAITING: 'fa-solid fa-hourglass'
   }
 
 	public static readonly EMBEDDING_METHOD = {
@@ -146,9 +262,11 @@ export class Constants {
 	public static readonly LOGIN_OPTION = {
 		NONE: "none",
 		REGISTER: "register",
+    REGISTER_INTERNAL: "register_internal", // In case the user is already authenticated
 		DEMO: "demo",
 		MIGRATE: "migrate",
 		LINK_ACCOUNT: "link",
+    LINK_ACCOUNT_INTERNAL: "link_internal", // In case the user is already authenticated
 		FORCE_CHOICE: "force"
 	}
 
@@ -341,6 +459,9 @@ export class Constants {
     ACTOR: {
       PARAMETERS: 0
     },
+    ENDPOINT: {
+      PARAMETERS: 0
+    },
     COMMUNITY: {
       ORGANISATIONS: 0,
       ADMINISTRATORS: 1,
@@ -427,6 +548,7 @@ export class Constants {
 		SESSION_ALIVE_TIME: 'session_alive_time',
 		REST_API_ENABLED: 'rest_api_enabled',
 		REST_API_ADMIN_KEY: 'rest_api_admin_key',
+    REST_API_RATE_LIMITS: 'rest_api_rate_limits',
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
 		WELCOME_MESSAGE: 'welcome',
@@ -434,8 +556,19 @@ export class Constants {
 		EMAIL_SETTINGS: 'email_settings',
     SOFTWARE_VERSION_CHECK: 'software_version_check',
     WELCOME_TITLE: 'welcome_title',
-    STARTUP_WIZARD: 'startup_wizard'
+    STARTUP_WIZARD: 'startup_wizard',
+    USAGE_TIPS: 'usage_tips'
 	}
+
+  public static readonly USAGE_TIP = {
+    TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT: 1,
+    TEST_BED_ADMIN_CREATE_SYSTEM: 2,
+    TEST_BED_LANDING_PAGE: 3,
+    TEST_BED_ADMIN_COMMUNITIES: 4,
+    TEST_BED_ADMIN_DOMAINS: 5,
+    HEALTH_DASHBOARD: 6,
+    TEST_SERVICES: 7
+  }
 
 	public static readonly USER_SSO_STATUS = {
 		NOT_MIGRATED: 1,
@@ -493,12 +626,16 @@ export class Constants {
     TEXT: 2
   }
 
+  public static readonly HOME_PAGE_TYPE = {
+    LANDING_PAGE: 1,
+    CONFORMANCE_DASHBOARD: 2
+  }
+
 	public static readonly PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/
 	public static readonly END_OF_TEST_STEP = "-1"
 	public static readonly END_OF_TEST_STEP_EXTERNAL = "-2"
 	public static readonly LOG_EVENT_TEST_STEP = "-999"
 	public static readonly EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-	public static readonly DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static readonly VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 	public static readonly LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
 	public static readonly BADGE_PLACEHOLDER_REGEX = /(\$com\.gitb\.placeholder\.BadgeUrl\{[A-Z]+\|\-?\d+\|\-?\d+\|\-?\d+\|\-?\d+\})/g

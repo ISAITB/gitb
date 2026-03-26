@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -25,7 +25,6 @@
     }
 }
 .sessionDiagramDiv {
-    margin-bottom: 20px;
 }
 .missingConfigurationDiv {
     padding: 20px;
@@ -40,21 +39,84 @@
     position: relative;
     margin-left: 5px;
 }
-.session-execution-info {
-	display: flex;
-	width: 100%;
-	.session-table-title {
-		display: inline-flex;
-		padding-left: 0px;
-		.session-table-title-part {
-			padding-top: 15px;
-			padding-bottom: 15px;
-		}
-	}
-	.session-table-operations {
-		display: inline-flex;
-		align-items: center;
-	}
+.test-case-list-table {
+    overflow: clip;
+}
+.test-case-container {
+    border-bottom: 1px solid @gray-dark-1;
+    &.expandable {
+        &:has(.test-case-header:hover) {
+            background-color: @gray-highlight;
+        }
+        .test-case-header {
+            cursor: pointer;
+        }
+    }
+    &.last-visible {
+        border-bottom: none;
+    }
+    padding-bottom: 10px;
+    padding-top: 10px;
+    background-color: @gray-light-1;
+    .test-case-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        display: flex;
+        min-height: 35px;
+        align-items: center;
+        .test-case-name {
+            font-weight: bold;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+        .test-case-description {
+            margin-left: 10px;
+            border-left: 1px solid @gray-dark-1;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 10px;
+        }
+        .test-case-controls {
+            margin-left: auto;
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+            .progress-icon {
+                margin-left: 20px;
+            }
+        }
+    }
+    .test-case-session-container {
+        padding-top: 10px;
+    }
+    .test-case-session {
+        border: 1px solid @gray-dark-1;
+        border-radius: @border-radius;
+        background-color: @white;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+    .session-execution-info {
+        display: flex;
+        width: 100%;
+        border-bottom: 1px solid @gray-dark-1;
+        .session-table-title {
+            display: inline-flex;
+            padding-left: 10px;
+            .session-table-title-part {
+                margin-top: 10px;
+                margin-bottom: 10px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+        }
+        .session-table-operations {
+            display: inline-flex;
+            align-items: center;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+    }
 }
 .sessionButtonDiv {
     display: flex;

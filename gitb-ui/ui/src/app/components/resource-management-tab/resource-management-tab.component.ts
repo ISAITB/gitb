@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,14 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {ResourceActions} from './resource-actions';
 import {CommunityResource} from '../../types/community-resource';
 import {
   CommunityResourceBulkUploadModalComponent
 } from '../../modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {
   CreateEditCommunityResourceModalComponent
 } from '../../modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
@@ -31,6 +30,8 @@ import {TableColumnDefinition} from '../../types/table-column-definition.type';
 import {DataService} from '../../services/data.service';
 import {TableComponent} from '../table/table.component';
 import {PagingEvent} from '../paging-controls/paging-event';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {ResourceState} from './resource-state';
 
 @Component({
   selector: 'app-resource-management-tab',
@@ -40,18 +41,16 @@ import {PagingEvent} from '../paging-controls/paging-event';
 })
 export class ResourceManagementTabComponent implements AfterViewInit {
 
+  @Input() state!: ResourceState
   @Input() actions!: ResourceActions
-  @Input() deferredActivation?: EventEmitter<void>
+  @Output() pageSizeChanged = new EventEmitter<void>()
   @ViewChild("resourcesTable") resourcesTable?: TableComponent
 
   downloadAllResourcesPending = false
   deleteResourcesPending = false
   selectingForDeleteResources = false
   resourcesRefreshing = false
-  resourceFilter?: string
-  resourcesStatus = {status: Constants.STATUS.NONE}
   clearResourceSelections = new EventEmitter<void>()
-  resources: CommunityResource[] = []
 
   resourceColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
@@ -60,7 +59,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   ]
 
   constructor(
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly popupService: PopupService,
     private readonly dataService: DataService
@@ -68,14 +67,10 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.deferredActivation) {
-      this.deferredActivation.subscribe(() => {
-        if (this.resourcesStatus.status == Constants.STATUS.NONE) {
-          this.refreshResources()
-        }
-      })
-    } else {
+    if (this.state.status == Constants.STATUS.NONE) {
       this.refreshResources()
+    } else {
+      this.updateResourcesPagination(this.state.page, this.state.total)
     }
   }
 
@@ -84,24 +79,26 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   queryResources(pagingInfo: PagingEvent) {
-    if (this.resourcesStatus.status == Constants.STATUS.FINISHED) {
+    if (this.state.status == Constants.STATUS.FINISHED) {
       this.resourcesRefreshing = true
     } else {
-      this.resourcesStatus.status = Constants.STATUS.PENDING
+      this.state.status = Constants.STATUS.PENDING
     }
     this.clearResourceSelections.emit()
-    this.actions.searchResources(this.resourceFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
+    this.actions.searchResources(this.state.filter, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        this.resources = data.data
+        this.state.resources = data.data
         this.updateResourcesPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
       this.resourcesRefreshing = false
-      this.resourcesStatus.status = Constants.STATUS.FINISHED
+      this.state.status = Constants.STATUS.FINISHED
     })
   }
 
   private updateResourcesPagination(page: number, count: number) {
     this.resourcesTable?.pagingControls?.updateStatus(page, count)
+    this.state.page = page
+    this.state.total = count
   }
 
   uploadResource() {
@@ -109,13 +106,10 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   uploadResourceBulk() {
-    const modal = this.modalService.show(CommunityResourceBulkUploadModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        actions: this.actions
-      }
-    })
-    modal.content!.resourcesUpdated.subscribe((updateMade) => {
+    const modal = this.modalService.open(CommunityResourceBulkUploadModalComponent, { modalDialogClass: "modal-lg" })
+    const modalInstance = modal.componentInstance as CommunityResourceBulkUploadModalComponent
+    modalInstance.actions = this.actions
+    modal.closed.subscribe((updateMade: boolean) => {
       if (updateMade) {
         this.refreshResources()
       }
@@ -123,27 +117,24 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   private openResourceModal(resourceToEdit?: CommunityResource) {
-    const modal = this.modalService.show(CreateEditCommunityResourceModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        actions: this.actions,
-        resource: resourceToEdit
-      }
-    })
-    modal.content!.resourceUpdated.subscribe((updateMade) => {
+    const modal = this.modalService.open(CreateEditCommunityResourceModalComponent, { modalDialogClass: "modal-lg" })
+    const modalInstance = modal.componentInstance as CreateEditCommunityResourceModalComponent
+    modalInstance.actions = this.actions
+    modalInstance.resource = resourceToEdit
+    modal.closed.subscribe((updateMade: boolean) => {
       if (updateMade) {
         this.refreshResources()
       }
     })
-    modal.onHide!.subscribe(() => {
+    modal.hidden.subscribe(() => {
       this.clearResourceSelections.emit()
     })
   }
 
   downloadAllResources() {
-    if (this.resources.length > 0) {
+    if (this.state.resources.length > 0) {
       this.downloadAllResourcesPending = true
-      this.actions.downloadResources(this.resourceFilter)
+      this.actions.downloadResources(this.state.filter)
         .subscribe((data) => {
           const blobData = new Blob([data], {type: 'application/zip'})
           saveAs(blobData, 'resources.zip')
@@ -159,7 +150,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
 
   confirmDeleteResources() {
     const resourceIds: number[] = []
-    for (let resource of this.resources) {
+    for (let resource of this.state.resources) {
       if (resource.checked != undefined && resource.checked) {
         resourceIds.push(resource.id)
       }
@@ -170,7 +161,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
     } else {
       msg = 'Are you sure you want to delete the selected resources?'
     }
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", msg, "Delete", "Cancel").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", msg, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
       this.deleteResourcesPending = true
       this.resourcesRefreshing = true
       this.actions.deleteResources(resourceIds).subscribe(() => {
@@ -186,7 +177,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   cancelDeleteResources() {
     this.clearResourceSelections.emit()
     this.selectingForDeleteResources = false
-    for (let resource of this.resources) {
+    for (let resource of this.state.resources) {
       if (resource.checked != undefined) {
         resource.checked = false
       }
@@ -194,7 +185,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   resourcesChecked() {
-    for (let resource of this.resources) {
+    for (let resource of this.state.resources) {
       if (resource.checked !== undefined && resource.checked) {
         return true
       }
@@ -230,7 +221,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   deleteResource(resource: CommunityResource) {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
       resource.deletePending = true
       this.actions.deleteResource(resource.id).subscribe(() => {
         this.popupService.success("Resource deleted.")
@@ -243,10 +234,14 @@ export class ResourceManagementTabComponent implements AfterViewInit {
 
   doPageNavigation(event: PagingEvent) {
     this.queryResources(event)
+    if (event.pageSizeChanged) {
+      this.pageSizeChanged.emit()
+    }
   }
 
   refreshResources() {
-    this.queryResources({ targetPage: 1, targetPageSize: this.resourcesTable?.pagingControls?.getCurrentStatus().pageSize!})
+    this.queryResources({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize})
   }
 
+  protected readonly Constants = Constants;
 }

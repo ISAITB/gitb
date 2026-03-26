@@ -2,17 +2,16 @@
 	<div class="card mb-0">
 		<div class="card-header">
 			<div class="card-title">Create {{dataService.labelSpecificationGroupLower()}}</div>
+            <div app-domain-tag-indicator></div>
 		</div>
-		<form>
+		<form (ngSubmit)="createSpecificationGroup()">
 			<div class="card-body">
-				<div class="col-10 offset-1">
-                    <app-specification-group-form [group]="group"></app-specification-group-form>
-                </div>
+                <app-specification-group-form [group]="group"></app-specification-group-form>
 			</div>
 			<div class="card-footer">
 				<div class="btn-toolbar">
-					<button class="btn btn-secondary" type="submit" (click)="createSpecificationGroup()" [disable]="saveDisabled()" [pending]="pending">Save</button>
-					<button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+					<button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="saveDisabled()" [pending]="pending">Save</button>
+					<button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Cancel</button>
 				</div>
 			</div>
 		</form>

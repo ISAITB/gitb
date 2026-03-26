@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -19,8 +19,8 @@ import com.gitb.core.*;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.xml.DocumentNamespaceContext;
-import com.gitb.tr.ObjectFactory;
 import com.gitb.tr.*;
+import com.gitb.tr.ObjectFactory;
 import com.gitb.types.*;
 import com.gitb.utils.TestSessionNamespaceContext;
 import com.gitb.utils.XMLDateTimeUtils;
@@ -69,18 +69,18 @@ public class XmlMatchValidator extends AbstractValidator {
         module.getMetadata().setName("XmlMatchValidator");
         module.getMetadata().setVersion("1.0");
         module.setInputs(new TypedParameters());
-        module.getInputs().getParam().add(createTypedParameter(INPUT_XML, "The XML document instance to validate", ConfigurationType.SIMPLE, UsageEnumeration.R, "object"));
-        module.getInputs().getParam().add(createTypedParameter(INPUT_TEMPLATE, "The XML document template to consider for the match", ConfigurationType.SIMPLE, UsageEnumeration.R, "object"));
-        module.getInputs().getParam().add(createTypedParameter(INPUT_IGNORED_PATHS, "A list of paths to ignore", ConfigurationType.SIMPLE, UsageEnumeration.O, "list[string]"));
+        module.getInputs().getParam().add(createTypedParameter(INPUT_XML, "The XML document instance to validate", UsageEnumeration.R, "object"));
+        module.getInputs().getParam().add(createTypedParameter(INPUT_TEMPLATE, "The XML document template to consider for the match", UsageEnumeration.R, "object"));
+        module.getInputs().getParam().add(createTypedParameter(INPUT_IGNORED_PATHS, "A list of paths to ignore", UsageEnumeration.O, "list[string]"));
         return module;
     }
 
-    private TypedParameter createTypedParameter(String name, String desc, ConfigurationType kind, UsageEnumeration usage, String dataType) {
+    private TypedParameter createTypedParameter(String name, String desc, UsageEnumeration usage, String dataType) {
         TypedParameter param = new TypedParameter();
         param.setName(name);
         param.setUse(usage);
         param.setDesc(desc);
-        param.setKind(kind);
+        param.setKind(ConfigurationType.SIMPLE);
         param.setType(dataType);
         return param;
     }
@@ -93,8 +93,8 @@ public class XmlMatchValidator extends AbstractValidator {
         if (!inputs.containsKey(INPUT_TEMPLATE)) {
             throw new IllegalArgumentException("The ["+ INPUT_TEMPLATE +"] input is required.");
         }
-        ObjectType xml = getAsObjectType(inputs.get(INPUT_XML));
-        ObjectType template = getAsObjectType(inputs.get(INPUT_TEMPLATE));
+        ObjectType xml = getAndConvert(inputs, INPUT_XML, DataType.OBJECT_DATA_TYPE, ObjectType.class);
+        ObjectType template = getAndConvert(inputs, INPUT_TEMPLATE, DataType.OBJECT_DATA_TYPE, ObjectType.class);
         MapType namespaces = (MapType) inputs.get(NAMESPACE_MAP_INPUT);
 
         List<String> pathsToIgnore = new ArrayList<>();
@@ -106,9 +106,9 @@ public class XmlMatchValidator extends AbstractValidator {
             } else {
                 listType = (ListType)type.convertTo(DataType.LIST_DATA_TYPE);
             }
-            for (Object path: ((List)listType.getValue())) {
-                if (path instanceof StringType) {
-                    pathsToIgnore.add(((StringType)path).getValue());
+            for (DataType path: listType.getElements()) {
+                if (path instanceof StringType stringPath) {
+                    pathsToIgnore.add((stringPath).getValue());
                 } else {
                     throw new IllegalArgumentException("The items of input ["+ INPUT_IGNORED_PATHS +"] must be of type string.");
                 }
@@ -127,7 +127,7 @@ public class XmlMatchValidator extends AbstractValidator {
         NamespaceContext contextToUse;
         if (namespaces != null) {
             namespacesToUse = new HashMap<>();
-            for (var entry: ((Map<String, DataType>)namespaces.getValue()).entrySet()) {
+            for (var entry: namespaces.getItems().entrySet()) {
                 namespacesToUse.put(entry.getKey(), (String) entry.getValue().getValue());
             }
             for (var documentPrefix: documentNamespaces.entrySet()) {
@@ -153,24 +153,14 @@ public class XmlMatchValidator extends AbstractValidator {
                 .withDifferenceEvaluator(chain)
                 .build();
 
-        return diffToTAR(diff, contextToUse, document, template);
+        return diffToTAR(diff, contextToUse, template, xml, document);
     }
 
     private CustomDifferenceEvaluator getDifferenceEvaluator(List<String> xpathsToIgnore) {
         return new CustomDifferenceEvaluator(xpathsToIgnore);
     }
 
-    private ObjectType getAsObjectType(DataType inputType) {
-        ObjectType obj;
-        if (inputType instanceof ObjectType) {
-            obj = (ObjectType)inputType;
-        } else {
-            obj = (ObjectType)inputType.convertTo(DataType.OBJECT_DATA_TYPE);
-        }
-        return obj;
-    }
-
-    private TAR diffToTAR(Diff diff, NamespaceContext nsContext, Document xml, ObjectType template) {
+    private TAR diffToTAR(Diff diff, NamespaceContext nsContext, ObjectType template, ObjectType xml, Document xmlDocument) {
         ObjectFactory objectFactory = new ObjectFactory();
         TAR report = new TAR();
         report.setResult(TestResultType.SUCCESS);
@@ -187,16 +177,16 @@ public class XmlMatchValidator extends AbstractValidator {
                 // Extract description
                 String description = difference.getComparison().toString();
                 // Extract location for error
-                String lineNumber = getLineNumberFromXPath(xPath, difference.getComparison().getTestDetails().getXPath(), xml);
+                String lineNumber = getLineNumberFromXPath(xPath, difference.getComparison().getTestDetails().getXPath(), xmlDocument);
                 if (lineNumber == null) {
-                    lineNumber = getLineNumberFromXPath(xPath, difference.getComparison().getTestDetails().getParentXPath(), xml);
+                    lineNumber = getLineNumberFromXPath(xPath, difference.getComparison().getTestDetails().getParentXPath(), xmlDocument);
                     if (lineNumber == null) {
                         LOGGER.warn("Could not extract line information for XPath {} or {}", difference.getComparison().getTestDetails().getXPath(), difference.getComparison().getTestDetails().getParentXPath());
                         lineNumber = "0";
                     }
                 }
                 String location = "xml:" + lineNumber + ":0";
-                addError(objectFactory, report, description, null, location);
+                addError(objectFactory, report, description, location);
                 counter += 1;
             }
             report.setCounters(new ValidationCounters());
@@ -211,13 +201,14 @@ public class XmlMatchValidator extends AbstractValidator {
         xmlContent.setName("xml");
         xmlContent.setType("string");
         xmlContent.setMimeType(MediaType.APPLICATION_XML_VALUE);
-        xmlContent.setValue(new String(new ObjectType(xml).serializeByDefaultEncoding()));
+        xmlContent.setValue(new String(xml.serializeByDefaultEncoding()));
         xmlContent.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
         AnyContent templateContent = new AnyContent();
         templateContent.setName("template");
         templateContent.setType("string");
         templateContent.setValue(new String(template.serializeByDefaultEncoding()));
         templateContent.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        templateContent.setMimeType(MediaType.APPLICATION_XML_VALUE);
         report.setContext(ctxContent);
         report.getContext().getItem().add(xmlContent);
         report.getContext().getItem().add(templateContent);
@@ -239,10 +230,9 @@ public class XmlMatchValidator extends AbstractValidator {
         return null;
     }
 
-    private static void addError(ObjectFactory objectFactory, TAR report, String description, String test, String location) {
+    private static void addError(ObjectFactory objectFactory, TAR report, String description, String location) {
         BAR error = new BAR();
         error.setDescription(description);
-        error.setTest(test);
         error.setLocation(location);
         if (report.getReports() == null) {
             report.setReports(new TestAssertionGroupReportsType());

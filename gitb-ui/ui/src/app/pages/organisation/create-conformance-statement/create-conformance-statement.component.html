@@ -27,30 +27,30 @@
                         <div class="btn-toolbar">
                             <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="searchCriteria.filterText" (apply)="loadStatements()"></app-text-filter>
                             <app-checkbox-option-panel
+                                #showStatementFilter
                                 label="Show statements..."
+                                [labelIcon]="Constants.BUTTON_ICON.FILTER"
                                 [options]="statusOptions"
                                 (updated)="filterByStatus($event)"></app-checkbox-option-panel>
-                            <div class="btn-group select-group" dropdown [isDisabled]="!hasVisibleItems">
-                                <button type="button" [disabled]="!hasVisibleItems" class="btn btn-secondary" (click)="selectAllStatements()">Select current statements</button>
-                                <button id="button-select" type="button" [disabled]="!hasVisibleItems" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                            <div class="btn-group select-group" ngbDropdown>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.SELECT" [disable]="!hasVisibleItems" class="btn btn-secondary" (click)="selectAllStatements()">Select current statements</button>
+                                <button id="button-select" type="button" [disabled]="!hasVisibleItems" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden">Select all statements</span>
                                 </button>
-                                <ul id="dropdown-select" *dropdownMenu class="dropdown-menu dropdown-menu-right"
-                                    role="menu" aria-labelledby="button-select">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="deselectAllStatements();$event.preventDefault()">Unselect current statements</a></li>
-                                </ul>
+                                <div id="dropdown-select" ngbDropdownMenu aria-labelledby="button-select">
+                                    <button ngbDropdownItem type="button" (click)="deselectAllStatements()">Unselect current statements</button>
+                                </div>
                             </div>
-                            <div class="btn-group collapse-group" dropdown [isDisabled]="!hasVisibleItems">
-                                <button type="button" [disabled]="!hasVisibleItems" class="btn btn-secondary" (click)="toggleCollapse(true)">Collapse statements</button>
-                                <button id="button-collapse" type="button" [disabled]="!hasVisibleItems" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                            <div class="btn-group collapse-group" ngbDropdown>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.COLLAPSE" [disable]="!hasVisibleItems" class="btn btn-secondary" (click)="toggleCollapse(true)">Collapse statements</button>
+                                <button id="button-collapse" type="button" [disabled]="!hasVisibleItems" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden">Collapse statements</span>
                                 </button>
-                                <ul id="dropdown-collapse" *dropdownMenu class="dropdown-menu dropdown-menu-right"
-                                    role="menu" aria-labelledby="button-collapse">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(false);$event.preventDefault()">Expand statements</a></li>
-                                </ul>
+                                <div id="dropdown-collapse" ngbDropdownMenu aria-labelledby="button-collapse">
+                                    <button ngbDropdownItem type="button" (click)="toggleCollapse(false)">Expand statements</button>
+                                </div>
                             </div>
                         </div>
                         <div #statusContainer class="total-container"><span>
@@ -82,8 +82,8 @@
         </div>
         <div class="card-footer">
             <div class="btn-toolbar">
-                <button type="button" class="btn btn-secondary" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
-                <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="createPending">Cancel</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancel()" [disable]="createPending">Cancel</button>
             </div>
         </div>
     </div>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -85,8 +85,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	private <T> T getXMLTestResource(String from, String testCaseId, Class<? extends T> clazz, String resourcePath) {
-		try {
-			InputStream inputStream = getTestResource(toLocationKey(from, testCaseId), resourcePath);
+		try (InputStream inputStream = getTestResource(toLocationKey(from, testCaseId), resourcePath)) {
 			if (inputStream != null) {
 				return XMLUtils.unmarshal(clazz, new StreamSource(inputStream));
 			} else {
@@ -99,12 +98,14 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	private TestCase getTestCaseResource(String testCaseId) {
-		try {
-			URLCodec codec = new URLCodec();
-			String uri = TestEngineConfiguration.TEST_CASE_REPOSITORY_URL.replace(":" + TestEngineConfiguration.TEST_ID_PARAMETER, codec.encode(testCaseId));
-
-			InputStream inputStream = retrieveRemoteTestResource(testCaseId, uri);
-
+		URLCodec codec = new URLCodec();
+        String uri;
+        try {
+            uri = TestEngineConfiguration.TEST_CASE_REPOSITORY_URL.replace(":" + TestEngineConfiguration.TEST_ID_PARAMETER, codec.encode(testCaseId));
+        } catch (EncoderException e) {
+            throw new GITBEngineInternalError("Error encoding test case identifier", e);
+        }
+        try (InputStream inputStream = retrieveRemoteTestResource(testCaseId, uri)) {
 			if (inputStream != null) {
                 return XMLUtils.unmarshal(TestCase.class, new StreamSource(inputStream));
 			} else {

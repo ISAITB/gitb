@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -51,6 +51,14 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
 
   refreshOptions(options: TestCaseFilterOptions|undefined, keepCurrentState: boolean): void {
     this.updateOptions(options, keepCurrentState)
+  }
+
+  documentEscape(): void {
+    this.optionPanel?.documentEscape()
+  }
+
+  documentClick(event: Event): void {
+    this.optionPanel?.documentClick(event)
   }
 
   private updateOptions(options: TestCaseFilterOptions|undefined, keepCurrentState: boolean): void {
@@ -108,4 +116,5 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
     })
   }
 
+  protected readonly Constants = Constants;
 }

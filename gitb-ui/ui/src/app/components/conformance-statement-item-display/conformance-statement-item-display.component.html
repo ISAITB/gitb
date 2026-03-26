@@ -22,6 +22,7 @@
                 (selectionChanged)="childSelectionChanged($event)"
                 (export)="onExport($event)"
                 (selected)="childSelected($event)"
+                (testStatusOpened)="manageAndPropagateTestStatusOpened($event)"
             ></app-conformance-statement-items-display>
         }
     } @else {
@@ -43,14 +44,19 @@
                 }
                 @if (withExport && expandable && hasChildren && !allChildrenHidden) {
                     <div class="item-controls">
-                        <app-checkbox-option-panel label="Options"
-                                                   icon="fa-solid fa-bars"
-                                                   placement="left"
-                                                   [options]="parentItemOptions"
-                                                   [singleSelection]="true"
-                                                   [pending]="item.exportPdfPending == true || item.exportXmlPending == true || optionPending"
-                                                   (updated)="handleOption($event)"
-                                                   (opening)="optionsOpening()"></app-checkbox-option-panel>
+                        @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true) {
+                            <app-checkbox-option-panel #optionButton
+                                                       label="Options"
+                                                       [icon]="Constants.BUTTON_ICON.ACTIONS"
+                                                       placement="left"
+                                                       [options]="parentItemOptions"
+                                                       [singleSelection]="true"
+                                                       [pending]="item.exportPdfPending == true || item.exportXmlPending == true || optionPending"
+                                                       (updated)="handleOption($event)"
+                                                       (opening)="optionsOpening()"></app-checkbox-option-panel>
+                        } @else {
+                            <button #pop="ngbTooltip" type="button" [pending]="item.exportPdfPending == true" [icon]="true" class="btn btn-secondary" (click)="exportPdfClicked(pop); $event.stopPropagation()" tooltipClass="shortTooltip" container="body" [ngbTooltip]="'Download overview report'" [triggers]="'mouseover:mouseout'" [openDelay]="Constants.TOOLTIP_DELAY"><i [class]="Constants.BUTTON_ICON.REPORT_PDF"></i></button>
+                        }
                     </div>
                 }
                 @if (showResults) {
@@ -61,22 +67,23 @@
                             </div>
                         }
                         @if (updateTime) {
-                            <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
+                            <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
                         }
                         @if (counters) {
                             <div class="item-counters">
-                                <app-test-status-icons [counters]="counters" [asLine]="true" [refresh]="refreshCounters"></app-test-status-icons>
+                                <app-test-status-icons #testStatusDisplay (opened)="manageAndPropagateTestStatusOpened($event)" [counters]="counters" [asLine]="true"></app-test-status-icons>
                             </div>
                             <div class="item-ratios">
-                                <app-test-result-ratio [counters]="counters" [asLine]="true" [refresh]="refreshCounters"></app-test-result-ratio>
+                                <app-test-result-ratio #testStatusDisplayRatio (opened)="manageAndPropagateTestStatusOpened($event)" [counters]="counters" [asLine]="true"></app-test-result-ratio>
                             </div>
                         }
                         @if (status) {
-                            <div class="item-status"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>
+                            <div class="item-status"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>
                         }
                         @if (withOptions && conformanceIds) {
                             <div class="options-button">
-                                <app-statement-options-button [item]="conformanceIds"
+                                <app-statement-options-button #ownOptionsButton
+                                                              [item]="conformanceIds"
                                                               [snapshotId]="snapshotId"
                                                               [communityId]="communityId"
                                                               [organisationId]="organisationId"
@@ -90,29 +97,32 @@
                 }
             </div>
             @if (item.items && item.items.length > 0) {
-                <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapses)="collapses()">
-                    <app-conformance-statement-items-display
-                        #itemsComponent
-                        [items]="item.items"
-                        [wrapDescriptions]="wrapDescriptions"
-                        [expandable]="expandable"
-                        [filtering]="filtering"
-                        [shade]="!shade"
-                        [animated]="animated"
-                        [withCheck]="withCheck"
-                        [withExport]="withExport"
-                        [withResults]="withResults"
-                        [withOptions]="withOptions"
-                        [communityId]="communityId"
-                        [organisationId]="organisationId"
-                        [systemId]="systemId"
-                        [domainId]="domainId"
-                        [snapshotId]="snapshotId"
-                        [parentItem]="item"
-                        (selectionChanged)="childSelectionChanged($event)"
-                        (export)="onExport($event)"
-                        (selected)="childSelected($event)"
-                    ></app-conformance-statement-items-display>
+                <div [ngbCollapse]="item.collapsed!" [animation]="expandable && animated" (shown)="expanded()" (hidden)="collapses()">
+                    <div class="item-content-container item-content">
+                        <app-conformance-statement-items-display
+                            #itemsComponent
+                            [items]="item.items"
+                            [wrapDescriptions]="wrapDescriptions"
+                            [expandable]="expandable"
+                            [filtering]="filtering"
+                            [shade]="!shade"
+                            [animated]="animated"
+                            [withCheck]="withCheck"
+                            [withExport]="withExport"
+                            [withResults]="withResults"
+                            [withOptions]="withOptions"
+                            [communityId]="communityId"
+                            [organisationId]="organisationId"
+                            [systemId]="systemId"
+                            [domainId]="domainId"
+                            [snapshotId]="snapshotId"
+                            [parentItem]="item"
+                            (selectionChanged)="childSelectionChanged($event)"
+                            (export)="onExport($event)"
+                            (selected)="childSelected($event)"
+                            (testStatusOpened)="manageAndPropagateTestStatusOpened($event)"
+                        ></app-conformance-statement-items-display>
+                    </div>
                 </div>
             }
         </div>

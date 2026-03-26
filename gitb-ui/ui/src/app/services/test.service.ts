@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,16 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { find } from 'lodash';
-import { map, mergeMap, Observable, of, share } from 'rxjs';
-import { ROUTES } from '../common/global';
-import { ActorInfo } from '../components/diagram/actor-info';
-import { Actor } from '../types/actor';
-import { FileParam } from '../types/file-param.type';
-import { TestCaseDefinition } from '../types/test-case-definition';
-import { UserInteractionInput } from '../types/user-interaction-input';
-import { RestService } from './rest.service';
+import {Injectable} from '@angular/core';
+import {map, mergeMap, Observable, of, share} from 'rxjs';
+import {ROUTES} from '../common/global';
+import {Actor} from '../types/actor';
+import {FileParam} from '../types/file-param.type';
+import {TestCaseDefinition} from '../types/test-case-definition';
+import {UserInteractionInput} from '../types/user-interaction-input';
+import {RestService} from './rest.service';
+import {TestCaseDefinitionActors} from '../types/test-case-definition-actors';
+import {ErrorDescription} from '../types/error-description';
+import {Value} from '../types/value';
 
 @Injectable({
   providedIn: 'root'
@@ -82,7 +83,7 @@ export class TestService {
     if (testCaseIds != undefined && testCaseIds.length > 0) {
         data.test_case_ids = testCaseIds.join(',')
     }
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
         path: ROUTES.controllers.TestService.startHeadlessTestSessions().url,
         authenticate: true,
         data: data
@@ -121,10 +122,9 @@ export class TestService {
   }
 
   initiate(testCase: number) {
-    return this.restService.post<string>({
+    return this.restService.post<Value|ErrorDescription>({
         path: ROUTES.controllers.TestService.initiate(testCase).url,
-        authenticate: true,
-        text: true
+        authenticate: true
     })
   }
 
@@ -148,15 +148,8 @@ export class TestService {
   }
 
   start(session: string) {
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
         path: ROUTES.controllers.TestService.start(session).url,
-        authenticate: true
-    })
-  }
-
-  restart(session: string) {
-    return this.restService.post<void>({
-        path: ROUTES.controllers.TestService.restart(session).url,
         authenticate: true
     })
   }
@@ -195,16 +188,16 @@ export class TestService {
     })
   }
 
-  prepareTestCaseDisplayActors(testCase: TestCaseDefinition, specificationId: number|undefined): Observable<ActorInfo[]> {
-    let actorData: Observable<ActorInfo[]>
+  prepareTestCaseDisplayActors(testCase: TestCaseDefinition, specificationId: number|undefined): Observable<TestCaseDefinitionActors> {
+    let actorData: Observable<TestCaseDefinitionActors>
     if (specificationId == undefined) {
-      actorData = of(testCase.actors.actor)
+      actorData = of(testCase.actors)
     } else {
       actorData = this.getActorDefinitions(specificationId).pipe(map((domainActors) => {
         for (let testCaseActor of testCase.actors.actor) {
           if (testCaseActor.name == undefined || testCaseActor.displayOrder == undefined) {
             // Lookup name and display order from domain data.
-            const relevantDomainActor = find(domainActors, (actorDef) => actorDef.actorId == testCaseActor.id)
+            const relevantDomainActor = domainActors.find((actorDef) => actorDef.actorId == testCaseActor.id)
             if (relevantDomainActor != undefined) {
               if (testCaseActor.name == undefined) {
                 testCaseActor.name = relevantDomainActor.name
@@ -215,12 +208,12 @@ export class TestService {
             }
           }
         }
-        return testCase.actors.actor
+        return testCase.actors
       }), share())
     }
     return actorData.pipe(
       mergeMap((actorDataToUse) => {
-        actorDataToUse = actorDataToUse.sort((a, b) => {
+        actorDataToUse.actor.sort((a, b) => {
           if (a.displayOrder == undefined && b.displayOrder == undefined) return 0
           else if (a.displayOrder != undefined && b.displayOrder == undefined) return -1
           else if (a.displayOrder == undefined && b.displayOrder != undefined) return 1

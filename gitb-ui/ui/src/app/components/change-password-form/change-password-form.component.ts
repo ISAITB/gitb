@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,7 +18,7 @@ import {PasswordChangeData} from './password-change-data.type';
 import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
-    selector: '[app-change-password-form]',
+    selector: 'app-change-password-form',
     templateUrl: './change-password-form.component.html',
     standalone: false
 })
@@ -28,6 +28,7 @@ export class ChangePasswordFormComponent {
   @Input() autoFocus = false
   @Input() validation!: ValidationState
   @Input() padded = true
+  @Input() fieldClass = 'col-8 col-md-6'
   @Input() focusChange?: EventEmitter<boolean>
 
   constructor() { }

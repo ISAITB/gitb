@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -21,6 +21,7 @@ import config.Configurations.{API_ROOT, WEB_CONTEXT_ROOT, WEB_CONTEXT_ROOT_WITH_
 import controllers.util.ResponseConstructor.NotFound
 import controllers.util.{ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions._
+import models.Constants
 import org.apache.pekko.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
@@ -42,8 +43,11 @@ class AuthenticationFilter @Inject() (router: Router)
   private def downstreamHeaderFromAccessToken(accessToken: String, originalRequest: RequestHeader): RequestHeader = {
     // Check if access token exists for any user
     val userId = TokenCache.checkAccessToken(accessToken)
+    if (userId.isEmpty) {
+      throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Invalid access token")
+    }
     // A workaround of customizing request headers to add our userId data, so that controllers can process it
-    val customHeaders = originalRequest.headers.add((ParameterNames.USER_ID, "" + userId))
+    val customHeaders = originalRequest.headers.add((ParameterNames.USER_ID, "" + userId.get))
     val customRequestHeader = originalRequest.withHeaders(customHeaders)
     customRequestHeader
   }
@@ -66,11 +70,11 @@ class AuthenticationFilter @Inject() (router: Router)
         next(requestHeader)
       } else {
         // Check Authorization headers
-        val authzHeader = requestHeader.headers.get(AUTHORIZATION)
-        if (authzHeader.isDefined) {
+        val authHeader = requestHeader.headers.get(AUTHORIZATION)
+        if (authHeader.isDefined) {
           try {
             // Parse access token info
-            val list = authzHeader.get.split(BEARER + " ")
+            val list = authHeader.get.split(BEARER + " ")
             if (list.length == 2){
               next(downstreamHeaderFromAccessToken(list(1), requestHeader))
             } else{
@@ -89,9 +93,9 @@ class AuthenticationFilter @Inject() (router: Router)
           }
         } else {
           if (isAuthenticatedHttpAccessAllowed(requestHeader)) {
-            val sessionCookie = requestHeader.cookies.get("tat")
-            if (sessionCookie.isDefined) {
-              next(downstreamHeaderFromAccessToken(sessionCookie.get.value, requestHeader))
+            val sessionIdentifier = requestHeader.session.get(Constants.AccessTokenKey)
+            if (sessionIdentifier.isDefined) {
+              next(downstreamHeaderFromAccessToken(sessionIdentifier.get, requestHeader))
             } else {
               Future.successful { Unauthorized }
             }
@@ -172,7 +176,7 @@ class AuthenticationFilter @Inject() (router: Router)
 
   def isPublic(request:RequestHeader):Boolean = {
     //public services
-    request.method.equals("OPTIONS") ||
+    var result = request.method.equals("OPTIONS") ||
       request.path.equals(WEB_CONTEXT_ROOT) ||
       request.path.equals(WEB_CONTEXT_ROOT_WITH_SLASH) ||
       request.path.equals("%sapp".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
@@ -194,6 +198,10 @@ class AuthenticationFilter @Inject() (router: Router)
       request.path.equals("%sfavicon.ico".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       // CAS callback
       request.path.equals("%scallback".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+    if (!result && Configurations.AUTHENTICATION_SSO_ENABLED && Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
+      result = request.path.equals("%s/sso/login".formatted(API_ROOT))
+    }
+    result
   }
 
   def isPublicWithOptionalAuthentication(request:RequestHeader):Boolean = {

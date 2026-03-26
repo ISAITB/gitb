@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -24,11 +24,11 @@ export abstract class BaseComponent {
     alerts: Alert[] = []
 
     numberOrEmpty(value: any): boolean {
-        return value == undefined || !isNaN(value)
+        return value == undefined || !Number.isNaN(value)
     }
 
     numberProvided(value: any, minimum?: number): boolean {
-        return value != undefined && !isNaN(value) && (minimum == undefined || minimum <= value)
+        return value != undefined && !Number.isNaN(value) && (minimum == undefined || minimum <= value)
     }
 
     textProvided(value: string|undefined): boolean {
@@ -136,7 +136,19 @@ export abstract class BaseComponent {
   }
 
   protected isErrorDescription(obj: ErrorDescription|any): obj is ErrorDescription {
-      return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_id != undefined)
+      return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_code != undefined)
+  }
+
+  protected isShutdownPreparationError(obj: ErrorDescription|any): obj is ErrorDescription {
+    if (this.isErrorDescription(obj)) {
+      if (obj.error_code === Constants.PREPARE_FOR_SHUTDOWN_ERROR_CODE) {
+        return true
+      } else {
+        throw new Error(`Unexpected error code [${obj.error_code}]`)
+      }
+    } else {
+      return false
+    }
   }
 
   protected saveDisplayState<T>(key: string, state: DisplayState<T>): void {

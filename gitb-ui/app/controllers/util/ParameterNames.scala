@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -77,6 +77,7 @@ object ParameterNames {
   val ACTIVE = "active"
   val EVENT = "event"
   val VERSION = "version"
+  val ORDER = "order"
   val OPTIONAL = "optional"
   val DISABLED = "disabled"
   val TAGS = "tags"
@@ -167,6 +168,9 @@ object ParameterNames {
   val COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKENS = "community_selfreg_allow_org_tokens"
   val COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKEN_MANAGEMENT = "community_selfreg_allow_org_token_management"
   val COMMUNITY_SELFREG_FORCE_ORGANISATION_TOKEN_INPUT = "community_selfreg_force_org_token_input"
+  val COMMUNITY_SELFREG_DEFAULT_ORGANISATION = "community_selfreg_default_organisation"
+  val COMMUNITY_SELFREG_JOIN_EXISTING = "community_selfreg_join_existing"
+  val COMMUNITY_SELFREG_JOIN_AS_ADMIN = "community_selfreg_join_as_admin"
   val COMMUNITY_INTERACTION_NOTIFICATION = "interaction_notification"
   val SELFREG_TOKEN = "selfreg_token"
   val ALLOW_CERTIFICATE_DOWNLOAD = "allow_certificate_download"
@@ -178,6 +182,7 @@ object ParameterNames {
   val ALLOW_AUTOMATION_API = "allow_automation_api"
   val ALLOW_COMMUNITY_VIEW = "allow_community_view"
   val ALLOW_USER_MANAGEMENT = "allow_user_management"
+  val ALLOW_XML_REPORTS = "allow_xml_reports"
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val ACTOR_DEFAULT   = "default"
@@ -288,5 +293,13 @@ object ParameterNames {
   val AUTH_TOKEN_USERNAME = "authTokenUsername"
   val AUTH_TOKEN_PASSWORD = "authTokenPassword"
   val AUTH_TOKEN_PASSWORD_TYPE = "authTokenPasswordType"
+
+  val MENU_COLLAPSED = "menu_collapsed"
+  val PAGE_SIZE = "page_size"
+  val STATEMENTS_COLLAPSED = "statements_collapsed"
+  val HOME_PAGE_TYPE = "home_page_type"
+  val PREFERENCES = "preferences"
+  val FORCE_PREFERENCES = "force_preferences"
+  val MONITOR = "monitor"
 
 }

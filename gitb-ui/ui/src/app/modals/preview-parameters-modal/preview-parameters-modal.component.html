@@ -6,26 +6,22 @@
         <div class="row">
             <div class="col-12">
                 <div class="alert alert-info rounded">
-                    <span>The defined properties generate a form that differs depending on the connected user. Use the preview mode below to ensure this form matches your expectations for each case.</span>
+                    <span>The defined properties generate a form depending on the connected user. Use the preview mode to ensure this form matches your expectations for each case.</span>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-10 offset-1">
-                <div class="row mb-3">
-                    <label class="col-3 col-form-label text-end" for="mode">Preview mode:</label>
-                    <div class="col-8">
-                        <select class="form-select" id="mode" name="mode" [(ngModel)]="mode">
-                            <option value="user">{{dataService.labelOrganisation()}} user</option>
-                            @if (hasRegistrationCase) {
-                                <option value="registration">Self-registration screen</option>
-                            }
-                            <option value="admin">Community administrator</option>
-                        </select>
-                    </div>
-                    <div app-tooltip class="col-auto" tbTooltip="The mode to consider to generate the preview."></div>
-                </div>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="mode">Preview mode:</label>
+            <div class="col-8 col-md-6">
+                <select class="form-select" id="mode" name="mode" [(ngModel)]="mode">
+                    <option value="user">{{dataService.labelOrganisation()}} user</option>
+                    @if (hasRegistrationCase) {
+                        <option value="registration">Self-registration screen</option>
+                    }
+                    <option value="admin">Community administrator</option>
+                </select>
             </div>
+            <div app-tooltip class="col-auto" tbTooltip="The mode to consider to generate the preview."></div>
         </div>
         <app-form-section sectionTitle="Property form">
             @if (mode == 'user') {
@@ -67,7 +63,7 @@
 	</div>
 	<div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="close()">Close</button>
         </div>
 	</div>
 </form>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,17 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { RestService } from './rest.service'
-import { ROUTES } from '../common/global';
-import { SystemConfiguration } from '../types/system-configuration';
-import { ErrorDescription } from '../types/error-description';
-import { Theme } from '../types/theme';
-import { FileParam } from '../types/file-param.type';
-import { HttpResponse } from '@angular/common/http';
-import { EmailSettings } from '../types/email-settings';
+import {Injectable} from '@angular/core';
+import {RestService} from './rest.service';
+import {ROUTES} from '../common/global';
+import {SystemConfiguration} from '../types/system-configuration';
+import {ErrorDescription} from '../types/error-description';
+import {Theme} from '../types/theme';
+import {FileParam} from '../types/file-param.type';
+import {HttpResponse} from '@angular/common/http';
+import {EmailSettings} from '../types/email-settings';
 import {ConfigurationValue} from '../types/configuration-value';
 import {StartupWizardOptions} from '../types/startup-wizard-options';
+import {SearchResult} from '../types/search-result';
+import {RestApiEndpointDescription} from '../types/rest-api-endpoint-description';
 
 @Injectable({
   providedIn: 'root'
@@ -71,22 +73,14 @@ export class SystemConfigurationService {
     })
   }
 
-  updateSessionAliveTime(value?: number) {
-    const data: any = {}
-    if (value !== undefined) {
-      data.parameter = value
-    }
-    return this.restService.post<ErrorDescription|undefined>({
-      path: ROUTES.controllers.SystemConfigurationService.updateSessionAliveTime().url,
-      data: data,
-      authenticate: true
-    })
-  }
-
-  getThemes() {
-    return this.restService.get<Theme[]>({
+  getThemes(page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Theme>>({
       path: ROUTES.controllers.SystemConfigurationService.getThemes().url,
-      authenticate: true
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 
@@ -214,6 +208,23 @@ export class SystemConfigurationService {
       path: ROUTES.controllers.SystemConfigurationService.completeStartupWizard().url,
       authenticate: true,
       data: data
+    })
+  }
+
+  prepareForShutdown(enable: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SystemConfigurationService.prepareForShutdown().url,
+      authenticate: true,
+      data: {
+        enable: enable,
+      }
+    })
+  }
+
+  getRestApiEndpointsFromDocumentation() {
+    return this.restService.get<RestApiEndpointDescription[]>({
+      path: ROUTES.controllers.SystemConfigurationService.getRestApiEndpointsFromDocumentation().url,
+      authenticate: true
     })
   }
 

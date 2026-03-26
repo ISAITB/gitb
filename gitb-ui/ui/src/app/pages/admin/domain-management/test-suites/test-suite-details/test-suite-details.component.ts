@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -28,9 +28,7 @@ import {TestCase} from 'src/app/types/test-case';
 import {TestSuiteWithTestCases} from 'src/app/types/test-suite-with-test-cases';
 import {saveAs} from 'file-saver';
 import {Specification} from 'src/app/types/specification';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
-import {filter, find} from 'lodash';
 import {finalize, forkJoin, Observable, tap} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
@@ -42,6 +40,8 @@ import {PagingPlacement} from '../../../../../components/paging-controls/paging-
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {share} from 'rxjs/operators';
 import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {TableApi} from '../../../../../components/table/table-api';
 
 @Component({
     selector: 'app-test-suite-details',
@@ -52,6 +52,7 @@ import {PagingControlsApi} from '../../../../../components/paging-controls/pagin
 export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
+  @ViewChild("linkedSpecificationsTable") linkedSpecificationsTable?: TableApi
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
 
   testSuite: Partial<TestSuiteWithTestCases> = {}
@@ -85,6 +86,9 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   moveSelectionConfig!: MultiSelectConfig<Specification>
   convertPending = false
   testCasesRefreshing = false
+  specificationsRefreshing = false
+  linkedSpecificationsPage = 1
+  linkedSpecificationsTotal = 0
 
   testCaseFilter?: string
   protected readonly PagingPlacement = PagingPlacement;
@@ -97,7 +101,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     private readonly htmlService: HtmlService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     route: ActivatedRoute,
     router: Router
   ) { super(router, route) }
@@ -119,6 +123,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
       textField: "sname",
       singleSelection: true,
       filterLabel: 'Move to ' + this.dataService.labelSpecificationLower(),
+      filterLabelIcon: Constants.BUTTON_ICON.MOVE,
       noItemsMessage: 'No target ' + this.dataService.labelSpecificationsLower() + ' available.',
       searchPlaceholder: 'Search ' + this.dataService.labelSpecificationsLower() + '...',
       loader: () => this.loadAvailableSpecificationsForMove()
@@ -134,8 +139,11 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
-  testCasePageNavigation(pagingInfo: PagingEvent) {
-    this.loadTestCasesInternal(pagingInfo)
+  doTestCasePaging(event: PagingEvent) {
+    this.loadTestCasesInternal(event)
+    if (event.pageSizeChanged) {
+      this.specificationStatus.status = Constants.STATUS.NONE
+    }
   }
 
   loadInitialData(): void {
@@ -156,7 +164,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
   private loadTestCases(): Observable<any> {
-    return this.loadTestCasesInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+    return this.loadTestCasesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   private loadTestCasesInternal(pagingInfo: PagingEvent): Observable<any> {
@@ -185,26 +193,47 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     return obs$
   }
 
+  doSpecificationPaging(event: PagingEvent) {
+    this.loadLinkedSpecificationsInternal(event)
+    if (event.pageSizeChanged) {
+      this.dataStatus.status = Constants.STATUS.NONE
+    }
+  }
+
   loadLinkedSpecifications(forceLoad?: boolean) {
     if (this.specificationStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.linkedSpecifications = []
-      this.unlinkedSpecifications = []
-      const loadLinked = this.testSuiteService.getLinkedSpecifications(this.testSuiteId)
-      const loadUnlinked = this.conformanceService.getDomainSpecifications(this.domainId)
-      forkJoin([loadLinked, loadUnlinked]).subscribe((results) => {
-        this.linkedSpecifications = results[0]
-        const currentIds = this.dataService.asSet(this.linkedSpecifications.map((x) => x.id))
-        const specs: Specification[] = []
-        for (let spec of results[1]) {
-          if (!currentIds[spec.id]) {
-            specs.push(spec)
-          }
-        }
-        this.unlinkedSpecifications = specs
-      }).add(() => {
-        this.specificationStatus.status = Constants.STATUS.FINISHED
-      })
+      this.refreshLinkedSpecifications()
+    } else {
+      this.updateLinkedSpecificationPaging(this.linkedSpecificationsPage, this.linkedSpecificationsTotal)
     }
+  }
+
+  private updateLinkedSpecificationPaging(page: number, count: number) {
+    this.linkedSpecificationsTable?.getPagingControls()?.updateStatus(page, count)
+    this.linkedSpecificationsPage = page
+    this.linkedSpecificationsTotal = count
+  }
+
+  refreshLinkedSpecifications() {
+    this.loadLinkedSpecificationsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+  }
+
+  loadLinkedSpecificationsInternal(pagingInfo: PagingEvent) {
+    if (this.specificationStatus.status == Constants.STATUS.FINISHED) {
+      this.specificationsRefreshing = true
+    } else {
+      this.specificationStatus.status = Constants.STATUS.PENDING
+    }
+    const loadLinked = this.testSuiteService.getLinkedSpecifications(this.testSuiteId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+    const loadUnlinked = this.conformanceService.getUnlinkedDomainSpecs(this.domainId, this.testSuiteId)
+    forkJoin([loadLinked, loadUnlinked]).subscribe((results) => {
+      this.linkedSpecifications = results[0].data
+      this.unlinkedSpecifications = results[1]
+      this.updateLinkedSpecificationPaging(pagingInfo.targetPage, results[0].count)
+    }).add(() => {
+      this.specificationsRefreshing = false
+      this.specificationStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
 	previewDocumentation() {
@@ -240,7 +269,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     } else {
       message = "Are you sure you want to delete this test suite?"
     }
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
 		.subscribe(() => {
       this.deletePending = true
       this.testSuiteService.undeployTestSuite(this.testSuite.id!)
@@ -254,14 +283,16 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
 	saveChanges() {
-    this.clearAlerts()
-    this.savePending = true
-		this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
-    .subscribe(() => {
-      this.popupService.success('Test suite updated.')
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.clearAlerts()
+      this.savePending = true
+      this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.order!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
+        .subscribe(() => {
+          this.popupService.success('Test suite updated.')
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
 	back() {
@@ -273,7 +304,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
 	saveDisabled() {
-    return !this.textProvided(this.testSuite?.sname) || !this.textProvided(this.testSuite?.version)
+    return !this.loaded || this.savePending || !this.textProvided(this.testSuite?.sname) || !this.textProvided(this.testSuite?.version)
   }
 
 	onTestCaseSelect(testCaseId: number) {
@@ -291,20 +322,15 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   linkSpecifications() {
     this.clearAlerts()
     this.linkPending = true
-    const modalRef = this.modalService.show(LinkSharedTestSuiteModalComponent, {
-      class: 'modal-lg',
-      keyboard: false,
-      backdrop: 'static',
-      initialState: {
-        testSuiteId: this.testSuite.id,
-        domainId: this.domainId,
-        availableSpecifications: this.unlinkedSpecifications
-      }
-    })
-    modalRef.onHidden!.subscribe(() => {
+    const modalRef = this.modalService.open(LinkSharedTestSuiteModalComponent, { size: 'lg', keyboard: false, backdrop: 'static' })
+    const modalInstance = modalRef.componentInstance as LinkSharedTestSuiteModalComponent
+    modalInstance.testSuiteId = this.testSuite.id!
+    modalInstance.domainId = this.domainId
+    modalInstance.availableSpecifications = this.unlinkedSpecifications
+    modalRef.hidden.subscribe(() => {
       this.linkPending = false
     })
-    modalRef.content!.completed.subscribe((refreshNeeded: boolean) => {
+    modalInstance.completed.subscribe((refreshNeeded: boolean) => {
       if (refreshNeeded) {
         this.loadLinkedSpecifications(true)
       }
@@ -312,13 +338,11 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
   checkedSpecifications() {
-    return filter(this.linkedSpecifications, (spec) => {
-      return spec.checked != undefined && spec.checked
-    })
+    return this.linkedSpecifications.filter((spec) => spec.checked != undefined && spec.checked)
   }
 
   specificationsChecked() {
-    return find(this.linkedSpecifications, (spec) => spec.checked != undefined && spec.checked) != undefined
+    return this.linkedSpecifications.find((spec) => spec.checked != undefined && spec.checked) != undefined
   }
 
   selectUnlinkSpecifications() {
@@ -430,6 +454,16 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 
   applySearchFilter() {
     this.loadTestCases()
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentClick(event))
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentEscape())
   }
 
 }

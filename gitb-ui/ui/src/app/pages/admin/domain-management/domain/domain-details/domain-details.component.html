@@ -2,231 +2,254 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title">{{dataService.labelDomain()}} details</div>
-        </div>
-        <form>
-            <div class="card-body" [pending]="!loaded" focus="shortName">
-                <div class="row">
-                    <div class="col-10 offset-1">
-                        @if (domain) {
-                            <app-domain-form [domain]="domain"></app-domain-form>
-                        }
-                    </div>
+            @if (currentTags && currentTags.length == 1 && (currentTags[0].flag1 && dataService.isCommunityAdmin || currentTags[0].flag2 && dataService.isSystemAdmin)) {
+                <div class="ms-auto">
+                    <app-tags-display [tags]="currentTags"></app-tags-display>
                 </div>
+            }
+        </div>
+        <form (ngSubmit)="saveDomainChanges()">
+            <div class="card-body" [pending]="!loaded" focus="shortName">
+                @if (domain) {
+                    <app-domain-form [domain]="domain" [animationsEnabled]="loaded"></app-domain-form>
+                }
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE"  class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
                     @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)) {
-                        <button type="button" (click)="back()" class="btn btn-secondary">Back</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" (click)="back()" class="btn btn-secondary">Back</button>
                     }
                 </div>
                 @if (dataService.isSystemAdmin) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button type="button" (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE"  (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>
         </form>
     </div>
     <div>
-        <tabset #tabs>
-            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.SPECIFICATIONS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" [text]="dataService.labelSpecifications()"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            @if (!managingSpecificationOrder) {
-                                <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="applySpecificationFilter()"></app-text-filter>
-                                @if (specifications.length > 0) {
-                                    <button type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
-                                }
-                                <div class="btn-group" dropdown>
-                                    <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
-                                    <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                        <span class="caret"></span>
-                                        <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
-                                    </button>
-                                    <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
-                                    </ul>
-                                </div>
-                            }
-                            @if (specificationGroups.length > 0 && managingSpecificationOrder) {
-                                <div class="btn-group" dropdown>
-                                    <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
-                                    <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                                    </ul>
-                                </div>
-                            }
-                            @if (hasMultipleSpecifications) {
-                                <div class="btn-group" dropdown>
-                                    @if (managingSpecificationOrder) {
-                                        <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
-                                    } @else {
-                                        <button type="button" class="btn btn-secondary" (click)="manageOrdering()">Manage {{dataService.labelSpecificationLower()}} order</button>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.DOMAIN.SPECIFICATIONS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.SPECIFICATION" [text]="dataService.labelSpecifications()"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                @if (!managingSpecificationOrder) {
+                                    <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="loadSpecifications(true)"></app-text-filter>
+                                    @if (specifications.length > 0) {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
                                     }
-                                    <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                        <span class="caret"></span>
-                                        <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
-                                    </button>
-                                    <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="resetOrdering();$event.preventDefault();">Reset {{dataService.labelSpecificationLower()}} order</a></li>
-                                    </ul>
-                                </div>
-                                @if (managingSpecificationOrder) {
-                                    <button type="button" class="btn btn-secondary" (click)="cancelManageOrdering()">Cancel</button>
+                                    <div class="btn-group" ngbDropdown>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                        <button id="button-create-spec" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
+                                        </button>
+                                        <div id="dropdown-create-spec" ngbDropdownMenu aria-labelledby="button-create-spec">
+                                            <button ngbDropdownItem type="button" (click)="createSpecificationGroup()">Create {{dataService.labelSpecificationGroupLower()}}</button>
+                                        </div>
+                                    </div>
                                 }
-                            }
-                        </div>
-                    </div>
-                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" [class.disable-events]="specificationsRefreshing" [class.dragging]="dragOngoing">
-                        @if (specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED) {
-                            <div class="spec-message-div">
-                                <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-                                <div class="pending-message">Loading {{dataService.labelSpecificationsLower()}}...</div>
+                                @if (specificationGroups.length > 0 && managingSpecificationOrder) {
+                                    <div class="btn-group" ngbDropdown>
+                                        <button id="button-option-visibility" [labelIcon]="Constants.BUTTON_ICON.FILTER" (click)="$event.stopPropagation()" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
+                                        <div id="dropdown-option-visibility" ngbDropdownMenu aria-labelledby="button-option-visibility">
+                                            <button ngbDropdownItem type="button" (click)="toggleSpecificationGroupCollapse(false)">Show {{dataService.labelSpecificationInGroupsLower()}}</button>
+                                            <button ngbDropdownItem type="button" (click)="toggleSpecificationGroupCollapse(true)">Hide {{dataService.labelSpecificationInGroupsLower()}}</button>
+                                        </div>
+                                    </div>
+                                }
+                                @if (hasMultipleSpecifications) {
+                                    <div class="btn-group" ngbDropdown>
+                                        @if (managingSpecificationOrder) {
+                                            <button [pending]="saveOrderPending" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                        } @else {
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.SORT" class="btn btn-secondary" (click)="manageOrdering()">Manage {{dataService.labelSpecificationLower()}} order</button>
+                                        }
+                                        <button id="button-order" type="button" ngbDropdownToggle [disabled]="saveOrderPending" class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
+                                        </button>
+                                        <div id="dropdown-order" ngbDropdownMenu aria-labelledby="button-order">
+                                            <button ngbDropdownItem type="button" (click)="resetOrdering()">Reset {{dataService.labelSpecificationLower()}} order</button>
+                                        </div>
+                                    </div>
+                                    @if (managingSpecificationOrder) {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelManageOrdering()">Cancel</button>
+                                    }
+                                }
                             </div>
-                        } @else {
-                            @if (domainSpecifications.length == 0) {
+                        </div>
+                        <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" [class.disable-events]="specificationsRefreshing" [class.dragging]="dragOngoing">
+                            @if (specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED) {
                                 <div class="spec-message-div">
-                                    <span>No {{dataService.labelSpecificationsLower()}} found.</span>
+                                    <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                                    <div class="pending-message">Loading {{dataService.labelSpecificationsLower()}}...</div>
                                 </div>
                             } @else {
-                                @for (spec of domainSpecifications; track spec.id; let firstGroup = $first, lastGroup = $last) {
-                                    <app-domain-specification-display #specificationDisplayComponent
-                                        [spec]="spec"
-                                        [first]="firstGroup"
-                                        [last]="lastGroup"
-                                        [groups]="specificationGroups"
-                                        [dragOngoing]="dragOngoing"
-                                        [dragEnabled]="managingSpecificationOrder"
-                                        (removeSpec)="removeSpecificationFromGroup($event[0])"
-                                        (moveSpec)="moveSpecificationToGroup($event[0], $event[2])"
-                                        (copySpec)="copySpecificationToGroup($event[0], $event[2])"
-                                        (selectSpec)="onSpecificationSelect($event)"
-                                        (dragging)="dragOngoing = $event"
-                                        (click)="onSpecificationGroupSelect(spec)"
-                                        (controlSelected)="onSpecificationDisplayControlSelected($event)"
-                                    ></app-domain-specification-display>
+                                @if (domainSpecifications.length == 0) {
+                                    <div class="spec-message-div">
+                                        <span>No {{dataService.labelSpecificationsLower()}} found.</span>
+                                    </div>
+                                } @else {
+                                    @for (spec of domainSpecifications; track spec.id; let firstGroup = $first, lastGroup = $last) {
+                                        <app-domain-specification-display #specificationDisplayComponent
+                                                                          [spec]="spec"
+                                                                          [first]="firstGroup"
+                                                                          [last]="lastGroup"
+                                                                          [groups]="specificationGroups"
+                                                                          [dragOngoing]="dragOngoing"
+                                                                          [dragEnabled]="managingSpecificationOrder"
+                                                                          (removeSpec)="removeSpecificationFromGroup($event[0])"
+                                                                          (moveSpec)="moveSpecificationToGroup($event[0], $event[2])"
+                                                                          (copySpec)="copySpecificationToGroup($event[0], $event[2])"
+                                                                          (selectSpec)="onSpecificationSelect($event)"
+                                                                          (dragging)="dragOngoing = $event"
+                                                                          (click)="onSpecificationGroupSelect(spec)"
+                                                                          (controlSelected)="onSpecificationDisplayControlSelected($event)"
+                                        ></app-domain-specification-display>
+                                    }
                                 }
                             }
-                        }
-                        @if (!managingSpecificationOrder) {
-                            <app-paging-controls #specificationPagingControls [placement]="PagingPlacement.tab" (navigation)="doSpecificationPaging($event)"></app-paging-controls>
-                        }
-                    </div>
-                </div>
-            </tab>
-
-            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.TEST_SUITES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Shared test suites"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <app-text-filter name="sharedTestSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="sharedTestSuiteFilter" (apply)="applySharedTestSuiteFilter()"></app-text-filter>
-                            <button type="button" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
+                            @if (!managingSpecificationOrder) {
+                                <app-paging-controls #specificationPagingControls [placement]="PagingPlacement.tab" (navigation)="doSpecificationPaging($event)"></app-paging-controls>
+                            }
                         </div>
                     </div>
-                    <div class="card">
-                        <div #sharedTestSuiteTable table-directive
-                            [columns]="sharedTestSuiteTableColumns"
-                            [data]="sharedTestSuites"
-                            [noDataMessage]="'No shared test suites found'"
-                            [loadingStatus]="sharedTestSuiteStatus"
-                            [allowSelect]="true"
-                            [contentRefreshing]="sharedTestSuitesRefreshing"
-                            [supportPaging]="true"
-                            (pageNavigation)="doSharedTestSuitePaging($event)"
-                            (onSelect)="onSharedTestSuiteSelect($event)">
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.DOMAIN.TEST_SUITES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TEST_SUITE" text="Shared test suites"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <app-text-filter name="sharedTestSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="sharedTestSuiteFilter" (apply)="refreshSharedTestSuites()"></app-text-filter>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div #sharedTestSuiteTable table-directive
+                                 [columns]="sharedTestSuiteTableColumns"
+                                 [data]="sharedTestSuites"
+                                 [noDataMessage]="'No shared test suites found'"
+                                 [loadingStatus]="sharedTestSuiteStatus"
+                                 [allowSelect]="true"
+                                 [contentRefreshing]="sharedTestSuitesRefreshing"
+                                 [supportPaging]="true"
+                                 (pageNavigation)="doSharedTestSuitePaging($event)"
+                                 (onSelect)="onSharedTestSuiteSelect($event)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-
-            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.PARAMETERS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createDomainParameter()">Create parameter</button>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.DOMAIN.PARAMETERS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES" text="Parameters"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <app-text-filter name="parameterFilter" [width]="300" [placeholder]="'Search parameters...'" [(ngModel)]="parameterFilter" (apply)="loadDomainParameters(true)"></app-text-filter>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createDomainParameter()">Create parameter</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card table-container rounded">
-                        <table class="table table-directive">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Value</th>
-                                    <th>Description</th>
-                                    <th class="th-min-centered">In&nbsp;tests</th>
-                                    @if (hasTestServices) {
-                                        <th></th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (parameterStatus.status == Constants.STATUS.FINISHED) {
-                                    @if (domainParameters.length == 0) {
-                                        <tr>
-                                            <td [attr.colspan]="domainParameterColumnCount" class="td-no-data"><span>No parameters found</span></td>
-                                        </tr>
-                                    } @else {
-                                        @for (parameter of domainParameters; track parameter.id) {
-                                            <tr class="selectable" (click)="onDomainParameterSelect(parameter)">
-                                                <td>{{parameter.name}}</td>
-                                                @if (parameter.kind == 'BINARY') {
-                                                    <td><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
-                                                } @else {
-                                                    <td>{{parameter.valueToShow}}</td>
-                                                }
-                                                <td>{{parameter.description}}</td>
-                                                <td class="td-min-centered">
-                                                    <div><i class="fa-solid" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></div>
-                                                </td>
-                                                @if (hasTestServices) {
-                                                    <td class="td-min-centered">
-                                                    @if (parameter.isTestService) {
-                                                        <div class="ms-4 me-2" tooltip="Corresponds to a registered test service" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
-                                                    }
-                                                    </td>
-                                                }
-                                            </tr>
-                                        }
-                                    }
-                                } @else {
+                        <div class="card table-container rounded">
+                            <table class="table table-directive">
+                                <thead>
                                     <tr>
-                                        <td colspan="4" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                        <th><div class="cell-content">Name</div></th>
+                                        <th><div class="cell-content">Value</div></th>
+                                        <th><div class="cell-content">Description</div></th>
+                                        <th class="th-min centered"><div class="cell-content">In tests</div></th>
+                                        @if (hasTestServices) {
+                                            <th></th>
+                                        }
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </tab>
-
-            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.TEST_SERVICES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gears" text="Test services"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createTestService()">Register service</button>
-                            <app-multi-select-filter [config]="convertParameterSelectionConfig" (apply)="convertParameterToTestService($event)" [pending]="convertPending"></app-multi-select-filter>
+                                </thead>
+                                <tbody [class.disable-events]="parametersRefreshing">
+                                    @if (parameterStatus.status == Constants.STATUS.FINISHED) {
+                                        @if (domainParameters.length == 0) {
+                                            <tr>
+                                                <td [attr.colspan]="domainParameterColumnCount" class="td-no-data">
+                                                    <div class="cell-content">
+                                                        <span>No parameters found</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        } @else {
+                                            @for (parameter of domainParameters; track parameter.id) {
+                                                <tr class="selectable" (click)="onDomainParameterSelect(parameter)">
+                                                    <td><div class="cell-content">{{parameter.name}}</div></td>
+                                                    @if (parameter.kind == 'BINARY') {
+                                                        <td><div class="cell-content"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></div></td>
+                                                    } @else {
+                                                        <td><div class="cell-content">{{parameter.valueToShow}}</div></td>
+                                                    }
+                                                    <td><div class="cell-content">{{parameter.description}}</div></td>
+                                                    <td class="td-min centered">
+                                                        <div class="cell-content"><span class="d-flex"><i class="fa-solid" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div>
+                                                    </td>
+                                                    @if (hasTestServices) {
+                                                        <td class="td-min centered">
+                                                            @if (parameter.isTestService) {
+                                                                <div class="cell-content">
+                                                                    <div class="ms-4 me-2" ngbTooltip="Corresponds to a registered test service" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
+                                                                </div>
+                                                            }
+                                                        </td>
+                                                    }
+                                                </tr>
+                                            }
+                                        }
+                                    } @else {
+                                        <tr>
+                                            <td colspan="4" class="td-data-loading">
+                                                <div class="cell-content">
+                                                    <app-pending-block></app-pending-block>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <app-paging-controls #parameterPagingControls [refreshing]="parametersRefreshing" (navigation)="doParameterPaging($event)"></app-paging-controls>
                         </div>
                     </div>
-                    <div class="card">
-                        <div table-directive
-                             [columns]="testServiceTableColumns"
-                             [data]="testServices"
-                             [noDataMessage]="'No services found'"
-                             [loadingStatus]="testServiceStatus"
-                             [allowSelect]="true"
-                             [persistentSelection]="false"
-                             (onSelect)="onTestServiceSelect($event)">
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.DOMAIN.TEST_SERVICES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CUSTOM_TEST_SERVICES" text="Test services"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <app-text-filter name="testServiceFilter" [width]="300" [placeholder]="'Search services...'" [(ngModel)]="testServiceFilter" (apply)="loadTestServices(true)"></app-text-filter>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTestService()">Register service</button>
+                                <app-multi-select-filter [config]="convertParameterSelectionConfig" (apply)="convertParameterToTestService($event)" [pending]="convertPending"></app-multi-select-filter>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div #servicesTable table-directive
+                                 [columns]="testServiceTableColumns"
+                                 [data]="testServices"
+                                 [noDataMessage]="'No services found'"
+                                 [loadingStatus]="testServiceStatus"
+                                 [contentRefreshing]="servicesRefreshing"
+                                 (pageNavigation)="doServicePaging($event)"
+                                 [allowSelect]="true"
+                                 [persistentSelection]="false"
+                                 (onSelect)="onTestServiceSelect($event)"
+                                 [supportPaging]="true">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-        </tabset>
+                </ng-template>
+            </li>
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
     </div>
 </div>

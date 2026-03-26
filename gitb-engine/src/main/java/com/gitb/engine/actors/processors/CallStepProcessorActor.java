@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -68,7 +68,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	protected void start() throws Exception {
 		childScope = createChildScope();
 		TestCaseUtils.applyStopOnErrorSemantics(step, scriptlet.getSteps());
-		TestCaseUtils.initialiseStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), scriptlet.getSteps(), childScope);
+		TestCaseUtils.initialiseStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), getStepReportMap(), scriptlet.getSteps(), childScope);
 		ActorRef child = SequenceProcessorActor.create(getContext(), scriptlet.getSteps(), childScope, stepId, stepContext);
 
 		StartCommand command = new StartCommand(scope.getContext().getSessionId());

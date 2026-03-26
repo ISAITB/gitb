@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,14 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {map} from 'lodash';
-import {BsModalService} from 'ngx-bootstrap/modal';
-import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
+import {finalize, forkJoin, mergeMap, Observable, of, Subscription, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
-import {Counters} from 'src/app/components/test-status-icons/counters';
+import {Counters} from 'src/app/components/test-status-base/counters';
 import {MissingConfigurationAction} from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
 import {MissingConfigurationModalComponent} from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import {CommunityService} from 'src/app/services/community.service';
@@ -59,6 +57,11 @@ import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {TestSuiteDisplayComponentApi} from '../../../components/test-suite-display/test-suite-display-component-api';
 import {DisplayState} from '../../../types/display-state';
 import {StatementTestCaseSearchCriteria} from './statement-test-case-search-criteria';
+import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {TestStatusBaseApi} from '../../../components/test-status-base/test-status-base-api';
+import {TestStatusBase} from '../../../components/test-status-base/test-status-base';
+import {PreviewBadgeModalComponent} from '../../../modals/preview-badge-modal/preview-badge-modal.component';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -74,6 +77,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   @ViewChild('conformanceDetailPage') conformanceDetailPage?: ElementRef
   @ViewChild('statusInfoContainer') statusInfoContainer?: ElementRef
   @ViewChild('resultsContainer') resultsContainer?: ElementRef
+  @ViewChildren("testStatusDisplay") testStatusDisplay?: QueryList<TestStatusBaseApi>
 
   communityId?: number
   communityIdOfStatement!: number
@@ -107,15 +111,22 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   canEditSystemConfiguration = false
   canEditStatementConfiguration = false
   navigationConfig?: NavigationControlsConfig
+  testCasePage = 1
+  testCaseCount = 0
   protected readonly PagingPlacement = PagingPlacement;
+  copyBadgePending = false
+  animatedDetails = false
+  clickableDetails = false
+  statementLabel: string = ''
 
-  testSuiteSelectionConfig = {
+  testSuiteSelectionConfig: MultiSelectConfig<TestSuiteMinimalInfo> = {
     name: "testSuiteChoice",
     singleSelection: true,
     singleSelectionClearable: true,
     singleSelectionPersistent: false,
     textField: "sname",
     filterLabel: "Show test suite...",
+    filterLabelIcon: Constants.BUTTON_ICON.FILTER,
     loader: () => this.loadStatementTestSuites()
   }
 
@@ -169,15 +180,16 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   resizeObserver!: ResizeObserver
   resultsWrapped = false
   refreshPending = false
-  refreshCounters = new EventEmitter<Counters>()
   statementExecutionPending = false
+
+  conformanceStatementDetailVisibilitySubscription?: Subscription
 
   constructor(
     public readonly dataService: DataService,
     route: ActivatedRoute,
     router: Router,
     private readonly conformanceService: ConformanceService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly systemService: SystemService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly reportService: ReportService,
@@ -190,7 +202,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     private readonly zone: NgZone
   ) {
     super(router, route)
-    const navigation = router.getCurrentNavigation()
+    const navigation = router.currentNavigation()
     if (navigation?.extras?.state) {
       this.snapshotLabel = navigation.extras.state[Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_LABEL]
     }
@@ -198,7 +210,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
 
   ngAfterViewInit(): void {
     super.ngAfterViewInit()
-    this.pagingControls?.updateStatus(1, this.unfilteredTestCaseCount)
+    this.updateTestCasePaging(1, this.unfilteredTestCaseCount)
     setTimeout(() => {
       this.updateTestCaseFilterOptions()
     })
@@ -228,6 +240,10 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       const fromDashboard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
       if (!fromDashboard) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "false")
     }
+    this.toggleOverviewVisibility(this.dataService.conformanceStatementDetailVisibility, true)
+    this.conformanceStatementDetailVisibilitySubscription = this.dataService.onConformanceStatementDetailVisibilityChange$.subscribe((visible) => {
+      this.toggleOverviewVisibility(visible)
+    })
     this.loadInitialData().pipe(
       mergeMap(() => {
         const existingDisplayState = this.getDisplayState<TestCaseSearchCriteria>(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, true)
@@ -238,15 +254,17 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
           }
           return this.loadConformanceTestsInternal({
             targetPage: (existingDisplayState.paging != undefined)?existingDisplayState.paging.currentPage:1,
-            targetPageSize: (existingDisplayState.paging != undefined)?existingDisplayState.paging.pageSize:Constants.TABLE_PAGE_SIZE
+            targetPageSize: (existingDisplayState.paging != undefined)?existingDisplayState.paging.pageSize:this.dataService.defaultPagingTableSize
           })
         } else {
-          this.pagingControls?.updateStatus(1, this.unfilteredTestCaseCount)
+          this.updateTestCasePaging(1, this.unfilteredTestCaseCount)
           return of(true)
         }
       }),
       finalize(() => {
         this.updatingTests = false
+        this.animatedDetails = true
+        this.clickableDetails = true
         this.loadingTests.status = Constants.STATUS.FINISHED
       })
     ).subscribe(() => {})
@@ -254,12 +272,19 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
 
   ngOnDestroy(): void {
     this.saveState()
+    if (this.conformanceStatementDetailVisibilitySubscription) this.conformanceStatementDetailVisibilitySubscription.unsubscribe()
+  }
+
+  private updateTestCasePaging(page: number, total: number) {
+    this.pagingControls?.updateStatus(page, total)
+    this.testCasePage = page
+    this.testCaseCount = total
   }
 
   private loadInitialData(): Observable<any> {
     // Load conformance statement and its results.
     this.loadingTests.status = Constants.STATUS.PENDING
-    const statementsLoaded = this.conformanceService.getConformanceStatement(this.systemId, this.actorId, this.snapshotId)
+    const statementsLoaded = this.conformanceService.getConformanceStatement(this.systemId, this.actorId, this.snapshotId, 1, this.dataService.defaultPagingTableSize)
     const snapshotLabelLoaded = this.retrieveSnapshotLabel(this.snapshotId, this.snapshotLabel)
     const obs$ = forkJoin([statementsLoaded, snapshotLabelLoaded]).pipe(
       tap((results) => {
@@ -282,7 +307,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         // Statement definition.
         this.prepareStatement(statementData.statement)
         this.statement = statementData.statement
-        this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.breadcrumbLabel(), this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
+        this.statementLabel = this.breadcrumbLabel()
+        this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.statementLabel, this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
         // IDs.
         this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
         this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
@@ -343,6 +369,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   loadTab(tabIndex: number) {
     if (tabIndex == Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION) {
       this.showConfigurationTab()
+    } else {
+      this.updateTestCasePaging(this.testCasePage, this.testCaseCount)
     }
   }
 
@@ -351,7 +379,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   private loadConformanceTests() {
-    return this.loadConformanceTestsInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+    return this.loadConformanceTestsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   private loadConformanceTestsInternal(pagingInfo: PagingEvent): Observable<any> {
@@ -364,9 +392,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
             component.refresh()
           })
           if (this.statusCounters) {
-            this.refreshCounters.emit(this.statusCounters)
+            this.testStatusDisplay?.forEach((component) => component.refresh(this.statusCounters!))
           }
-          this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
+          this.updateTestCasePaging(pagingInfo.targetPage, data.count)
         })
       }),
       finalize(() => {
@@ -412,7 +440,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     return label
   }
 
-  private breadcrumbLabel(): string {
+  breadcrumbLabel(): string {
     let label = ''
     if (this.statement) {
       const domainItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)
@@ -430,7 +458,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   private showConfigurationTab() {
     this.loadConfigurations()
     if (this.tabs) {
-      this.tabs.tabs[1].active = true
+      this.tabIdToShow = Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION
     }
   }
 
@@ -530,24 +558,21 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         }
         if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
           // Missing configuration.
-          const modalRef = this.modalService.show(MissingConfigurationModalComponent, {
-            class: 'modal-lg',
-            initialState: {
-              organisationProperties: organisationProperties,
-              organisationConfigurationValid: organisationConfigurationValid,
-              systemProperties: systemProperties,
-              systemConfigurationValid: systemConfigurationValid,
-              statementProperties: statementProperties,
-              configurationValid: configurationValid
-            }
-          })
-          modalRef.content!.action.subscribe((action: MissingConfigurationAction) => {
+          const modalRef = this.modalService.open(MissingConfigurationModalComponent, { size: 'lg' })
+          const modalInstance = modalRef.componentInstance as MissingConfigurationModalComponent
+          modalInstance.organisationProperties = organisationProperties
+          modalInstance.organisationConfigurationValid = organisationConfigurationValid
+          modalInstance.systemProperties = systemProperties
+          modalInstance.systemConfigurationValid = systemConfigurationValid
+          modalInstance.statementProperties = statementProperties
+          modalInstance.configurationValid = configurationValid
+          modalRef.closed.subscribe((action: MissingConfigurationAction) => {
             this.organisationPropertiesCollapsed = !action.viewOrganisationProperties
             this.systemPropertiesCollapsed = !action.viewSystemProperties
             this.statementPropertiesCollapsed = !action.viewStatementProperties
             this.showConfigurationTab()
           })
-          return modalRef.onHidden!.pipe(
+          return modalRef.hidden.pipe(
             mergeMap(() => {
               return of(false)
             })
@@ -583,13 +608,17 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   private executeHeadless(testCases: ConformanceTestCase[]) {
-    const testCaseIds = map(testCases, (test) => { return test.id } )
+    const testCaseIds = testCases.map((test) => test.id)
     this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
-    .subscribe(() => {
-      if (testCaseIds.length == 1) {
-        this.popupService.success('Started test session.')
+    .subscribe((result) => {
+      if (this.isShutdownPreparationError(result)) {
+        this.dataService.togglePrepareForShutdown(true)
       } else {
-        this.popupService.success('Started '+testCaseIds.length+' test sessions.')
+        if (testCaseIds.length == 1) {
+          this.popupService.success('Started test session.')
+        } else {
+          this.popupService.success('Started '+testCaseIds.length+' test sessions.')
+        }
       }
     })
   }
@@ -721,7 +750,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   deleteConformanceStatement() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this conformance statement?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this conformance statement?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.systemService.deleteConformanceStatement(this.systemId, [this.actorId])
@@ -757,11 +786,29 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
-  toTestSession(sessionId: string) {
+  toTestCaseHistory(testCase: ConformanceTestCase) {
     if (this.organisationId == this.dataService.vendor?.id) {
-      this.routingService.toTestHistory(this.organisationId, sessionId)
+      this.routingService.toTestHistory(this.organisationId, undefined, this.systemId,  testCase.id)
     } else {
-      this.routingService.toSessionDashboard(sessionId)
+      this.routingService.toSessionDashboard(undefined, this.systemId, testCase.id)
+    }
+  }
+
+  toggleOverviewVisibility(visible: boolean, immediate?: boolean) {
+    const toggle = () => {
+      this.collapsedDetails = !visible
+      if (immediate && this.collapsedDetails) {
+        this.collapsedDetailsFinished = true
+      } else if (!immediate && !this.collapsedDetails) {
+        this.toggleOverviewCollapse(false)
+      }
+    }
+    if (immediate) {
+      toggle()
+    } else {
+      setTimeout(() => {
+        toggle()
+      })
     }
   }
 
@@ -824,4 +871,87 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
+  headerClicked() {
+    if (this.clickableDetails) {
+      this.dataService.setConformanceStatementDetailVisibility(this.collapsedDetails)
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.testStatusDisplay?.forEach((component) => component.documentClick(event))
+    this.testCaseResultFilter?.documentClick(event)
+    this.testSuiteDisplayComponents?.forEach((item) => item.documentClick(event))
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.testStatusDisplay?.forEach((component) => component.documentEscape())
+    this.testCaseResultFilter?.documentEscape()
+    this.testSuiteDisplayComponents?.forEach((item) => item.documentEscape())
+  }
+
+  testStatusOpened(source: TestStatusBase) {
+    this.testStatusDisplay?.forEach((component) => {
+      if (component !== source) {
+        component.close()
+      }
+    })
+  }
+
+  copyBadgeURL() {
+    this.copyBadgePending = true
+    this.conformanceService.copyBadgeURL(this.systemId, this.actorId, this.snapshotId).subscribe(() => {
+      this.copyBadgePending = false
+    })
+  }
+
+  previewBadge() {
+    const modal = this.modalService.open(PreviewBadgeModalComponent)
+    const modalInstance = modal.componentInstance as PreviewBadgeModalComponent
+    modalInstance.config =  {
+      systemId: this.systemId,
+      actorId: this.actorId,
+      snapshotId: this.snapshotId
+    }
+  }
+
+  viewSystem() {
+    if (this.organisationId == this.dataService.vendor?.id) {
+      // This is the user's own organisation
+      this.routingService.toOwnSystemDetails(this.systemId!)
+    } else {
+      this.routingService.toSystemDetails(this.communityIdOfStatement!, this.organisationId!, this.systemId!)
+    }
+  }
+
+  viewOrganisation() {
+    if (this.organisationId == this.dataService.vendor?.id) {
+      // This is the user's own organisation
+      this.routingService.toOwnOrganisationDetails()
+    } else {
+      // Another organisation
+      this.routingService.toOrganisationDetails(this.communityIdOfStatement!, this.organisationId!)
+    }
+  }
+
+  viewCommunity() {
+    this.routingService.toCommunity(this.communityIdOfStatement!)
+  }
+
+  viewActor() {
+    this.routingService.toActor(this.domainId!, this.specId!, this.actorId!)
+  }
+
+  viewSpecification() {
+    this.routingService.toSpecification(this.domainId!, this.specId!)
+  }
+
+  viewDomain() {
+    this.routingService.toDomain(this.domainId!)
+  }
+
+  isNavigable(identifier: number|undefined): boolean {
+    return identifier != undefined && identifier > 0
+  }
 }

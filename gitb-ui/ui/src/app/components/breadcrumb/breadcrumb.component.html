@@ -8,14 +8,14 @@
                     }
                     <div class="breacrumbItem"
                         [class.actionable]="crumb.action != undefined"
-                        #popup="bs-tooltip"
+                        #popup="ngbTooltip"
                         (mouseover)="mouseOver($event)"
-                        containerClass="shortTooltip"
+                        [tooltipClass]="'shortTooltip'"
                         placement="bottom"
-                        [tooltip]="crumb.label"
-                        [delay]="Constants.TOOLTIP_DELAY"
-                        [isDisabled]="!hasOverflow"
-                        (click)="popup.hide();breadcrumbClicked(crumb)"
+                        [ngbTooltip]="crumb.label"
+                        [openDelay]="Constants.TOOLTIP_DELAY"
+                        [disableTooltip]="!hasOverflow"
+                        (click)="popup.close();breadcrumbClicked(crumb)"
                     >{{crumb.label}}</div>
                 }
             }

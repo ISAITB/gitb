@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -20,19 +20,18 @@ import {forkJoin, map, Observable, of, share} from 'rxjs';
 import {PlaceholderInfo} from 'src/app/components/placeholder-selector/placeholder-info';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {PopupService} from 'src/app/services/popup.service';
 import {DataService} from 'src/app/services/data.service';
 import {Domain} from 'src/app/types/domain';
 import {SpecificationService} from 'src/app/services/specification.service';
 import {SpecificationGroup} from 'src/app/types/specification-group';
 import {Specification} from 'src/app/types/specification';
-import {filter, find} from 'lodash';
 import {ConformanceOverviewMessage} from '../conformance-overview-message';
 import {ReportService} from 'src/app/services/report.service';
 import {HttpResponse} from '@angular/common/http';
 import {ErrorService} from 'src/app/services/error.service';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-overview-certificate-form',
@@ -114,7 +113,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   constructor(
     reportService: ReportService,
     conformanceService: ConformanceService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     popupService: PopupService,
     public readonly dataService: DataService,
     private readonly specificationService: SpecificationService,
@@ -338,6 +337,9 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
       const newValue = this.settings != undefined && (this.settings.enableAllLevel! || this.settings.enableDomainLevel! || this.settings.enableGroupLevel! || this.settings.enableSpecificationLevel!)
       this.messageBlockAnimated = newValue == this.anyLevelEnabled
       this.anyLevelEnabled = newValue
+      if (this.anyLevelEnabled) {
+        this.messageBlockAnimated = false
+      }
       this.levelAnimated = true
     }, 1)
   }
@@ -386,10 +388,10 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         this.selectedGroup = undefined
         this.selectedSpecification = undefined
       } else if (this.messageLevel == "group") {
-        this.domains = filter(this.allDomains, (domain) => this.groupsPerDomain.has(domain.id))
+        this.domains = this.allDomains?.filter((domain) => this.groupsPerDomain.has(domain.id))
         this.selectedSpecification = undefined
       } else if (this.messageLevel == "specification") {
-        this.domains = filter(this.allDomains, (domain) => this.groupsPerDomain.has(domain.id) || this.specsPerDomain.has(domain.id))
+        this.domains = this.allDomains?.filter((domain) => this.groupsPerDomain.has(domain.id) || this.specsPerDomain.has(domain.id))
       } else {
         this.domains = []
         this.selectedDomain = undefined
@@ -404,7 +406,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   toggleSpecificMessageSetting() {
     if (this.specificMessageSetting && this.domains && this.domains.length > 0) {
       if (this.selectedDomain != undefined) {
-        this.selectedDomain = find(this.domains, (domain) => domain.id == this.selectedDomain!.id)
+        this.selectedDomain = this.domains.find((domain) => domain.id == this.selectedDomain!.id)
       }
       if (this.selectedDomain == undefined) {
         this.selectedDomain = this.domains[0]
@@ -421,22 +423,26 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         // The selected domain has groups.
         if (this.messageLevel == "group") {
           this.groups = this.groupsPerDomain.get(this.selectedDomain.id)
-          if (this.selectedGroup != undefined) {
-            this.selectedGroup = find(this.groups, (group) => group.id == this.selectedGroup!.id)
-          }
-          if (this.selectedGroup == undefined && this.groups!.length > 0) {
-            this.selectedGroup = this.groups![0]
+          if (this.groups != undefined) {
+            if (this.selectedGroup != undefined) {
+              this.selectedGroup = this.groups.find((group) => group.id == this.selectedGroup!.id)
+            }
+            if (this.selectedGroup == undefined && this.groups.length > 0) {
+              this.selectedGroup = this.groups[0]
+            }
           }
         } else if (this.messageLevel == "specification") {
-          this.groups = filter(this.groupsPerDomain.get(this.selectedDomain.id), (group) => this.specsPerGroup.has(group.id))
-          if (this.selectedGroup != undefined) {
-            this.selectedGroup = find(this.groups, (group) => group.id == this.selectedGroup!.id)
-          }
-          if (this.selectedGroup == undefined) {
-            if (this.specsPerDomain.has(this.selectedDomain.id)) {
-              this.selectedGroup = (this.noGroupEntry as SpecificationGroup)
-            } else if (this.groups.length > 0) {
+          this.groups = this.groupsPerDomain.get(this.selectedDomain.id)?.filter((group) => this.specsPerGroup.has(group.id))
+          if (this.groups != undefined) {
+            if (this.selectedGroup != undefined) {
+              this.selectedGroup = this.groups.find((group) => group.id == this.selectedGroup!.id)
+            }
+            if (this.selectedGroup == undefined) {
+              if (this.specsPerDomain.has(this.selectedDomain.id)) {
+                this.selectedGroup = (this.noGroupEntry as SpecificationGroup)
+              } else if (this.groups.length > 0) {
                 this.selectedGroup = this.groups[0]
+              }
             }
           }
         }

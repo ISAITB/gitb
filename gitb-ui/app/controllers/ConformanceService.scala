@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,6 +15,9 @@
 
 package controllers
 
+import actors.BulkTaskActor
+import actors.events.obsolete.{DeleteAllObsoleteSessions, DeleteObsoleteSessionsForCommunity, DeleteObsoleteSessionsForOrganisation}
+import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.ConformanceService.{KeystoreInfo, TestSuiteUploadInfo}
 import controllers.util._
@@ -27,6 +30,7 @@ import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.RandomStringUtils
+import org.apache.pekko.actor.ActorSystem
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils._
@@ -41,7 +45,6 @@ import javax.inject.Inject
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
-import com.gitb.tr.TestResultType
 
 object ConformanceService {
 
@@ -83,6 +86,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
                                     parameterManager: ParameterManager,
                                     authorizationManager: AuthorizationManager,
                                     communityLabelManager: CommunityLabelManager,
+                                    actorSystem: ActorSystem,
                                     repositoryUtils: RepositoryUtils)
                                    (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
@@ -91,8 +95,16 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getDomain(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
       domainManager.getDomains(Some(List(domainId))).map { domains =>
-        val json = JsonUtil.jsDomain(domains.head, withApiKeys = true).toString()
+        val json = JsonUtil.jsDomain(domains.head, withApiKeys = true, withTags = true).toString()
         ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getDomainTags(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
+      domainManager.getDomainTags(domainId).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTags(result).toString())
       }
     }
   }
@@ -107,7 +119,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       domainManager.getDomains(ids, snapshotId).map { domains =>
         val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.KEYS)
           .getOrElse(ids.exists(_.nonEmpty))
-        val json = JsonUtil.jsDomains(domains, withApiKeys).toString()
+        val json = JsonUtil.jsDomains(domains, withApiKeys, withTags = false).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -119,7 +131,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       domainManager.searchDomains(page, limit, filter).map { result =>
-        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false, withTags = true)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -128,7 +140,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getDomainOfSpecification(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewDomainBySpecificationId(request, specId).flatMap { _ =>
       domainManager.getDomainOfSpecification(specId).map { domain =>
-        val json = JsonUtil.jsDomain(domain, withApiKeys = false).toString()
+        val json = JsonUtil.jsDomain(domain, withApiKeys = false, withTags = false).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -137,7 +149,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getDomainOfActor(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewActor(request, actorId).flatMap { _ =>
       domainManager.getDomainOfActor(actorId).map { domain =>
-        val json = JsonUtil.jsDomain(domain, withApiKeys = false).toString()
+        val json = JsonUtil.jsDomain(domain, withApiKeys = false, withTags = false).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -151,7 +163,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewDomainByCommunityId(request, communityId).flatMap { _ =>
       domainManager.getCommunityDomain(communityId).map { domain =>
         if (domain.isDefined) {
-          val json = JsonUtil.jsDomain(domain.get, withApiKeys = false).toString()
+          val json = JsonUtil.jsDomain(domain.get, withApiKeys = false, withTags = false).toString()
           ResponseConstructor.constructJsonResponse(json)
         } else {
           ResponseConstructor.constructEmptyResponse
@@ -191,7 +203,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       domainManager.searchCommunityDomains(page, limit, filter, communityId).map { result =>
-        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false, withTags = true)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -350,9 +362,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets the specifications that are defined/tested in the platform
    */
-  def getDomainSpecs(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+  def getUnlinkedDomainSpecs(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewSpecificationsByDomainId(request, domainId).flatMap { _ =>
-      specificationManager.getSpecificationsWithGroups(domainId).map { specs =>
+      val testSuiteId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.TEST_SUITE_ID).toLong
+      specificationManager.getUnlinkedDomainSpecs(domainId, testSuiteId).map { specs =>
         val json = JsonUtil.jsSpecifications(specs).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -378,6 +391,17 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
       actorManager.getActorsWithSpecificationId(None, Some(List(specId))).map { actors =>
         val json = JsonUtil.jsActorsNonCase(actors).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchSpecActors(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      actorManager.searchActorsWithSpecificationId(specId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsActorsNonCase).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -438,11 +462,12 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canUpdateDomain(request, domainId).flatMap { _ =>
       domainManager.checkDomainExists(domainId).flatMap { domainExists =>
         if (domainExists) {
-          val shortName:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
-          val fullName:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
-          val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
-          val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
-          domainManager.updateDomain(domainId, shortName, fullName, description, reportMetadata).map { _ =>
+          val shortName = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
+          val fullName = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
+          val description = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+          val reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
+          val tags = ParameterExtractor.optionalBodyParameter(request, ParameterNames.TAGS)
+          domainManager.updateDomain(domainId, shortName, fullName, description, reportMetadata, tags).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
         } else {
@@ -900,28 +925,25 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteAllObsoleteTestResults(): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canDeleteAllObsoleteTestResults(request).flatMap { _ =>
-      testResultManager.deleteAllObsoleteTestResults().map { _ =>
-        ResponseConstructor.constructEmptyResponse
-      }
+    authorizationManager.canDeleteAllObsoleteTestResults(request).map { _ =>
+      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteAllObsoleteSessions
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
   def deleteObsoleteTestResultsForOrganisation(): Action[AnyContent] = authorizedAction.async { request =>
     val organisationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ORGANIZATION_ID).toLong
-    authorizationManager.canDeleteObsoleteTestResultsForOrganisation(request, organisationId).flatMap { _ =>
-      testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(organisationId).map { _ =>
-        ResponseConstructor.constructEmptyResponse
-      }
+    authorizationManager.canDeleteObsoleteTestResultsForOrganisation(request, organisationId).map { _ =>
+      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteObsoleteSessionsForOrganisation(organisationId)
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
   def deleteObsoleteTestResultsForCommunity(): Action[AnyContent] = authorizedAction.async { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
-    authorizationManager.canDeleteObsoleteTestResultsForCommunity(request, communityId).flatMap { _ =>
-      testResultManager.deleteObsoleteTestResultsForCommunityWrapper(communityId).map { _ =>
-        ResponseConstructor.constructEmptyResponse
-      }
+    authorizationManager.canDeleteObsoleteTestResultsForCommunity(request, communityId).map { _ =>
+      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteObsoleteSessionsForCommunity(communityId)
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
@@ -1565,7 +1587,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       conformanceManager.getConformanceStatementsForSystem(systemId, Some(actorId), snapshotId, withDescriptions = true, withResults = false).flatMap { result =>
         val conformanceStatement = result.headOption
         if (conformanceStatement.isDefined) {
-          conformanceManager.getConformanceStatusWithPagedTests(actorId, systemId, None, snapshotId).flatMap { results =>
+          val page = ParameterExtractor.extractPageNumber(request)
+          val limit = ParameterExtractor.extractPageLimit(request)
+          conformanceManager.getConformanceStatusWithPagedTests(actorId, systemId, None, snapshotId, page, limit).flatMap { results =>
             if (results.isDefined) {
               val systemInfoTask = if (systemId >= 0) {
                 systemManager.getSystemProfile(systemId)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -24,7 +24,6 @@ import com.apicatalog.jsonld.loader.SchemeRouter;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ValueEmbeddingEnumeration;
-import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
@@ -369,7 +368,7 @@ public class ShaclValidator extends AbstractValidator {
             report.setResult(TestResultType.SUCCESS);
         }
         if (sortBySeverity) {
-            reports.sort(new ReportItemComparator(ReportItemComparator.SortType.SEVERITY_THEN_LOCATION));
+            sortReport(report, false);
         }
         report.setReports(new TestAssertionGroupReportsType());
         report.getReports().getInfoOrWarningOrError().addAll(reports);

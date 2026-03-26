@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -40,6 +40,24 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .sortBy(_._2.asc)
         .result
         .map(_.toList.map(x => new ErrorTemplate(x._1, x._2, x._3, None, x._4)))
+    )
+  }
+
+  def searchErrorTemplatesByCommunityWithoutContent(communityId: Long, page: Long, limit: Long): Future[SearchResult[ErrorTemplate]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.errorTemplates
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.default))
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_._2.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.toList.map(x => new ErrorTemplate(x._1, x._2, x._3, None, x._4)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
     )
   }
 

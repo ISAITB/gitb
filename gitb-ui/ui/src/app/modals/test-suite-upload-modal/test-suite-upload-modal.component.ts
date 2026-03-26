@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,29 +13,28 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Observable, of } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { FileData } from 'src/app/types/file-data.type';
-import { Specification } from 'src/app/types/specification';
-import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice';
-import { SpecificationChoice } from './specification-choice';
-import { SpecificationResult } from './specification-result';
-import { TestSuiteUploadResult } from './test-suite-upload-result';
-import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-choice';
-import { ValidationReport } from './validation-report';
-import { find } from 'lodash';
-import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-upload-choice-test-case';
-import { ValidationReportItem } from './validation-report-item';
-import { AssertionReport } from 'src/app/components/diagram/assertion-report';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
-import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Observable, of} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {FileData} from 'src/app/types/file-data.type';
+import {Specification} from 'src/app/types/specification';
+import {PendingTestSuiteUploadChoice} from './pending-test-suite-upload-choice';
+import {SpecificationChoice} from './specification-choice';
+import {SpecificationResult} from './specification-result';
+import {TestSuiteUploadResult} from './test-suite-upload-result';
+import {TestSuiteUploadTestCaseChoice} from './test-suite-upload-test-case-choice';
+import {ValidationReport} from './validation-report';
+import {PendingTestSuiteUploadChoiceTestCase} from './pending-test-suite-upload-choice-test-case';
+import {ValidationReportItem} from './validation-report-item';
+import {AssertionReport} from 'src/app/components/diagram/assertion-report';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-suite-upload-modal',
@@ -49,7 +48,6 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   @Input() sharedTestSuite = false
   @Input() domainId!: number
   @Input() availableSpecifications: Specification[] = []
-  @Output() completed = new EventEmitter<boolean>()
 
   specifications: Specification[] = []
   actionPending = false
@@ -66,7 +64,6 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   results?: SpecificationResult[]
   specificationChoices?: SpecificationChoice[]
   specificationChoiceMap: {[key: number]: SpecificationChoice} = {}
-  reportItemsCollapsed = false
   specificationsCollapsed = true
   hasChoicesToComplete = false
   hasMultipleChoices = false
@@ -80,7 +77,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
 
   constructor(
     public readonly dataService: DataService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly conformanceService: ConformanceService,
     private readonly popupService: PopupService
@@ -100,6 +97,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
       replaceSelectedItems: new EventEmitter<Specification[]>(),
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      enableSelectAll: true,
       loader: () => of(this.availableSpecifications)
     }
   }
@@ -130,18 +128,6 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   showValidationReport() {
     this.step = 'validation'
     this.report = this.uploadResult?.validationReport
-  }
-
-  actionLabel(itemAction: string) {
-    if (itemAction == 'update') {
-      return '(updated)'
-    } else if (itemAction == 'add') {
-      return '(added)'
-    } else if (itemAction == 'unchanged') {
-      return '(unchanged)'
-    } else {
-      return '(deleted)'
-    }
   }
 
   showUploadResults() {
@@ -221,7 +207,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
           const testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
           const testCasesInArchive: TestSuiteUploadTestCaseChoice[] = []
           const testCasesInDB: TestSuiteUploadTestCaseChoice[] = []
-          const matchingSpecification = find(this.uploadResult!.testCases, (resultingSpec) => {
+          const matchingSpecification = this.uploadResult?.testCases?.find((resultingSpec) => {
             return resultingSpec.specification == spec.id
           })
           if (matchingSpecification) {
@@ -384,7 +370,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
     }
     const resolve$ = new Observable<boolean>((subscriber) => {
       if (hasDropHistory) {
-        this.confirmationDialogService.confirmDangerous("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Reset history", "Cancel")
+        this.confirmationDialogService.confirmDangerous("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Reset history", "Cancel", Constants.BUTTON_ICON.RESET)
         .subscribe((choice: boolean) => {
           subscriber.next(choice)
           subscriber.complete()
@@ -452,8 +438,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
     if (!finalStep && this.resolutionNeeded() && this.uploadResult?.pendingFolderId != undefined) {
       this.conformanceService.resolvePendingTestSuite(this.uploadResult.pendingFolderId, 'cancel', this.domainId, this.specificationIds()).subscribe(() => {})
     }
-    this.completed.emit(refreshNeeded)
-    this.modalInstance.hide()
+    this.modalInstance.close(refreshNeeded)
   }
 
   selectArchive(file: FileData) {

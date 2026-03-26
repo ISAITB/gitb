@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -58,7 +58,7 @@
         border-bottom-right-radius: 5px;
         position: absolute;
         top: 40px;
-        right: 0px;
+        right: 0;
         min-width: 500px;
         display: flex;
         z-index: 200;
@@ -103,12 +103,17 @@
         }
         .header-popup-options {
             padding: 30px;
+            gap: 5px;
             margin-left: auto;
             white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
             .profile-option {
                 padding: 3px 10px;
-                margin: 5px 0px;
                 border-radius: @border-radius;
+                width: 100%;
                 font-size: 0.9em;
                 .icon {
                     padding-right: 10px;

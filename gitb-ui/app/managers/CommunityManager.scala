@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -47,11 +47,18 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   conformanceManager: ConformanceManager,
                                   accountManager: AccountManager,
                                   domainParameterManager: DomainParameterManager,
+                                  userPreferenceManager: UserPreferenceManager,
                                   automationApiHelper: AutomationApiHelper,
                                   dbConfigProvider: DatabaseConfigProvider)
                                  (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
+
+  def getCommunityTags(id: Long): Future[Option[String]] = {
+    DB.run {
+      PersistenceSchema.communities.filter(_.id === id).map(_.tags).result.headOption
+    }.map(_.flatten)
+  }
 
   def existsOrganisationWithSameUserEmail(communityId: Long, email: String): Future[Boolean] = {
     DB.run(PersistenceSchema.users
@@ -83,7 +90,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Future[Long] = {
+  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo],
+                   customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction: DBIO[(Long, OrganisationCreationDbInfo)] = for {
       // Process organisation data
@@ -111,6 +119,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       // Save admin user account
       userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationInfo.organisationId)
+      // Initialise the user preferences.
+      _ <- userPreferenceManager.initialiseUserPreferences(organisation.community, userId)
       // Link current session user with created admin user account
       _ <-
         if (actualUserInfo.isDefined) {
@@ -157,7 +167,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
         })
       if (!forCount) {
-        baseQuery.map(x => (x.id, x.shortname, x.fullname))
+        baseQuery.map(x => (x.id, x.shortname, x.fullname, x.tags))
           .sortBy(_._2.asc)
       } else {
         baseQuery
@@ -167,8 +177,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       for {
         results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map { results =>
           results.map { r =>
-            val result = r.asInstanceOf[(Long, String, String)]
-            CommunityLimited(result._1, result._2, result._3)
+            val result = r.asInstanceOf[(Long, String, String, Option[String])]
+            CommunityLimited(result._1, result._2, result._3, result._4)
           }
         }
         resultCount <- queryBuilder(true).size.result
@@ -184,6 +194,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .filter(x => x._1.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x._1.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
         .sortBy(_._1.shortname.asc)
         .result
+      // Load the community IDs for which default organisations are enabled
+      communitiesWithDefaultOrganisations <- PersistenceSchema.organizations
+        .filter(_.selfRegDefault === true)
+        .map(_.community)
+        .result
+        .map(x => x.toSet)
       communityIds <- DBIO.successful(communities.map(_._1.id))
       // Load templates
       templates <- PersistenceSchema.organizations
@@ -243,24 +259,29 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           }
           paramMap.view.mapValues(_.toList).toMap
         }
-    } yield (communities, templates, labels, orgParameters)
+    } yield (communities, templates, labels, orgParameters, communitiesWithDefaultOrganisations)
     DB.run(action).map { results =>
       val buffer = new ListBuffer[SelfRegOption]
       results._1.foreach { community =>
-        buffer += new SelfRegOption(
-          community._1.id,
-          community._1.shortname,
-          selfRegDescriptionToUse(community._1.description, community._2),
-          community._1.selfRegTokenHelpText,
-          community._1.selfRegType,
-          results._2.get(community._1.id), // Templates
-          results._3.getOrElse(community._1.id, List()), // Labels
-          results._4.getOrElse(community._1.id, List()), // Organisation parameters
-          community._1.selfRegForceTemplateSelection,
-          community._1.selfRegForceRequiredProperties,
-          community._1.selfRegAllowOrganisationTokens,
-          community._1.selfRegForceOrganisationTokenInput
-        )
+        val hasDefaultOrganisation = results._5.contains(community._1.id)
+        if (!community._1.selfRegJoinExisting || hasDefaultOrganisation || community._1.selfRegAllowOrganisationTokens) {
+          // In other cases we have a community forcing to join existing organisations but no way to do so (no default organisation and no organisation tokens)
+          buffer += new SelfRegOption(
+            community._1.id,
+            community._1.shortname,
+            selfRegDescriptionToUse(community._1.description, community._2),
+            community._1.selfRegTokenHelpText,
+            community._1.selfRegType,
+            results._2.get(community._1.id), // Templates
+            results._3.getOrElse(community._1.id, List()), // Labels
+            results._4.getOrElse(community._1.id, List()), // Organisation parameters
+            community._1.selfRegForceTemplateSelection,
+            community._1.selfRegForceRequiredProperties,
+            community._1.selfRegAllowOrganisationTokens,
+            community._1.selfRegJoinExisting,
+            hasDefaultOrganisation // Whether a default organisation is defined
+          )
+        }
       }
       buffer.toList
     }
@@ -313,7 +334,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       .result
       .head
     ).map { result =>
-      new Community(result._2, result._1)
+      new Community(result._2, result._1, None)
     }
   }
 
@@ -333,8 +354,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   /**
     * Creates new community
     */
-  def createCommunity(community: Communities): Future[(Long, Long)] = {
-    DB.run(createCommunityInternal(community).transactionally)
+  def createCommunity(community: Communities, userPreferences: UserPreferenceDefaults): Future[(Long, Long)] = {
+    DB.run(createCommunityInternal(community, Some(userPreferences)).transactionally)
   }
 
   def createCommunityThroughAutomationApi(input: CreateCommunityRequest): Future[String] = {
@@ -366,21 +387,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         createCommunityInternal(Communities(0L, input.shortName, input.fullName, input.supportEmail,
           SelfRegistrationType.NotSupported.id.toShort, None, None, selfRegNotification = false,
           interactionNotification = input.interactionNotifications.getOrElse(false), input.description, SelfRegistrationRestriction.NoRestriction.id.toShort,
-          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false,
+          selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
           allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
-          allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, apiKeyToUse, None, domainId
-        ))
+          allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true,
+          apiKeyToUse, None, None, domainId
+        ), None)
       }
     } yield apiKeyToUse
     DB.run(action.transactionally)
   }
 
-  def createCommunityInternal(community: Communities): DBIO[(Long, Long)] = {
-    createCommunityInternal(community, checkApiKeyUniqueness = false)
+  def createCommunityInternal(community: Communities, userPreferences: Option[UserPreferenceDefaults]): DBIO[(Long, Long)] = {
+    createCommunityInternal(community, checkApiKeyUniqueness = false, userPreferences)
   }
 
-  def createCommunityInternal(community: Communities, checkApiKeyUniqueness: Boolean): DBIO[(Long, Long)] = {
+  def createCommunityInternal(community: Communities, checkApiKeyUniqueness: Boolean, userPreferences: Option[UserPreferenceDefaults]): DBIO[(Long, Long)] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {
         PersistenceSchema.communities.filter(_.apiKey === community.apiKey).exists.result
@@ -392,20 +415,43 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         PersistenceSchema.insertCommunity += communityToUse
       }
       adminOrganisationId <- {
-        organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, None, communityId))
+        organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, None, selfRegDefault = false, communityId))
       }
+      // Add default user preferences
+      _ <- PersistenceSchema.userPreferenceDefaults += userPreferences.map(_.copy(community = communityId)).getOrElse(UserPreferenceDefaults.createDefault(communityId))
     } yield (communityId, adminOrganisationId)
   }
 
   /**
     * Gets community with specified id
     */
-  def getCommunityById(communityId: Long): Future[Community] = {
+  def getCommunityById(communityId: Long, withDefaultOrganisation: Boolean, withDefaultUserPreferences: Boolean): Future[Community] = {
     DB.run(
       for {
         c <- PersistenceSchema.communities.filter(_.id === communityId).result.head
         d <- PersistenceSchema.domains.filter(_.id === c.domain).result.headOption
-      } yield new Community(c, d)
+        o <- {
+          if (c.selfRegType != Enums.SelfRegistrationType.NotSupported.id && withDefaultOrganisation) {
+            PersistenceSchema.organizations
+              .filter(_.community === communityId)
+              .filter(_.selfRegDefault === true)
+              .result
+              .headOption
+          } else {
+            DBIO.successful(None)
+          }
+        }
+        p <- {
+          if (withDefaultUserPreferences) {
+            PersistenceSchema.userPreferenceDefaults
+              .filter(_.community === communityId)
+              .result
+              .headOption
+          } else {
+            DBIO.successful(None)
+          }
+        }
+      } yield new Community(c, d, o, p)
     )
   }
 
@@ -475,9 +521,9 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, interactionNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
-                                                allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
-                                                apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
+                                                selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
+                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean,
+                                                apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean, tags: Option[String], onSuccess: mutable.ListBuffer[() => _]) = {
     for {
       // Update short name.
       _ <- {
@@ -505,11 +551,21 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .filter(_.id === community.id)
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView, c.allowUserManagement, c.interactionNotification
+          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView,
+          c.allowUserManagement, c.allowXmlReports, c.interactionNotification, c.tags
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView, allowUserManagement, interactionNotification
+          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView,
+          allowUserManagement, allowXmlReports, interactionNotification, tags
         )
+      // Update user preferences.
+      _ <- {
+        if (userPreferences.isDefined) {
+          userPreferenceManager.updateUserPreferenceDefaults(community.id, userPreferences.get, overrideExistingUserPreferences)
+        } else {
+          DBIO.successful(())
+        }
+      }
       // Update self-registration properties.
       _ <- {
         if (Configurations.REGISTRATION_ENABLED) {
@@ -518,11 +574,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             .map(c => (
               c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfRegNotification,
               c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
-              c.selfRegAllowOrganisationTokens, c.selfRegAllowOrganisationTokenManagement, c.selfRegForceOrganisationTokenInput,
+              c.selfRegAllowOrganisationTokens, c.selfRegAllowOrganisationTokenManagement, c.selfRegForceOrganisationTokenInput, c.selfRegJoinExisting, c.selfRegJoinAsAdmin,
             ))
             .update(selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
               selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
               selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokens && selfRegAllowOrganisationTokenManagement, selfRegAllowOrganisationTokens && selfRegForceOrganisationTokenInput,
+              selfRegJoinExisting, selfRegJoinAsAdmin
             )
         } else {
           DBIO.successful(())
@@ -627,9 +684,11 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateRequest.description.getOrElse(community.description),
           community.selfRegRestriction, community.selfRegForceTemplateSelection, community.selfRegForceRequiredProperties,
           community.selfRegAllowOrganisationTokens, community.selfRegAllowOrganisationTokenManagement, community.selfRegForceOrganisationTokenInput,
+          community.selfRegJoinExisting, community.selfRegJoinAsAdmin,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
-          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
+          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, community.allowXmlReports, None, domainIdToUse,
+          checkApiKeyUniqueness = false, None, overrideExistingUserPreferences = false, community.tags, onSuccess
         )
       }
     } yield ()
@@ -643,11 +702,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String],
                       selfRegNotification: Boolean, interactionNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
-                      selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
+                      selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean,
+                      selfRegForceOrganisationTokenInput: Boolean, selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
-                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
-                      domainId: Option[Long]): Future[Unit] = {
+                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean,
+                      domainId: Option[Long], selfRegDefaultOrganisation: Option[Long], userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean,
+                      tags: Option[String]): Future[Unit] = {
 
     val onSuccess = ListBuffer[() => _]()
     val dbAction = for {
@@ -657,13 +718,32 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateCommunityInternal(
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-            selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
+            selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, None,
-            domainId, checkApiKeyUniqueness = false, onSuccess
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
+            None, domainId, checkApiKeyUniqueness = false, userPreferences, overrideExistingUserPreferences, tags, onSuccess
           )
         } else {
           throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
+        }
+      }
+      // Update the default self registration organisation. First remove the previous one (if defined).
+      _ <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.selfRegDefault === true)
+        .map(_.selfRegDefault)
+        .update(false)
+      // If a default self registration is set then persist it.
+      _ <- {
+        if (selfRegDefaultOrganisation.isDefined) {
+          PersistenceSchema.organizations
+            .filter(_.community === communityId)
+            .filter(_.adminOrganization === false)
+            .filter(_.id === selfRegDefaultOrganisation.get)
+            .map(_.selfRegDefault)
+            .update(true)
+        } else {
+          DBIO.successful(())
         }
       }
     } yield ()
@@ -705,6 +785,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- deleteCommunityKeystoreInternal(communityId)
       _ <- deleteCommunityReportStylesheets(communityId, onSuccessCalls)
       _ <- PersistenceSchema.communityLabels.filter(_.community === communityId).delete
+      _ <- PersistenceSchema.userPreferenceDefaults.filter(_.community === communityId).delete
       _ <- PersistenceSchema.communities.filter(_.id === communityId).delete
     } yield ()
   }

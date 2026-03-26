@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -57,6 +57,7 @@ export class UserGuideService {
   initialise() {
     this.paths['/'] = this.setPath('')
     this.paths['/home'] = this.setPath('index.html')
+    this.paths['/start'] = this.setPath('index.html')
     this.paths['/login'] = this.setPath('login/index.html')
     this.paths['/settings/profile'] = this.setPath('profile/index.html')
     this.paths['/settings/organisation'] = this.setPath('manageOrganisation/index.html', '', 'validateTestSetup/index.html#manage-your-organisation')

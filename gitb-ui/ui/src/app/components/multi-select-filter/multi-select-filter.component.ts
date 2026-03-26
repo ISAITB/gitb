@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,7 +18,6 @@ import {DataService} from 'src/app/services/data.service';
 import {ItemMap} from './item-map';
 import {MultiSelectConfig} from './multi-select-config';
 import {EntityWithId} from '../../types/entity-with-id';
-import {filter, find} from 'lodash';
 import {FilterValues} from '../test-filter/filter-values';
 import {FilterUpdate} from '../test-filter/filter-update';
 import {map, Observable, of, share, Subscription} from 'rxjs';
@@ -51,6 +50,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   @ViewChild('filterControl') filterControlElement?: ElementRef
   @ViewChild('filterForm') filterFormElement?: ElementRef
 
+  selectedItemIds: number[] = []
   selectedItems: T[] = []
   availableItems: T[] = []
   visibleAvailableItems: T[] = []
@@ -141,6 +141,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   clearItems(): void {
     this.selectedSelectedItems = {}
     this.selectedItems = []
+    this.selectedItemIds = []
     this.updateCheckFlag(false)
     this.updateLabel()
   }
@@ -150,6 +151,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.updateCheckFlag(false)
     this.updateLabel()
     this.selectedItems = []
+    this.selectedItemIds = []
     this.availableItems = items
     this.visibleAvailableItems = this.availableItems
   }
@@ -213,11 +215,11 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
           const previouslySelectedItem = this.selectedSelectedItems[id].item
           if (this.itemsWithSameValue[id]) {
             // Other similarly valued items exist.
-            let otherApplicableItemWithSameTextValue = find(this.itemsWithSameValue[id], (entry) => { return entry.applicable })
+            let otherApplicableItemWithSameTextValue = this.itemsWithSameValue[id].find((entry) => { return entry.applicable })
             if (otherApplicableItemWithSameTextValue != undefined) {
               const newSelectedItemId = otherApplicableItemWithSameTextValue.item.id
               // A previously hidden similarly valued item still applies - replace the visible one with it.
-              const otherHiddenItems = filter(this.itemsWithSameValue[id], (entry) => { return entry.item.id != newSelectedItemId })
+              const otherHiddenItems = this.itemsWithSameValue[id].filter((entry) => { return entry.item.id != newSelectedItemId })
               // Add the previously selected item as a hidden, non-applicable one and the remaining ones.
               this.itemsWithSameValue[newSelectedItemId] = [{applicable: false, item: previouslySelectedItem}].concat(otherHiddenItems)
               this.selectedSelectedItems[newSelectedItemId] = { selected: true, item: otherApplicableItemWithSameTextValue.item }
@@ -240,6 +242,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       }
     }
     this.selectedItems = this.sortItems(newItemsToSet)
+    this.selectedItemIds = this.selectedItems.map(item => item.id)
     this.updateCheckFlag()
     this.updateLabel()
     this.applyItems(true, skipApply)
@@ -251,14 +254,14 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.clearItemsSubscription) this.clearItemsSubscription.unsubscribe()
   }
 
-  @HostListener('window:resize', ['$event'])
+  @HostListener('window:resize')
   onWindowResize() {
     if (this.formVisible) {
       this.calculateSizeAndPosition()
     }
   }
 
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onWindowScroll() {
     if (this.formVisible) {
       this.calculateSizeAndPosition()
@@ -266,7 +269,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   @HostListener('document:click', ['$event'])
-  clickRegistered(event: any) {
+  clickRegistered(event: Event) {
     if (!this.eRef.nativeElement.contains(event.target)) {
       this.close()
     }
@@ -396,15 +399,19 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   private updateLabel() {
-    if (this.selectedItems.length == 0) {
+    if (this.selectedItemIds.length == 0) {
       this.filterLabel = this.defaultFilterLabel
     } else {
       if (this.config.singleSelection == true) {
         if (this.config.singleSelectionPersistent == true) {
-          this.filterLabel = this.selectedItems[0][this.config.textField]
+          if (this.selectedItems.length > 0) {
+            this.filterLabel = this.selectedItems[0][this.config.textField]
+          } else {
+            this.filterLabel = ""
+          }
         }
       } else {
-        this.filterLabel = "("+this.selectedItems.length+")"
+        this.filterLabel = "("+this.selectedItemIds.length+")"
       }
     }
   }
@@ -545,12 +552,18 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     return result
   }
 
-  private isSelected(id: number): boolean {
-    if (this.selectedSelectedItems[id]) {
+  private isSelected(item: T): boolean {
+    const selectedItem = this.selectedSelectedItems[item.id]
+    if (selectedItem) {
+      if (selectedItem.item[this.config.textField] === '') {
+        selectedItem.item = item
+        const itemIndex = this.selectedItems.findIndex(item => item.id === selectedItem.item.id)
+        this.selectedItems[itemIndex] = item
+      }
       return true
-    } else if (this.itemsWithSameValue[id]) {
-      return find(this.itemsWithSameValue[id], (entry) => {
-        return entry.applicable && entry.item.id == id
+    } else if (this.itemsWithSameValue[item.id]) {
+      return this.itemsWithSameValue[item.id].find((entry) => {
+        return entry.applicable && entry.item.id == item.id
       }) != undefined
     }
     return false
@@ -558,8 +571,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   private findItemWithSameTextValue(items: T[], item: T) {
     let itemWithSameTextValue: T|undefined
-    if (items != undefined) {
-      itemWithSameTextValue = find(items, (existingItem) => {
+    if (items != undefined && (this.config.squashItemsWithSameText == undefined || this.config.squashItemsWithSameText)) {
+      itemWithSameTextValue = items.find((existingItem) => {
         return existingItem[this.config.textField] == item[this.config.textField]
       })
     }
@@ -589,12 +602,14 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
         this.loadPending = false
         const newSelectedAvailableItems: ItemMap<T> = {}
         const newAvailableItems: T[] = []
+        const existingSelectedItemIds = this.dataService.asIdSetFromIds(this.selectedItemIds)
         for (let item of items) {
           if (this.config.singleSelection == true) {
             newAvailableItems.push(item)
             newSelectedAvailableItems[item.id] = { selected: false, item: item }
+            newSelectedAvailableItems[item.id].selected = this.selectedItemIds.find((id) => id == item.id) != undefined
           } else {
-            if (!this.isSelected(item.id)) {
+            if (!this.isSelected(item)) {
               let matchingItem = this.findItemWithSameTextValue(newAvailableItems, item)
               if (matchingItem) {
                 this.recordItemWithSameTextValue(matchingItem, item)
@@ -603,8 +618,13 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
                 if (matchingItem) {
                   this.recordItemWithSameTextValue(matchingItem, item)
                 } else {
-                  newAvailableItems.push(item)
-                  newSelectedAvailableItems[item.id] = { selected: false, item: item }
+                  if (existingSelectedItemIds[item.id]) {
+                    this.selectedItems.push(item)
+                    this.selectedSelectedItems[item.id] = { selected: true, item: item }
+                  } else {
+                    newAvailableItems.push(item)
+                    newSelectedAvailableItems[item.id] = { selected: false, item: item }
+                  }
                 }
               }
             }
@@ -623,7 +643,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.visibleAvailableItems = this.availableItems
     } else {
       const textForSearch = this.textValue.trim().toLowerCase()
-      this.visibleAvailableItems = filter(this.availableItems, (item) => { return (<string>item[this.config.textField]).toLowerCase().indexOf(textForSearch) >= 0 })
+      this.visibleAvailableItems = this.availableItems.filter((item) => { return (<string>item[this.config.textField]).toLowerCase().indexOf(textForSearch) >= 0 })
     }
   }
 
@@ -636,6 +656,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   selectAvailableItem(item: T) {
     if (this.config.singleSelection) {
       this.selectedItems = [item]
+      this.selectedItemIds = [item.id]
       const itemToReport: FilterValues<T> = { active: [], other: [] }
       itemToReport.active = this.getItemsToSignalForItem(item)
       this._value = item
@@ -680,12 +701,19 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   private getHiddenItemsForItem(item: T, applicable: boolean): T[] {
     let items: T[] = []
     if (this.itemsWithSameValue[item.id]) {
-      items = filter(this.itemsWithSameValue[item.id], (otherItem) => { return otherItem.applicable == applicable }).map((otherItem) => otherItem.item)
+      items = this.itemsWithSameValue[item.id].filter((otherItem) => { return otherItem.applicable == applicable }).map((otherItem) => otherItem.item)
     }
     if (items == undefined) {
       items = []
     }
     return items
+  }
+
+  applyAllItems() {
+    this.visibleAvailableItems.forEach((item: T) => {
+      this.selectAvailableItem(item)
+    })
+    this.applyItems()
   }
 
   applyItems(skipRefresh?: boolean, skipApply?: boolean) {
@@ -718,6 +746,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       selectedItemsToReport.other = selectedItemsToReport.other.concat(this.getHiddenItemsForItem(item, false))
     }
     this.selectedItems = this.sortItems(newSelectedItems)
+    this.selectedItemIds = this.selectedItems.map(item => item.id)
     this.updateCheckFlag()
     this.updateLabel()
     if (this.config.singleSelection) {
@@ -756,7 +785,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   updateCheckFlag(forcedValue?: boolean) {
     if (forcedValue == undefined) {
-      this.hasCheckedSelectedItem = this.hasCheckedItems(this.selectedSelectedItems) || this.hasCheckedItems(this.selectedAvailableItems)
+      this.hasCheckedSelectedItem = this.hasCheckedItems(this.selectedSelectedItems) || this.hasCheckedItems(this.selectedAvailableItems) || this.selectedItemIds.length > 0
     } else {
       this.hasCheckedSelectedItem = forcedValue
     }
@@ -794,6 +823,20 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+  }
+
+  getSelectedItems(): T[] {
+    return [...this.selectedItems];
+  }
+
+  getSelectedItemIds(): number[] {
+    return [...this.selectedItemIds];
+  }
+
+  setSelectedItemIdsBeforeLoad(ids: number[]) {
+    this.selectedItemIds = [...ids]
+    this.updateLabel()
+    this.updateCheckFlag(this.selectedItemIds.length > 0)
   }
 
   protected readonly Constants = Constants;

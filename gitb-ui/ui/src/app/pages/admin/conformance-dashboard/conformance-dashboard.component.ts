@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,7 +14,6 @@
  */
 
 import {Component, NgZone, OnInit, ViewChild} from '@angular/core';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
@@ -31,7 +30,6 @@ import {SystemService} from 'src/app/services/system.service';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {ReportSupportService} from 'src/app/services/report-support.service';
-import {find} from 'lodash';
 import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
 import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {
@@ -42,6 +40,7 @@ import {CheckboxOptionState} from '../../../components/checkbox-option-panel/che
 import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-result-full-with-test-suites';
 import {ActivatedRoute} from '@angular/router';
 import {MultiSelectFilterComponentApi} from '../../../components/multi-select-filter/multi-select-filter-component-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -73,7 +72,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     dataService: DataService,
     zone: NgZone,
     conformanceService: ConformanceService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly routingService: RoutingService,
     private readonly communityService: CommunityService,
     private readonly organisationService: OrganisationService,
@@ -83,7 +82,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   ) { super(dataService, zone, conformanceService) }
 
   ngOnInit(): void {
-    this.latestSnapshotButtonLabel = 'Latest conformance status'
+    this.latestSnapshotButtonLabel = Constants.LATEST_CONFORMANCE_STATUS_LABEL
     this.snapshotButtonLabel = this.latestSnapshotButtonLabel
 		if (this.dataService.isCommunityAdmin) {
 			this.communityId = this.dataService.community!.id
@@ -106,6 +105,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         name: 'availableCommunities',
         textField: 'fname',
         filterLabel: 'Select community',
+        filterLabelIcon: Constants.BUTTON_ICON.COMMUNITY,
         singleSelection: true,
         singleSelectionPersistent: true,
       }
@@ -114,6 +114,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       name: 'availableOrganisations',
       textField: 'fname',
       filterLabel: `Select ${this.dataService.labelOrganisationLower()}`,
+      filterLabelIcon: Constants.BUTTON_ICON.ORGANISATION,
       singleSelection: true,
       singleSelectionPersistent: true,
     }
@@ -121,6 +122,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       name: 'availableSystems',
       textField: 'fname',
       filterLabel: `Select ${this.dataService.labelSystemLower()}`,
+      filterLabelIcon: Constants.BUTTON_ICON.SYSTEM,
       singleSelection: true,
       singleSelectionPersistent: true,
     }
@@ -189,14 +191,11 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   manageConformanceSnapshots() {
     if (this.selectedCommunityId != undefined) {
-      const modalRef = this.modalService.show(ConformanceSnapshotsModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          communityId: this.selectedCommunityId!,
-          currentlySelectedSnapshot: this.snapshotIdToUse()
-        }
-      })
-      modalRef.content!.select.subscribe((selectedSnapshot) => {
+      const modalRef = this.modalService.open(ConformanceSnapshotsModalComponent, { size: 'lg'})
+      const modalInstance = modalRef.componentInstance as ConformanceSnapshotsModalComponent
+      modalInstance.communityId = this.selectedCommunityId!
+      modalInstance.currentlySelectedSnapshot = this.snapshotIdToUse()
+      modalInstance.select.subscribe((selectedSnapshot) => {
         if (selectedSnapshot) {
           this.snapshotButtonLabel = selectedSnapshot.label
           if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
@@ -318,6 +317,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }
     if (!fromSnapshotChange) {
       this.activeConformanceSnapshot = undefined
+      this.snapshotButtonLabel = this.latestSnapshotButtonLabel
     }
     let loadObservable: Observable<Organisation[]>
     if (this.selectedCommunityId == undefined) {
@@ -334,7 +334,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           organisationToApply = data[0]
           this.selectedOrganisationId = organisationToApply.id
         } else if (data.length > 1 && this.selectedOrganisationId != undefined) {
-          organisationToApply = find(data, (org) => org.id == this.selectedOrganisationId)
+          organisationToApply = data.find((org) => org.id == this.selectedOrganisationId)
           if (organisationToApply == undefined) {
             this.selectedOrganisationId = undefined
           }
@@ -372,7 +372,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           systemToApply = data[0]
           this.selectedSystemId = systemToApply.id
         } else if (data.length > 1 && this.selectedSystemId != undefined) {
-          systemToApply = find(data, (sys) => sys.id == this.selectedSystemId)
+          systemToApply = data.find((sys) => sys.id == this.selectedSystemId)
           if (systemToApply == undefined) {
             this.selectedSystemId = undefined
           }
@@ -416,7 +416,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   getConformanceStatementsForTreeView() {
     this.restoreState()
-    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE }
+    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
     if (this.initialPagingStatus != undefined) {
       pagingEvent = { targetPage: this.initialPagingStatus.currentPage, targetPageSize: this.initialPagingStatus.pageSize }
       this.initialPagingStatus = undefined

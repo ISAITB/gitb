@@ -1,12 +1,14 @@
-<div class="root-container">
+<div class="root-container" (click)="tagClicked($event)" [class.with-toggle]="toggleEnabled">
     <div class="tag-container"
         [class.pill]="pill"
-        [tooltip]="tooltipText"
-        [isDisabled]="tooltipText == undefined || tooltipText == ''"
+        [class.in-table]="inTable"
+        [ngbTooltip]="tooltipText"
+        [disableTooltip]="tooltipText == undefined || tooltipText == ''"
+        [openDelay]="Constants.TOOLTIP_DELAY"
         [ngClass]="styleClass == undefined ? '': styleClass"
         [style.background]="background ? background : null"
         [style.color]="foreground ? foreground : null"
-        [style.border]="(!setDefaultBorder) ? ('1px solid '+background) : null"
+        [style.border]="(!isDefaultBorder()) ? ('1px solid '+background) : null"
         [class.editable]="editable"
     >
         @if (label) {
@@ -21,12 +23,17 @@
         @if (value) {
             <div class="tag-value">{{value}}</div>
         }
+        @if (toggleEnabled) {
+            <div class="form-switch ms-3">
+                <input name="toggle" class="form-check-input" type="checkbox" role="switch" aria-label="Toggle" [(ngModel)]="toggled">
+            </div>
+        }
     </div>
     @if (editable) {
         <div class="tag-controls">
             <div class="btn-group">
-                <button (click)="editTag()" class="btn btn-secondary" tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" containerClass="shortTooltip" container="body"><i class="fa-solid fa-pencil" aria-hidden="true"></i></button>
-                <button (click)="deleteTag()" class="btn btn-secondary" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" containerClass="shortTooltip" container="body"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                <button (click)="editTag()" type="button" class="btn btn-secondary" ngbTooltip="Edit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" tooltipClass="shortTooltip" container="body"><i [class]="Constants.BUTTON_ICON.EDIT" aria-hidden="true"></i></button>
+                <button (click)="deleteTag()" type="button" class="btn btn-secondary" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" tooltipClass="shortTooltip" container="body"><i [class]="Constants.BUTTON_ICON.DELETE" aria-hidden="true"></i></button>
             </div>
         </div>
     }

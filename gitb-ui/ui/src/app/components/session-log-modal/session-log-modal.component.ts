@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,12 +15,13 @@
 
 import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import * as CodeMirror from 'codemirror';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
 import {LineInfo} from './line-info';
 import {LogLevel} from '../../types/log-level';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-session-log-modal',
@@ -39,21 +40,11 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
   minimumLogLevel = LogLevel.DEBUG
   content = ''
   contentLines: LineInfo[] = []
-  tail = false
-
+  tail = true
   LogLevel = LogLevel
-  levelFilterLabelDebug = 'Show all messages'
-  levelFilterLabelInfo = 'Show at least info messages'
-  levelFilterLabelWarn = 'Show at least warnings'
-  levelFilterLabelError = 'Show errors'
-  levelFilterLabel = this.levelFilterLabelDebug
-
-  tailLabelYes = 'Scroll to latest'
-  tailLabelNo = 'Do not scroll to latest'
-  tailLabel = this.tailLabelNo
 
   constructor(
-    modalRef: BsModalRef,
+    modalRef: NgbActiveModal,
     dataService: DataService,
     popupService: PopupService
   ) { super(modalRef, dataService, popupService) }
@@ -151,23 +142,12 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
     else return 'error'
   }
 
-  applyMinimumLogLevel(level: LogLevel) {
-    if (this.minimumLogLevel != level) {
-      this.minimumLogLevel = level
-      if (level == LogLevel.DEBUG) {
-        this.levelFilterLabel = this.levelFilterLabelDebug
-      } else if (level == LogLevel.INFO) {
-        this.levelFilterLabel = this.levelFilterLabelInfo
-      } else if (level == LogLevel.WARN) {
-        this.levelFilterLabel = this.levelFilterLabelWarn
-      } else if (level == LogLevel.ERROR) {
-        this.levelFilterLabel = this.levelFilterLabelError
-      }
-      this.updateContent()
-      setTimeout(() => {
-        this.applyLineStyles()
-      })
-    }
+  applyMinimumLogLevel() {
+    this.updateContent()
+    setTimeout(() => {
+      this.applyLineStyles()
+    })
   }
 
+  protected readonly Constants = Constants;
 }

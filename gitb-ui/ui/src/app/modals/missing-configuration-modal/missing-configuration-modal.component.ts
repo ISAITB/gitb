@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,14 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { MissingConfigurationAction } from './missing-configuration-action';
-import { DataService } from 'src/app/services/data.service';
-import { EndpointParameter } from 'src/app/types/endpoint-parameter';
+import {Component, Input, OnInit} from '@angular/core';
+import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
+import {OrganisationParameter} from 'src/app/types/organisation-parameter';
+import {SystemParameter} from 'src/app/types/system-parameter';
+import {DataService} from 'src/app/services/data.service';
+import {EndpointParameter} from 'src/app/types/endpoint-parameter';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-missing-configuration-modal',
@@ -35,7 +35,6 @@ export class MissingConfigurationModalComponent implements OnInit {
   @Input() systemConfigurationValid!: boolean
   @Input() statementProperties!: EndpointParameter[]
   @Input() configurationValid!: boolean
-  @Output() action = new EventEmitter<MissingConfigurationAction>()
 
   organisationPropertyVisibility!: ConfigurationPropertyVisibility
   systemPropertyVisibility!: ConfigurationPropertyVisibility
@@ -50,7 +49,7 @@ export class MissingConfigurationModalComponent implements OnInit {
   requiredPropertiesIncludeNonEditable = false
 
   constructor(
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     public readonly dataService: DataService
   ) { }
 
@@ -73,13 +72,15 @@ export class MissingConfigurationModalComponent implements OnInit {
 
   close(view?: boolean) {
     if (view == true) {
-      this.action.emit({
+      this.modalRef.close({
         viewOrganisationProperties: this.showOrganisationProperties,
         viewSystemProperties: this.showSystemProperties,
         viewStatementProperties: this.showStatementProperties
       })
+    } else {
+      this.modalRef.dismiss()
     }
-    this.modalRef.hide()
   }
 
+  protected readonly Constants = Constants;
 }

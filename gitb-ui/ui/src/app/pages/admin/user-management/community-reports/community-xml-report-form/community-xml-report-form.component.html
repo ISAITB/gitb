@@ -2,7 +2,7 @@
     <form>
         <div class="row">
             <legend class="col-3 col-form-label text-end pt-0">Custom XML reports:</legend>
-            <div class="col-7">
+            <div class="col-8 col-md-6">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" [attr.id]="idValueStylesheet" [name]="idValueStylesheet" [(ngModel)]="useStylesheet">
                     <label class="form-check-label" [attr.for]="idValueStylesheet">Apply stylesheet to XML reports
@@ -11,13 +11,13 @@
                 </div>
             </div>
         </div>
-        <div [collapse]="!useStylesheet" [isAnimated]="animated">
-            <div class="row mt-3">
+        <div [ngbCollapse]="!useStylesheet" [animation]="animated">
+            <div class="row pt-3">
                 <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
-                <div class="col-7">
+                <div class="col-8 col-md-6">
                     <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings!.stylesheetExists">
                         @if (reportSettings!.stylesheetExists) {
-                            <button type="button" class="btn btn-secondary" (click)="viewStylesheet(config.reportType)" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            <button type="button" class="btn btn-secondary" (click)="viewStylesheet(config.reportType)" tooltipClass="shortTooltip" ngbTooltip="View" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></button>
                         }
                     </app-file-select>
                 </div>
@@ -26,7 +26,7 @@
         </div>
         <div class="row mt-3 pt-1">
             <legend class="col-3 col-form-label text-end pt-0">Custom PDF reports:</legend>
-            <div class="col-7">
+            <div class="col-8">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" [attr.id]="idValueCustomPdf" [name]="idValueCustomPdf" [(ngModel)]="reportSettings!.customPdfs">
                     <label class="form-check-label" [attr.for]="idValueCustomPdf">Delegate PDF generation to external service
@@ -35,17 +35,17 @@
                 </div>
             </div>
         </div>
-        <div [collapse]="!reportSettings!.customPdfs" [isAnimated]="animated" (expanded)="serviceBlockExpanded()">
-            <div class="row mt-3">
+        <div [ngbCollapse]="!reportSettings!.customPdfs" [animation]="animated" (shown)="serviceBlockExpanded()">
+            <div class="row pt-3">
                 <label class="col-3 col-form-label text-end" for="customPdfService">* Service address:</label>
-                <div class="col-7">
+                <div class="col-8 col-md-6">
                     <input #serviceField type="text" id="customPdfService" name="customPdfService" [(ngModel)]="reportSettings!.customPdfService" class="form-control"/>
                 </div>
                 <div app-tooltip class="col-auto" tbTooltip="The full address of the service that will be called to generate PDF reports."></div>
             </div>
-            <div [collapse]="!useStylesheet" [isAnimated]="true">
-                <div class="row mt-3 pt-0">
-                    <div class="col-7 offset-3">
+            <div [ngbCollapse]="!useStylesheet" [animation]="true">
+                <div class="row pt-3">
+                    <div class="col-8 col-md-6 offset-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" [attr.id]="idValueCustomPdfWithCustomXml" [name]="idValueCustomPdfWithCustomXml" [(ngModel)]="reportSettings!.customPdfsWithCustomXml">
                             <label class="form-check-label" [attr.for]="idValueCustomPdfWithCustomXml">Apply stylesheet before calling service
@@ -58,7 +58,7 @@
         </div>
         <div class="row mt-3 pt-1">
             <legend class="col-3 col-form-label text-end pt-0">PDF signatures:</legend>
-            <div class="col-7">
+            <div class="col-8 col-md-6">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="checkbox" [attr.id]="idValueSign" [name]="idValueSign" [(ngModel)]="reportSettings!.signPdfs">
                     <label class="form-check-label" [attr.for]="idValueSign">Add signature to PDF reports
@@ -68,23 +68,23 @@
             </div>
         </div>
         <div class="btn-toolbar mt-3">
-            <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
             @if (config.previewOptions.length > 0) {
-                <div class="btn-group" dropdown [isDisabled]="updatePending || !updateEnabled()">
-                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
-                    <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
+                <div class="btn-group" ngbDropdown>
+                    <button id="button-preview" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" ngbDropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
+                    <div id="dropdown-preview" ngbDropdownMenu aria-labelledby="button-preview">
                         @for (optionGroup of config.previewOptions; track $index) {
                             @for (option of optionGroup; track $index) {
-                                <li role="menuitem"><a class="dropdown-item" href (click)="preview(option);$event.preventDefault();">{{option.label}}</a></li>
+                                <button ngbDropdownItem type="button" (click)="preview(option)">{{option.label}}</button>
                             }
                             @if (!$last) {
-                                <li class="divider dropdown-divider"></li>
+                                <div class="divider dropdown-divider"></div>
                             }
                         }
-                    </ul>
+                    </div>
                 </div>
             }
-            <button class="btn btn-secondary" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SIGNATURE" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
         </div>
     </form>
 }

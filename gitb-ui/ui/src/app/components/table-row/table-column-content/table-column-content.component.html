@@ -1,27 +1,27 @@
-@if (column.iconFn) {
-    <div [class]="column.cellClass">
+<div class="cell-content">
+    @if (column.iconFn) {
+        <span class="d-flex">
         @if (column.iconTooltipFn != undefined) {
-            <i [ngClass]="column.iconFn!(item.data)" containerClass="shortTooltip" [tooltip]="column.iconTooltipFn!(item.data)"></i>
+            <i [ngClass]="column.iconFn!(item.data)" tooltipClass="shortTooltip" [ngbTooltip]="column.iconTooltipFn!(item.data)"></i>
         } @else {
             <i [ngClass]="column.iconFn!(item.data)"></i>
         }
-    </div>
-} @else {
-    <div [class]="column.cellClass">
+        </span>
+    } @else {
         @if (item.boolean) {
-            <div>
-                @if (item.isHiddenFlag) {
-                    @if (item.data) {
-                        <app-hidden-icon></app-hidden-icon>
-                    }
-                } @else {
-                    <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
+            @if (item.isHiddenFlag) {
+                @if (item.data) {
+                    <app-hidden-icon></app-hidden-icon>
                 }
-            </div>
+            } @else {
+                <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
+            }
+        } @else if (item.data != undefined && column.tag === true) {
+            <app-tag [label]="column.tagIcon" [icon]="true" [tooltipText]="column.tagTooltip" [value]="item.data" [inTable]="true"></app-tag>
+        } @else if (item.data != undefined && column.tagData === true) {
+            <app-tags-display [tags]="item.data"></app-tags-display>
         } @else {
-            <div>
-                {{item.data}}
-            </div>
+            {{item.data}}
         }
-    </div>
-}
+    }
+</div>

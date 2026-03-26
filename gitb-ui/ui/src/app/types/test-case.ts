@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,7 +15,7 @@
 
 import {EntityWithId} from './entity-with-id';
 import {SpecificationReferenceInfo} from './specification-reference-info';
-import {TestCaseTag} from './test-case-tag';
+import {TagData} from './tag-data';
 
 export interface TestCase extends EntityWithId, SpecificationReferenceInfo {
 
@@ -26,8 +26,7 @@ export interface TestCase extends EntityWithId, SpecificationReferenceInfo {
   hasDocumentation?: boolean
   optional?: boolean
   disabled?: boolean
-  tags?: string
-  parsedTags?: TestCaseTag[]
+  tags?: TagData[]
   group?: number
 
 }

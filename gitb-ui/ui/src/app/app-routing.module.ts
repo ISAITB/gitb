@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,79 +13,97 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { NgModule, inject } from '@angular/core';
-import { Routes, RouterModule, ResolveFn, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { ConformanceDashboardComponent } from './pages/admin/conformance-dashboard/conformance-dashboard.component';
-import { ActorDetailsComponent } from './pages/admin/domain-management/actor/actor-details/actor-details.component';
-import { CreateActorComponent } from './pages/admin/domain-management/actor/create-actor/create-actor.component';
-import { DomainManagementComponent } from './pages/admin/domain-management/domain-management.component';
-import { CreateDomainComponent } from './pages/admin/domain-management/domain/create-domain/create-domain.component';
-import { DomainDetailsComponent } from './pages/admin/domain-management/domain/domain-details/domain-details.component';
-import { CreateEndpointComponent } from './pages/admin/domain-management/endpoint/create-endpoint/create-endpoint.component';
-import { EndpointDetailsComponent } from './pages/admin/domain-management/endpoint/endpoint-details/endpoint-details.component';
-import { CreateSpecificationComponent } from './pages/admin/domain-management/specification/create-specification/create-specification.component';
-import { SpecificationDetailsComponent } from './pages/admin/domain-management/specification/specification-details/specification-details.component';
-import { TestCaseDetailsComponent } from './pages/admin/domain-management/test-suites/test-case-details/test-case-details.component';
-import { TestSuiteDetailsComponent } from './pages/admin/domain-management/test-suites/test-suite-details/test-suite-details.component';
-import { SessionDashboardComponent } from './pages/admin/session-dashboard/session-dashboard.component';
-import { CommunityAdminDetailsComponent } from './pages/admin/user-management/community-admin/community-admin-details/community-admin-details.component';
-import { CreateCommunityAdminComponent } from './pages/admin/user-management/community-admin/create-community-admin/create-community-admin.component';
-import { CommunityDetailsComponent } from './pages/admin/user-management/community/community-details/community-details.component';
-import { CreateCommunityComponent } from './pages/admin/user-management/community/create-community/create-community.component';
-import { CreateErrorTemplateComponent } from './pages/admin/user-management/error-template/create-error-template/create-error-template.component';
-import { ErrorTemplateDetailsComponent } from './pages/admin/user-management/error-template/error-template-details/error-template-details.component';
-import { CreateLandingPageComponent } from './pages/admin/user-management/landing-page/create-landing-page/create-landing-page.component';
-import { LandingPageDetailsComponent } from './pages/admin/user-management/landing-page/landing-page-details/landing-page-details.component';
-import { CreateLegalNoticeComponent } from './pages/admin/user-management/legal-notice/create-legal-notice/create-legal-notice.component';
-import { LegalNoticeDetailsComponent } from './pages/admin/user-management/legal-notice/legal-notice-details/legal-notice-details.component';
-import { CreateOrganisationComponent } from './pages/admin/user-management/organisation/create-organisation/create-organisation.component';
-import { OrganisationDetailsComponent } from './pages/admin/user-management/organisation/organisation-details/organisation-details.component';
-import { AdminDetailsComponent } from './pages/admin/user-management/system-admin/admin-details/admin-details.component';
-import { CreateAdminComponent } from './pages/admin/user-management/system-admin/create-admin/create-admin.component';
-import { TriggerComponent } from './pages/admin/user-management/trigger/trigger.component';
-import { UserManagementComponent } from './pages/admin/user-management/user-management.component';
-import { HomeComponent } from './pages/home/home.component';
-import { IndexComponent } from './pages/index/index.component';
-import { LoginComponent } from './pages/login/login.component';
-import { OrganisationComponent } from './pages/settings/organisation/organisation.component';
-import { PasswordComponent } from './pages/settings/password/password.component';
-import { ProfileComponent } from './pages/settings/profile/profile.component';
-import { CommunityResolver } from './resolvers/community-resolver';
-import { EditOwnOrganisationResolver } from './resolvers/edit-own-organisation-resolver';
-import { ErrorTemplateResolver } from './resolvers/error-template-resolver';
-import { LandingPageResolver } from './resolvers/landing-page-resolver';
-import { LegalNoticeResolver } from './resolvers/legal-notice-resolver';
-import { ProfileResolver } from './resolvers/profile-resolver'
-import { RouteAuthenticationGuard } from './resolvers/route-authentication.guard';
-import { CommunityPropertiesComponent } from './pages/admin/user-management/community-properties/community-properties.component';
-import { CommunityLabelsComponent } from './pages/admin/user-management/community-labels/community-labels.component';
-import { CreateUserComponent } from './pages/admin/user-management/user/create-user/create-user.component';
-import { UserDetailsComponent } from './pages/admin/user-management/user/user-details/user-details.component';
-import { ExportComponent } from './pages/admin/export/export.component';
-import { ImportComponent } from './pages/admin/import/import.component';
-import { ConformanceStatementsComponent } from './pages/organisation/conformance-statements/conformance-statements.component';
-import { CreateConformanceStatementComponent } from './pages/organisation/create-conformance-statement/create-conformance-statement.component';
-import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
-import { TestExecutionComponent } from './pages/test-execution/test-execution.component';
-import { CreateSpecificationGroupComponent } from './pages/admin/domain-management/specification/group/create-specification-group/create-specification-group.component';
-import { SpecificationGroupDetailsComponent } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
-import { CreateSystemComponent } from './pages/admin/user-management/system/create-system/create-system.component';
-import { SystemDetailsComponent } from './pages/admin/user-management/system/system-details/system-details.component';
-import { OrganisationTestsComponent } from './pages/organisation/organisation-tests/organisation-tests.component';
-import { Constants } from './common/constants';
-import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
-import { EditOwnSystemResolver } from './resolvers/edit-own-system-resolver';
-import { CreateThemeComponent } from './pages/admin/system-administration/create-theme/create-theme.component';
-import { ThemeDetailsComponent } from './pages/admin/system-administration/theme-details/theme-details.component';
-import { Theme } from './types/theme';
-import { SystemConfigurationService } from './services/system-configuration.service';
-import { CommunityReportsComponent } from './pages/admin/user-management/community-reports/community-reports.component';
-import { AdminViewGuard } from './resolvers/admin-view-guard';
-import { SystemAdminViewGuard } from './resolvers/system-admin-view-guard';
+import {inject, NgModule} from '@angular/core';
+import {ActivatedRouteSnapshot, ResolveFn, RouterModule, RouterStateSnapshot, Routes} from '@angular/router';
+import {ConformanceDashboardComponent} from './pages/admin/conformance-dashboard/conformance-dashboard.component';
+import {ActorDetailsComponent} from './pages/admin/domain-management/actor/actor-details/actor-details.component';
+import {CreateActorComponent} from './pages/admin/domain-management/actor/create-actor/create-actor.component';
+import {DomainManagementComponent} from './pages/admin/domain-management/domain-management.component';
+import {CreateDomainComponent} from './pages/admin/domain-management/domain/create-domain/create-domain.component';
+import {DomainDetailsComponent} from './pages/admin/domain-management/domain/domain-details/domain-details.component';
+import {CreateEndpointComponent} from './pages/admin/domain-management/endpoint/create-endpoint/create-endpoint.component';
+import {EndpointDetailsComponent} from './pages/admin/domain-management/endpoint/endpoint-details/endpoint-details.component';
+import {
+  CreateSpecificationComponent
+} from './pages/admin/domain-management/specification/create-specification/create-specification.component';
+import {
+  SpecificationDetailsComponent
+} from './pages/admin/domain-management/specification/specification-details/specification-details.component';
+import {TestCaseDetailsComponent} from './pages/admin/domain-management/test-suites/test-case-details/test-case-details.component';
+import {TestSuiteDetailsComponent} from './pages/admin/domain-management/test-suites/test-suite-details/test-suite-details.component';
+import {SessionDashboardComponent} from './pages/admin/session-dashboard/session-dashboard.component';
+import {
+  CommunityAdminDetailsComponent
+} from './pages/admin/user-management/community-admin/community-admin-details/community-admin-details.component';
+import {
+  CreateCommunityAdminComponent
+} from './pages/admin/user-management/community-admin/create-community-admin/create-community-admin.component';
+import {CommunityDetailsComponent} from './pages/admin/user-management/community/community-details/community-details.component';
+import {CreateCommunityComponent} from './pages/admin/user-management/community/create-community/create-community.component';
+import {
+  CreateErrorTemplateComponent
+} from './pages/admin/user-management/error-template/create-error-template/create-error-template.component';
+import {
+  ErrorTemplateDetailsComponent
+} from './pages/admin/user-management/error-template/error-template-details/error-template-details.component';
+import {CreateLandingPageComponent} from './pages/admin/user-management/landing-page/create-landing-page/create-landing-page.component';
+import {LandingPageDetailsComponent} from './pages/admin/user-management/landing-page/landing-page-details/landing-page-details.component';
+import {CreateLegalNoticeComponent} from './pages/admin/user-management/legal-notice/create-legal-notice/create-legal-notice.component';
+import {LegalNoticeDetailsComponent} from './pages/admin/user-management/legal-notice/legal-notice-details/legal-notice-details.component';
+import {CreateOrganisationComponent} from './pages/admin/user-management/organisation/create-organisation/create-organisation.component';
+import {OrganisationDetailsComponent} from './pages/admin/user-management/organisation/organisation-details/organisation-details.component';
+import {AdminDetailsComponent} from './pages/admin/user-management/system-admin/admin-details/admin-details.component';
+import {CreateAdminComponent} from './pages/admin/user-management/system-admin/create-admin/create-admin.component';
+import {TriggerComponent} from './pages/admin/user-management/trigger/trigger.component';
+import {UserManagementComponent} from './pages/admin/user-management/user-management.component';
+import {HomeComponent} from './pages/home/home.component';
+import {IndexComponent} from './pages/index/index.component';
+import {LoginComponent} from './pages/login/login.component';
+import {OrganisationComponent} from './pages/settings/organisation/organisation.component';
+import {PasswordComponent} from './pages/settings/password/password.component';
+import {ProfileComponent} from './pages/settings/profile/profile.component';
+import {CommunityResolver} from './resolvers/community-resolver';
+import {EditOwnOrganisationResolver} from './resolvers/edit-own-organisation-resolver';
+import {ErrorTemplateResolver} from './resolvers/error-template-resolver';
+import {LandingPageResolver} from './resolvers/landing-page-resolver';
+import {LegalNoticeResolver} from './resolvers/legal-notice-resolver';
+import {ProfileResolver} from './resolvers/profile-resolver';
+import {RouteAuthenticationGuard} from './resolvers/route-authentication.guard';
+import {CommunityPropertiesComponent} from './pages/admin/user-management/community-properties/community-properties.component';
+import {CommunityLabelsComponent} from './pages/admin/user-management/community-labels/community-labels.component';
+import {CreateUserComponent} from './pages/admin/user-management/user/create-user/create-user.component';
+import {UserDetailsComponent} from './pages/admin/user-management/user/user-details/user-details.component';
+import {ConformanceStatementsComponent} from './pages/organisation/conformance-statements/conformance-statements.component';
+import {
+  CreateConformanceStatementComponent
+} from './pages/organisation/create-conformance-statement/create-conformance-statement.component';
+import {ConformanceStatementComponent} from './pages/organisation/conformance-statement/conformance-statement.component';
+import {TestExecutionComponent} from './pages/test-execution/test-execution.component';
+import {
+  CreateSpecificationGroupComponent
+} from './pages/admin/domain-management/specification/group/create-specification-group/create-specification-group.component';
+import {
+  SpecificationGroupDetailsComponent
+} from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
+import {CreateSystemComponent} from './pages/admin/user-management/system/create-system/create-system.component';
+import {SystemDetailsComponent} from './pages/admin/user-management/system/system-details/system-details.component';
+import {OrganisationTestsComponent} from './pages/organisation/organisation-tests/organisation-tests.component';
+import {Constants} from './common/constants';
+import {SystemAdministrationComponent} from './pages/admin/system-administration/system-administration.component';
+import {EditOwnSystemResolver} from './resolvers/edit-own-system-resolver';
+import {CreateThemeComponent} from './pages/admin/system-administration/create-theme/create-theme.component';
+import {ThemeDetailsComponent} from './pages/admin/system-administration/theme-details/theme-details.component';
+import {Theme} from './types/theme';
+import {SystemConfigurationService} from './services/system-configuration.service';
+import {CommunityReportsComponent} from './pages/admin/user-management/community-reports/community-reports.component';
+import {AdminViewGuard} from './resolvers/admin-view-guard';
+import {SystemAdminViewGuard} from './resolvers/system-admin-view-guard';
 import {ImplicitCommunityResolver} from './resolvers/implicit-community-resolver';
 import {CommunitySessionDashboardComponent} from './pages/organisation/community-session-dashboard/community-session-dashboard.component';
 import {ServiceHealthDashboardComponent} from './pages/service-health-dashboard/service-health-dashboard.component';
 import {DataManagementComponent} from './pages/admin/data-management/data-management.component';
+import {startRedirectResolver} from './resolvers/start-redirect.resolver';
+import {StartRedirectComponent} from './components/start-redirect/start-redirect.component';
 
 const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
@@ -95,6 +113,8 @@ const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   {
     path: '', component: IndexComponent, resolve: { profile: ProfileResolver }, canActivate: [RouteAuthenticationGuard], children: [
+      // Start
+      { path: 'start', component: StartRedirectComponent, canActivate: [startRedirectResolver] },
       // Home
       { path: 'home', component: HomeComponent, resolve: { profile: ProfileResolver } },
       // Login
@@ -116,7 +136,7 @@ const routes: Routes = [
       // Administration
       { path: 'admin', resolve: { profile: ProfileResolver }, canActivate: [AdminViewGuard], children: [
           // Session dashboard
-          { path: 'health', component: ServiceHealthDashboardComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'health', component: ServiceHealthDashboardComponent },
           // Session dashboard
           { path: 'sessions', component: SessionDashboardComponent },
           // Conformance dashboard

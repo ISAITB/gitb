@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -88,38 +88,40 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
   }
 
   saveDisabled() {
-    return !this.textProvided(this.theme.key)
+    return this.savePending || !this.textProvided(this.theme.key)
   }
 
   save() {
-    let proceed: Observable<boolean>
-    if (this.theme.active) {
-      proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel")
-    } else {
-      proceed = of(true)
-    }
-    proceed.subscribe((confirmed) => {
-      this.savePending = true
-      if (confirmed) {
-        this.processButtonColors(this.theme)
-        this.validation.clearErrors()
-        this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
-        .subscribe((error) => {
-          if (this.isErrorDescription(error)) {
-            this.validation.applyError(error)
-          } else {
-            this.popupService.success("Theme created.")
-            if (this.theme.active) {
-              this.dataService.refreshCss()
-            }
-            this.back()
-          }
-        })
-        .add(() => {
-          this.savePending = false
-        })
+    if (!this.saveDisabled()) {
+      let proceed: Observable<boolean>
+      if (this.theme.active) {
+        proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
+      } else {
+        proceed = of(true)
       }
-    })
+      proceed.subscribe((confirmed) => {
+        if (confirmed) {
+          this.savePending = true
+          this.processButtonColors(this.theme)
+          this.validation.clearErrors()
+          this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
+            .subscribe((error) => {
+              if (this.isErrorDescription(error)) {
+                this.validation.applyError(error)
+              } else {
+                this.popupService.success("Theme created.")
+                if (this.theme.active) {
+                  this.dataService.refreshCss()
+                }
+                this.back()
+              }
+            })
+            .add(() => {
+              this.savePending = false
+            })
+        }
+      })
+    }
   }
 
   back() {

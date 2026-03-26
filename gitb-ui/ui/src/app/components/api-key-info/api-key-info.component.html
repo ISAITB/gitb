@@ -3,111 +3,109 @@
         <div class="api-cell api-header">API key type</div>
         <div class="api-cell api-header">Name</div>
         <div class="api-cell api-header">API key</div>
-        @if (dataStatus && dataStatus.status != Constants.STATUS.FINISHED) {
+        @if (state.status != Constants.STATUS.FINISHED) {
             <div class="api-cell colspan"><app-pending-block></app-pending-block></div>
         }
-        @if (apiInfo) {
+        @if (state.apiInfo) {
             <div class="api-cell">{{dataService.labelOrganisation()}}</div>
-            <div class="api-cell"><input type="text" name="organisationName" [(ngModel)]="organisationName" readonly="readonly" class="form-control"/></div>
+            <div class="api-cell"><input type="text" name="organisationName" [(ngModel)]="state.organisationName" readonly="readonly" class="form-control"/></div>
             <div class="api-cell">
-                @if (apiInfo.organisation != undefined) {
-                    <app-api-key-text idName="organisation" name="organisation"
-                                      [key]="apiInfo.organisation"
-                                      [supportUpdate]="canUpdate"
-                                      [supportDelete]="canUpdate"
-                                      [updatePending]="organisationUpdatePending"
-                                      [deletePending]="organisationDeletePending"
-                                      (delete)="deleteOrganisationKey()"
-                                      (update)="updateOrganisationKey()"></app-api-key-text>
-                } @else if (canUpdate) {
-                    <button class="btn btn-secondary" (click)="newOrganisationKey()" [pending]="organisationUpdatePending">Generate API key</button>
-                }
+                <app-api-key-text idName="organisation" name="organisation"
+                                  [key]="state.apiInfo.organisation"
+                                  [supportCreate]="canUpdate"
+                                  [supportUpdate]="canUpdate"
+                                  [supportDelete]="canUpdate"
+                                  [createPending]="organisationUpdatePending"
+                                  [updatePending]="organisationUpdatePending"
+                                  [deletePending]="organisationDeletePending"
+                                  (create)="newOrganisationKey()"
+                                  (delete)="deleteOrganisationKey()"
+                                  (update)="updateOrganisationKey()"></app-api-key-text>
             </div>
-            @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
+            @if (state.conformanceSnapshots != undefined && state.conformanceSnapshots.length > 0) {
                 <div class="api-cell">Conformance snapshot</div>
                 <div class="api-cell">
-                    <app-multi-select-filter [(ngModel)]="selectedSnapshot" [config]="snapshotSelectionConfig" (apply)="snapshotChanged()"></app-multi-select-filter>
+                    <app-multi-select-filter [(ngModel)]="state.selectedSnapshot" [config]="snapshotSelectionConfig" (apply)="snapshotChanged()"></app-multi-select-filter>
                 </div>
                 <div class="api-cell">
-                    @if (selectedSnapshot && selectedSnapshot.apiKey) {
-                        <app-api-key-text idName="snapshot" name="snapshot" [key]="selectedSnapshot.apiKey"></app-api-key-text>
+                    @if (state.selectedSnapshot && state.selectedSnapshot.apiKey) {
+                        <app-api-key-text idName="snapshot" name="snapshot" [key]="state.selectedSnapshot.apiKey"></app-api-key-text>
                     }
                 </div>
             }
-            @if (selectedSystem) {
+            @if (state.selectedSystem) {
                 <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelSystem()}}</div>
                 <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                    @if (apiInfo.systems.length == 1) {
-                        <input type="text" name="selectedSystem" [(ngModel)]="selectedSystem.name" readonly="readonly" class="form-control"/>
+                    @if (state.apiInfo.systems.length == 1) {
+                        <input type="text" name="selectedSystem" [(ngModel)]="state.selectedSystem.name" readonly="readonly" class="form-control"/>
                     } @else {
-                        <app-multi-select-filter [(ngModel)]="selectedSystem" [config]="systemSelectionConfig"></app-multi-select-filter>
+                        <app-multi-select-filter [(ngModel)]="state.selectedSystem" [config]="systemSelectionConfig"></app-multi-select-filter>
                     }
                 </div>
                 <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                    @if (selectedSystem.key != undefined) {
-                        <app-api-key-text idName="system" name="system"
-                                          [key]="selectedSystem.key"
-                                          [supportUpdate]="canUpdate"
-                                          [supportDelete]="false"
-                                          [updatePending]="systemUpdatePending[selectedSystem.id]"
-                                          (update)="updateSystemKey(selectedSystem!.id)"></app-api-key-text>
-                    } @else if (canUpdate && selectedSnapshot == undefined) {
-                        <button class="btn btn-secondary" (click)="newSystemKey(selectedSystem!.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>
-                    }
+                    <app-api-key-text idName="system" name="system"
+                                      [key]="state.selectedSystem.key"
+                                      [supportCreate]="canUpdate && state.selectedSnapshot == undefined"
+                                      [supportUpdate]="canUpdate"
+                                      [supportDelete]="false"
+                                      [createPending]="systemUpdatePending[state.selectedSystem.id]"
+                                      [updatePending]="systemUpdatePending[state.selectedSystem.id]"
+                                      (create)="newSystemKey(state.selectedSystem!.id)"
+                                      (update)="updateSystemKey(state.selectedSystem!.id)"></app-api-key-text>
                 </div>
-                @if (apiInfo.specifications.length > 0) {
+                @if (state.apiInfo.specifications.length > 0) {
                     <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelSpecification()}}</div>
                     <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                        @if (apiInfo.specifications.length == 1) {
-                            <input type="text" name="selectedSpecification" [(ngModel)]="selectedSpecification!.name" readonly="readonly" class="form-control"/>
+                        @if (state.apiInfo.specifications.length == 1) {
+                            <input type="text" name="selectedSpecification" [(ngModel)]="state.selectedSpecification!.name" readonly="readonly" class="form-control"/>
                         } @else {
-                            <app-multi-select-filter [(ngModel)]="selectedSpecification" [config]="specificationSelectionConfig" (apply)="specificationChanged()"></app-multi-select-filter>
+                            <app-multi-select-filter [(ngModel)]="state.selectedSpecification" [config]="specificationSelectionConfig" (apply)="specificationChanged()"></app-multi-select-filter>
                         }
                     </div>
                     <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                        @if (apiInfo.specifications.length == 1) {
+                        @if (state.apiInfo.specifications.length == 1) {
                             <div app-tooltip class="col-auto" [tbTooltip]="'The following '+dataService.labelActorLower()+', test suite and test case API keys are relevant to this '+dataService.labelSpecificationLower()+'.'"></div>
                         } @else {
                             <div app-tooltip class="col-auto" [tbTooltip]="'Select the '+dataService.labelSpecificationLower()+' to view the API keys for its '+dataService.labelActorsLower()+', test suites and test cases.'"></div>
                         }
                     </div>
-                    @if (selectedSpecification && selectedActor) {
+                    @if (state.selectedSpecification && state.selectedActor) {
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelActor()}}</div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            @if (selectedSpecification.actors.length == 1) {
-                                <input type="text" name="selectedActor" [(ngModel)]="selectedActor.name" readonly="readonly" class="form-control"/>
+                            @if (state.selectedSpecification.actors.length == 1) {
+                                <input type="text" name="selectedActor" [(ngModel)]="state.selectedActor.name" readonly="readonly" class="form-control"/>
                             } @else {
-                                <app-multi-select-filter [(ngModel)]="selectedActor" [config]="actorSelectionConfig"></app-multi-select-filter>
+                                <app-multi-select-filter [(ngModel)]="state.selectedActor" [config]="actorSelectionConfig"></app-multi-select-filter>
                             }
                         </div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            <app-api-key-text [key]="selectedActor.key" idName="actor" name="actor"></app-api-key-text>
+                            <app-api-key-text [key]="state.selectedActor.key" idName="actor" name="actor"></app-api-key-text>
                         </div>
                     }
-                    @if (selectedSpecification && selectedTestSuite) {
+                    @if (state.selectedSpecification && state.selectedTestSuite) {
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">Test suite</div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            @if (selectedSpecification.testSuites.length == 1) {
-                                <input type="text" name="selectedTestSuite" [(ngModel)]="selectedTestSuite.name" readonly="readonly" class="form-control"/>
+                            @if (state.selectedSpecification.testSuites.length == 1) {
+                                <input type="text" name="selectedTestSuite" [(ngModel)]="state.selectedTestSuite.name" readonly="readonly" class="form-control"/>
                             } @else {
-                                <app-multi-select-filter [(ngModel)]="selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="testSuiteChanged()"></app-multi-select-filter>
+                                <app-multi-select-filter [(ngModel)]="state.selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="testSuiteChanged()"></app-multi-select-filter>
                             }
                         </div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            <app-api-key-text [key]="selectedTestSuite.key" idName="testSuite" name="testSuite"></app-api-key-text>
+                            <app-api-key-text [key]="state.selectedTestSuite.key" idName="testSuite" name="testSuite"></app-api-key-text>
                         </div>
                     }
-                    @if (selectedTestSuite && selectedTestCase) {
+                    @if (state.selectedTestSuite && state.selectedTestCase) {
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">Test case</div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            @if (selectedTestSuite.testCases.length == 1) {
-                                <input type="text" name="selectedTestCase" [(ngModel)]="selectedTestCase.name" readonly="readonly" class="form-control"/>
+                            @if (state.selectedTestSuite.testCases.length == 1) {
+                                <input type="text" name="selectedTestCase" [(ngModel)]="state.selectedTestCase.name" readonly="readonly" class="form-control"/>
                             } @else {
-                                <app-multi-select-filter [(ngModel)]="selectedTestCase" [config]="testCaseSelectionConfig"></app-multi-select-filter>
+                                <app-multi-select-filter [(ngModel)]="state.selectedTestCase" [config]="testCaseSelectionConfig"></app-multi-select-filter>
                             }
                         </div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            <app-api-key-text [key]="selectedTestCase.key" idName="testCase" name="testCase"></app-api-key-text>
+                            <app-api-key-text [key]="state.selectedTestCase.key" idName="testCase" name="testCase"></app-api-key-text>
                         </div>
                     }
                 }

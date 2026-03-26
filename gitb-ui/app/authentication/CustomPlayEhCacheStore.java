@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -45,6 +45,11 @@ public class CustomPlayEhCacheStore<K, O> extends PlayEhCacheStore<K, O> {
         e.setTimeToIdle(getTimeout());
         e.setTimeToLive(getMaxTimeout());
         getEhcache().put(e);
+    }
+
+    @Override
+    public void remove(K key) {
+        getEhcache().remove(computeKey(key));
     }
 
     @Override

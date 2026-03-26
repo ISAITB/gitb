@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -23,10 +23,10 @@ import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {LandingPage} from 'src/app/types/landing-page';
 import {Constants} from 'src/app/common/constants';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {PreviewLandingPageComponent} from '../preview-landing-page/preview-landing-page.component';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-landing-page-details',
@@ -54,7 +54,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     private readonly landingPageService: LandingPageService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly popupService: PopupService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { super() }
 
   ngOnInit(): void {
@@ -81,17 +81,19 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   saveDisabled() {
-    return !this.loaded || !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
+    return !this.loaded || this.savePending || !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
   }
 
   updateLandingPage(copy: boolean) {
-    if (!this.isDefault && this.page.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (!this.isDefault && this.page.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
+          .subscribe(() => {
+            this.doUpdate(copy)
+          })
+      } else {
         this.doUpdate(copy)
-      })
-    } else {
-      this.doUpdate(copy)
+      }
     }
   }
 
@@ -146,7 +148,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   deleteLandingPage() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this landing page?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this landing page?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.validation.clearErrors()
       this.deletePending = true
@@ -170,11 +172,9 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   preview() {
-    this.modalService.show(PreviewLandingPageComponent, {
-      initialState: {
-        previewContent: this.page.content!
-      }
-    })
+    const modal = this.modalService.open(PreviewLandingPageComponent, { modalDialogClass: 'landingPagePreview' })
+    const modalInstance = modal.componentInstance as PreviewLandingPageComponent
+    modalInstance.previewContent = this.page.content!
   }
 
 }

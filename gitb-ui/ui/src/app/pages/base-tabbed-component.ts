@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,9 +15,9 @@
 
 import {AfterViewInit, Component, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {TabsetComponent} from 'ngx-bootstrap/tabs';
 import {BaseComponent} from './base-component.component';
 import {Constants} from '../common/constants';
+import {NgbNav} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
@@ -25,14 +25,14 @@ import {Constants} from '../common/constants';
 })
 export abstract class BaseTabbedComponent extends BaseComponent implements AfterViewInit {
 
-    @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+    @ViewChild('tabs', { static: false }) tabs?: NgbNav;
     tabIdToShow = 0
 
     constructor(
       protected readonly router: Router,
       protected readonly route: ActivatedRoute) {
       super()
-      const navigation = router.getCurrentNavigation()
+      const navigation = router.currentNavigation()
       let tabParam: any
       if (navigation) {
         tabParam = navigation.extras.state?.tab
@@ -46,42 +46,32 @@ export abstract class BaseTabbedComponent extends BaseComponent implements After
 
     abstract loadTab(tabIndex: number): void
 
-    showTab(tabId?: number) {
+    showTab() {
         setTimeout(() => {
-            let tabToShow = tabId
-            if (tabToShow == undefined) {
-                tabToShow = this.tabIdToShow
-            }
-            this.loadTab(tabToShow)
-            const tabIndex = this.tabIdToTabIndex(tabToShow)
-            if (this.tabs && tabIndex < this.tabs.tabs.length && this.tabs.tabs[tabIndex]) {
-                if (tabId == undefined) {
-                    /*
-                     * Set the tab to active only if this was called through ngAfterViewInit(). This avoid calling twice the event method in subclasses.
-                     * If a tab was activated because a tab was clicked, the tab is already active and the event method is already called.
-                     */
-                    this.tabs.tabs[tabIndex].active = true
-                }
+            if (this.tabs) {
+              const matchedTab = this.tabs.items.filter(tab => tab.id === this.tabIdToShow)
+              if (matchedTab.length == 0) {
+                this.tabIdToShow = this.defaultTabId() // Default tab.
+                this.showTab()
+              } else {
+                this.loadTab(this.tabIdToShow)
                 // Set the tab ID as a URL query parameter. This ensures we don't lose the tab upon refresh.
                 this.router.navigate([], {
-                    queryParams: { tab: tabToShow },
-                    queryParamsHandling: 'merge',
-                    replaceUrl: true
+                  queryParams: {tab: this.tabIdToShow},
+                  queryParamsHandling: 'merge',
+                  replaceUrl: true
                 })
+              }
             }
         })
     }
 
-  protected tabIdToTabIndex(tabId: number) {
-    /*
-     * This can be extended in subclasses in case tabs appear conditionally. In such a case
-     * the tab index may differ from the tab identifier.
-     */
-    return tabId
-  }
+    protected defaultTabId(): number {
+      return 0
+    }
 
-  ngAfterViewInit(): void {
-     this.showTab()
-  }
+    ngAfterViewInit(): void {
+       this.showTab()
+    }
 
 }

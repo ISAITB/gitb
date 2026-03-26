@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,15 +16,10 @@
 package com.gitb.engine.actors;
 
 import com.gitb.PropertyConstants;
-import org.apache.pekko.actor.AbstractActor;
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.actor.PoisonPill;
-import org.apache.pekko.actor.Props;
-import org.apache.pekko.dispatch.Futures;
-import com.gitb.core.AnyContent;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
+import com.gitb.engine.TestEngine;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.processors.TestCaseProcessorActor;
 import com.gitb.engine.actors.supervisors.SessionSupervisor;
@@ -38,21 +33,21 @@ import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.XMLDateTimeUtils;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.PoisonPill;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.dispatch.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
-import scala.concurrent.Await;
-import scala.concurrent.duration.Duration;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static com.gitb.PropertyConstants.*;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_EXTERNAL_STEP_ID;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_STEP_ID;
 import static com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum.*;
@@ -169,7 +164,7 @@ public class SessionActor extends AbstractActor {
                         ctx.message().getSystemConfiguration(),
                         ctx.message().getTestServiceConfigurations()
                 );
-                setInputsToSessionContext(context, ctx.message().getInputs());
+                context.addInputs(ctx.message().getInputs());
                 if (context.getTestCase().getPreliminary() != null) {
                     context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
                 } else {
@@ -255,21 +250,31 @@ public class SessionActor extends AbstractActor {
     }
 
     private void handleSessionCleanupCommand(SessionCleanupCommand message) {
-        var sessionEndEvent = (message.getSessionEndMessage() == null)?createSessionEndMessage(StepStatus.SKIPPED, null, false):message.getSessionEndMessage();
+        var sessionEndEvent = message.getSessionEndMessage() == null
+                ? createSessionEndMessage(StepStatus.SKIPPED, null, false)
+                : message.getSessionEndMessage();
         logger.debug("Signalling end of session [{}]", getSessionId());
+        var blockingDispatcher = getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER);
+        var pendingUpdates = message.getPendingUpdates();
+        var sessionId = getSessionId();
         Futures.future(() -> {
             try {
-                for (UpdateMessage msg: message.getPendingUpdates()) {
+                for (UpdateMessage msg: pendingUpdates) {
                     sendUpdateSync(msg, false);
                 }
+            } catch (Exception e) {
+                logger.error("Failed to send pending update for session [{}]", sessionId, e);
             } finally {
-                Await.result(Futures.future(() -> {
+                try {
                     sendUpdateSync(sessionEndEvent, false);
-                    return null;
-                }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER)), Duration.apply(100, TimeUnit.MILLISECONDS));
+                } catch (Exception e) {
+                    logger.error("Failed to send session end event for session [{}]", sessionId, e);
+                } finally {
+                    TestEngine.getInstance().getTbsCallbackHandle().releaseTestbedClient(sessionId);
+                }
             }
             return null;
-        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+        }, blockingDispatcher);
         self().tell(PoisonPill.getInstance(), self());
     }
 
@@ -289,24 +294,6 @@ public class SessionActor extends AbstractActor {
         return self().path().name();
     }
 
-    private void setInputsToSessionContext(TestCaseContext context, List<AnyContent> inputs) {
-        if (inputs != null) {
-            for (var input: inputs) {
-                if (input != null) {
-                    if (input.getName() == null) {
-                        logger.warn("Session [{}] received input with no name", getSessionId());
-                    } else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP)) {
-                        logger.warn("Session [{}] received input with reserved name [{}]", getSessionId(), input.getName());
-                    } else {
-                        // Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables
-                        var variable = context.getScope().createVariable(input.getName());
-                        variable.setValue(DataTypeUtils.convertAnyContentToDataType(input));
-                    }
-                }
-            }
-        }
-    }
-
     private boolean shouldSignalLogEvent(LogCommand message, TestCaseContext context) {
         var logLevel = context.getLogLevelToSignal();
         return (logLevel == LogLevel.DEBUG) ||
@@ -317,9 +304,10 @@ public class SessionActor extends AbstractActor {
 
     private void stopTestSession(TestCaseContext context, State state, UpdateMessage sessionEndMessage) {
         context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
-        SessionManager.getInstance().endSession(getSessionId());
+        String sessionId = getSessionId();
+        SessionManager.getInstance().endSession(sessionId);
         updateState(state.newForCleanupPhase());
-        self().tell(new SessionCleanupCommand(sessionEndMessage, state.getEventOutbox().values()), self());
+        self().tell(new SessionCleanupCommand(sessionId, sessionEndMessage, state.getEventOutbox().values()), self());
     }
 
     private UpdateMessage createSessionEndMessage(StepStatus result, TestStepReportType report, boolean isExternallyTriggered) {

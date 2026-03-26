@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -80,7 +80,7 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
       { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc' }
+      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' }
     ]
   }
 
@@ -90,9 +90,9 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
       { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true },
-      { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
+      { field: 'startTime', title: 'Start time', sortable: true, tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
+      { field: 'endTime', title: 'End time', sortable: true, order: 'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
+      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
     ]
   }
 

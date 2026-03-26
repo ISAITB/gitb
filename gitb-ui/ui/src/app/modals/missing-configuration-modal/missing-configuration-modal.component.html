@@ -1,4 +1,5 @@
 <div class="modal-header">
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
     <div class="modal-title">Prerequisite information missing</div>
 </div>
 <div class="modal-body">
@@ -8,15 +9,21 @@
                 @if (requiredPropertiesAreHidden) {
                     <!-- Something is not visible -->
                     <div class="alert alert-info rounded">
-                        <p>Required information is needed before tests can be launched. Please review this below.</p>
-                        <span><b>Note: </b></span><span>Certain additional configuration must be completed by an administrator before starting tests.</span>
+                        <div class="alert-section">Required information is needed before tests can be launched. Please review this below.</div>
+                        <div class="alert-section">
+                            <span class="alert-label">Note</span>
+                            Certain additional configuration must be completed by an administrator before starting tests.
+                        </div>
                     </div>
                 } @else {
                     <!-- Everything is visible -->
                     @if (requiredPropertiesIncludeEditable && requiredPropertiesIncludeNonEditable) {
                         <div class="alert alert-info rounded">
-                            <p>Required information is needed before tests can be launched. Please review this below.</p>
-                            <span><b>Note: </b></span><span>Certain configuration must be completed by an administrator before starting tests.</span>
+                            <div class="alert-section">Required information is needed before tests can be launched. Please review this below.</div>
+                            <div class="alert-section">
+                                <span class="alert-label">Note</span>
+                                Certain configuration must be completed by an administrator before starting tests.
+                            </div>
                         </div>
                     } @else if (!requiredPropertiesIncludeEditable && requiredPropertiesIncludeNonEditable) {
                         <div class="alert alert-info rounded">
@@ -49,9 +56,9 @@
 </div>
 <div class="modal-footer">
     <div class="btn-toolbar">
-        <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
         @if (somethingIsVisible) {
-            <button type="button" class="btn btn-secondary" (click)="view()">View missing configuration</button>
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" (click)="view()">View missing configuration</button>
         }
     </div>
 </div>

@@ -4,7 +4,7 @@ resolvers += Resolver.url(
        Resolver.ivyStylePatterns)
 
 // The Play plugin
-addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.9")
+addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.10")
 
 // web plugins
 
@@ -12,7 +12,7 @@ addSbtPlugin("com.github.sbt" % "sbt-web" % "1.5.8")
 
 addSbtPlugin("com.github.sbt" % "sbt-js-engine" % "1.3.9")
 
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.2.0")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.3.1")
 
 // Run with "sbt dependencyTree"
 addDependencyTreePlugin
@@ -23,4 +23,4 @@ addDependencyTreePlugin
 // addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "5.1.0")
 
 // Run "sbt dumpLicenseReport" or "sbt licenseCheck".
-addSbtPlugin("com.github.sbt" % "sbt-license-report" % "1.7.0")
+addSbtPlugin("com.github.sbt" % "sbt-license-report" % "1.9.0")

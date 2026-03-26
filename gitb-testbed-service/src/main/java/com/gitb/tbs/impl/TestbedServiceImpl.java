@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -84,8 +84,9 @@ public class TestbedServiceImpl implements TestbedService {
             result = TestEngineConfiguration.ROOT_CALLBACK_URL;
         } else {
             result = com.gitb.engine.TestbedService.healthCheck((msg) -> {
-                TestbedClient client = TestbedServiceCallbackHandler.createTestBedClient(wsc);
-                client.updateStatus(msg);
+                TestbedServiceCallbackHandler.getInstance()
+                        .createClient(wsc)
+                        .updateStatus(msg);
             });
         }
         // Prepare result
@@ -102,9 +103,7 @@ public class TestbedServiceImpl implements TestbedService {
             //Call the real TestbedService
             sessionId = com.gitb.engine.TestbedService.initiate(parameters.getTcId(), parameters.getTcInstanceId());
             //Save the WSAddressing properties so we can use callbacks
-            TestbedServiceCallbackHandler.
-                    getInstance().
-                    saveWSAddressingProperties(sessionId, wsc);
+            TestbedServiceCallbackHandler.getInstance().createClient(sessionId, wsc);
             //Construct Response
             InitiateResponse response = new InitiateResponse();
             response.setTcInstanceId(sessionId);
@@ -192,10 +191,18 @@ public class TestbedServiceImpl implements TestbedService {
 
     @Override
     public Void stop(BasicCommand parameters) {
-        String sessionId = parameters.getTcInstanceId();
-        //Call the real TestbedService
-        com.gitb.engine.TestbedService.stop(sessionId);
-        //Construct Response
+        // The received string may be a request to terminate multiple sessions.
+        String[] signalledSessionIds = StringUtils.split(parameters.getTcInstanceId(), '|');
+        if (signalledSessionIds.length > 0) {
+            boolean isClosedConnectionSignal = "CONNECTION_CLOSED".equals(signalledSessionIds[0]);
+            int startIndex = 0;
+            if (isClosedConnectionSignal) {
+                startIndex = 1;
+            }
+            for (int i = startIndex; i < signalledSessionIds.length; i++) {
+                com.gitb.engine.TestbedService.stop(signalledSessionIds[i], isClosedConnectionSignal);
+            }
+        }
         return new Void();
     }
 

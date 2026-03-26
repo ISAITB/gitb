@@ -190,13 +190,6 @@
         <cve>CVE-2025-7962</cve>
     </suppress>
     <suppress>
-        <notes><![CDATA[
-   file name: tomcat-embed-core-10.1.46.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
-        <cve>CVE-2025-61795</cve>
-    </suppress>
-    <suppress>
         <!-- This CVE affects an active log4j implementation. In our case only the API is used (we use logback). -->
         <notes><![CDATA[
    file name: log4j-api-2.24.3.jar
@@ -205,55 +198,23 @@
         <cve>CVE-2025-68161</cve>
     </suppress>
     <suppress>
+        <!-- This false-positive as this CVE relates to the Nu Html Checker (validator.nu). -->
+        <notes><![CDATA[
+   file name: json-schema-validator-2.0.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.networknt/json-schema-validator@.*$</packageUrl>
+        <cve>CVE-2025-15104</cve>
+    </suppress>
+    <suppress>
         <!-- Not applicable. -->
         <notes><![CDATA[
    file name: logback-core-1.5.18.jar
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-core@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-1225</vulnerabilityName>
-    </suppress>    
-    <suppress>
-        <!-- No OCSP responder is used. -->
-        <notes><![CDATA[
-        file name: tomcat-embed-core-10.1.50.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-core@.*$</packageUrl>
-        <vulnerabilityName>CVE-2026-24734</vulnerabilityName>
-    </suppress>    
-    <suppress>
-        <!-- Not applicable. -->
-        <notes><![CDATA[
-        file name: tomcat-embed-core-10.1.46.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-core@.*$</packageUrl>
-        <vulnerabilityName>CVE-2025-66614</vulnerabilityName>
-    </suppress>       
-    <suppress>
-        <!-- Not applicable. -->
-        <notes><![CDATA[
-        file name: tomcat-embed-core-10.1.46.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-.*@.*$</packageUrl>
-        <vulnerabilityName>CVE-2026-24733</vulnerabilityName>
     </suppress>
     <suppress>
-        <!-- This affects tomcat-native which is not used (use of Tomcat is embedded via Spring Boot). -->
-        <notes><![CDATA[
-        file name: tomcat-embed-websocket-10.1.50.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-.*@.*$</packageUrl>
-        <cve>CVE-2026-24734</cve>
-    </suppress>
-    <suppress>
-        <!-- Not applicable as the embedded Tomcat does not define virtual hosts. -->
-        <notes><![CDATA[
-        file name: tomcat-embed-websocket-10.1.46.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-.*@.*$</packageUrl>
-        <cve>CVE-2025-66614</cve>
-    </suppress>
-    <suppress>
-        <!-- Non-applicable and refers to an example. -->
+        <!-- False positive (CVE affects up to v3.0.6). -->
         <notes><![CDATA[
    file name: pdfbox-3.0.7.jar
    ]]></notes>
@@ -261,27 +222,11 @@
         <cve>CVE-2026-23907</cve>
     </suppress>
     <suppress>
-        <!-- Non-applicable and refers to an example. -->
+        <!-- False positive (CVE affects up to v3.0.6). -->
         <notes><![CDATA[
    file name: xmpbox-3.0.7.jar
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/xmpbox.*@.*$</packageUrl>
         <cve>CVE-2026-23907</cve>
     </suppress>
-    <suppress>
-        <!-- Not applicable - we don't use enabled Java scripting. -->
-        <notes><![CDATA[
-        file name: spring-webmvc-6.2.15.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-webmvc@.*$</packageUrl>
-        <vulnerabilityName>CVE-2026-22737</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <!-- Not applicable - we don't use SSE or WebSockets. -->
-        <notes><![CDATA[
-        file name: spring-webmvc-6.2.15.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-webmvc@.*$</packageUrl>
-        <vulnerabilityName>CVE-2026-22735</vulnerabilityName>
-    </suppress>    
 </suppressions>

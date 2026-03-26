@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -29,6 +29,7 @@ public class SessionConfigurationData {
     private ActorConfiguration organisationConfiguration;
     private ActorConfiguration systemConfiguration;
     private final List<ActorConfiguration> testServiceConfigurations = new ArrayList<>();
+    private ActorConfiguration predefinedVariables;
 
     public SessionConfigurationData(List<ActorConfiguration> allConfigurations) {
         if (allConfigurations != null) {
@@ -42,9 +43,11 @@ public class SessionConfigurationData {
                 } else if (configuration.getActor().startsWith(ACTOR_CONFIG_TEST_SERVICE)) {
                     // Passed as 'com.gitb.TEST_SERVICE|serviceTestKey'
                     var serviceConfig = new ActorConfiguration();
-                    serviceConfig.setActor(configuration.getActor().substring(configuration.getActor().indexOf(ACTOR_CONFIG_TEST_SERVICE_SEPARATOR)+1));
+                    serviceConfig.setActor(configuration.getActor().substring(configuration.getActor().indexOf(ACTOR_CONFIG_TEST_SERVICE_SEPARATOR) + 1));
                     serviceConfig.getConfig().addAll(configuration.getConfig());
                     testServiceConfigurations.add(serviceConfig);
+                } else if (ACTOR_CONFIG_VARIABLES.equals(configuration.getActor())) {
+                    predefinedVariables = configuration;
                 } else {
                     actorConfigurations.add(configuration);
                 }
@@ -71,4 +74,9 @@ public class SessionConfigurationData {
     public List<ActorConfiguration> getTestServiceConfigurations() {
         return testServiceConfigurations;
     }
+
+    public ActorConfiguration getPredefinedVariables() {
+        return predefinedVariables;
+    }
+
 }

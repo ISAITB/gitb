@@ -1,122 +1,150 @@
 @if (hasVisibleProperties()) {
-  <div>
     @if (tbShowFormHeader) {
-      <div class="row">
-        <div class="col-12">
-          <div class="mb-0 form-separator" [class.expandable]="tbExpandable" (click)="checkToExpand()">
-            <div class="separator-title">
-              @if (tbExpandable) {
-                <app-collapsing-icon [isCollapsed]="tbCollapsed!"></app-collapsing-icon>
-              }
-              Additional properties<span class="ms-2" [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-    <div [collapse]="tbCollapsed!" [isAnimated]="true">
-      <div [ngClass]="{'row': tbFormPadded}">
-        <div [ngClass]="innerDivStyle">
-            @for (property of tbProperties; track $index) {
-              @if ((isAdmin || (!property.hidden && (!tbSelfRegistration || property.inSelfRegistration))) && property.prerequisiteOk) {
-                <div class="row mt-3">
-                  <label [ngClass]="'col-'+tbColLabel" class="col-form-label text-end" [attr.for]="'prop-'+property.id">
-                    @if (property.use == 'R' && tbShowRequiredAsterisks) {
-                      <span>* </span>
-                    }
-                    {{property.name}}:
-                  </label>
-                  @if (property.kind == 'SIMPLE') {
-                    <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)">
-                      @if (property.hasPresetValues) {
-                        @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
-                          <p class="form-control-plaintext">{{presetValueLabel(property)}}
-                            @if (property.desc) {
-                              <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
-                            }
-                          </p>
-                        } @else {
-                          <select (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-select" [invalid]="validation?.get(tbPropertyType+property.id)">
-                            <option value=""></option>
-                            @for (v of property.presetValues; track $index) {
-                              <option [ngValue]="v.value">{{v.label}}</option>
-                            }
-                          </select>
+        <div class="row">
+            <div class="col-12">
+                <div class="mb-0 form-separator" [class.expandable]="tbExpandable" (click)="checkToExpand()">
+                    <div class="separator-title">
+                        @if (tbExpandable) {
+                            <app-collapsing-icon [isCollapsed]="tbCollapsed!"></app-collapsing-icon>
                         }
-                      } @else {
-                        @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
-                          <p class="form-control-plaintext">{{property.value}}
-                            @if (property.desc) {
-                              <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
-                            }
-                          </p>
-                        } @else {
-                          <input (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)" type="text"/>
-                        }
-                      }
+                        Additional properties<span class="ms-2"
+                                                   [ngbTooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'"
+                                                   [tooltipClass]="'tooltipContainerBig'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                     </div>
-                  } @else if (property.kind == 'SECRET') {
-                    <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)">
-                      @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
-                        <div class="form-control-plaintext">
-                          {{property.configured?'*****':''}}
-                          @if (property.desc) {
-                            <span [class.ml-2]="property.configured" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
-                          }
-                        </div>
-                      } @else {
-                        <div class="row row-cols-auto align-items-center">
-                          <div class="col-auto">
-                            <div class="form-check" [class.secretLabelInvalid]="property.showAsInvalid">
-                              <input class="form-check-input" type="checkbox" [attr.id]="'update-'+property.id" name="{{'prop-update-'+property.id}}" [(ngModel)]="property.changeValue">
-                              <label class="form-check-label" [attr.for]="'update-'+property.id">Update</label>
-                            </div>
-                          </div>
-                          <div class="col-auto flex-grow-1">
-                            @if (property.changeValue == undefined || !property.changeValue) {
-                              @if (property.configured) {
-                                <input type="text" [readonly]="true" class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)" value="*****">
-                              } @else {
-                                <input type="text" [readonly]="true" class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)">
-                              }
-                            } @else {
-                              <app-secret-input [inputId]="'prop-'+property.id" [inputName]="'prop-'+property.id" name="{{'secret-prop-'+property.id}}" [(ngModel)]="property.value" [invalid]="validation?.get(tbPropertyType+property.id)"></app-secret-input>
-                            }
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  } @else if (property.kind == 'BINARY') {
-                    <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)">
-                      @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
-                        <div>
-                          <p class="form-control-plaintext">
-                            @if (property.value != undefined) {
-                              <a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a>
-                            }
-                            @if (property.desc) {
-                              <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
-                            }
-                          </p>
-                        </div>
-                      } @else {
-                        <app-file-select [fileName]="fileName(property)" [validation]="validation?.get(tbPropertyType+property.id)" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true" [reset]="resetMap[property.id]">
-                          @if (property.value != undefined) {
-                            <button type="button" class="btn btn-secondary" (click)="downloadProperty(property)" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-download"></i></button>
-                            <button type="button" class="btn btn-secondary" (click)="removeFile(property)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-trash"></i></button>
-                          }
-                        </app-file-select>
-                      }
-                    </div>
-                  }
-                  @if (!isReadonly && (!property.adminOnly || isAdmin || (tbSelfRegistration && property.inSelfRegistration)) && property.desc) {
-                    <div app-tooltip class="col-auto" [tbTooltip]="property.desc"></div>
-                  }
                 </div>
-              }
-            }
+            </div>
         </div>
-      </div>
+    }
+    <div [ngbCollapse]="tbCollapsed!" [animation]="true">
+        @for (property of tbProperties; track $index) {
+            @if ((isAdmin || (!property.hidden && (!tbSelfRegistration || property.inSelfRegistration))) && property.prerequisiteOk) {
+                <div class="row pt-3">
+                    <label class="col-3 col-form-label text-end" [attr.for]="'prop-'+property.id">
+                        @if (property.use == 'R' && tbShowRequiredAsterisks) {
+                            <span>* </span>
+                        }
+                        {{ property.name }}:
+                    </label>
+                    @if (property.kind == 'SIMPLE') {
+                        <div class="col-8 col-md-6">
+                            @if (property.hasPresetValues) {
+                                @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                                    <p class="form-control-plaintext">{{ presetValueLabel(property) }}
+                                        @if (property.desc) {
+                                            <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
+                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
+                                        }
+                                    </p>
+                                } @else {
+                                    <select (change)="checkPrerequisites(property, true)"
+                                            [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}"
+                                            [(ngModel)]="property.value" class="form-select"
+                                            [invalid]="validation?.get(tbPropertyType+property.id)">
+                                        <option value=""></option>
+                                        @for (v of property.presetValues; track $index) {
+                                            <option [ngValue]="v.value">{{ v.label }}</option>
+                                        }
+                                    </select>
+                                }
+                            } @else {
+                                @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                                    <p class="form-control-plaintext">{{ property.value }}
+                                        @if (property.desc) {
+                                            <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
+                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
+                                        }
+                                    </p>
+                                } @else {
+                                    <input (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id"
+                                           name="{{'prop-'+property.id}}" [(ngModel)]="property.value"
+                                           class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)"
+                                           type="text"/>
+                                }
+                            }
+                        </div>
+                    } @else if (property.kind == 'SECRET') {
+                        <div class="col-8 col-md-6">
+                            @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                                <div class="form-control-plaintext">
+                                    {{ property.configured ? '*****' : '' }}
+                                    @if (property.desc) {
+                                        <span [class.ml-2]="property.configured" [ngbTooltip]="property.desc"
+                                              [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
+                                    }
+                                </div>
+                            } @else {
+                                <div class="row row-cols-auto align-items-center">
+                                    <div class="col-auto">
+                                        <div class="form-check" [class.secretLabelInvalid]="property.showAsInvalid">
+                                            <input class="form-check-input" type="checkbox"
+                                                   [attr.id]="'update-'+property.id"
+                                                   name="{{'prop-update-'+property.id}}"
+                                                   [(ngModel)]="property.changeValue">
+                                            <label class="form-check-label"
+                                                   [attr.for]="'update-'+property.id">Update</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto flex-grow-1">
+                                        @if (property.changeValue == undefined || !property.changeValue) {
+                                            @if (property.configured) {
+                                                <input type="text" [readonly]="true" class="form-control"
+                                                       [invalid]="validation?.get(tbPropertyType+property.id)"
+                                                       value="*****">
+                                            } @else {
+                                                <input type="text" [readonly]="true" class="form-control"
+                                                       [invalid]="validation?.get(tbPropertyType+property.id)">
+                                            }
+                                        } @else {
+                                            <app-secret-input [inputId]="'prop-'+property.id"
+                                                              [inputName]="'prop-'+property.id"
+                                                              name="{{'secret-prop-'+property.id}}"
+                                                              [(ngModel)]="property.value"
+                                                              [invalid]="validation?.get(tbPropertyType+property.id)"></app-secret-input>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    } @else if (property.kind == 'BINARY') {
+                        <div class="col-8 col-md-6">
+                            @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                                <div>
+                                    <p class="form-control-plaintext">
+                                        @if (property.value != undefined) {
+                                            <a href (click)="downloadProperty(property);$event.preventDefault()"
+                                               style="padding-right:10px;">{{ fileName(property) }}</a>
+                                        }
+                                        @if (property.desc) {
+                                            <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
+                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
+                                        }
+                                    </p>
+                                </div>
+                            } @else {
+                                <app-file-select [fileName]="fileName(property)"
+                                                 [validation]="validation?.get(tbPropertyType+property.id)"
+                                                 (onUpload)="onFileSelect(property, $event)"
+                                                 placeholder="Drop or browse for file ..." [extraActions]="true"
+                                                 [reset]="resetMap[property.id]">
+                                    @if (property.value != undefined) {
+                                        <button type="button" class="btn btn-secondary"
+                                                (click)="downloadProperty(property)" tooltipClass="shortTooltip"
+                                                ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY"
+                                                [triggers]="'mouseover:mouseout'" container="body"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
+                                        <button type="button" class="btn btn-secondary" (click)="removeFile(property)"
+                                                tooltipClass="shortTooltip" ngbTooltip="Remove"
+                                                [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"
+                                                container="body"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
+                                    }
+                                </app-file-select>
+                            }
+                        </div>
+                    }
+                    @if (!isReadonly && (!property.adminOnly || isAdmin || (tbSelfRegistration && property.inSelfRegistration)) && property.desc) {
+                        <div app-tooltip class="col-auto" [tbTooltip]="property.desc"></div>
+                    }
+                </div>
+            }
+        }
     </div>
-  </div>
 }

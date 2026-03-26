@@ -1,6 +1,6 @@
 @if (dragActive) {
   <div class="drag-active form-control" [class.drop-active]="dropActive">
-    <span class="drop-icon"><i class="fa-solid fa-upload"></i></span>
+    <span class="drop-icon"><i [class]="Constants.BUTTON_ICON.UPLOAD"></i></span>
     <span>Drop file here</span>
   </div>
 } @else {
@@ -10,7 +10,7 @@
     }
     <input type="text" autocomplete="off" class="form-control" [invalid]="validation" [class.clickable]="!disableUpload" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
     @if (!disableUpload) {
-      <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-folder-open"></i></button>
+      <button class="btn btn-secondary" type="button" (click)="onButtonClick()" tooltipClass="shortTooltip" container="body" ngbTooltip="Open" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-folder-open"></i></button>
     }
     @if (extraActions) {
       <ng-content></ng-content>

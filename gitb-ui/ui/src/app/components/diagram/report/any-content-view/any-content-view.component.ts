@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ReportService } from 'src/app/services/report.service';
-import { TestService } from 'src/app/services/test.service';
-import { AnyContent } from '../../any-content';
-import { ReportSupport } from '../report-support';
-import { StepReport } from '../step-report';
-import { saveAs } from 'file-saver'
-import { HtmlService } from 'src/app/services/html.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
+import {TestService} from 'src/app/services/test.service';
+import {AnyContent} from '../../any-content';
+import {ReportSupport} from '../report-support';
+import {StepReport} from '../step-report';
+import {saveAs} from 'file-saver';
+import {HtmlService} from 'src/app/services/html.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-any-content-view',
@@ -44,6 +44,8 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() root = true
   @Input() forceDisplay = false
   @Input() preserveName = true
+  @Input() showControls = true
+  @Input() level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE' = 'NONE'
 
   Constants = Constants
 
@@ -65,7 +67,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     private readonly testService: TestService,
     reportService: ReportService,
     dataService: DataService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     private readonly popupService: PopupService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     htmlService: HtmlService
@@ -111,7 +113,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       })
     } catch (e) {
       this.openPending = false
-      this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel')
+      this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel', Constants.BUTTON_ICON.DOWNLOAD)
       .subscribe(() => {
         this.download()
       })
@@ -119,11 +121,12 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   private toBlob(mimeType: string) {
+    let valueToUse = this.context.valueToUse??this.context.valueToUse
     let bb: Blob
     if (this.context!.embeddingMethod == 'BASE64' || this.dataService.isImageType(mimeType)) {
-      bb = this.dataService.b64toBlob(this.context.value!, mimeType)
+      bb = this.dataService.b64toBlob(valueToUse!, mimeType)
     } else {
-      bb = new Blob([this.context.value!], {type: mimeType})
+      bb = new Blob([valueToUse!], {type: mimeType})
     }
     return bb
   }

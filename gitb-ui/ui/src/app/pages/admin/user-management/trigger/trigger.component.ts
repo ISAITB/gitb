@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,9 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {CommunityService} from 'src/app/services/community.service';
@@ -28,10 +27,8 @@ import {IdLabel} from 'src/app/types/id-label';
 import {OrganisationParameter} from 'src/app/types/organisation-parameter';
 import {SystemParameter} from 'src/app/types/system-parameter';
 import {Trigger} from 'src/app/types/trigger';
-import {remove} from 'lodash';
-import {forkJoin, Observable, of} from 'rxjs';
+import {Observable, of} from 'rxjs';
 import {DomainParameter} from 'src/app/types/domain-parameter';
-import {map, share} from 'rxjs/operators';
 import {TriggerDataItem} from 'src/app/types/trigger-data-item';
 import {ErrorDescription} from 'src/app/types/error-description';
 import {CustomProperty} from 'src/app/types/custom-property.type';
@@ -46,6 +43,9 @@ import {TriggerFireExpression} from '../../../../types/trigger-fire-expression';
 import {TriggerFireExpressionModalComponent} from './trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 import {DomainParameterService} from '../../../../services/domain-parameter.service';
 import {ServiceCallResultHandlerService} from '../../../../services/service-call-result-handler.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {MultiSelectConfig} from '../../../../components/multi-select-filter/multi-select-config';
+import {MultiSelectFilterComponentApi} from '../../../../components/multi-select-filter/multi-select-filter-component-api';
 
 @Component({
     selector: 'app-trigger',
@@ -53,7 +53,12 @@ import {ServiceCallResultHandlerService} from '../../../../services/service-call
     styleUrls: ['./trigger.component.less'],
     standalone: false
 })
-export class TriggerComponent extends BaseComponent implements OnInit {
+export class TriggerComponent extends BaseComponent implements OnInit, AfterViewInit {
+
+  @ViewChild("domainParameterSelect") domainParameterSelect?: MultiSelectFilterComponentApi<DomainParameter>
+  @ViewChild("organisationParameterSelect") organisationParameterSelect?: MultiSelectFilterComponentApi<OrganisationParameter>
+  @ViewChild("systemParameterSelect") systemParameterSelect?: MultiSelectFilterComponentApi<SystemParameter>
+  @ViewChild("statementParameterSelect") statementParameterSelect?: MultiSelectFilterComponentApi<StatementParameterMinimal>
 
   communityId!: number
   triggerId?: number
@@ -71,22 +76,14 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   fireExpressions: TriggerFireExpression[] = []
   fireExpressionEmitters: EventEmitter<void>[] = []
   fireExpressionTypes: number[] = []
-  fireConditionsTooltip = 'A condition containing one or more clauses based on regular expressions. The trigger will only fire if the condition is satisfied.'
+  fireConditionsTooltip = 'A condition containing one or more clauses based on regular expressions. The webhook will only fire if the condition is satisfied.'
   testValueForFireCondition = ''
   testValueTypeForFireCondition?: number
   testFireCondition = false
   testedFireCondition = false
   testedFireConditionMatches = false
-  organisationParameters: OrganisationParameter[] = []
-  systemParameters: SystemParameter[] = []
-  statementParameters: StatementParameterMinimal[] = []
-  domainParameters: DomainParameter[] = []
   dataTypes!: IdLabel[]
   dataTypeMap!: {[key: number]: string}
-  organisationParameterMap: {[key: number]: OrganisationParameter} = {}
-  systemParameterMap: {[key: number]: SystemParameter} = {}
-  statementParameterMap: {[key: number]: StatementParameterMinimal} = {}
-  domainParameterMap: {[key: number]: DomainParameter} = {}
 
   triggerData = {
     community: {dataType: Constants.TRIGGER_DATA_TYPE.COMMUNITY, visible: true, selected: false},
@@ -105,11 +102,16 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   Constants = Constants
   validation = new ValidationState()
   loaded = false
+  viewInitialised = false
+  domainParameterDataConfig!: MultiSelectConfig<DomainParameter>
+  organisationParameterDataConfig!: MultiSelectConfig<OrganisationParameter>
+  systemParameterDataConfig!: MultiSelectConfig<SystemParameter>
+  statementParameterDataConfig!: MultiSelectConfig<StatementParameterMinimal>
 
   constructor(
     private readonly routingService: RoutingService,
     private readonly route: ActivatedRoute,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly triggerService: TriggerService,
     private readonly domainParameterService: DomainParameterService,
     private readonly conformanceService: ConformanceService,
@@ -156,80 +158,50 @@ export class TriggerComponent extends BaseComponent implements OnInit {
       Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ORGANISATION_NAME,
       Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SYSTEM_NAME
     ])
-    // Load data
-    const loadPromises: Observable<any>[] = []
-    loadPromises.push(this.communityService.getOrganisationParameters(this.communityId).pipe(
-      map((data) => {
-        this.organisationParameters = data
-        for (let parameter of this.organisationParameters) {
-          parameter.selected = false
-          this.organisationParameterMap[parameter.id] = parameter
-        }
-        if (this.organisationParameters.length == 0) {
-          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER)
-        }
-      }),
-      share()
-    ))
-    loadPromises.push(this.communityService.getSystemParameters(this.communityId).pipe(
-      map((data) => {
-        this.systemParameters = data
-        for (let parameter of this.systemParameters) {
-          parameter.selected = false
-          this.systemParameterMap[parameter.id] = parameter
-        }
-        if (this.systemParameters.length == 0) {
-          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER)
-        }
-      }),
-      share()
-    ))
-    loadPromises.push(this.conformanceService.getStatementParametersOfCommunity(this.communityId).pipe(
-      map((data) => {
-        this.statementParameters = data
-        for (let parameter of this.statementParameters) {
-          parameter.selected = false
-          this.statementParameterMap[parameter.id] = parameter
-        }
-        if (this.statementParameters.length == 0) {
-          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER)
-        }
-      }),
-      share()
-    ))
-
-    let domainParameterFnResult: Observable<DomainParameter[]>|undefined
-    if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-      domainParameterFnResult = this.domainParameterService.getDomainParameters(this.dataService.community!.domainId, false, false)
-    } else if (this.dataService.isSystemAdmin) {
-      domainParameterFnResult = this.domainParameterService.getDomainParametersOfCommunity(this.communityId, false, false)
+    // Set up selection lists for configuration properties.
+    this.domainParameterDataConfig = {
+      name: "domainParameters",
+      textField: "name",
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelDomainLower()} properties...`,
+      textDecorator: (item) => `(${this.parameterType(item)})`,
+      loader: () => this.loadDomainParameters()
     }
-    if (domainParameterFnResult != undefined) {
-      loadPromises.push(domainParameterFnResult.pipe(
-        map((data) => {
-          this.domainParameters = data
-          for (let parameter of this.domainParameters) {
-            parameter.selected = false
-            this.domainParameterMap[parameter.id] = parameter
-          }
-          if (this.domainParameters.length == 0) {
-            remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER)
-          }
-        }),
-        share()
-      ))
+    this.organisationParameterDataConfig = {
+      name: "organisationParameters",
+      textField: "name",
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelOrganisationLower()} properties...`,
+      textDecorator: (item) => `(${this.parameterType(item)})`,
+      loader: () => this.loadOrganisationParameters()
     }
-    const data$ = forkJoin(loadPromises)
+    this.systemParameterDataConfig = {
+      name: "systemParameters",
+      textField: "name",
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelSystemLower()} properties...`,
+      textDecorator: (item) => `(${this.parameterType(item)})`,
+      loader: () => this.loadSystemParameters()
+    }
+    this.statementParameterDataConfig = {
+      name: "statementParameters",
+      textField: "name",
+      showAsFormControl: true,
+      filterLabel: `Select conformance statement properties...`,
+      textDecorator: (item) => `(${this.parameterType(item)})`,
+      loader: () => this.loadStatementParameters()
+    }
+    // Load trigger data.
     let trigger$: Observable<TriggerInfo|undefined> = of(undefined)
     if (this.update) {
       trigger$ = this.triggerService.getTriggerById(this.triggerId!)
     }
-    forkJoin([trigger$, data$]).subscribe((data) => {
+    trigger$.subscribe((data) => {
       if (this.update) {
-        if (data[0]) {
-          this.trigger = data[0].trigger
-          if (data[0].fireExpressions) {
-            this.fireExpressions = data[0].fireExpressions
+        if (data) {
+          this.trigger = data.trigger
+          if (data.fireExpressions) {
+            this.fireExpressions = data.fireExpressions
             this.fireExpressions.forEach(() => {
               this.fireExpressionEmitters.push(new EventEmitter<void>())
             })
@@ -245,8 +217,12 @@ export class TriggerComponent extends BaseComponent implements OnInit {
         } else {
           this.applyStatusValues(this.statusTextUnknown)
         }
-        if (data[0]?.data != undefined) {
-          for (let item of data[0].data) {
+        if (data?.data != undefined) {
+          const domainParameterIds: number[] = []
+          const organisationParameterIds: number[] = []
+          const systemParameterIds: number[] = []
+          const statementParameterIds: number[] = []
+          for (let item of data.data) {
             if (item.dataType == Constants.TRIGGER_DATA_TYPE.COMMUNITY) {
               this.triggerData.community.selected = true
             } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION) {
@@ -263,32 +239,54 @@ export class TriggerComponent extends BaseComponent implements OnInit {
               this.triggerData.testReport.selected = true
             } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER) {
               this.triggerData.organisationParameter.selected = true
-              if (this.organisationParameterMap[item.dataId] != undefined) {
-                this.organisationParameterMap[item.dataId].selected = true
-              }
+              organisationParameterIds.push(item.dataId)
             } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER) {
               this.triggerData.systemParameter.selected = true
-              if (this.systemParameterMap[item.dataId] != undefined) {
-                this.systemParameterMap[item.dataId].selected = true
-              }
+              systemParameterIds.push(item.dataId)
             } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER) {
               this.triggerData.domainParameter.selected = true
-              if (this.domainParameterMap[item.dataId] != undefined) {
-                this.domainParameterMap[item.dataId].selected = true
-              }
+              domainParameterIds.push(item.dataId)
             } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER) {
               this.triggerData.statementParameter.selected = true
-              if (this.statementParameterMap[item.dataId] != undefined) {
-                this.statementParameterMap[item.dataId].selected = true
-              }
+              statementParameterIds.push(item.dataId)
             }
           }
+          this.domainParameterSelect?.setSelectedItemIdsBeforeLoad(domainParameterIds)
+          this.organisationParameterSelect?.setSelectedItemIdsBeforeLoad(organisationParameterIds)
+          this.systemParameterSelect?.setSelectedItemIdsBeforeLoad(systemParameterIds)
+          this.statementParameterSelect?.setSelectedItemIdsBeforeLoad(statementParameterIds)
         }
       }
       this.eventTypeChanged()
     }).add(() => {
       this.loaded = true
     })
+  }
+
+  ngAfterViewInit() {
+    this.viewInitialised = true
+  }
+
+  private loadDomainParameters(): Observable<DomainParameter[]> {
+    if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
+      return this.domainParameterService.getDomainParameters(this.dataService.community!.domainId, false, false)
+    } else if (this.dataService.isSystemAdmin) {
+      return this.domainParameterService.getDomainParametersOfCommunity(this.communityId, false, false)
+    } else {
+      return of([])
+    }
+  }
+
+  private loadOrganisationParameters(): Observable<OrganisationParameter[]> {
+    return this.communityService.getOrganisationParameters(this.communityId)
+  }
+
+  private loadSystemParameters(): Observable<SystemParameter[]> {
+    return this.communityService.getSystemParameters(this.communityId)
+  }
+
+  private loadStatementParameters(): Observable<StatementParameterMinimal[]> {
+    return this.conformanceService.getStatementParametersOfCommunity(this.communityId)
   }
 
   private addValidFireExpressionTypes(eventTypes: number[], expressionTypes: number[]): void {
@@ -353,71 +351,65 @@ export class TriggerComponent extends BaseComponent implements OnInit {
       dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.TEST_REPORT, dataId: -1})
     }
     if (this.triggerData.organisationParameter.visible && this.triggerData.organisationParameter.selected) {
-      for (let parameter of this.organisationParameters) {
-        if (parameter.selected) {
-          dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, dataId: parameter.id})
-        }
-      }
+      this.organisationParameterSelect?.getSelectedItemIds().forEach(item => {
+        dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, dataId: item})
+      })
     }
     if (this.triggerData.systemParameter.visible && this.triggerData.systemParameter.selected) {
-      for (let parameter of this.systemParameters) {
-        if (parameter.selected) {
-          dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, dataId: parameter.id})
-        }
-      }
+      this.systemParameterSelect?.getSelectedItemIds().forEach(item => {
+        dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, dataId: item})
+      })
     }
     if (this.triggerData.domainParameter.visible && this.triggerData.domainParameter.selected) {
-      for (let parameter of this.domainParameters) {
-        if (parameter.selected) {
-          dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, dataId: parameter.id})
-        }
-      }
+      this.domainParameterSelect?.getSelectedItemIds().forEach(item => {
+        dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, dataId: item})
+      })
     }
     if (this.triggerData.statementParameter.visible && this.triggerData.statementParameter.selected) {
-      for (let parameter of this.statementParameters) {
-        if (parameter.selected) {
-          dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, dataId: parameter.id})
-        }
-      }
+      this.statementParameterSelect?.getSelectedItemIds().forEach(item => {
+        dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, dataId: item})
+      })
     }
     return dataItems
   }
 
   save() {
-    this.validation.clearErrors()
-    this.savePending = true
-    let callResult: Observable<ErrorDescription|undefined>
-    if (this.update) {
-      callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
-    } else {
-      callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
-    }
-    callResult.subscribe((data) => {
-      if (this.isErrorDescription(data)) {
-        this.validation.applyError(data)
+    if (!this.saveDisabled()) {
+      this.validation.clearErrors()
+      this.savePending = true
+      let callResult: Observable<ErrorDescription|undefined>
+      if (this.update) {
+        callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
       } else {
-        if (this.update) {
-          this.popupService.success('Trigger updated.')
-          this.dataService.breadcrumbUpdate({id: this.triggerId, type: BreadcrumbType.trigger, label: this.trigger.name})
-        } else {
-          this.back()
-          this.popupService.success('Trigger created.')
-        }
+        callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
       }
-    }).add(() => {
-      this.savePending = false
-    })
+      callResult.subscribe((data) => {
+        if (this.isErrorDescription(data)) {
+          this.validation.applyError(data)
+        } else {
+          if (this.update) {
+            this.popupService.success('Webhook updated.')
+            this.dataService.breadcrumbUpdate({id: this.triggerId, type: BreadcrumbType.trigger, label: this.trigger.name})
+          } else {
+            this.back()
+            this.popupService.success('Webhook created.')
+          }
+        }
+      }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
   delete() {
     this.validation.clearErrors()
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this trigger?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this webhook?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.triggerService.deleteTrigger(this.triggerId!)
       .subscribe(() => {
         this.back()
-        this.popupService.success('Trigger deleted.')
+        this.popupService.success('Webhook deleted.')
       }).add(() => {
         this.deletePending = false
       })
@@ -442,15 +434,12 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.previewPending = true
     this.triggerService.preview(this.trigger.operation, this.trigger.serviceType!, this.dataItemsToSave(), this.communityId)
     .subscribe((result) => {
-      this.modalService.show(TestTriggerModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          request: result.message,
-          communityId: this.communityId,
-          url: this.trigger.url,
-          serviceType: this.trigger.serviceType!
-        }
-      })
+      const modal = this.modalService.open(TestTriggerModalComponent, { size: 'lg' })
+      const modalInstance = modal.componentInstance as TestTriggerModalComponent
+      modalInstance.request = result.message
+      modalInstance.communityId = this.communityId
+      modalInstance.url = this.trigger.url
+      modalInstance.serviceType = this.trigger.serviceType!
     }).add(() => {
       this.previewPending = false
     })
@@ -459,10 +448,10 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   clearStatus() {
     this.clearStatusPending = true
     this.triggerService.clearStatus(this.trigger.id!)
-    .subscribe((result) => {
+    .subscribe(() => {
       this.trigger.latestResultOk = undefined
       this.applyStatusValues(this.statusTextUnknown)
-      this.popupService.success('Trigger status cleared.')
+      this.popupService.success('Webhook status cleared.')
     }).add(() => {
       this.clearStatusPending = false
     })
@@ -510,32 +499,29 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.triggerData.actor.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.actor.dataType)
     this.triggerData.testSession.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.testSession.dataType)
     this.triggerData.testReport.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.testReport.dataType)
-    this.triggerData.organisationParameter.visible = this.organisationParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.organisationParameter.dataType))
-    this.triggerData.systemParameter.visible = this.systemParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.systemParameter.dataType))
-    this.triggerData.domainParameter.visible = this.domainParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.domainParameter.dataType))
-    this.triggerData.statementParameter.visible = this.statementParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.statementParameter.dataType))
+    this.triggerData.organisationParameter.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.organisationParameter.dataType)
+    this.triggerData.systemParameter.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.systemParameter.dataType)
+    this.triggerData.domainParameter.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.domainParameter.dataType)
+    this.triggerData.statementParameter.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.statementParameter.dataType)
   }
 
   parameterType(parameter: CustomProperty|DomainParameter|StatementParameterMinimal) {
     if (parameter.kind == 'SIMPLE') {
-      parameter.kindLabel = 'Simple'
+      parameter.kindLabel = 'simple'
     } else if (parameter.kind == 'BINARY') {
-      parameter.kindLabel = 'Binary'
+      parameter.kindLabel = 'binary'
     } else {
-      parameter.kindLabel = 'Secret'
+      parameter.kindLabel = 'secret'
     }
     return parameter.kindLabel
   }
 
   private showFireExpressionForm(fireExpression: TriggerFireExpression, existingIndex?: number) {
-    const modal = this.modalService.show(TriggerFireExpressionModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        fireExpression: fireExpression,
-        expressionTypes: this.fireExpressionTypes
-      }
-    })
-    modal.content?.savedFireExpression.subscribe((expression) => {
+    const modal = this.modalService.open(TriggerFireExpressionModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as TriggerFireExpressionModalComponent
+    modalInstance.fireExpression = fireExpression
+    modalInstance.expressionTypes = this.fireExpressionTypes
+    modal.closed.subscribe((expression: TriggerFireExpression) => {
       if (existingIndex != undefined) {
         // Update
         this.fireExpressions[existingIndex] = expression

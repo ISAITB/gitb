@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,8 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, HostListener, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, Input, OnInit} from '@angular/core';
 import {TestStatusBase} from '../test-status-base/test-status-base';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-test-result-ratio',
@@ -23,8 +24,6 @@ import {TestStatusBase} from '../test-status-base/test-status-base';
     standalone: false
 })
 export class TestResultRatioComponent extends TestStatusBase implements OnInit {
-
-  constructor(private readonly eRef: ElementRef) { super() }
 
   @Input() alignRight = true
   @Input() asLine? = false
@@ -35,20 +34,9 @@ export class TestResultRatioComponent extends TestStatusBase implements OnInit {
   completedIgnoredPercentage = ''
   failedIgnoredPercentage = ''
   otherIgnoredPercentage = ''
-  expanded = false
 
-  @HostListener('document:click', ['$event'])
-  clickRegistered(event: any) {
-    if (!this.eRef.nativeElement.contains(event.target) && this.expanded) {
-      this.expanded = false
-    }
-  }
-
-  @HostListener('document:keyup.escape', ['$event'])
-  escapeRegistered(event: KeyboardEvent) {
-    if (this.expanded) {
-      this.expanded = false
-    }
+  constructor(eRef: ElementRef) {
+    super(eRef)
   }
 
   ngOnInit(): void {
@@ -71,4 +59,5 @@ export class TestResultRatioComponent extends TestStatusBase implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

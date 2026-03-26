@@ -2,8 +2,9 @@
     <div class="card mb-0">
         <div class="card-header">
             <div class="card-title">Create {{dataService.labelSystemLower()}}</div>
+            <div app-community-tag-indicator></div>
         </div>
-        <form>
+        <form (ngSubmit)="create()">
             <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-system-form
                     [system]="system"
@@ -14,8 +15,8 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="create()" [pending]="savePending" [disable]="!loaded || !saveEnabled()">Save</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="savePending">Cancel</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [pending]="savePending" [disable]="!saveEnabled()">Save</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()" [disable]="savePending">Cancel</button>
                 </div>
             </div>
         </form>

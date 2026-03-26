@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,8 +14,7 @@
  */
 
 import {HttpClient, HttpResponse} from '@angular/common/http';
-import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {BsModalService} from 'ngx-bootstrap/modal';
+import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {forkJoin, Observable, of, throwError} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {Constants} from 'src/app/common/constants';
@@ -37,13 +36,17 @@ import {SelfRegistrationModel} from 'src/app/types/self-registration-model.type'
 import {SelfRegistrationOption} from 'src/app/types/self-registration-option.type';
 import {ValidationState} from 'src/app/types/validation-state';
 import {BaseSelfRegistrationPageComponent} from '../../components/self-registration/base-self-registration-page.component';
+import {ActualUserInfo} from '../../types/actual-user-info';
+import {LoginFormType} from './login-form-type';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-login',
     templateUrl: './login.component.html',
+    styleUrls: ['./login.component.less'],
     standalone: false
 })
-export class LoginComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit {
+export class LoginComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild("emailField", { static: false }) emailField?: ElementRef;
 
@@ -51,13 +54,14 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
   createPending = false
   loginOption?: string
   selfRegData: SelfRegistrationModel = {}
+  formType: LoginFormType = LoginFormType.Login;
 
   email?: string
   password?: string
 
   private loginState?: LoginEventInfo
-  onetimePassword = false
-  weakPassword = false
+  protected readonly LoginFormType = LoginFormType;
+
   passwordChangeData: PasswordChangeData = {}
   loginInProgress = false
   validation = new ValidationState()
@@ -70,7 +74,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     private readonly authService: AuthService,
     private readonly errorService: ErrorService,
     private readonly popupService: PopupService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) {
     super(dataService)
   }
@@ -80,15 +84,42 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     if (!this.loginOption) {
       this.loginOption = Constants.LOGIN_OPTION.NONE
     }
-    if ((this.loginOption == Constants.LOGIN_OPTION.REGISTER && !this.dataService.configuration.registrationEnabled) || (this.loginOption == Constants.LOGIN_OPTION.DEMO && !this.dataService.configuration.demosEnabled) || (this.loginOption == Constants.LOGIN_OPTION.MIGRATE && (!this.dataService.configuration.ssoEnabled || !this.dataService.configuration.ssoInMigration))) {
+    if (((this.loginOption == Constants.LOGIN_OPTION.REGISTER || this.loginOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL) && !this.dataService.configuration.registrationEnabled) || (this.loginOption == Constants.LOGIN_OPTION.DEMO && !this.dataService.configuration.demosEnabled) || (this.loginOption == Constants.LOGIN_OPTION.MIGRATE && (!this.dataService.configuration.ssoEnabled || !this.dataService.configuration.ssoInMigration))) {
       // Invalid login option
       this.loginOption = Constants.LOGIN_OPTION.NONE
     }
-    if (this.loginOption == Constants.LOGIN_OPTION.REGISTER) {
+    if (this.dataService.configuration.ssoEnabled) {
+      if (this.dataService.configuration.ssoWithNativeLogin && this.loginOption == Constants.LOGIN_OPTION.DEMO) {
+        this.loginViaSelection(this.dataService.configuration.demosAccount)
+      } else if (this.dataService.configuration.ssoWithNativeLogin && !this.dataService.actualUser) {
+        this.formType = LoginFormType.Login
+      } else {
+        this.handleSsoLoginOption()
+      }
+    } else {
+      if (this.loginOption == Constants.LOGIN_OPTION.REGISTER || this.loginOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL) {
+        this.formType = LoginFormType.SelfRegister
+      } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
+        this.loginViaSelection(this.dataService.configuration.demosAccount)
+      } else {
+        this.formType = LoginFormType.Login
+      }
+    }
+    this.dataService.changeBanner(this.loginInProgress?'Home':this.dataService.configuration.welcomePageTitle)
+    this.dataService.breadcrumbUpdate({breadcrumbs: []})
+  }
+
+  ngOnDestroy(): void {
+    this.dataService.clearLoginOption()
+  }
+
+  private handleSsoLoginOption() {
+    this.formType = LoginFormType.SelectAccount
+    if (this.loginOption == Constants.LOGIN_OPTION.REGISTER || this.loginOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL) {
       if (this.dataService.configuration.ssoEnabled) {
         this.createAccount(this.loginOption)
       }
-    } else if (this.loginOption == Constants.LOGIN_OPTION.MIGRATE || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
+    } else if (this.loginOption == Constants.LOGIN_OPTION.MIGRATE || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL) {
       this.createAccount(this.loginOption)
     } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
       this.loginViaSelection(this.dataService.configuration.demosAccount)
@@ -111,12 +142,23 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
         this.loginViaSelection(userIdToConnectWith)
       }
     }
-    this.dataService.changeBanner(this.loginInProgress?'Home':this.dataService.configuration.welcomePageTitle)
-    this.dataService.breadcrumbUpdate({breadcrumbs: []})
+  }
+
+  formTitle(): string {
+    switch (this.formType) {
+      case LoginFormType.Login:
+        return 'Account login'
+      case LoginFormType.SelfRegister:
+        return 'Registration'
+      case LoginFormType.ChangePassword:
+        return 'Change password'
+      default:
+        return ''
+    }
   }
 
   ngAfterViewInit(): void {
-    if (this.loginOption == Constants.LOGIN_OPTION.NONE && !this.dataService.configuration.ssoEnabled) {
+    if (this.formType === LoginFormType.Login) {
       this.emailField?.nativeElement.focus()
     }
   }
@@ -136,17 +178,25 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
       this.authService.getUserUnlinkedFunctionalAccounts(),
       selfRegistrationOptionObservable
     ]).subscribe((data) => {
-      const modalRef = this.modalService.show(LinkAccountComponent, {
-        class: 'modal-xl',
-        initialState: {
-          linkedAccounts: data[0],
-          createOption: loginOption,
-          selfRegOptions: data[1]
-        }
-      })
-      modalRef.onHide!.subscribe(() => {
+      const modalRef = this.modalService.open(LinkAccountComponent, { size: 'xl' })
+      const modalInstance = modalRef.componentInstance as LinkAccountComponent
+      modalInstance.linkedAccounts = data[0]
+      modalInstance.createOption = loginOption
+      modalInstance.selfRegOptions = data[1]
+      modalRef.hidden.subscribe(() => {
         this.createPending = false
       })
+      if (this.dataService.configuration.ssoEnabled && (
+          this.loginOption == Constants.LOGIN_OPTION.REGISTER ||
+          this.loginOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL ||
+          this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT ||
+          this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL ||
+          this.loginOption == Constants.LOGIN_OPTION.MIGRATE
+      )) {
+        // Avoid opening the same popup again if the user refreshes.
+        this.loginOption = Constants.LOGIN_OPTION.FORCE_CHOICE
+        this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
+      }
     })
   }
 
@@ -163,8 +213,14 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
   }
 
 	loginViaCredentials(userEmail: string, userPassword: string) {
+    let pathToUse: string
+    if (this.dataService.configuration.ssoEnabled && this.dataService.configuration.ssoWithNativeLogin) {
+      pathToUse = ROUTES.controllers.AuthenticationService.ssoLoginViaNativeForm().url
+    } else {
+      pathToUse = ROUTES.controllers.AuthenticationService.accessToken().url
+    }
     let config: HttpRequestConfig = {
-      path: ROUTES.controllers.AuthenticationService.accessToken().url,
+      path: pathToUse,
       data: {
         email: userEmail,
         password: userPassword
@@ -188,21 +244,36 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
 	loginInternal(config: HttpRequestConfig) {
     this.clearAlerts()
     this.spinner = true // Start spinner before calling service operation
-    this.makeAuthenticationPost(config.path, config.data).subscribe((result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) => {
+    this.makeAuthenticationPost(config.path, config.data).subscribe((result: HttpResponse<LoginResultOk|LoginResultActionNeeded|ActualUserInfo>) => {
       // Login successful.
       if (this.isLoginActionNeeded(result.body)) {
         this.spinner = false
         // Correct authentication but we need to replace the password to complete the login.
-        this.onetimePassword = result.body.onetime != undefined && result.body.onetime
-        this.weakPassword = result.body.weakPassword != undefined && result.body.weakPassword
+        if (result.body.onetime != undefined && result.body.onetime) {
+          // One-time password
+          this.formType = LoginFormType.ChangePassword
+        }
+        if (result.body.weakPassword != undefined && result.body.weakPassword) {
+          this.validation.invalid('new', this.getPasswordComplexityAlertMessage())
+        }
       } else if (this.isLoginOk(result.body)) {
         this.completeLogin(result)
+      } else if (this.isAccountSelection(result.body)) {
+        if (!this.dataService.configuration.ssoEnabled || !this.dataService.configuration.ssoWithNativeLogin) {
+          this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
+        }
+        this.dataService.setActualUser(result.body)
+        this.handleSsoLoginOption()
       } else {
         // This case should never occur.
         this.spinner = false
         this.addAlertError('You are unable to log in at this time due to an unexpected error.')
       }
     })
+  }
+
+  private isAccountSelection(obj: ActualUserInfo|any): obj is ActualUserInfo {
+    return obj != undefined && obj.uid != undefined
   }
 
   private isLoginOk(obj: LoginResultOk|any): obj is LoginResultOk {
@@ -213,7 +284,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     return obj != undefined && (obj.onetime != undefined || obj.weakPassword != undefined)
   }
 
-  private completeLogin(result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) {
+  private completeLogin(result: HttpResponse<LoginResultOk|LoginResultActionNeeded|ActualUserInfo>) {
     let path = '/'
     let userId: number|undefined
     if (this.isLoginOk(result.body)) {
@@ -228,8 +299,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     this.loginState = {
       userId: userId!,
       tokens: result.body,
-      path: path,
-      remember: false
+      path: path
     }
     this.authProvider.signalLogin(this.loginState)
   }
@@ -237,7 +307,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
   private handleLoginAuthenticationError(error: any) {
     this.spinner = false
     if (error.status == 401) {
-      if (this.dataService.configuration.ssoEnabled) {
+      if (this.dataService.configuration.ssoEnabled && !this.dataService.configuration.ssoWithNativeLogin) {
         // We need to re-login.
         this.errorService.showInvalidSessionNotification().subscribe((shown) => {
           if (shown) {
@@ -279,7 +349,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
       if (this.selfRegData.template) {
         templateId = this.selfRegData.template.id
       }
-      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.newOrganisation === true, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, this.selfRegData.adminName!, this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
+      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.organisationChoice!, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, this.selfRegData.adminName!, this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)
@@ -325,11 +395,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
   }
 
   private getPasswordComplexityAlertMessage() {
-    if (this.weakPassword) {
-      return 'Password does not match required complexity rules.'
-    } else {
-      return 'Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.'
-    }
+    return 'Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.'
   }
 
   replacePassword() {

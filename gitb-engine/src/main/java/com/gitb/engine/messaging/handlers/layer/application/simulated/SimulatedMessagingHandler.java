@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -20,35 +20,44 @@ import com.gitb.engine.CallbackManager;
 import com.gitb.engine.TestEngine;
 import com.gitb.engine.messaging.MessagingHandler;
 import com.gitb.engine.messaging.handlers.layer.AbstractNonWorkerMessagingHandler;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.tdl.MessagingStep;
 import com.gitb.tr.TestResultType;
+import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
-@MessagingHandler(name="SimulatedMessaging")
+@MessagingHandler(name= SimulatedMessagingHandler.HANDLER_NAME)
 public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler {
 
+    public static final String HANDLER_NAME = "SimulatedMessaging";
     private static final Logger LOG = LoggerFactory.getLogger(SimulatedMessagingHandler.class);
     private static final String INPUT_PARAMETERS = "parameters";
     private static final String INPUT_CONTENT_TYPES = "contentTypes";
+    private static final String INPUT_REPORT_ITEMS = "reportItems";
+    public static final String INPUT_REPORT_STEPS = "reportSteps";
     private static final String INPUT_RESULT = "result";
     private static final String INPUT_DELAY = "delay";
+    private static final String INPUT_SORT_REPORT_BY_SEVERITY = "sortReportBySeverity";
 
     private MessagingReport createReport(String sessionId, Message message) {
         // Overall result
         var result = TestResultType.SUCCESS;
-        if (message.hasInput(INPUT_RESULT)) {
+        var hasResult = message.hasInput(INPUT_RESULT);
+        boolean sortReportBySeverity = Optional.ofNullable(getAndConvert(message.getFragments(), INPUT_SORT_REPORT_BY_SEVERITY, DataType.BOOLEAN_DATA_TYPE, BooleanType.class)).map(BooleanType::getValue).orElse(false);
+        if (hasResult) {
             try {
                 result = TestResultType.valueOf(((String) message.getFragments().get(INPUT_RESULT).convertTo(DataType.STRING_DATA_TYPE).getValue()));
             } catch (IllegalArgumentException | NullPointerException e) {
@@ -67,6 +76,9 @@ public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler
         var report = generateSuccessReport(messageForReport);
         TestCaseUtils.applyContentTypes(message.getFragments().get(INPUT_CONTENT_TYPES), report.getReport().getContext());
         report.getReport().setResult(result);
+        HandlerUtils.addReportStepMapToReport(message.getFragments().get(INPUT_REPORT_STEPS), report.getReport(), !hasResult,  getScope(sessionId), sessionId);
+        HandlerUtils.addReportItemMapToReport(message.getFragments().get(INPUT_REPORT_ITEMS), report.getReport(), !hasResult, Optional.of(objectFactory));
+        sortReport(report.getReport(), !sortReportBySeverity);
         return report;
     }
 

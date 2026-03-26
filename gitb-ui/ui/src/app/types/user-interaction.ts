@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,33 +13,38 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EventEmitter } from "@angular/core";
-import { FileData } from "./file-data.type";
-import { ValueLabel } from "./value-label";
+import {EventEmitter} from '@angular/core';
+import {FileData} from './file-data.type';
+import {ValueLabel} from './value-label';
 
 export interface UserInteraction {
 
-    type: "instruction"|"request"
-    desc?: string
-    with?: string
-    id: string
-    options?: string
-    optionLabels?: string
-    optionData?: ValueLabel[]
-    data?: string
-    selectedOption?: ValueLabel
-    selectedOptions?: ValueLabel[]
-    file?: FileData
-    name?: string
-    variableType?: string
-    contentType?: string
-    multiple?: boolean
-    value?: string
-    inputType: "TEXT"|"MULTILINE_TEXT"|"SECRET"|"CODE"|"SELECT_SINGLE"|"SELECT_MULTIPLE"|"UPLOAD"
-    mimeType?: string
-    forceDisplay?: boolean
-    required?: boolean
+  type: 'instruction' | 'request';
+  desc?: string;
+  with?: string;
+  id: string;
+  options?: string;
+  optionLabels?: string;
+  optionData?: ValueLabel[];
+  data?: string;
+  selectedOption?: ValueLabel;
+  selectedOptions?: ValueLabel[];
+  file?: FileData;
+  name?: string;
+  variableType?: string;
+  contentType?: string;
+  multiple?: boolean;
+  value?: string;
+  inputType: 'TEXT' | 'MULTILINE_TEXT' | 'SECRET' | 'CODE' | 'SELECT_SINGLE' | 'SELECT_MULTIPLE' | 'UPLOAD';
+  mimeType?: string;
+  forceDisplay?: boolean;
+  required?: boolean;
+  size?: number;
+  showControls?: boolean;
+  level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE';
+  default?: string;
+  accept?: string;
 
-    reset?: EventEmitter<void>
+  reset?: EventEmitter<void>;
 
 }

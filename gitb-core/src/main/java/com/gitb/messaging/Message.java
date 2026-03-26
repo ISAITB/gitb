@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,8 +18,9 @@ package com.gitb.messaging;
 import com.gitb.InputHolder;
 import com.gitb.types.DataType;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by tuncay on 9/2/14.
@@ -29,7 +30,7 @@ public class Message implements InputHolder {
     private final Map<String, DataType> fragments;
 
 	public Message() {
-		this.fragments = new ConcurrentHashMap<>();
+		this.fragments = Collections.synchronizedMap(new LinkedHashMap<>());
 	}
 
 	public Map<String, DataType> getFragments() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -201,6 +201,18 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
           val json:String = JsonUtil.jsSystems(list, results).toString
           ResponseConstructor.constructJsonResponse(json)
         }
+      }
+    }
+  }
+
+  def searchSystemsByOrganization(): Action[AnyContent] = authorizedAction.async { request =>
+    val orgId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ORGANIZATION_ID).toLong
+    authorizationManager.canViewSystems(request, orgId).flatMap { _ =>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      systemManager.searchSystemsByOrganization(orgId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsSystems).toString
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -188,6 +188,28 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
 
   def getDomainParametersByCommunityId(communityId: Long, onlySimple: Boolean, loadValues: Boolean): Future[List[DomainParameter]] = {
     DB.run(getDomainParametersByCommunityIdInternal(communityId, onlySimple, loadValues)).map(_.toList)
+  }
+
+  def searchDomainParameters(domainId: Long, filter: Option[String], page: Long, limit: Long): Future[SearchResult[DomainParameter]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.domainParameters
+        .filter(_.domain === domainId)
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table.name.toLowerCase.like(filterValueToUse) || table.desc.getOrElse("").toLowerCase.like(filterValueToUse)
+        })
+      if (!forCount) {
+        baseQuery.sortBy(_.name.asc)
+      } else {
+        baseQuery
+      }
+    }
+    DB.run {
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    }
   }
 
   def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean], onlySimple: Boolean): Future[List[DomainParameter]] = {
@@ -635,8 +657,8 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       // Update non-password information
       _ <- PersistenceSchema.testServices
         .filter(_.id === service.id)
-        .map(x => (x.serviceType, x.apiType, x.identifier, x.version, x.authBasicUsername, x.authTokenUsername, x.authTokenPasswordType, x.parameter))
-        .update((service.serviceType, service.apiType, service.identifier, service.version, service.authBasicUsername, service.authTokenUsername, service.authTokenPasswordType, service.parameter))
+        .map(x => (x.serviceType, x.apiType, x.identifier, x.version, x.authBasicUsername, x.authTokenUsername, x.authTokenPasswordType, x.monitorHealth, x.parameter))
+        .update((service.serviceType, service.apiType, service.identifier, service.version, service.authBasicUsername, service.authTokenUsername, service.authTokenPasswordType, service.monitorHealth, service.parameter))
       // Handle basic auth password
       _ <- {
         if (service.authBasicUsername.isDefined) {
@@ -686,7 +708,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     DB.run(getTestServicesInternal(domainId))
   }
 
-  def getTestServicesInternal(domainId: Long): DBIO[List[TestService]] = {
+  private def getTestServicesInternal(domainId: Long): DBIO[List[TestService]] = {
     PersistenceSchema.testServices
       .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
       .filter(_._2.domain === domainId)
@@ -695,31 +717,45 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       .map(_.toList)
   }
 
-  def getTestServicesWithParameters(domainId: Long): Future[Seq[TestServiceWithParameter]] = {
-    DB.run {
-      PersistenceSchema.testServices
+  def searchTestServicesWithParameters(domainId: Long, filter: Option[String], page: Long, limit: Long): Future[SearchResult[TestServiceWithParameter]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.testServices
         .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
         .filter(_._2.domain === domainId)
-        .result
-        .map { results =>
-          results.map { result =>
-            TestServiceWithParameter(result._1, result._2)
-          }
-        }
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table._2.name.toLowerCase.like(filterValueToUse) || table._2.desc.getOrElse("").toLowerCase.like(filterValueToUse)
+      })
+      if (!forCount) {
+        baseQuery.sortBy(_._2.name.asc)
+      } else {
+        baseQuery
+      }
+    }
+    DB.run {
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.map(result => TestServiceWithParameter(result._1, result._2)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
     }
   }
 
-  def getTestServiceWithParameter(serviceId: Long): Future[TestServiceWithParameter] = {
+  def getTestServiceWithParameter(serviceId: Long, domainId: Option[Long] = None): Future[TestServiceWithParameter] = {
     DB.run {
-      PersistenceSchema.testServices
-        .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
-        .filter(_._1.id === serviceId)
-        .result
-        .head
-        .map { result =>
-          TestServiceWithParameter(result._1, result._2)
-        }
+      getTestServiceWithParameterInternal(serviceId, domainId)
     }
+  }
+
+  private def getTestServiceWithParameterInternal(serviceId: Long, domainId: Option[Long]): DBIO[TestServiceWithParameter] = {
+    PersistenceSchema.testServices
+      .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+      .filter(_._1.id === serviceId)
+      .filterOpt(domainId)((q, id) => q._2.domain === id)
+      .result
+      .head
+      .map { result =>
+        TestServiceWithParameter(result._1, result._2)
+      }
   }
 
   def getAvailableDomainParametersForTestServiceConversion(domainId: Long): Future[Seq[DomainParameter]] = {
@@ -780,40 +816,90 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     props
   }
 
+  def testTestServiceById(serviceId: Long, domainId: Long): Future[(ServiceTestResult, TestServiceWithParameter)] = {
+    for {
+      serviceDataToUse <- getTestServiceWithParameter(serviceId, Some(domainId)).map { serviceData =>
+        serviceData.copy(
+          service = serviceData.service.copy(
+            authBasicPassword = serviceData.service.authBasicPassword.map(MimeUtil.decryptString),
+            authTokenPassword = serviceData.service.authTokenPassword.map(MimeUtil.decryptString)
+          )
+        )
+      }
+      result <- makeTestServiceTestCall(serviceDataToUse)
+    } yield (result, serviceDataToUse)
+  }
+
   def testTestService(testService: TestServiceWithParameter): Future[ServiceTestResult] = {
     for {
       serviceDataToUse <- loadTestServiceForTest(testService)
-      result <- {
-        Future {
-          val serviceUrl = URI.create(serviceDataToUse.parameter.value.get).toURL
-          val callProperties = prepareTestServiceCallProperties(serviceDataToUse)
-          val response = TestServiceType.apply(serviceDataToUse.service.serviceType) match {
-            case TestServiceType.ValidationService =>
-              val client = new RemoteValidationModuleClient(serviceUrl, callProperties)
-              val wrapper = new com.gitb.vs.GetModuleDefinitionResponse
-              wrapper.setModule(client.getModuleDefinition)
-              new JAXBElement[com.gitb.vs.GetModuleDefinitionResponse](new QName("http://www.gitb.com/vs/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.vs.GetModuleDefinitionResponse], wrapper)
-            case TestServiceType.MessagingService =>
-              val client = new RemoteMessagingModuleClient(serviceUrl, callProperties)
-              val wrapper = new com.gitb.ms.GetModuleDefinitionResponse
-              wrapper.setModule(client.getModuleDefinition)
-              new JAXBElement[com.gitb.ms.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ms/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ms.GetModuleDefinitionResponse], wrapper)
-            case TestServiceType.ProcessingService =>
-              val client = new RemoteProcessingModuleClient(serviceUrl, callProperties)
-              val wrapper = new com.gitb.ps.GetModuleDefinitionResponse
-              wrapper.setModule(client.getModuleDefinition)
-              new JAXBElement[com.gitb.ps.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ps.GetModuleDefinitionResponse], wrapper)
-            case _ => throw new IllegalArgumentException("Unknown test service type %s".formatted(serviceDataToUse.service.serviceType))
-          }
-          val bos = new ByteArrayOutputStream()
-          XMLUtils.marshalToStream(response, bos)
-          ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
-        }.recover {
-          case exception: Exception =>
-            ServiceTestResult(success = false, Some(extractFailureDetails(exception)), Constants.MimeTypeTextPlain)
-        }
-      }
+      result <- makeTestServiceTestCall(serviceDataToUse)
     } yield result
+  }
+
+  private def makeTestServiceTestCall(serviceDataToUse: TestServiceWithParameter) = {
+    Future {
+      val serviceUrl = URI.create(serviceDataToUse.parameter.value.get).toURL
+      val callProperties = prepareTestServiceCallProperties(serviceDataToUse)
+      val response = TestServiceType.apply(serviceDataToUse.service.serviceType) match {
+        case TestServiceType.ValidationService =>
+          val client = new RemoteValidationModuleClient(serviceUrl, callProperties)
+          val wrapper = new com.gitb.vs.GetModuleDefinitionResponse
+          wrapper.setModule(client.getModuleDefinition)
+          new JAXBElement[com.gitb.vs.GetModuleDefinitionResponse](new QName("http://www.gitb.com/vs/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.vs.GetModuleDefinitionResponse], wrapper)
+        case TestServiceType.MessagingService =>
+          val client = new RemoteMessagingModuleClient(serviceUrl, callProperties)
+          val wrapper = new com.gitb.ms.GetModuleDefinitionResponse
+          wrapper.setModule(client.getModuleDefinition)
+          new JAXBElement[com.gitb.ms.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ms/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ms.GetModuleDefinitionResponse], wrapper)
+        case TestServiceType.ProcessingService =>
+          val client = new RemoteProcessingModuleClient(serviceUrl, callProperties)
+          val wrapper = new com.gitb.ps.GetModuleDefinitionResponse
+          wrapper.setModule(client.getModuleDefinition)
+          new JAXBElement[com.gitb.ps.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ps.GetModuleDefinitionResponse], wrapper)
+        case _ => throw new IllegalArgumentException("Unknown test service type %s".formatted(serviceDataToUse.service.serviceType))
+      }
+      val bos = new ByteArrayOutputStream()
+      XMLUtils.marshalToStream(response, bos)
+      ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
+    }.recover {
+      case exception: Exception =>
+        ServiceTestResult(success = false, Some(extractFailureDetails(exception)), Constants.MimeTypeTextPlain)
+    }
+  }
+
+  def getTestServicesForHealthCheck(communityId: Option[Long], domainId: Option[Long]): Future[Iterable[TestServiceBasicInfo]] = {
+    DB.run {
+      for {
+        domainIds <- {
+          if (communityId.isDefined && domainId.isEmpty) {
+            PersistenceSchema.communities
+              .filter(_.id === communityId.get)
+              .map(_.domain)
+              .result
+              .headOption
+              .map { result =>
+                result.flatten.map(Set(_))
+              }
+          } else {
+            DBIO.successful(domainId.map(Set(_)))
+          }
+        }
+        services <- PersistenceSchema.testServices
+          .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+          .join(PersistenceSchema.domains).on(_._2.domain === _.id)
+          .filter(_._1._1.monitorHealth === true)
+          .filterOpt(domainIds)((q, ids) => q._2.id inSet ids)
+          .map(x => (x._1._1.id, x._1._1.serviceType, x._1._2.name, x._2.shortname, x._2.id))
+          .sortBy(x => (x._4.asc, x._3.asc))
+          .result
+          .map { results =>
+            results.map { result =>
+              TestServiceBasicInfo(result._1, result._2, result._3, result._4, result._5)
+            }
+          }
+      } yield services
+    }
   }
 
 }

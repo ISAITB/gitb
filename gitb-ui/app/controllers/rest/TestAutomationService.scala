@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,8 +15,11 @@
 
 package controllers.rest
 
+import config.Configurations
+import controllers.rest.BaseAutomationService.{DeleteEndpoint, EndpointSignature, GetEndpoint, PostEndpoint, PutEndpoint}
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.{AutomationApiException, ErrorCodes}
+import managers.ratelimit.RateLimitManager
 import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}
 import models.Constants
 import org.apache.commons.io.FileUtils
@@ -34,21 +37,35 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                        repositoryUtils: RepositoryUtils,
                                        authorizationManager: AuthorizationManager,
                                        systemManager: SystemManager,
+                                       rateLimitManager: RateLimitManager,
                                        testExecutionManager: TestExecutionManager)
-                                      (implicit ec: ExecutionContext) extends BaseAutomationService(cc) {
+                                      (implicit ec: ExecutionContext) extends BaseAutomationService(cc, rateLimitManager) {
 
   def start: Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
-      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
-      val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
-      testExecutionManager.processAutomationLaunchRequest(input).map { result =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
+    if (Configurations.PREPARE_FOR_SHUTDOWN) {
+      Future.successful {
+        authorizationManager.markRequestAsAuthorized(request)
+        ResponseConstructor.constructErrorResponse(ErrorCodes.PREPARING_FOR_SHUTDOWN, "The Test Bed is preparing to be shut down and will not accept new test sessions.")
       }
-    })
+    } else {
+      processAsJson(request, GetEndpoint("/tests/start"), () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
+        val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
+        val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
+        if (!rateLimitManager.currentSettings().enableBulkTestExecution && input.testCase.size != 1) {
+          Future.successful {
+            ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, "Bulk test execution is not allowed. To launch tests you must provide the identifier of a single, specific test case to execute.")
+          }
+        } else {
+          testExecutionManager.processAutomationLaunchRequest(input).map { result =>
+            ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
+          }
+        }
+      })
+    }
   }
 
   def stop: Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
+    processAsJson(request, PostEndpoint("/tests/stop"), () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val sessionIds = JsonUtil.parseJsSessions(body)
       testExecutionManager.processAutomationStopRequest(organisationKey, sessionIds).map { _ =>
@@ -58,21 +75,20 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def status: Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
-        val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
-        val query = JsonUtil.parseJsSessionStatusRequest(body)
-        val sessionIds = query._1
-        val withLogs = query._2
-        val withReports = query._3
-        reportManager.processAutomationStatusRequest(organisationKey, sessionIds, withLogs, withReports).map { statusItems =>
-          ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionStatusInfo(statusItems).toString())
-        }
+    processAsJson(request, PostEndpoint("/tests/status"), () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val query = JsonUtil.parseJsSessionStatusRequest(body)
+      val sessionIds = query._1
+      val withLogs = query._2
+      val withReports = query._3
+      reportManager.processAutomationStatusRequest(organisationKey, sessionIds, withLogs, withReports).map { statusItems =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionStatusInfo(statusItems).toString())
       }
-    )
+    })
   }
 
   def report(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/tests/report/{sessionId}"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val contentType = determineReportType(request)
       val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
@@ -91,7 +107,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getOrganisationStatements(): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+    process(request, PostEndpoint("/conformance"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.getConformanceStatementsViaApi(organisationKey, None, None).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
@@ -100,7 +116,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getOrganisationStatementsOfSnapshot(snapshotKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/conformance/snapshot/{snapshot}"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.getConformanceStatementsViaApi(organisationKey, None, Some(snapshotKey)).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
@@ -109,7 +125,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getSystemStatements(systemKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/conformance/{system}"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.getConformanceStatementsViaApi(organisationKey, Some(systemKey), None).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
@@ -118,7 +134,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getSystemStatementsOfSnapshot(systemKey: String, snapshotKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/conformance/snapshot/{snapshot}/{system}"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.getConformanceStatementsViaApi(organisationKey, Some(systemKey), Some(snapshotKey)).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
@@ -127,7 +143,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def createStatement(systemKey: String, actorKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+    process(request, PutEndpoint("/conformance/{system}/{actor}"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.defineConformanceStatementViaApi(organisationKey, systemKey, actorKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -136,7 +152,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteStatement(systemKey: String, actorKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+    process(request, DeleteEndpoint("/conformance/{system}/{actor}"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.deleteConformanceStatementViaApi(organisationKey, systemKey, actorKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -145,15 +161,15 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def statementReport(systemKey: String, actorKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    statementReportInternal(systemKey, actorKey, None, request)
+    statementReportInternal(GetEndpoint("/conformance/{system}/{actor}"), systemKey, actorKey, None, request)
   }
 
   def statementReportForSnapshot(systemKey: String, actorKey: String, snapshotKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    statementReportInternal(systemKey, actorKey, Some(snapshotKey), request)
+    statementReportInternal(GetEndpoint("/conformance/{system}/{actor}/{snapshot}"), systemKey, actorKey, Some(snapshotKey), request)
   }
 
-  private def statementReportInternal(systemKey: String, actorKey: String, snapshotKey: Option[String], request: RequestWithAttributes[AnyContent]): Future[Result] = {
-    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+  private def statementReportInternal(signature: EndpointSignature, systemKey: String, actorKey: String, snapshotKey: Option[String], request: RequestWithAttributes[AnyContent]): Future[Result] = {
+    process(request, signature, () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val contentType = determineReportType(request)
       val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -307,6 +307,8 @@ public class ReportGenerator {
                         value = contextValueAsString(content.getValue());
                     }
                     item = new ContextItem(StringUtils.defaultString(content.getName()), truncateIfNeeded(value, specs));
+                } else {
+                    item = new ContextItem(StringUtils.defaultString(content.getName()), (String)null);
                 }
             } else {
                 var children = content.getItem().stream()
@@ -430,10 +432,16 @@ public class ReportGenerator {
     }
 
     public void writeTestCaseOverviewXmlReport(TestCaseOverviewReportType testCaseOverview, OutputStream outputStream) {
+        writeTestCaseOverviewXmlReport(testCaseOverview, outputStream, false);
+    }
+
+    public void writeTestCaseOverviewXmlReport(TestCaseOverviewReportType testCaseOverview, OutputStream outputStream, boolean keepStepContexts) {
         try {
             Marshaller marshaller = jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-            emptyTestStepContext(testCaseOverview);
+            if (!keepStepContexts) {
+                emptyTestStepContext(testCaseOverview);
+            }
             marshaller.marshal(new ObjectFactory().createTestCaseOverviewReport(testCaseOverview), outputStream);
         } catch(Exception e) {
             throw new IllegalStateException(e);
@@ -490,6 +498,7 @@ public class ReportGenerator {
             }
             parameters.put("startTime", testCaseOverview.getStartTime());
             parameters.put("endTime", testCaseOverview.getEndTime());
+            parameters.put("sessionId", testCaseOverview.getSessionId());
             parameters.put("testName", testCaseOverview.getTestName());
             parameters.put("testDescription", testCaseOverview.getTestDescription());
             parameters.put("specReference", testCaseOverview.getSpecReference());

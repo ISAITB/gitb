@@ -279,71 +279,23 @@
         <vulnerabilityName>CVE-2026-1225</vulnerabilityName>
     </suppress>
     <suppress>
-        <!-- Low severity CVE that relates to the MySQL server, not the JDBC driver. -->
-       <notes><![CDATA[
-   file name: mysql-connector-j-9.4.0.jar
+        <!-- Relates to an XSS issue with DomPurify. This is not applicable for the GITB as there is no unsafe neing processed. -->
+        <notes><![CDATA[
+   file name: swagger-ui-5.32.0.jar: swagger-ui-bundle.js
    ]]></notes>
-       <sha1>8f6c66269048fbd2316b7b45d75898ebee44986f</sha1>
-        <cve>CVE-2026-21964</cve>
-    </suppress>
-    <suppress>
-        <!-- Non-applicable as email recipients are not controlled externally. In addition the patched Angus runtime is already used as a transitive dependency. -->
-        <notes><![CDATA[
-        file name: jakarta.mail-2.0.2.jar
-    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.sun\.mail/jakarta\.mail@.*$</packageUrl>
-        <vulnerabilityName>CVE-2025-7962</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <!-- Dompurify is defined as a transitive dependency and is not used to processes uncontrolled content. -->
-        <notes><![CDATA[
-        file name: swagger-ui-5.28.1.jar: swagger-ui-es-bundle.js
-        ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <cve>CVE-2025-15599</cve>
     </suppress>
     <suppress>
-        <!-- Dompurify is defined as a transitive dependency and is not used to processes uncontrolled content. -->
+        <!-- Relates to an XSS issue with DomPurify. This is not applicable for the GITB as there is no unsafe neing processed. -->
         <notes><![CDATA[
-        file name: swagger-ui-5.28.1.jar: swagger-ui-es-bundle.js
-        ]]></notes>
+   file name: swagger-ui-5.32.0.jar: swagger-ui-bundle.js
+   ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <cve>CVE-2026-0540</cve>
     </suppress>
     <suppress>
-        <!-- Jetty is not used to expose accessible endpoints. -->
-        <notes><![CDATA[
-        file name: jetty-server-12.0.23.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
-        <cve>CVE-2026-1605</cve>
-    </suppress>
-    <suppress>
-        <!-- Jetty is not used to expose accessible endpoints. -->
-        <notes><![CDATA[
-        file name: jetty-server-12.0.23.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
-        <cve>CVE-2025-11143</cve>
-    </suppress>
-    <suppress>
-        <!-- Jetty is not used to expose accessible endpoints. -->
-        <notes><![CDATA[
-        file name: jetty-ee10-servlet-12.0.23.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.ee10/.*@.*$</packageUrl>
-        <cve>CVE-2025-11143</cve>
-    </suppress>
-    <suppress>
-        <!-- Jetty is not used to expose accessible endpoints. -->
-        <notes><![CDATA[
-        file name: jetty-ee10-servlet-12.0.23.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.ee10/.*@.*$</packageUrl>
-        <cve>CVE-2026-1605</cve>
-    </suppress>
-    <suppress>
-        <!-- Non-applicable and refers to an example. -->
+        <!-- False positive (CVE affects up to v3.0.6). -->
         <notes><![CDATA[
    file name: pdfbox-3.0.7.jar
    ]]></notes>
@@ -351,7 +303,7 @@
         <cve>CVE-2026-23907</cve>
     </suppress>
     <suppress>
-        <!-- Non-applicable and refers to an example. -->
+        <!-- False positive (CVE affects up to v3.0.6). -->
         <notes><![CDATA[
    file name: xmpbox-3.0.7.jar
    ]]></notes>

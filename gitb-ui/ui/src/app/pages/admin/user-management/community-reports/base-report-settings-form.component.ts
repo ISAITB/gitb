@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { HttpResponse } from '@angular/common/http';
-import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { from, Observable } from 'rxjs';
-import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
-import { CommunityKeystoreModalComponent } from 'src/app/modals/community-keystore-modal/community-keystore-modal.component';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { ReportService } from 'src/app/services/report.service';
-import { CommunityReportSettings } from 'src/app/types/community-report-settings';
-import { FileData } from 'src/app/types/file-data.type';
-import { saveAs } from 'file-saver'
-import { ErrorService } from 'src/app/services/error.service';
+import {HttpResponse} from '@angular/common/http';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {from, Observable} from 'rxjs';
+import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
+import {CommunityKeystoreModalComponent} from 'src/app/modals/community-keystore-modal/community-keystore-modal.component';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {ReportService} from 'src/app/services/report.service';
+import {CommunityReportSettings} from 'src/app/types/community-report-settings';
+import {FileData} from 'src/app/types/file-data.type';
+import {saveAs} from 'file-saver';
+import {ErrorService} from 'src/app/services/error.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
@@ -50,7 +50,7 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
 
   constructor(
     protected readonly conformanceService: ConformanceService,
-    protected readonly modalService: BsModalService,
+    protected readonly modalService: NgbModal,
     protected readonly reportService: ReportService,
     protected readonly errorService: ErrorService
   ) { super() }
@@ -78,20 +78,13 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
     // Do nothing by default
   }
 
-  collapseForm() {
-    this.collapse.emit(true)
-  }
-
   manageKeystore() {
     this.manageKeystorePending = true
     this.conformanceService.getCommunityKeystoreInfo(this.communityId).subscribe((data) => {
-      this.modalService.show(CommunityKeystoreModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          communityId: this.communityId,
-          communityKeystore: data
-        }
-      })
+      const modal = this.modalService.open(CommunityKeystoreModalComponent, { size: 'lg' })
+      const modalInstance = modal.componentInstance as CommunityKeystoreModalComponent
+      modalInstance.communityId = this.communityId
+      modalInstance.communityKeystore = data
     }).add(() => {
       this.manageKeystorePending = false
     })
@@ -114,24 +107,21 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
         contentObservable = this.reportService.getReportStylesheet(this.communityId, reportType)
       }
       contentObservable.subscribe((data) => {
-        this.modalService.show(CodeEditorModalComponent, {
-          class: 'modal-lg',
-          initialState: {
-            documentName: 'Stylesheet',
-            editorOptions: {
-              value: data,
-              readOnly: true,
-              lineNumbers: true,
-              smartIndent: false,
-              electricChars: false,
-              mode: 'application/xml',
-              download: {
-                fileName: 'stylesheet.xslt',
-                mimeType: 'application/xslt+xml'
-              }
-            }
+        const modal = this.modalService.open(CodeEditorModalComponent, { size: 'lg' })
+        const modalInstance = modal.componentInstance as CodeEditorModalComponent
+        modalInstance.documentName = 'Stylesheet'
+        modalInstance.editorOptions = {
+          value: data,
+          readOnly: true,
+          lineNumbers: true,
+          smartIndent: false,
+          electricChars: false,
+          mode: 'application/xml',
+          download: {
+            fileName: 'stylesheet.xslt',
+            mimeType: 'application/xslt+xml'
           }
-        })
+        }
       })
     }
   }

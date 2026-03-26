@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,21 +17,29 @@ package managers
 
 import actors.events.{ConformanceStatementCreatedEvent, SystemUpdatedEvent}
 import exceptions.{AutomationApiException, ErrorCodes}
+import managers.SystemManager.{ExistingResult, logger}
 import managers.triggers.TriggerHelper
 import models.Enums.{TestResultStatus, UserRole}
 import models._
 import models.automation.{ConformanceStatementKeys, CreateSystemRequest, UpdateSystemRequest}
+import org.slf4j.{Logger, LoggerFactory}
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
-import java.util
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
+
+object SystemManager {
+
+  private val logger: Logger = LoggerFactory.getLogger(classOf[SystemManager])
+  private case class ExistingResult(sessionId: String, result: String, outputMessage: Option[String], endTime: Option[Timestamp])
+
+}
 
 @Singleton
 class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
@@ -56,7 +64,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
             addedStatements += key
             linkedActorIds += otherConformanceStatement.actor
             // We create default parameter values only if we are not copying the other system's parameter values.
-            actions += defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, setDefaultParameterValues = !copyStatementParameters)
+            actions += defineConformanceStatementIfNotExisting(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, setDefaultParameterValues = !copyStatementParameters)
           }
         }
         toDBIO(actions).map(_ => linkedActorIds.toList)
@@ -516,6 +524,22 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
+  def searchSystemsByOrganization(orgId: Long, page: Long, limit: Long): Future[SearchResult[Systems]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.systems.filter(_.owner === orgId)
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_.shortname.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
+  }
+
   def getSystemsByOrganization(orgId: Long, snapshotId: Option[Long]): Future[List[Systems]] = {
     if (snapshotId.isEmpty) {
       DB.run(getSystemsByOrganizationInternal(orgId))
@@ -555,23 +579,36 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
             PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.head
           }
         }
-        existingStatementActorIds <- PersistenceSchema.systemImplementsActors
+        actorIdsToProcess <- PersistenceSchema.systemImplementsActors
           .filter(_.systemId === systemId)
           .map(_.actorId)
           .result
-        actorsToProcess <- PersistenceSchema.specificationHasActors
-          .join(PersistenceSchema.actors).on(_.actorId === _.id)
-          .filterOpt(domainId)((q, id) => q._2.domain === id) // Ensure these are valid actors within the domain.
-          .filter(_._1.actorId inSet actorIds)
-          .filterNot(_._1.actorId inSet existingStatementActorIds)
-          .map(_._1)
-          .result
-        _ <- {
-          val actions = new ListBuffer[DBIO[_]]
-          actorsToProcess.foreach { actor =>
-            actions += defineConformanceStatement(systemId, actor._1, actor._2, setDefaultParameterValues = true)
+          .map { existingStatementActorIds =>
+            actorIds.toSet.removedAll(existingStatementActorIds)
           }
-          toDBIO(actions)
+        actorsToProcess <- {
+          if (actorIdsToProcess.isEmpty) {
+            DBIO.successful(Seq.empty[(Long, Long)])
+          } else {
+            PersistenceSchema.specificationHasActors
+              .join(PersistenceSchema.actors).on(_.actorId === _.id)
+              .filterOpt(domainId)((q, id) => q._2.domain === id) // Ensure these are valid actors within the domain.
+              .filter(_._1.actorId inSet actorIdsToProcess)
+              .map(_._1)
+              .result
+          }
+        }
+        _ <- {
+          if (actorsToProcess.isEmpty) {
+            logger.info("Skipping creation of conformance statement(s). No actors were found from IDs [{}] that were not already associated to system [{}].", actorIds.mkString(","), systemId)
+            DBIO.successful(())
+          } else {
+            val actions = new ListBuffer[DBIO[_]]
+            actorsToProcess.foreach { actor =>
+              actions += defineConformanceStatement(systemId, actor._1, actor._2, setDefaultParameterValues = true)
+            }
+            toDBIO(actions)
+          }
         }
       } yield (communityId, actorsToProcess.map(_._2))).transactionally
     ).map { result =>
@@ -604,54 +641,61 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
           }
         }
         // Create statement
-        _ <- defineConformanceStatement(statementIds.systemId, specificationId, statementIds.actorId, setDefaultParameterValues = true)
+        _ <- defineConformanceStatementIfNotExisting(statementIds.systemId, specificationId, statementIds.actorId, setDefaultParameterValues = true)
       } yield ()
     ).transactionally)
   }
 
-  def defineConformanceStatement(system: Long, spec: Long, actor: Long, setDefaultParameterValues: Boolean): DBIO[_] = {
+  def defineConformanceStatementIfNotExisting(system: Long, spec: Long, actor: Long, setDefaultParameterValues: Boolean): DBIO[Unit] = {
     for {
+      existingSystemMapping <- PersistenceSchema.systemImplementsActors
+          .filter(_.systemId === system)
+          .filter(_.actorId === actor)
+          .filter(_.specId === spec)
+          .result
+          .headOption
+      _ <- {
+        if (existingSystemMapping.isEmpty) {
+          defineConformanceStatement(system, spec, actor, setDefaultParameterValues)
+        } else {
+          logger.info("Conformance statement already exists for system[{}] specification[{}] and actor[{}]", system, spec, actor)
+          DBIO.successful(())
+        }
+      }
+    } yield ()
+  }
+
+  private def defineConformanceStatement(system: Long, spec: Long, actor: Long, setDefaultParameterValues: Boolean): DBIO[Unit] = {
+    for {
+      // Add the system to actor mapping.
+      _ <- PersistenceSchema.systemImplementsActors += (system, spec, actor)
+      // Load any existing test results for the system and actor.
+      // We look up based on test case ID (and not actor) because we may have shared test suites.
       conformanceInfo <- PersistenceSchema.testCaseHasActors
         .join(PersistenceSchema.testSuiteHasTestCases).on(_.testcase === _.testcase)
         .filter(_._1.actor === actor)
         .filter(_._1.sut === true)
         .map(r => (r._1.testcase, r._2.testsuite))
         .result
-      // Add the system to actor mapping. This may be missing due to test suite updates that changed actor roles.
-      existingSystemMapping <- {
-        if (conformanceInfo.isEmpty) {
-          DBIO.successful(None)
-        } else {
-          PersistenceSchema.systemImplementsActors
-            .filter(_.systemId === system)
-            .filter(_.actorId === actor)
-            .filter(_.specId === spec)
-            .result
-            .headOption
-        }
-      }
-      _ <- {
-        if (existingSystemMapping.isDefined) {
-          DBIO.successful(())
-        } else {
-          PersistenceSchema.systemImplementsActors += (system, spec, actor)
-        }
-      }
-      // Load any existing test results for the system and actor.
-      // We look up based on test case ID (and not actor) because we may have shared test suites.
-      existingResults <- PersistenceSchema.testResults
-        .filter(_.sutId === system)
-        .filter(_.testCaseId inSet conformanceInfo.map(_._1)) // In expected set of test case IDs
-        .sortBy(_.endTime.desc)
-        .result
       existingResultsMap <- {
-        val existingResultsMap = new util.HashMap[Long, (String, String, Option[String], Option[Timestamp])]
-        existingResults.foreach { existingResult =>
-          if (!existingResultsMap.containsKey(existingResult.testCaseId.get)) {
-            existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result, existingResult.outputMessage, existingResult.endTime))
-          }
+        if (conformanceInfo.isEmpty) {
+          DBIO.successful(Map.empty[Long, ExistingResult])
+        } else {
+          PersistenceSchema.testResults
+            .filter(_.sutId === system)
+            .filter(_.testCaseId inSet conformanceInfo.map(_._1)) // In expected set of test case IDs
+            .sortBy(_.endTime.desc)
+            .result
+            .map { existingResults =>
+              val existingResultsMap = new mutable.HashMap[Long, ExistingResult]
+              existingResults.foreach { existingResult =>
+                if (!existingResultsMap.contains(existingResult.testCaseId.get)) {
+                  existingResultsMap += (existingResult.testCaseId.get -> ExistingResult(existingResult.sessionId, existingResult.result, existingResult.outputMessage, existingResult.endTime))
+                }
+              }
+              existingResultsMap.toMap
+            }
         }
-        DBIO.successful(existingResultsMap)
       }
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
@@ -662,32 +706,37 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
           var outputMessage: Option[String] = None
           var sessionId: Option[String] = None
           var updateTime: Option[Timestamp] = None
-          if (existingResultsMap.containsKey(testCase)) {
-            val existingData = existingResultsMap.get(testCase)
-            sessionId = Some(existingData._1)
-            result = TestResultStatus.withName(existingData._2)
-            outputMessage = existingData._3
-            updateTime = existingData._4
+          if (existingResultsMap.contains(testCase)) {
+            val existingData = existingResultsMap(testCase)
+            sessionId = Some(existingData.sessionId)
+            result = TestResultStatus.withName(existingData.result)
+            outputMessage = existingData.outputMessage
+            updateTime = existingData.endTime
           }
           actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, outputMessage, sessionId, updateTime))
         }
         toDBIO(actions)
       }
-      /*
-      Set properties with default values.
-       */
-      // 1. Determine the properties that have default values.
-      propertiesWithDefaults <-
+      // Set properties with default values.
+      _ <- {
         if (setDefaultParameterValues) {
-          PersistenceSchema.parameters
-            .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-            .filter(_._2.actor === actor)
-            .filter(_._1.defaultValue.isDefined)
-            .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get))
-            .result
+          setDefaultParameterValuesForSystem(actor, system)
         } else {
-          DBIO.successful(Seq.empty)
+          DBIO.successful(())
         }
+      }
+    } yield ()
+  }
+
+  private def setDefaultParameterValuesForSystem(actor: Long, system: Long): DBIO[Unit] = {
+    for {
+      // 1. Determine the properties that have default values.
+      propertiesWithDefaults <- PersistenceSchema.parameters
+          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+          .filter(_._2.actor === actor)
+          .filter(_._1.defaultValue.isDefined)
+          .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get))
+          .result
       // 2. See which of these properties have values.
       propertiesWithDefaultsThatAreSet <-
         if (propertiesWithDefaults.isEmpty) {

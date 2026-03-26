@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,6 +18,7 @@ import { ROUTES } from '../common/global';
 import { ErrorDescription } from '../types/error-description';
 import { LandingPage } from '../types/landing-page';
 import { RestService } from './rest.service';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -40,6 +41,17 @@ export class LandingPageService {
     return this.restService.get<LandingPage[]>({
       path: ROUTES.controllers.LandingPageService.getLandingPagesByCommunity(communityId).url,
       authenticate: true
+    })
+  }
+
+  searchLandingPagesByCommunity(communityId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<LandingPage>>({
+      path: ROUTES.controllers.LandingPageService.searchLandingPagesByCommunity(communityId).url,
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 

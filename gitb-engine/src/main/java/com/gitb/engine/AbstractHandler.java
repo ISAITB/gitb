@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,7 +17,9 @@ package com.gitb.engine;
 
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.tr.ObjectFactory;
+import com.gitb.tr.TAR;
 import com.gitb.types.DataType;
 
 import java.util.Map;
@@ -32,6 +34,13 @@ public abstract class AbstractHandler {
 
     protected static <T extends DataType> T getAndConvert(Map<String, DataType> inputs, String inputName, String dataType, Class<T> dataTypeClass) {
         return MessagingHandlerUtils.getAndConvert(inputs, inputName, dataType, dataTypeClass);
+    }
+
+    protected void sortReport(TAR report, boolean byLocation) {
+        if (report != null && report.getReports() != null) {
+            ReportItemComparator.SortType sortType = byLocation?ReportItemComparator.SortType.LOCATION_THEN_SEVERITY:ReportItemComparator.SortType.SEVERITY_THEN_LOCATION;
+            report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(sortType));
+        }
     }
 
 }

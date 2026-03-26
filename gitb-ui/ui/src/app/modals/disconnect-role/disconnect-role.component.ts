@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AuthService } from 'src/app/services/auth.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
+import {Component} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {AuthService} from 'src/app/services/auth.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-disconnect-role',
@@ -30,28 +30,30 @@ export class DisconnectRoleComponent extends BaseComponent {
 
   disconnectPending = false
   choice = Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL
-  public result = new EventEmitter<number|undefined>()
 
   constructor(
     public readonly dataService: DataService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly authService: AuthService,
-    public readonly modalRef: BsModalRef
+    public readonly modalRef: NgbActiveModal
   ) { super() }
 
   disconnect() {
     let message: string|undefined
+    let dangerous = false
+    let sameStyles = true
     if (this.choice == Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL) {
       message = "This action will also end your current session. Are you sure you want to proceed?"
     } else {
+      dangerous = true
+      sameStyles = false
       message = "This action will end your current session and cannot be undone. Are you sure you want to proceed?"
     }
-    this.confirmationDialogService.confirmedDangerous("Confirmation", message, "End session", "Cancel")
+    this.confirmationDialogService.confirmed("Confirmation", message, "End session", "Cancel", Constants.BUTTON_ICON.DISCONNECT, Constants.BUTTON_ICON.CANCEL, sameStyles, dangerous)
     .subscribe(() => {
       this.disconnectPending = true
       this.authService.disconnectFunctionalAccount(this.choice).subscribe(() => {
-        this.modalRef.hide()
-        this.result.emit(this.choice)
+        this.modalRef.close(this.choice)
       }).add(() => {
         this.disconnectPending = false
       })
@@ -59,8 +61,7 @@ export class DisconnectRoleComponent extends BaseComponent {
   }
 
   cancel() {
-    this.modalRef.hide()
-    this.result.emit()
+    this.modalRef.dismiss()
   }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -87,17 +87,19 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   saveDisabled() {
-    return !this.loaded || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
+    return !this.loaded || this.savePending || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
   }
 
   updateErrorTemplate(copy: boolean) {
-    if (!this.isDefault && this.template.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (!this.isDefault && this.template.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No", Constants.BUTTON_ICON.SAVE)
+          .subscribe(() => {
+            this.doUpdate(copy)
+          })
+      } else {
         this.doUpdate(copy)
-      })
-    } else {
-      this.doUpdate(copy)
+      }
     }
   }
 
@@ -135,7 +137,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   deleteErrorTemplate() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this error template?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this error template?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.validation.clearErrors()

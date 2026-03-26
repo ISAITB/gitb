@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -55,6 +55,23 @@ export class Utils {
         } else {
             return url
         }
+    }
+
+    public static uniqueValues<T>(array: T[]): T[] {
+      return [...new Set(array)]
+    }
+
+    public static removeFromArray<T>(array: T[]|undefined, predicate: (item: T, index: number, array: T[]) => boolean): T[] {
+      const removed: T[] = [];
+      if (array != undefined) {
+        for (let i = array.length - 1; i >= 0; i--) {
+          if (predicate(array[i], i, array)) {
+            removed.unshift(array[i]);
+            array.splice(i, 1);
+          }
+        }
+      }
+      return removed;
     }
 
 }

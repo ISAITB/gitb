@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -219,7 +219,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                     for (int i = completedStepIndex + 1; i < childStepSpecs.size(); i++) {
                         var pendingStep = childStepSpecs.get(i).getRight();
                         if (pendingStep instanceof TestConstruct && ((TestConstruct)pendingStep).getId() != null) {
-                            TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), (TestConstruct) pendingStep, scope, StepStatus.SKIPPED);
+                            TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), getStepReportMap(), (TestConstruct) pendingStep, scope, StepStatus.SKIPPED);
                             var pendingEvent = new TestStepStatusEvent(scope.getContext().getSessionId(), ((TestConstruct)pendingStep).getId(), StepStatus.SKIPPED, constructDefaultReport(TestResultType.UNDEFINED), self(), pendingStep, scope);
                             TestStepStatusEventBus.getInstance().publish(pendingEvent);
                         }

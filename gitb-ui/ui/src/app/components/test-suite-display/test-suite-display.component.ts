@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -38,8 +38,8 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
   @Input() shaded = false
   @Input() communityId?: number
 
-  @Output() viewTestSession = new EventEmitter<string>()
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()
+  @Output() viewTestSessions = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestCase = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestSuite = new EventEmitter<ConformanceTestSuite>()
   @Output() toggleExpand = new EventEmitter<boolean>()
@@ -99,8 +99,8 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
     this.toggleExpand.emit(testSuite.expanded)
   }
 
-  propagateViewTestSession(sessionId: string) {
-    this.viewTestSession.emit(sessionId)
+  propagateViewTestSessions(testCase: ConformanceTestCase) {
+    this.viewTestSessions.emit(testCase)
   }
 
   propagateExecuteTestSession(testCase: ConformanceTestCase) {
@@ -125,4 +125,12 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
   onTestSuiteSelect(testSuite: ConformanceTestSuite) {
     this.executeTestSuite.emit(testSuite)
   }
+
+  documentEscape(): void {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentEscape())
+  }
+  documentClick(event: Event): void {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentClick(event))
+  }
+
 }

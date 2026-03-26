@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -22,6 +22,7 @@ import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
 import models.Enums.{SelfRegistrationType, UserRole}
 import models._
+import org.pac4j.core.context.WebContext
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
@@ -1283,6 +1284,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
+  def canExportTestSessionData(request: RequestWithAttributes[_], sessionId: String): Future[Boolean] = {
+    canManageTestSession(request, sessionId, requireAdmin = true, requireOwnTestSessionIfNotAdmin = false)
+  }
+
   def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean, requireOwnTestSessionIfNotAdmin: Boolean): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
@@ -1779,7 +1784,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       if (authenticated) {
         val userId = getRequestUserId(request)
         Future.successful {
-          !Configurations.AUTHENTICATION_SSO_ENABLED && (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT)
+          !Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT
         }
       } else {
         Future.successful(false)
@@ -1793,11 +1798,29 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canCreateUserInOwnOrganisation(request: RequestWithAttributes[_]): Future[Boolean] = {
-    canUpdateOwnOrganisation(request, ignoreExistingTests = true)
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isOrganisationAdmin(userInfo)) {
+        canUpdateOwnOrganisationUsers(userInfo)
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot create users"))
   }
 
   def canViewOwnOrganisationUsers(request: RequestWithAttributes[_]): Future[Boolean] = {
-    checkIsAuthenticated(request)
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isOrganisationAdmin(userInfo)) {
+        canUpdateOwnOrganisationUsers(userInfo)
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the organisation users"))
   }
 
   def canUpdateOwnOrganisationAndLandingPage(request: RequestWithAttributes[_], landingPageId: Option[Long]): Future[Boolean] = {
@@ -2375,6 +2398,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User is not authenticated"))
   }
 
+  def canRetrieveAccessToken(request: RequestWithAttributes[_]): Future[Boolean] = {
+    markRequestAsAuthorized(request)
+    Future.successful(true)
+  }
+
   private def isTestBedAdmin(userId: Long): Future[Boolean] = {
     accountManager.isSystemAdmin(userId)
   }
@@ -2417,24 +2445,28 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ok
   }
 
-  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
+  def markRequestAsAuthorized(request: RequestWithAttributes[_]): Unit = {
     if (!request.authorised) {
       request.authorised = true
     }
+  }
+
+  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
+    markRequestAsAuthorized(request)
     checkAuthResult(ok, message)
   }
 
-  def getAccountInfo(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
-    getPrincipal(request).flatMap { accountInfo =>
+  def getAccountInfo(request: RequestWithAttributes[_], context: Option[WebContext] = None): Future[ActualUserInfo] = {
+    getPrincipal(request, context).flatMap { accountInfo =>
       accountManager.getUserAccountsForUid(accountInfo.uid).map { userAccounts =>
         new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.name, userAccounts)
       }
     }
   }
 
-  def getPrincipal(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
+  def getPrincipal(request: RequestWithAttributes[_], context: Option[WebContext] = None): Future[ActualUserInfo] = {
     Future.successful {
-      profileResolver.resolveUserInfo(request).orNull
+      profileResolver.resolveUserInfo(request, context).orNull
     }
   }
 

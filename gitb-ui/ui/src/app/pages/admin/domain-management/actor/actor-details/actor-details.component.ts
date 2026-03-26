@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -128,7 +128,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   delete() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.actorService.deleteActor(this.actorId)
@@ -142,14 +142,16 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   saveChanges() {
-    this.savePending = true
-    this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
-    .subscribe(() => {
-      this.popupService.success(this.dataService.labelActor()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelActor()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
   back() {
@@ -158,6 +160,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
 
   saveDisabled() {
     return !(
+      !this.savePending &&
       this.loaded &&
       this.textProvided(this.actor?.actorId) &&
       this.textProvided(this.actor?.name) &&

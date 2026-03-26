@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -19,7 +19,6 @@ import config.Configurations
 import models.Enums.UserRole
 import models.Enums.UserRole._
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.CryptoUtil
@@ -32,38 +31,68 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 @Singleton
 class UserManager @Inject() (accountManager: AccountManager,
-                             organizationManager: OrganizationManager,
+                             userPreferenceManager: UserPreferenceManager,
                              dbConfigProvider: DatabaseConfigProvider)
                             (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def logger = LoggerFactory.getLogger("UserManager")
-
-  def getSystemAdministrators(): Future[List[Users]] = {
-    getUsersByRole(UserRole.SystemAdmin)
+  def getSystemAdministrators(page: Long, limit: Long): Future[SearchResult[Users]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.users.filter(_.role === UserRole.SystemAdmin.id.toShort)
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_.name.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   /**
     * Gets all community administrators of the given community
     */
-  def getCommunityAdministrators(communityId:Long): Future[List[Users]] = {
-    DB.run(for {
-      organizations <- PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).result.map(_.toList)
-      users <- PersistenceSchema.users.filter(_.organization inSet organizations).filter(_.role === UserRole.CommunityAdmin.id.toShort)
-        .sortBy(_.name.asc)
-        .result
-        .map(_.toList)
-    } yield users)
+  def getCommunityAdministrators(communityId:Long, page: Long, limit: Long): Future[SearchResult[Users]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.users
+        .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .filter(_._1.role === UserRole.CommunityAdmin.id.toShort)
+        .filter(_._2.community === communityId)
+        .map(_._1)
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_.name.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
-  /**
-   * Gets all users with specified role
-   */
-  def getUsersByRole(role: UserRole): Future[List[Users]] = {
-    DB.run(PersistenceSchema.users.filter(_.role === role.id.toShort)
-      .sortBy(_.name.asc)
-      .result.map(_.toList))
+  def searchUsersByOrganization(orgId: Long, page: Long, limit: Long, role: Option[UserRole] = None): Future[SearchResult[Users]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.users
+        .filter(_.organization === orgId)
+        .filterOpt(role)((q, r) => q.role === r.id.toShort)
+        .filterIf(role.isEmpty)(_.role inSet Set(UserRole.VendorUser.id.toShort, UserRole.VendorAdmin.id.toShort))
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(x => (x.role.asc, x.name.asc))
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   /**
@@ -211,6 +240,38 @@ class UserManager @Inject() (accountManager: AccountManager,
     DB.run(action.transactionally)
   }
 
+  private [managers] def createUserInternal(user: Users, preferences: Option[UserPreferences], communityId: Long): DBIO[Long] = {
+    for {
+      userId <- PersistenceSchema.insertUser += user
+      _ <- userPreferenceManager.createPreferences(userId, communityId, preferences)
+    } yield userId
+  }
+
+  private [managers] def updateUserInternal(userId: Long, name: String, password: String, oneTimePassword: Boolean, role: Option[Short], preferences: Option[UserPreferences]): DBIO[Unit] = {
+    for {
+      _ <- {
+        if (role.isDefined) {
+          PersistenceSchema.users
+            .filter(_.id === userId)
+            .map(x => (x.name, x.password, x.onetimePassword, x.role))
+            .update((name, password, oneTimePassword, role.get))
+        } else {
+          PersistenceSchema.users
+            .filter(_.id === userId)
+            .map(x => (x.name, x.password, x.onetimePassword))
+            .update((name, password, oneTimePassword))
+        }
+      }
+      _ <- {
+        if (preferences.isDefined) {
+          userPreferenceManager.updatePreferencesInternal(userId, preferences.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield ()
+  }
+
   /**
    * Create system admin
    */
@@ -222,7 +283,8 @@ class UserManager @Inject() (accountManager: AccountManager,
         .map(_.id)
         .result
         .head
-      _ <- PersistenceSchema.insertUser += user.withOrganizationId(organisationId)
+      userId <- PersistenceSchema.insertUser += user.withOrganizationId(organisationId)
+      _ <- userPreferenceManager.initialiseUserPreferences(communityId, userId)
     } yield ()
     DB.run(dbAction.transactionally)
   }
@@ -232,38 +294,62 @@ class UserManager @Inject() (accountManager: AccountManager,
    */
   def createUser(user: Users, orgId: Long): Future[Long] = {
     val action = for {
-      organizationExists <- organizationManager.checkOrganizationExistsInternal(orgId)
-      newOrgId <- {
-        if (organizationExists) {
-          PersistenceSchema.insertUser += user.withOrganizationId(orgId)
-        } else {
-          throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
+      // Make sure the organisation exists and retrieve its communityID.
+      communityId <- PersistenceSchema.organizations
+        .filter(_.id =!= Constants.DefaultOrganizationId)
+        .filter(_.id === orgId)
+        .map(_.community)
+        .result
+        .headOption
+        .map { result =>
+          if (result.isEmpty) {
+            throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
+          } else {
+            result.get
+          }
         }
-      }
-    } yield newOrgId
+      // Add the user.
+      newUserId <- PersistenceSchema.insertUser += user.withOrganizationId(orgId)
+      // Initialise the user preferences.
+      _ <- userPreferenceManager.initialiseUserPreferences(communityId, newUserId)
+    } yield newUserId
     DB.run(action.transactionally)
   }
 
   /**
    * Deletes user
    */
-  def deleteUser(userId: Long): Future[Int] = {
-    DB.run(PersistenceSchema.users.filter(_.id === userId).delete.transactionally)
+  def deleteUser(userId: Long): Future[Unit] = {
+    DB.run {
+      {
+        for {
+          _ <- userPreferenceManager.deletePreferencesForUser(userId)
+          _ <- PersistenceSchema.users.filter(_.id === userId).delete
+        } yield ()
+      }.transactionally
+    }
   }
 
   def deleteUsersByUidExceptTestBedAdmin(ssoUid: String, ssoEmail: String): Future[Unit] = {
     val dbAction = for {
-      // Delete active roles
-      _ <- PersistenceSchema.users
+      // Collect active role IDs
+      activeUserIds <- PersistenceSchema.users
         .filter(_.ssoUid === ssoUid)
         .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
-        .delete
-      // Delete inactive roles
-      _ <- PersistenceSchema.users
+        .map(_.id)
+        .result
+      // Collect inactive roles
+      inactiveUserIds <- PersistenceSchema.users
         .filter(_.ssoEmail.isDefined)
         .filter(_.ssoEmail.toLowerCase === ssoEmail.toLowerCase)
         .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
-        .delete
+        .map(_.id)
+        .result
+      userIds <- DBIO.successful(activeUserIds.toSet ++ inactiveUserIds.toSet)
+      // Delete preferences.
+      _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+      // Delete user entries.
+      _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
     } yield ()
     DB.run(dbAction.transactionally)
   }
@@ -271,11 +357,22 @@ class UserManager @Inject() (accountManager: AccountManager,
   /**
    * Deletes user
    */
-  def deleteUserExceptTestBedAdmin(userId: Long): Future[Int] = {
-    DB.run(PersistenceSchema.users
-      .filter(_.id === userId)
-      .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
-      .delete.transactionally)
+  def deleteUserExceptTestBedAdmin(userId: Long): Future[Unit] = {
+    DB.run {
+      {
+        for {
+          userIds <- PersistenceSchema.users
+            .filter(_.id === userId)
+            .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
+            .map(_.id)
+            .result
+          // Delete preferences.
+          _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+          // Delete user entries.
+          _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
+        } yield ()
+      }.transactionally
+    }
   }
 
   /**

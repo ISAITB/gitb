@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,19 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 import {BaseComponent} from '../../pages/base-component.component';
 import {TestServiceWithParameter} from '../../types/test-service-with-parameter';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {ConfirmationDialogService} from '../../services/confirmation-dialog.service';
 import {DomainParameterService} from '../../services/domain-parameter.service';
 import {PopupService} from '../../services/popup.service';
 import {Constants} from '../../common/constants';
 import {ValidationState} from '../../types/validation-state';
-import {cloneDeep} from 'lodash';
 import {Id} from '../../types/id';
 import {DataService} from '../../services/data.service';
 import {ServiceCallResultHandlerService} from '../../services/service-call-result-handler.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-create-edit-test-service-modal',
@@ -37,7 +36,6 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   @Input() testService!: Partial<TestServiceWithParameter>
   @Input() domainId!: number
   @Input() updateMatching = false
-  public servicesUpdated = new EventEmitter<boolean>()
 
   @ViewChild("nameField") nameField?: ElementRef;
   title!: string
@@ -59,7 +57,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   tokenAuthPasswordMask!: string
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly domainParameterService: DomainParameterService,
     private readonly popupService: PopupService,
@@ -76,13 +74,14 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   ngOnInit(): void {
-    this.testService = cloneDeep(this.testService)
+    this.testService = structuredClone(this.testService)
     if (this.testService.service == undefined) {
       this.testService.service = {
         id: 0,
         serviceType: Constants.TEST_SERVICE_TYPE.VALIDATION,
         apiType: Constants.TEST_SERVICE_API_TYPE.SOAP,
         parameter: 0,
+        monitor: true
       }
     }
     this.isUpdate = this.testService.service?.id != 0
@@ -115,7 +114,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   saveAllowed() {
-    return this.textProvided(this.testService.parameter!.name) && this.serviceSettingsOk()
+    return !this.pending && this.textProvided(this.testService.parameter!.name) && this.serviceSettingsOk()
   }
 
   serviceSettingsOk() {
@@ -152,13 +151,12 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)
         } else if (this.isMatchingParameterId(data)) {
-          this.confirmationDialogService.confirmed("Matching parameter found", "A parameter was found with a name matching the provided identifier. Do you want to replace it with this test service?", "Replace", "Cancel")
+          this.confirmationDialogService.confirmed("Matching parameter found", "A parameter was found with a name matching the provided identifier. Do you want to replace it with this test service?", "Replace", "Cancel", Constants.BUTTON_ICON.REPLACE)
             .subscribe(() => {
               this.doCreate(serviceData, true)
             })
         } else {
-          this.servicesUpdated.emit(true)
-          this.modalInstance.hide()
+          this.modalInstance.close()
           this.popupService.success('Test service registered.')
         }
       }).add(() => {
@@ -173,13 +171,12 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)
         } else if (this.isMatchingParameterId(data)) {
-          this.confirmationDialogService.confirmed("Matching parameter found", "An existing parameter was found with the same name. Do you want to replace it with this test service?", "Replace", "Cancel")
+          this.confirmationDialogService.confirmed("Matching parameter found", "An existing parameter was found with the same name. Do you want to replace it with this test service?", "Replace", "Cancel", Constants.BUTTON_ICON.REPLACE)
             .subscribe(() => {
               this.doUpdate(serviceData, true)
             })
         } else {
-          this.servicesUpdated.emit(true)
-          this.modalInstance.hide()
+          this.modalInstance.close()
           this.popupService.success('Test service updated.')
         }
       }).add(() => {
@@ -189,7 +186,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   private prepareServiceDataForSubmission() {
-    const serviceData = cloneDeep(this.testService) as TestServiceWithParameter
+    const serviceData = structuredClone(this.testService) as TestServiceWithParameter
     if (this.hasBasicAuthentication) {
       if (!this.updateBasicAuthPassword) {
         serviceData.service.authBasicPassword = undefined
@@ -211,30 +208,31 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   save() {
-    this.validation.clearErrors()
-    if (this.saveAllowed() && this.validateData(this.testService)) {
-      const serviceData = this.prepareServiceDataForSubmission()
-      this.pending = true
-      this.savePending = true
-      if (this.testService.service!.id != 0) {
-        // Update
-        this.doUpdate(serviceData, this.updateMatching)
-      } else {
-        // Create
-        this.doCreate(serviceData, this.updateMatching)
+    if (this.saveAllowed()) {
+      this.validation.clearErrors()
+      if (this.validateData(this.testService)) {
+        const serviceData = this.prepareServiceDataForSubmission()
+        this.pending = true
+        this.savePending = true
+        if (this.testService.service!.id != 0) {
+          // Update
+          this.doUpdate(serviceData, this.updateMatching)
+        } else {
+          // Create
+          this.doCreate(serviceData, this.updateMatching)
+        }
       }
     }
   }
 
   delete() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this test service?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this test service?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
       .subscribe(() => {
         this.pending = true
         this.deletePending = true
         this.domainParameterService.deleteTestService(this.domainId, this.testService.service?.id!)
           .subscribe(() => {
-            this.servicesUpdated.emit(true)
-            this.modalInstance.hide()
+            this.modalInstance.close()
             this.popupService.success('Test service deleted.')
           }).add(() => {
           this.pending = false
@@ -244,8 +242,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   cancel() {
-    this.servicesUpdated.emit(false)
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   private isMatchingParameterId(obj: Id|any): obj is Id {

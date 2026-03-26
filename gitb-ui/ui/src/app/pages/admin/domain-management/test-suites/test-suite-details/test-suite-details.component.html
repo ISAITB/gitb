@@ -2,8 +2,9 @@
 	<div class="card">
 		<div class="card-header">
 			<div class="card-title">Test suite details</div>
+            <div app-domain-tag-indicator></div>
 		</div>
-		<form>
+		<form (ngSubmit)="saveChanges()">
 			<div class="card-body" [pending]="!loaded" focus="name">
                 <app-alert-display [alerts]="alerts"></app-alert-display>
 				@if (testSuite.shared) {
@@ -11,37 +12,38 @@
 						<span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
 					</div>
 				}
-				<div class="row">
-                    <div class="col-10 offset-1">
-						<div class="row mb-3">
-							<label class="col-3 col-form-label text-end" for="identifier">ID:</label>
-							<div class="col-7">
-								<app-api-key-text idName="identifier" name="identifier" [key]="testSuite.identifier!"></app-api-key-text>
-							</div>
-							<div app-tooltip class="col-auto" [tbTooltip]="'The unique identifier of the test suite within the '+dataService.labelSpecificationLower()+'. This is not presented to users but is used internally to match uploaded test suites to existing ones.'"></div>
-						</div>
-						<div class="row mb-3">
-							<label class="col-3 col-form-label text-end" for="name">* Name:</label>
-							<div class="col-7"><input id="name" name="name" [(ngModel)]="testSuite.sname" class="form-control" type="text"></div>
-							<div app-tooltip class="col-auto" tbTooltip="A short and descriptive identifier for the test suite. This is used for filtering purposes and also to distinguish the test suite in conformance statements where multiple test suites are defined."></div>
-						</div>
-						<div class="row mb-3">
-							<label class="col-3 col-form-label text-end" for="version">* Version:</label>
-							<div class="col-7"><input id="version" name="version" [(ngModel)]="testSuite.version" class="form-control" type="text"></div>
-							<div app-tooltip class="col-auto" tbTooltip="A version number for this test suite. This is only visible to administrators."></div>
-						</div>
-						<div class="row mb-3">
-							<label class="col-3 col-form-label text-end" for="description">Description:</label>
-							<div class="col-7">
-								<textarea id="description" name="description" [(ngModel)]="testSuite.description" class="form-control"></textarea>
-							</div>
-							<div app-tooltip class="col-auto" tbTooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></div>
-						</div>
-					</div>
-				</div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="identifier">ID:</label>
+                    <div class="col-8 col-md-6">
+                        <app-api-key-text idName="identifier" name="identifier" [key]="testSuite.identifier!"></app-api-key-text>
+                    </div>
+                    <div app-tooltip class="col-auto" [tbTooltip]="'The unique identifier of the test suite within the '+dataService.labelSpecificationLower()+'. This is not presented to users but is used internally to match uploaded test suites to existing ones.'"></div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="name">* Name:</label>
+                    <div class="col-8 col-md-6"><input id="name" name="name" [(ngModel)]="testSuite.sname" class="form-control" type="text"></div>
+                    <div app-tooltip class="col-auto" tbTooltip="A short and descriptive identifier for the test suite. This is used for filtering purposes and also to distinguish the test suite in conformance statements where multiple test suites are defined."></div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="version">* Version:</label>
+                    <div class="col-8 col-md-6"><input id="version" name="version" [(ngModel)]="testSuite.version" class="form-control" type="text"></div>
+                    <div app-tooltip class="col-auto" tbTooltip="A version number for this test suite. This is only visible to administrators."></div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="description">Description:</label>
+                    <div class="col-8 col-md-6">
+                        <textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="testSuite.description" class="form-control"></textarea>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="order">* Relative order:</label>
+                    <div class="col-1"><input id="order" name="order" [(ngModel)]="testSuite.order" class="form-control" type="number"></div>
+                    <div app-tooltip class="col-auto" [tbTooltip]="'A number used to determine the display and execution order of this test suite relative to others (default being zero). Test suites with the same order are sorted based on their name. Note that any numeric value can be provided for the order (negative, positive or zero), also without having to be sequential or unique compared to the order of other test suites.'"></div>
+                </div>
 				<app-specification-reference-form [reference]="testSuite"></app-specification-reference-form>
 				<app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
-					<div class="row mb-3 mt-3">
+					<div class="row py-3">
 						<div class="offset-1 col-10">
                             <div class="mb-3">
                                 <app-placeholder-selector [resources]="communityId != undefined" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
@@ -55,8 +57,8 @@
 					<div class="row form-group">
 						<div class="offset-1 col-10">
 							<div class="btn-toolbar">
-								<button (click)="previewDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
-								<button (click)="copyDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
+								<button (click)="previewDocumentation()" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
+								<button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
 							</div>
 						</div>
 					</div>
@@ -64,93 +66,101 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || movePending || convertPending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending || movePending || convertPending" [pending]="downloadPending">Download</button>
+					<button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || movePending || convertPending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="download()" [labelIcon]="Constants.BUTTON_ICON.DOWNLOAD" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending || movePending || convertPending" [pending]="downloadPending">Download</button>
                     @if (testSuite.shared) {
-                        <button (click)="convertToNonShared()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to non-shared</button>
+                        <button (click)="convertToNonShared()" [labelIcon]="Constants.BUTTON_ICON.REPLACE" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to non-shared</button>
                     } @else {
                         <app-multi-select-filter [config]="moveSelectionConfig" (apply)="moveSelectionChanged($event)" [pending]="movePending" [disable]="!loaded || savePending || deletePending || downloadPending || convertPending"></app-multi-select-filter>
-                        <button (click)="convertToShared()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to shared</button>
+                        <button (click)="convertToShared()" [labelIcon]="Constants.BUTTON_ICON.REPLACE" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to shared</button>
                     }
-					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
+					<button (click)="back()" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-outline-danger" [disable]="!loaded || savePending || downloadPending || movePending || convertPending" [pending]="deletePending">Delete</button>
+					<button (click)="delete()" type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-outline-danger" [disable]="!loaded || savePending || downloadPending || movePending || convertPending" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>
 	</div>
 	<div>
-		<tabset #tabs>
-			<tab (selectTab)="showTab(Constants.TAB.TEST_SUITE.TEST_CASES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
-				<div class="tabPanel" [class.disable-events]="testCasesRefreshing">
-                    @if (dataStatus.status != Constants.STATUS.FINISHED) {
-                        <div class="message-div">
-                            <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-                            <div class="pending-message">Loading test cases...</div>
-                        </div>
-                    } @else {
-                        <div class="tabControls">
-                            <div class="btn-toolbar">
-                                <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilter()"></app-text-filter>
-                            </div>
-                        </div>
-                        @if (testCasesToShow && testCasesToShow.length > 0) {
-                            <div class="testCaseDisplayContainer">
-                                <app-test-case-display #testCaseDisplayComponent
-                                    [testCases]="testCasesToShow"
-                                    [testCaseGroups]="testCaseGroupMap"
-                                    [hasOptional]="hasOptionalTestCases"
-                                    [hasDisabled]="hasDisabledTestCases"
-                                    [showExecute]="false"
-                                    [showExport]="false"
-                                    [showResults]="false"
-                                    [showViewDocumentation]="true"
-                                    [showEdit]="true"
-                                    [shaded]="false"
-                                    (edit)="onTestCaseSelect($event.id)"
-                                ></app-test-case-display>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.TEST_SUITE.TEST_CASES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TEST_CASE" text="Test cases"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel" [class.disable-events]="testCasesRefreshing">
+                        @if (dataStatus.status != Constants.STATUS.FINISHED) {
+                            <div class="message-div">
+                                <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                                <div class="pending-message">Loading test cases...</div>
                             </div>
                         } @else {
-                            <div class="message-div">
-                                <span>No test cases found.</span>
+                            <div class="tabControls">
+                                <div class="btn-toolbar">
+                                    <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilter()"></app-text-filter>
+                                </div>
                             </div>
+                            @if (testCasesToShow && testCasesToShow.length > 0) {
+                                <div class="testCaseDisplayContainer">
+                                    <app-test-case-display #testCaseDisplayComponent
+                                                           [testCases]="testCasesToShow"
+                                                           [testCaseGroups]="testCaseGroupMap"
+                                                           [hasOptional]="hasOptionalTestCases"
+                                                           [hasDisabled]="hasDisabledTestCases"
+                                                           [showExecute]="false"
+                                                           [showExport]="false"
+                                                           [showResults]="false"
+                                                           [showViewDocumentation]="true"
+                                                           [showEdit]="true"
+                                                           [shaded]="false"
+                                                           (edit)="onTestCaseSelect($event.id)"
+                                    ></app-test-case-display>
+                                </div>
+                            } @else {
+                                <div class="message-div">
+                                    <span>No test cases found.</span>
+                                </div>
+                            }
                         }
-                    }
-                    <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testCasePageNavigation($event)"></app-paging-controls>
-				</div>
-			</tab>
-			@if (testSuite.shared) {
-				<tab (selectTab)="showTab(Constants.TAB.TEST_SUITE.SPECIFICATIONS)" customClass="tabClass">
-					<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" text="Linked specifications"></app-tab-title></ng-template>
-					<div class="tabPanel">
-						<div class="tabControls">
-							<div class="btn-toolbar">
-								<button type="button" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
-								@if (!selectingForUnlink) {
-									<button type="button" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
-								} @else {
-									<button type="button" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
-									<button type="button" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" [disabled]="unlinkPending">Cancel</button>
-								}
-							</div>
-						</div>
-						<div class="card">
-							<div table-directive
-								[columns]="specificationTableColumns"
-								[data]="linkedSpecifications"
-								[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
-								[loadingStatus]="specificationStatus"
-								[allowSelect]="!selectingForUnlink"
-								(onSelect)="onSpecificationSelect($event)"
-								[checkboxEnabled]="selectingForUnlink"
-								[clearSelection]="clearLinkedSpecificationsSelection">
-							</div>
-						</div>
-					</div>
-				</tab>
-			}
-		</tabset>
+                        <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="doTestCasePaging($event)"></app-paging-controls>
+                    </div>
+                </ng-template>
+            </li>
+            @if (testSuite.shared) {
+                <li [ngbNavItem]="Constants.TAB.TEST_SUITE.SPECIFICATIONS">
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.SPECIFICATION" [text]="'Linked '+dataService.labelSpecificationsLower()"></app-tab-title></button>
+                    <ng-template ngbNavContent>
+                        <div class="tabPanel">
+                            <div class="tabControls">
+                                <div class="btn-toolbar">
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to {{dataService.labelSpecificationsLower()}}</button>
+                                    @if (!selectingForUnlink) {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REMOVE" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from {{dataService.labelSpecificationsLower()}}...</button>
+                                    } @else {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" [disable]="unlinkPending">Cancel</button>
+                                    }
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div table-directive #linkedSpecificationsTable
+                                     [columns]="specificationTableColumns"
+                                     [data]="linkedSpecifications"
+                                     [noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
+                                     [loadingStatus]="specificationStatus"
+                                     [allowSelect]="!selectingForUnlink"
+                                     (onSelect)="onSpecificationSelect($event)"
+                                     [checkboxEnabled]="selectingForUnlink"
+                                     [contentRefreshing]="specificationsRefreshing"
+                                     [supportPaging]="true"
+                                     (pageNavigation)="doSpecificationPaging($event)"
+                                     [clearSelection]="clearLinkedSpecificationsSelection">
+                                </div>
+                            </div>
+                        </div>
+                    </ng-template>
+                </li>
+            }
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
 	</div>
 </div>

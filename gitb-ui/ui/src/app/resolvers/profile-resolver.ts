@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,132 +13,134 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router'
-import { Observable, forkJoin, of } from 'rxjs';
-import { map, mergeMap, share } from 'rxjs/operators'
-import { AuthProviderService } from '../services/auth-provider.service'
-import { AccountService } from '../services/account.service'
-import { DataService } from '../services/data.service'
-import { UserGuideService } from '../services/user-guide.service'
-import { CommunityService } from '../services/community.service'
-import { AuthService } from '../services/auth.service'
+import {Injectable} from '@angular/core';
+import {ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
+import {forkJoin, Observable, of, switchMap, tap} from 'rxjs';
+import {map} from 'rxjs/operators';
+import {AuthProviderService} from '../services/auth-provider.service';
+import {AccountService} from '../services/account.service';
+import {DataService} from '../services/data.service';
+import {UserGuideService} from '../services/user-guide.service';
+import {CommunityService} from '../services/community.service';
+import {AuthService} from '../services/auth.service';
+import {Constants} from '../common/constants';
+import {AuthenticationStatus} from '../types/authentication-status';
 
 @Injectable({
-    providedIn: "root"
+  providedIn: 'root'
 })
-export class ProfileResolver  {
+export class ProfileResolver {
 
-    constructor(
-        private readonly authProviderService: AuthProviderService,
-        private readonly accountService: AccountService,
-        private readonly dataService: DataService,
-        private readonly userGuideService: UserGuideService,
-        private readonly communityService: CommunityService,
-        private readonly authService: AuthService,
-    ) {}
+  constructor(
+    private readonly authProviderService: AuthProviderService,
+    private readonly accountService: AccountService,
+    private readonly dataService: DataService,
+    private readonly userGuideService: UserGuideService,
+    private readonly communityService: CommunityService,
+    private readonly authService: AuthService,
+  ) { }
 
-    resolveData(state: RouterStateSnapshot): Observable<void> {
-        let result: Observable<any>
-        const authenticated = this.authProviderService.isAuthenticated()
-        let configObservable: Observable<any>
-        if (this.dataService.configurationLoaded) {
-            configObservable = of(true)
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<void> {
+    return this.resolveData(state);
+  }
+
+  resolveData(state: RouterStateSnapshot): Observable<void> {
+    return this.loadConfiguration().pipe(
+      switchMap(() => {
+        const authStatus = this.authProviderService.getAuthenticatedStatus()
+        if (authStatus === AuthenticationStatus.AuthenticatedWithAccessToken) {
+          return this.loadAuthenticatedData();
         } else {
-            configObservable = this.accountService.getConfiguration()
-            .pipe(
-                mergeMap((data) => {
-                    this.dataService.setConfiguration(data)
-                    return of(true)
-                }),
-                share()
-            )
+          return this.loadUnauthenticatedData(authStatus);
         }
-        result = configObservable
-        .pipe(
-            mergeMap(() => {
-                if (authenticated) {
-                    // User information
-                    let userObservable: Observable<any>
-                    if (this.dataService.user && this.dataService.user.role != undefined) {
-                        userObservable = of(true)
-                    } else {
-                        let actualUserObservable: Observable<any>
-                        if (this.dataService.configuration.ssoEnabled) {
-                            if (this.dataService.actualUser) {
-                                actualUserObservable = of(true)
-                            } else {
-                                actualUserObservable = this.authService.getUserFunctionalAccounts()
-                                .pipe(
-                                    map((data) => {
-                                        this.dataService.setActualUser(data)
-                                    }),
-                                    share()
-                                )
-                            }
-                        } else {
-                            actualUserObservable = of(true)
-                        }
-                        userObservable = actualUserObservable.pipe(
-                            mergeMap(() => {
-                                return this.accountService.getUserProfile()
-                                .pipe(
-                                    map((data) => {
-                                        this.dataService.setUser(data)
-                                        this.userGuideService.initialise()
-                                    }),
-                                    share()
-                                )
-                            })
-                        )
-                    }
-                    // Organisation information
-                    let vendorObservable: Observable<any>
-                    if (this.dataService.vendor) {
-                        vendorObservable = of(true)
-                    } else {
-                        vendorObservable = this.accountService.getVendorProfile()
-                        .pipe(
-                            map((data) => {
-                                this.dataService.setVendor(data)
-                            }),
-                            share()
-                        )
-                    }
-                    // Community information
-                    let communityObservable: Observable<any>
-                    if (this.dataService.community) {
-                        communityObservable = of(true)
-                    } else {
-                        communityObservable = this.communityService.getUserCommunity()
-                        .pipe(
-                            map((data) => {
-                                this.dataService.setCommunity(data)
-                            }),
-                            share()
-                        )
-                    }
-                    return forkJoin([userObservable, vendorObservable, communityObservable])
-                } else {
-                    if (this.dataService.configuration.ssoEnabled && !this.dataService.actualUser) {
-                        return this.authService.getUserFunctionalAccounts()
-                            .pipe(
-                                map((data) => {
-                                    this.dataService.setActualUser(data)
-                                }),
-                                share()
-                            )
-                    } else {
-                        return of(true)
-                    }
-                }
-            })
-        )
-        return result
-    }
+      }),
+      map(() => void 0)
+    )
+  }
 
-    resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<void> {
-        return this.resolveData(state)
+  private loadConfiguration(): Observable<void> {
+    if (this.dataService.configurationLoaded) {
+      return of(void 0);
     }
+    return this.accountService.getConfiguration().pipe(
+      tap(data => this.dataService.setConfiguration(data)),
+      map(() => void 0)
+    );
+  }
+
+  private loadAuthenticatedData(): Observable<any> {
+    return forkJoin([
+      this.loadUserData(),
+      this.loadOrganisation(),
+      this.loadCommunity()
+    ]);
+  }
+
+  private loadUserData(): Observable<any> {
+    if (this.dataService.user?.role !== undefined) {
+      return of(void 0);
+    }
+    const actualUser$ = this.dataService.configuration.ssoEnabled
+      ? this.loadActualUserIfNeeded()
+      : of(void 0);
+    return actualUser$.pipe(
+      switchMap(() =>
+        this.accountService.getUserProfile().pipe(
+          tap(data => {
+            this.dataService.setUser(data);
+            this.userGuideService.initialise();
+          })
+        )
+      )
+    );
+  }
+
+  private loadOrganisation(): Observable<any> {
+    if (this.dataService.vendor) {
+      return of(void 0);
+    }
+    return this.accountService.getVendorProfile().pipe(
+      tap(data => this.dataService.setVendor(data))
+    );
+  }
+
+  private loadCommunity(): Observable<any> {
+    if (this.dataService.community) {
+      return of(void 0);
+    }
+    return this.communityService.getUserCommunity().pipe(
+      tap(data => this.dataService.setCommunity(data))
+    );
+  }
+
+  private loadActualUserIfNeeded(): Observable<any> {
+    if (this.dataService.actualUser) {
+      return of(void 0);
+    }
+    return this.authService.getUserFunctionalAccounts().pipe(
+      tap(data => this.dataService.setActualUser(data))
+    );
+  }
+
+  private loadUnauthenticatedData(authStatus: AuthenticationStatus): Observable<any> {
+    if (!this.loadAccountsForSelection(authStatus)) {
+      return of(void 0);
+    }
+    return this.authService.getUserFunctionalAccounts().pipe(
+      tap(data => this.dataService.setActualUser(data))
+    );
+  }
+
+  private loadAccountsForSelection(authStatus: AuthenticationStatus): boolean {
+    let result = this.dataService.configuration.ssoEnabled && !this.dataService.actualUser;
+    if (result && this.dataService.configuration.ssoWithNativeLogin) {
+      const loginOption = this.dataService.retrieveLoginOption();
+      if (authStatus === AuthenticationStatus.NotAuthenticated || (loginOption !== Constants.LOGIN_OPTION.REGISTER_INTERNAL && loginOption !== Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL && loginOption !== Constants.LOGIN_OPTION.FORCE_CHOICE)) {
+        // We need to present the login form.
+        result = false;
+      }
+    }
+    return result;
+  }
 
 }

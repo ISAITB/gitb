@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -22,6 +22,7 @@ import { TriggerDataItem } from '../types/trigger-data-item';
 import { TriggerInfo } from '../types/trigger-info';
 import { RestService } from './rest.service';
 import {TriggerFireExpression} from '../types/trigger-fire-expression';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -32,10 +33,14 @@ export class TriggerService {
     private readonly restService: RestService
   ) { }
 
-  getTriggersByCommunity(communityId: number) {
-    return this.restService.get<Trigger[]>({
+  getTriggersByCommunity(communityId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Trigger>>({
       path: ROUTES.controllers.TriggerService.getTriggersByCommunity(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 

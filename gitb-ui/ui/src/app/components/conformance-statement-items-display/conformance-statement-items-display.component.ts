@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -21,6 +21,7 @@ import {ConformanceStatementItemsDisplayComponentApi} from './conformance-statem
 import {
   ConformanceStatementItemDisplayComponentApi
 } from '../conformance-statement-item-display/conformance-statement-item-display-component-api';
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 
 @Component({
     selector: 'app-conformance-statement-items-display',
@@ -52,6 +53,7 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() selected = new EventEmitter<number>()
+  @Output() testStatusOpened = new EventEmitter<TestStatusBaseApi>()
 
   @ViewChildren('itemComponent') itemComponents?: QueryList<ConformanceStatementItemDisplayComponentApi>
 
@@ -90,9 +92,22 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
 
   reset() {
     this.ngOnInit()
-    if (this.itemComponents) {
-      this.itemComponents.forEach(item => item.reset())
-    }
+    this.itemComponents?.forEach(item => item.reset())
   }
 
+  documentEscape(): void {
+    this.itemComponents?.forEach(item => item.documentEscape())
+  }
+
+  documentClick(event: Event): void {
+    this.itemComponents?.forEach(item => item.documentClick(event))
+  }
+
+  manageTestStatusOpened(source: TestStatusBaseApi) {
+    this.itemComponents?.forEach(item => item.manageTestStatusOpened(source))
+  }
+
+  propagateTestStatusOpened(source: TestStatusBaseApi) {
+    this.testStatusOpened.emit(source)
+  }
 }

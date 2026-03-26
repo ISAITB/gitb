@@ -1,12 +1,14 @@
 <div class="card mb-0 border-top-0">
     <form>
-        <div [collapse]="collapsed" [isAnimated]="animated">
-            <div class="ms-3 me-3 mt-2 pt-2 border-top bg-transparent"></div>
+        <div [ngbCollapse]="collapsed" [animation]="animated">
+            <div class="px-3 pt-2">
+                <div class="pt-2 border-top bg-transparent"></div>
+            </div>
             <div class="card-body pt-0" [pending]="!loaded">
                 @if (showDomainOption) {
                     <div class="row pt-2">
                         <legend class="col-3 col-form-label text-end pt-0">* Data to export:</legend>
-                        <div class="col-8">
+                        <div class="col-9">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">
                                 <label class="form-check-label" for="choice_domain">{{dataService.labelDomain()}} configuration
@@ -36,11 +38,11 @@
                         </div>
                     </div>
                 }
-                <div [collapse]="formCollapsed" [isAnimated]="true">
+                <div [ngbCollapse]="formCollapsed" [animation]="true">
                     @if (exportType == 'domain') {
-                        <div class="row" [class.mt-3]="showDomainOption">
+                        <div class="row" [class.pt-3]="showDomainOption">
                             <label class="col-3 col-form-label text-end" for="domain">* {{dataService.labelDomain()}}:</label>
-                            <div class="col-6">
+                            <div class="col-8 col-sm-6">
                                 @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community?.domainId == undefined)) {
                                     <app-multi-select-filter [config]="domainSelectionConfig" (apply)="domainSelected($event)" [disable]="domains.length == 0"></app-multi-select-filter>
                                 } @else if (dataService.isCommunityAdmin && domain != undefined) {
@@ -52,7 +54,7 @@
                     } @else if (exportType == 'community') {
                         <div class="row" [class.mt-3]="showDomainOption">
                             <label class="col-3 col-form-label text-end" for="community">* Community:</label>
-                            <div class="col-6">
+                            <div class="col-8 col-sm-6">
                                 @if (dataService.isSystemAdmin) {
                                     <app-multi-select-filter [config]="communitySelectionConfig" (apply)="communitySelected($event)" [disable]="communities.length == 0"></app-multi-select-filter>
                                 }
@@ -65,7 +67,7 @@
                     }
                     <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="encryptionPassword">* Export password:</label>
-                        <div class="col-4">
+                        <div class="col-8 col-sm-4">
                             <app-secret-input inputId="encryptionPassword" inputName="encryptionPassword" name="encryptionPasswordSecret" [(ngModel)]="settings.encryptionKey"></app-secret-input>
                         </div>
                         <div app-tooltip class="col-auto" tbTooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></div>
@@ -74,7 +76,7 @@
                         <div class="row mt-3">
                             <div class="offset-1 col-10">
                                 <div class="card table-container rounded mb-0">
-                                    <table class="table table-directive">
+                                    <table class="table table-directive extra-padding">
                                         <thead>
                                         <tr>
                                             <th class="first-column">
@@ -87,8 +89,8 @@
                                             <th>Specific</th>
                                             <th class="last-column">
                                                 <div class="btn-toolbar d-flex justify-content-end">
-                                                    <button class="btn btn-secondary btn-sm" type="button" (click)="allIncludes()" [disabled]="disableAllIncludes()">All</button>
-                                                    <button class="btn btn-secondary btn-sm" type="button" (click)="clearIncludes()" [disabled]="disableClearIncludes()">None</button>
+                                                    <button class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.SELECT" type="button" (click)="allIncludes()" [disable]="disableAllIncludes()">All</button>
+                                                    <button class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.NONE" type="button" (click)="clearIncludes()" [disable]="disableClearIncludes()">None</button>
                                                 </div>
                                             </th>
                                         </tr>
@@ -126,7 +128,7 @@
                                                         </div>
                                                         <div class="form-check form-check-inline">
                                                             <input class="form-check-input" type="checkbox" id="settingsTriggers" name="settingsTriggers" [(ngModel)]="settings.triggers" [disabled]="allCommunityData">
-                                                            <label class="form-check-label" for="settingsTriggers">Triggers</label>
+                                                            <label class="form-check-label" for="settingsTriggers">Webhooks</label>
                                                         </div>
                                                         <div class="form-check form-check-inline">
                                                             <input class="form-check-input" type="checkbox" id="settingsResources" name="settingsResources" [(ngModel)]="settings.resources" [disabled]="allCommunityData">
@@ -292,13 +294,13 @@
                     } @else {
                         <div class="row mt-3">
                             <label class="col-3 col-form-label text-end" for="community">{{dataService.labelDomains()}} to delete:</label>
-                            <div class="col-5">
+                            <div class="col-8 col-sm-7 col-md-5">
                                 <app-multi-select-filter [config]="domainsToDeleteConfig!" (apply)="domainsToDeleteChanged($event)"></app-multi-select-filter>
                             </div>
                             <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainsLower()+' to mark for deletion when the archive will be imported. The matching of existing '+dataService.labelDomainsLower()+' is based on the '+dataService.labelDomainLower()+' API keys.'"></div>
                         </div>
                         <div class="row mt-3 pt-0">
-                            <div class="col-7 offset-3">
+                            <div class="col-8 offset-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="addExtraDomainsForDeletion" name="addExtraDomainsForDeletion" [(ngModel)]="addExtraDomainsForDeletion">
                                     <label class="form-check-label" for="addExtraDomainsForDeletion">Add more API keys for deletion
@@ -307,11 +309,11 @@
                                 </div>
                             </div>
                         </div>
-                        <div [collapse]="!addExtraDomainsForDeletion" [isAnimated]="true">
+                        <div [ngbCollapse]="!addExtraDomainsForDeletion" [animation]="true">
                             @if (extraDomainsForDeletion.length > 0) {
                                 @for (key of extraDomainsForDeletion; track key) {
-                                    <div class="row mt-3 pt-0">
-                                        <div class="col-5 offset-3">
+                                    <div class="row pt-3">
+                                        <div class="col-8 col-sm-7 col-md-5 offset-3">
                                             <app-api-key-text [idName]="'domain_key_'+$index" [name]="'domain_key_'+$index"
                                                               [key]="key"
                                                               [supportDelete]="true"
@@ -321,12 +323,12 @@
                                     </div>
                                 }
                             }
-                            <div class="row mt-3 pt-0">
-                                <div class="col-5 offset-3">
+                            <div class="row pt-3">
+                                <div class="col-8 col-sm-7 col-md-5 offset-3">
                                     <div class="input-group">
                                         <input type="text" name="extraDomainKey" class="form-control" placeholder="API key" [(ngModel)]="extraDomainKey">
-                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraDomainKey)" type="button" (click)="addExtraDomainKey()" containerClass="shortTooltip" container="body" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                                            <i class="fa-solid fa-plus"></i>
+                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraDomainKey)" type="button" (click)="addExtraDomainKey()" tooltipClass="shortTooltip" container="body" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                                            <i [class]="Constants.BUTTON_ICON.NEW"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -334,13 +336,13 @@
                         </div>
                         <div class="row mt-3">
                             <label class="col-3 col-form-label text-end" for="community">Communities to delete:</label>
-                            <div class="col-5">
+                            <div class="col-8 col-sm-7 col-md-5">
                                 <app-multi-select-filter [config]="communitiesToDeleteConfig!" (apply)="communitiesToDeleteChanged($event)"></app-multi-select-filter>
                             </div>
                             <div app-tooltip class="col-auto" [tbTooltip]="'The communities to mark for deletion when the archive will be imported. The matching of existing communities is based on the community API keys.'"></div>
                         </div>
                         <div class="row mt-3 pt-0">
-                            <div class="col-7 offset-3">
+                            <div class="col-8 offset-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="addExtraCommunitiesForDeletion" name="addExtraCommunitiesForDeletion" [(ngModel)]="addExtraCommunitiesForDeletion">
                                     <label class="form-check-label" for="addExtraCommunitiesForDeletion">Add more API keys for deletion
@@ -349,11 +351,11 @@
                                 </div>
                             </div>
                         </div>
-                        <div [collapse]="!addExtraCommunitiesForDeletion" [isAnimated]="true">
+                        <div [ngbCollapse]="!addExtraCommunitiesForDeletion" [animation]="true">
                             @if (extraCommunitiesForDeletion.length > 0) {
                                 @for (key of extraCommunitiesForDeletion; track key) {
-                                    <div class="row mt-3 pt-0">
-                                        <div class="col-5 offset-3">
+                                    <div class="row pt-3">
+                                        <div class="col-8 col-sm-7 col-md-5 offset-3">
                                             <app-api-key-text [idName]="'community_key_'+$index" [name]="'community_key_'+$index"
                                                               [key]="key"
                                                               [supportDelete]="true"
@@ -363,12 +365,12 @@
                                     </div>
                                 }
                             }
-                            <div class="row mt-3 pt-0">
-                                <div class="col-5 offset-3">
+                            <div class="row pt-3">
+                                <div class="col-8 col-sm-7 col-md-5 offset-3">
                                     <div class="input-group">
                                         <input type="text" name="extraCommunityKey" class="form-control" placeholder="API key" [(ngModel)]="extraCommunityKey">
-                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraCommunityKey)" type="button" (click)="addExtraCommunityKey()" containerClass="shortTooltip" container="body" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                                            <i class="fa-solid fa-plus"></i>
+                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraCommunityKey)" type="button" (click)="addExtraCommunityKey()" tooltipClass="shortTooltip" container="body" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                                            <i [class]="Constants.BUTTON_ICON.NEW"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -379,7 +381,7 @@
             </div>
         </div>
         <div class="card-footer">
-            <button class="btn btn-secondary" type="submit" (click)="export()" [disable]="exportDisabled()" [pending]="pending">Proceed</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEXT" type="submit" (click)="export()" [disable]="exportDisabled()" [pending]="pending">Proceed</button>
         </div>
     </form>
 </div>

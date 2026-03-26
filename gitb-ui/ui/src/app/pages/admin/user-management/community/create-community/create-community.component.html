@@ -3,14 +3,14 @@
         <div class="card-header">
             <div class="card-title">Create community</div>
         </div>
-        <form>
+        <form (ngSubmit)="createCommunity()">
             <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-community-form [community]="community" [admin]="true" [domains]="domains" [validation]="validation"></app-community-form>
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="createCommunity()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancelCreateCommunity()">Cancel</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancelCreateCommunity()">Cancel</button>
                 </div>
             </div>
         </form>

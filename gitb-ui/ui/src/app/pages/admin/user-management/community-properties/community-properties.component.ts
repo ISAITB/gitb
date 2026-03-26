@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,26 +13,25 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { CreateParameterModalComponent } from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
-import { CommunityService } from 'src/app/services/community.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { CustomProperty } from 'src/app/types/custom-property.type';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { Parameter } from 'src/app/types/parameter';
-import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
-import { ParameterReference } from 'src/app/types/parameter-reference';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { find } from 'lodash'
-import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
-import { ActionMethods } from './action-methods';
-import { PreviewParametersModalComponent } from 'src/app/modals/preview-parameters-modal/preview-parameters-modal.component';
-import { RoutingService } from 'src/app/services/routing.service';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {CreateParameterModalComponent} from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
+import {CommunityService} from 'src/app/services/community.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {CustomProperty} from 'src/app/types/custom-property.type';
+import {OrganisationParameter} from 'src/app/types/organisation-parameter';
+import {Parameter} from 'src/app/types/parameter';
+import {ParameterPresetValue} from 'src/app/types/parameter-preset-value';
+import {ParameterReference} from 'src/app/types/parameter-reference';
+import {SystemParameter} from 'src/app/types/system-parameter';
+import {ParameterDetailsModalComponent} from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
+import {ActionMethods} from './action-methods';
+import {PreviewParametersModalComponent} from 'src/app/modals/preview-parameters-modal/preview-parameters-modal.component';
+import {RoutingService} from 'src/app/services/routing.service';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-community-properties',
@@ -84,7 +83,7 @@ export class CommunityPropertiesComponent implements OnInit {
     private readonly routingService: RoutingService,
     private readonly route: ActivatedRoute,
     private readonly communityService: CommunityService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly popupService: PopupService
   ) { }
 
@@ -146,22 +145,19 @@ export class CommunityPropertiesComponent implements OnInit {
   }
 
   previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean, parameterType: 'organisation'|'system') {
-    this.modalService.show(PreviewParametersModalComponent, {
-      class: 'modal-xl',
-      initialState: {
-        modalTitle: title,
-        parameters: parameters,
-        hasRegistrationCase: hasRegistrationCase,
-        parameterType: parameterType,
-        propertiesRequiredInRegistration: this.propertiesRequiredInRegistration === true
-      }
-    })
+    const modal = this.modalService.open(PreviewParametersModalComponent, { size: 'xl' })
+    const modalInstance = modal.componentInstance as PreviewParametersModalComponent
+    modalInstance.modalTitle = title
+    modalInstance.parameters = parameters
+    modalInstance.hasRegistrationCase = hasRegistrationCase
+    modalInstance.parameterType = parameterType
+    modalInstance.propertiesRequiredInRegistration = this.propertiesRequiredInRegistration === true
   }
 
   previewOrganisationParameters() {
     if (this.propertiesRequiredInRegistration == undefined) {
       this.previewOrganisationParametersPending = true
-      this.communityService.getCommunityById(this.communityId).subscribe((data) => {
+      this.communityService.getCommunityById(this.communityId, false, false).subscribe((data) => {
         this.propertiesRequiredInRegistration = data.selfRegForceRequiredProperties
         this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
       }).add(() => {
@@ -207,23 +203,20 @@ export class CommunityPropertiesComponent implements OnInit {
   }
 
   addParameter(modalTitle: string, existingValues: ParameterReference[], reservedKeys: string[], methods: ActionMethods, propertyLabel: string, hideInRegistration: boolean) {
-    const modalRef = this.modalService.show(CreateParameterModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        options: {
-          nameLabel: 'Label',
-          notForTests: true,
-          adminOnly: false,
-          hasKey: true,
-          hideInRegistration: hideInRegistration,
-          modalTitle: modalTitle,
-          confirmMessage: 'Are you sure you want to delete this property?',
-          existingValues: existingValues,
-          reservedKeys: reservedKeys
-        }
-      }
-    })
-    modalRef.content?.created.subscribe((parameter: Parameter) => {
+    const modalRef = this.modalService.open(CreateParameterModalComponent, { size: 'lg' })
+    const modalInstance = modalRef.componentInstance as CreateParameterModalComponent
+    modalInstance.options = {
+      nameLabel: 'Label',
+      notForTests: true,
+      adminOnly: false,
+      hasKey: true,
+      hideInRegistration: hideInRegistration,
+      modalTitle: modalTitle,
+      confirmMessage: 'Are you sure you want to delete this property?',
+      existingValues: existingValues,
+      reservedKeys: reservedKeys
+    }
+    modalRef.closed.subscribe((parameter: Parameter) => {
       this.preparePresetValues(parameter)
       methods.create(parameter, this.communityId).subscribe(() => {
         methods.reload()
@@ -238,7 +231,7 @@ export class CommunityPropertiesComponent implements OnInit {
       const checkedValues: ParameterPresetValue[] = []
       if (parameter.presetValues != undefined) {
         for (let value of parameter.presetValues) {
-          const existingValue = find(checkedValues, (v) => v.value == value.value)
+          const existingValue = checkedValues.find((v) => v.value == value.value)
           if (existingValue == undefined) {
             checkedValues.push({value: value.value, label: value.label})
           }
@@ -259,33 +252,34 @@ export class CommunityPropertiesComponent implements OnInit {
   }
 
   onParameterSelect(parameter: Parameter, existingValues: ParameterReference[], reservedKeys: string[], methods: ActionMethods, propertyLabel: string, hideInRegistration: boolean) {
-    const modalRef = this.modalService.show(ParameterDetailsModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        parameter: parameter,
-        options: {
-          nameLabel: 'Label',
-          hasKey: true,
-          hideInRegistration: hideInRegistration,
-          modalTitle: propertyLabel + ' property details',
-          confirmMessage: 'Are you sure you want to delete this property?',
-          existingValues: existingValues,
-          reservedKeys: reservedKeys
-        }
+    const parameterId = parameter.id
+    const modalRef = this.modalService.open(ParameterDetailsModalComponent, { size: 'lg' })
+    const modalInstance = modalRef.componentInstance as ParameterDetailsModalComponent
+    modalInstance.parameter = parameter
+    modalInstance.options = {
+      nameLabel: 'Label',
+      hasKey: true,
+      hideInRegistration: hideInRegistration,
+      modalTitle: propertyLabel + ' property details',
+      confirmMessage: 'Are you sure you want to delete this property?',
+      existingValues: existingValues,
+      reservedKeys: reservedKeys
+    }
+    modalRef.closed.subscribe((parameter?: Parameter) => {
+      if (parameter) {
+        // Update
+        this.preparePresetValues(parameter)
+        methods.update(parameter, this.communityId).subscribe(() => {
+          methods.reload()
+          this.popupService.success(propertyLabel + ' property updated.')
+        })
+      } else {
+        // Delete
+        methods.delete(parameterId).subscribe(() => {
+          methods.reload()
+          this.popupService.success(propertyLabel + ' property deleted.')
+        })
       }
-    })
-    modalRef.content?.deleted.subscribe((parameter: Parameter) => {
-      methods.delete(parameter.id).subscribe(() => {
-        methods.reload()
-        this.popupService.success(propertyLabel + ' property deleted.')
-      })
-    })
-    modalRef.content?.updated.subscribe((parameter: Parameter) => {
-      this.preparePresetValues(parameter)
-      methods.update(parameter, this.communityId).subscribe(() => {
-        methods.reload()
-        this.popupService.success(propertyLabel + ' property updated.')
-      })
     })
   }
 
@@ -327,4 +321,14 @@ export class CommunityPropertiesComponent implements OnInit {
     }, 1)
   }
 
+  mouseDownOnDragButton(pop: NgbTooltip) {
+    pop.close()
+    pop.disableTooltip = true
+  }
+
+  mouseOutOnDragButton(pop: NgbTooltip) {
+    setTimeout(() => {
+      pop.disableTooltip = false
+    }, 50)
+  }
 }

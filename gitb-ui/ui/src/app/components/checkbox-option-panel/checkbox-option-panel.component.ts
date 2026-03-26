@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,7 +18,6 @@ import {
   ElementRef,
   EmbeddedViewRef,
   EventEmitter,
-  HostListener,
   Input,
   OnDestroy,
   OnInit,
@@ -35,6 +34,7 @@ import {Observable, of, Subscription, tap} from 'rxjs';
 import {share} from 'rxjs/operators';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-checkbox-option-panel',
@@ -53,6 +53,8 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   @Input() pending = false
   @Input() placement: 'left'|'bottom' = 'bottom'
   @Input() referenceItem?: any
+  @Input() labelIcon?: string
+  @Input() smallButton = false
   @Output() updated = new EventEmitter<CheckboxOptionState>()
   @Output() opening = new EventEmitter<void>()
   @Output() opened = new EventEmitter<void>()
@@ -96,7 +98,14 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     this.closed.emit()
   }
 
-  buttonClicked() {
+  buttonClicked(pop?: NgbTooltip) {
+    if (pop) {
+      pop.disableTooltip = true
+      pop.close()
+      setTimeout(() => {
+        pop.disableTooltip = false
+      }, this.Constants.TOOLTIP_DELAY + 50)
+    }
     let obs$: Observable<any>
     if (!this.open) {
       this.opening.emit()
@@ -117,12 +126,14 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
       obs$ = of(true)
     }
     obs$.subscribe(() => {
-      this.open = !this.open
-      if (this.open) {
-        this.opened.emit()
-        this.openPanel()
-      } else {
-        this.close()
+      if (this.options != undefined && this.options.length > 0 && this.options[0].length > 0) {
+        this.open = !this.open
+        if (this.open) {
+          this.opened.emit()
+          this.openPanel()
+        } else {
+          this.close()
+        }
       }
     }).add(() => {
       this.pending = false
@@ -178,16 +189,14 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     }
   };
 
-  @HostListener('document:click', ['$event'])
-  clickRegistered(event: any) {
-    if (!this.eRef.nativeElement.contains(event.target) && this.open) {
+  documentEscape(): void {
+    if (this.open) {
       this.close()
     }
   }
 
-  @HostListener('document:keyup.escape', ['$event'])
-  escapeRegistered() {
-    if (this.open) {
+  documentClick(event: Event): void {
+    if (!this.eRef.nativeElement.contains(event.target) && this.open) {
       this.close()
     }
   }
@@ -195,7 +204,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   ngOnInit(): void {
     this.currentState = {}
     this.applyConfig()
-    this.popupSubscription = this.dataService.buttonPopupOpenSource$.subscribe((source => {
+    this.popupSubscription = this.dataService.onButtonPopupOpen$.subscribe((source => {
       if (source !== this && this.open) {
         this.close()
       }
@@ -226,7 +235,9 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     if (this.singleSelection) {
       this.currentState = {}
       this.currentState[key] = true
-      this.updated.emit(this.currentState)
+      const event:CheckboxOptionState = {}
+      event[key] = true
+      this.updated.emit(event)
       this.close()
     }
   }

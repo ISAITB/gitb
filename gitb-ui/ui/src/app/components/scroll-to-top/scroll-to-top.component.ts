@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,16 +17,15 @@ import { Component, HostListener } from '@angular/core';
 
 @Component({
     selector: 'app-scroll-to-top',
-    template: '<a class="scroll-to-top" [ngClass]="{\'visible\': visible}" href id="scrollToTop" (click)="doClick();$event.preventDefault()"><i class="fa-solid fa-chevron-up"></i></a>',
-    standalone: false
+    template: '<a class="scroll-to-top" [class.visible]="visible" href id="scrollToTop" (click)="doClick();$event.preventDefault()"><i class="fa-solid fa-chevron-up"></i></a>',
+    standalone: true
 })
 export class ScrollToTopComponent {
 
-  scrollListener: any
   timeout?: any
   visible = false
 
-  @HostListener('window:scroll') onScroll(e: Event): void {
+  @HostListener('window:scroll') onScroll(): void {
     clearTimeout(this.timeout)
     this.timeout = setTimeout(() => {
       if (document.documentElement.scrollTop > 150) {

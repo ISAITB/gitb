@@ -3,11 +3,13 @@
         <div class="report-description">
             <span class="report-icon"><i class="fa-solid" [ngClass]="{'fa-info-circle': assertionReport.type == types.INFO, 'fa-warning': assertionReport.type == types.WARNING, 'fa-times-circle': assertionReport.type == types.ERROR}"></i></span>{{description}}
         </div>
-        @if (assertionReport.value.value != undefined) {
+        @if (assertionReport.value.assertionID != undefined) {
             <div class="report-metadata">
                 <div class="report-metadata-key">Assertion ID:</div>
                 <div class="report-metadata-value">{{assertionReport.value.assertionID}}</div>
             </div>
+        }
+        @if (assertionReport.value.value != undefined) {
             <div class="report-metadata">
                 <div class="report-metadata-key">Value:</div>
                 <div class="report-metadata-value">{{assertionReport.value.value}}</div>

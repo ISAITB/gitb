@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory
 
 import javax.inject.Inject
 import scala.collection.mutable
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object SessionLaunchActor {
@@ -42,6 +43,7 @@ object SessionLaunchActor {
   private case class TerminateAllSessionsEventWrapper(wrapped: TerminateAllSessionsEvent)
 
   private case class ProcessNextTestSessionEvent()
+  private case class ProcessNextTestSessionAfterDelayEvent()
   private case class TaskCompleted(message: Option[Any])
   private case class TestCaseDefinitionLoaded(testCaseId: Long, testCaseDefinition: TestCase)
   private case class TestSessionInitialised(testCaseId: Long, assignedTestSession: String)
@@ -149,6 +151,10 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
       if (!stopping) {
         processNextTestSession()
       }
+    case _: ProcessNextTestSessionAfterDelayEvent =>
+      if (!stopping) {
+        processNextTestSession(wasDelayed = true)
+      }
     case msg: TaskCompleted =>
       if (!stopping) {
         workQueueProcessing = false
@@ -253,7 +259,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
   private def testSessionInitialised(msg: TestSessionInitialised): Unit = {
     state.setConfiguredTestSession(msg.testCaseId, msg.assignedTestSession)
     val testCaseInputs = state.testCaseInputs(msg.testCaseId)
-    val testCaseConfiguration = state.getSessionConfigurationData(onlySimple = false)
+    val testCaseConfiguration = state.getSessionConfigurationData(onlySimple = false, msg.testCaseId, includeInputs = false)
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Initiated test session [{}] for test case [{}]. {}", msg.assignedTestSession, msg.testCaseId, state.statusText())
     webSocketActor.registerActiveTestSession(msg.assignedTestSession)
     // Send the configure request. The response will be returned asynchronously.
@@ -286,20 +292,31 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
     }
   }
 
-  private def processNextTestSession(): Unit = {
+  private def processNextTestSession(wasDelayed: Boolean = false): Unit = {
     if (state.hasSessionsToProcess()) {
       val testCaseId = state.nextTestCaseId()
       if (state.testCaseAllowedToExecute(testCaseId)) {
-        state.setLoadingDefinitionForTestCase(testCaseId)
-        val configurationData = state.getSessionConfigurationData(onlySimple = true)
-        queueTask(() => {
-          testbedBackendClient.getTestCaseDefinition(testCaseId.toString, None, configurationData).map { result =>
-            TaskCompleted(Some(TestCaseDefinitionLoaded(testCaseId, result.getTestcase)))
-          }.recover {
-            case e: Exception =>
-              TaskCompleted(Some(TestSessionError(e, testCaseId)))
+        var proceedWithoutDelay = true
+        if (!wasDelayed) {
+          val executionDelay = state.getNextDelayToApply()
+          if (executionDelay > 0) {
+            if (LOGGER.isDebugEnabled()) LOGGER.debug("Delaying execution of test case [{}]", testCaseId)
+            proceedWithoutDelay = false
+            context.system.scheduler.scheduleOnce(executionDelay.milliseconds, self, ProcessNextTestSessionAfterDelayEvent())
           }
-        })
+        }
+        if (proceedWithoutDelay) {
+          state.setLoadingDefinitionForTestCase(testCaseId)
+          val configurationData = state.getSessionConfigurationData(onlySimple = true, testCaseId, includeInputs = true)
+          queueTask(() => {
+            testbedBackendClient.getTestCaseDefinition(testCaseId.toString, None, configurationData).map { result =>
+              TaskCompleted(Some(TestCaseDefinitionLoaded(testCaseId, result.getTestcase)))
+            }.recover {
+              case e: Exception =>
+                TaskCompleted(Some(TestSessionError(e, testCaseId)))
+            }
+          })
+        }
       } else {
         if (LOGGER.isDebugEnabled()) LOGGER.debug("Waiting for other sessions to complete before initialising test case [{}]", testCaseId)
       }

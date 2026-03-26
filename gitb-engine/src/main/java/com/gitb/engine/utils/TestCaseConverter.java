@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,9 +15,7 @@
 
 package com.gitb.engine.utils;
 
-import com.gitb.core.ActorConfiguration;
-import com.gitb.core.Documentation;
-import com.gitb.core.ErrorCode;
+import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionConfigurationData;
 import com.gitb.engine.expr.StaticExpressionHandler;
@@ -33,6 +31,8 @@ import com.gitb.tpl.*;
 import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
+import com.gitb.types.BooleanType;
+import com.gitb.types.DataType;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,7 +58,7 @@ public class TestCaseConverter {
     private final LinkedList<Boolean> scriptletStepHiddenAttributeStack = new LinkedList<>();
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
-    private final StaticExpressionHandler expressionHandler;
+    private final LinkedList<StaticExpressionHandler> expressionHandlerStack = new LinkedList<>();
     private final TestCaseContext testCaseContext;
     private Set<String> actorIds = null;
 
@@ -70,14 +70,31 @@ public class TestCaseConverter {
         this.testCase = testCase;
         this.scriptletCache = Objects.requireNonNullElseGet(scriptletCache, ScriptletCache::new);
         testCaseContext = createTestCaseContext(testCase, configs);
-        expressionHandler = new StaticExpressionHandler(testCaseContext.getScope());
+        expressionHandlerStack.addLast(new StaticExpressionHandler(testCaseContext.getScope()));
+    }
+
+    private StaticExpressionHandler getExpressionHandler() {
+        return expressionHandlerStack.peekLast();
     }
 
     private TestCaseContext createTestCaseContext(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
         var context = new StaticTestCaseContext(testCase);
         var configData = new SessionConfigurationData(configs);
         context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration(), configData.getTestServiceConfigurations());
+        if (configData.getPredefinedVariables() != null) {
+            context.addInputs(readInputs(configData.getPredefinedVariables()));
+        }
         return context;
+    }
+
+    private List<AnyContent> readInputs(ActorConfiguration actorConfig) {
+        return actorConfig.getConfig().stream().map(config -> {
+           var input = new AnyContent();
+            input.setName(config.getName());
+            input.setValue(config.getValue());
+            input.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            return input;
+        }).toList();
     }
 
     public TestCase convertTestCase(String testCaseId) {
@@ -188,16 +205,28 @@ public class TestCaseConverter {
     }
 
     private String fixedOrVariableValueAsString(String originalValue) {
-        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
+        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, getExpressionHandler());
     }
 
     private Boolean fixedOrVariableValueAsBoolean(String originalValue, boolean defaultIfMissing) {
-        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack, expressionHandler);
+        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack, getExpressionHandler());
         return Objects.requireNonNullElse(result, defaultIfMissing);
     }
 
+    private Boolean asStaticBooleanExpression(Expression value) {
+        // Strip out anything besides the core expression
+        var cleanExpression = new Expression();
+        cleanExpression.setValue(value.getValue());
+        var result = getExpressionHandler().processExpression(cleanExpression, DataType.BOOLEAN_DATA_TYPE);
+        if (result != null) {
+            return ((BooleanType)result.convertTo(DataType.BOOLEAN_DATA_TYPE)).getValue();
+        } else {
+            return false;
+        }
+    }
+
     private String fixedOrVariableValueForActor(String originalValue) {
-        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
+        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, getExpressionHandler());
         if (actorIds == null) {
             actorIds = new HashSet<>();
             if (testCase.getActors() != null) {
@@ -229,6 +258,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.VerifyStep convertVerifyStep(String testCaseId, String id, Verify description) {
         com.gitb.tpl.VerifyStep verify = new com.gitb.tpl.VerifyStep();
         verify.setId(id);
+        verify.setActor(fixedOrVariableValueAsString(description.getActor()));
         verify.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         verify.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         verify.setHidden(hiddenValueToUse(description.getHidden(), false));
@@ -238,6 +268,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.ProcessStep convertProcessStep(String testCaseId, String id, Process description) {
         com.gitb.tpl.ProcessStep process = new com.gitb.tpl.ProcessStep();
         process.setId(id);
+        process.setActor(fixedOrVariableValueAsString(description.getActor()));
         process.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         process.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         // Process steps are by default hidden.
@@ -282,7 +313,7 @@ public class TestCaseConverter {
         if (description.isStatic()) {
             // The If is always hidden and its condition evaluated at load time to determine whether to include the then or else block.
             decision.setHidden(true);
-            var includeThenBlock = fixedOrVariableValueAsBoolean(description.getCond().getValue(), false);
+            var includeThenBlock = asStaticBooleanExpression(description.getCond());
             decision.getThen().setHidden(hiddenValueToUse(description.getThen().getHidden(), !includeThenBlock));
             if (description.getElse() != null) {
                 decision.getElse().setHidden(hiddenValueToUse(description.getElse().getHidden(), includeThenBlock));
@@ -400,16 +431,28 @@ public class TestCaseConverter {
             scriptletCallStack.push(callKey);
         }
         Scriptlet scriptlet = scriptletCache.getScriptlet(testSuiteContext, callStep.getPath(), testCase, true).scriptlet();
-        scriptletStepStack.addLast(Pair.of(callStep, scriptlet));
-        scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(callStep.getHidden(), false));
+        addScripletScope(scriptlet, callStep);
         Sequence sequence = convertSequence(testCaseId, id, scriptlet.getSteps());
+        removeScriptletScope();
         if (callStep.getFrom() != null) {
             testSuiteContexts.pop();
         }
+        return sequence;
+    }
+
+    private void removeScriptletScope() {
+        getExpressionHandler().close();
+        expressionHandlerStack.removeLast();
         scriptletCallStack.pop();
         scriptletStepHiddenAttributeStack.removeLast();
         scriptletStepStack.removeLast();
-        return sequence;
+    }
+
+    private void addScripletScope(Scriptlet scriptlet, CallStep callStep) {
+        scriptletStepStack.addLast(Pair.of(callStep, scriptlet));
+        scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(callStep.getHidden(), false));
+        // Create an expression handler for the created scope.
+        expressionHandlerStack.addLast(getExpressionHandler().newForScriptlet(scriptlet, callStep));
     }
 
     private boolean hiddenValueToUse(String hiddenExpression, boolean defaultIfMissing) {
@@ -432,6 +475,7 @@ public class TestCaseConverter {
         interactionStep.setCollapsed(description.isCollapsed());
         interactionStep.setWith(description.getWith());
         interactionStep.setAdmin(description.isAdmin());
+        interactionStep.setActor(fixedOrVariableValueAsString(description.getActor()));
 
         int childIndex = 1;
 
@@ -457,6 +501,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.ExitStep convertExitStep(String testCaseId, String id, com.gitb.tdl.ExitStep description) {
         com.gitb.tpl.ExitStep exit = new com.gitb.tpl.ExitStep();
         exit.setId(id);
+        exit.setActor(fixedOrVariableValueAsString(description.getActor()));
         exit.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         exit.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         exit.setHidden(hiddenValueToUse(description.getHidden(), false));

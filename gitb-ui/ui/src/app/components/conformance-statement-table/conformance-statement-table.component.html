@@ -6,36 +6,48 @@
                  [snapshotId]="snapshotId"
                  (onApply)="getConformanceStatements()"></app-test-filter>
 <div class="table-container rounded">
-    <table class="table table-directive expandable-table">
+    <table class="table table-directive">
         <thead>
         <tr>
             @if (organisationId == undefined) {
                 @if (!dataService.isCommunityAdmin) {
-                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community<app-sort-indicator [columnType]="Constants.FILTER_TYPE.COMMUNITY" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)"><div class="cell-content">Community<app-sort-indicator [columnType]="Constants.FILTER_TYPE.COMMUNITY" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></div></th>
                 }
-                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ORGANISATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)"><div class="cell-content">{{dataService.labelOrganisation()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ORGANISATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></div></th>
             }
-            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SYSTEM" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)"><div class="cell-content">{{dataService.labelSystem()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SYSTEM" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></div></th>
             @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
-                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.DOMAIN" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.DOMAIN)"><div class="cell-content">{{dataService.labelDomain()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.DOMAIN" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></div></th>
             }
-            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-            <th class="th-min">Last update</th>
-            <th class="th-min-centered">Test results</th>
-            <th class="th-min-centered">Status</th>
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)"><div class="cell-content">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></div></th>
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)"><div class="cell-content">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></div></th>
+            <th class="th-min centered"><div class="cell-content">Last update</div></th>
+            <th class="th-min centered"><div class="cell-content">Test results</div></th>
+            <th class="th-min centered"><div class="cell-content">Status</div></th>
             @if (showExportControls) {
-                <th class="th-min-centered"></th>
+                <th class="th-min centered"></th>
             }
         </tr>
         </thead>
         @if (dataStatus.status != Constants.STATUS.FINISHED) {
             <tbody>
-            <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
+                <tr>
+                    <td [attr.colspan]="columnCount" class="td-data-loading">
+                        <div class="cell-content">
+                            <app-pending-block></app-pending-block>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         } @else if (dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0) {
             <tbody>
-            <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
+                <tr>
+                    <td [attr.colspan]="columnCount" class="td-no-data">
+                        <div class="cell-content">
+                            <span>No conformance data found</span>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         } @else if (conformanceStatements.length > 0) {
             <tbody [class.disable-events]="filterState.updatePending">
@@ -43,31 +55,51 @@
                     <tr (click)="onStatementSelect(statement)" class="table-row-directive selectable">
                         @if (organisationId == undefined) {
                             @if (!dataService.isCommunityAdmin) {
-                                <td>{{statement.communityName}}</td>
+                                <td>
+                                    <div class="cell-content">{{statement.communityName}}</div>
+                                </td>
                             }
-                            <td>{{statement.organizationName}}</td>
+                            <td><div class="cell-content">{{statement.organizationName}}</div></td>
                         }
-                        <td>{{statement.systemName}}</td>
+                        <td><div class="cell-content">{{statement.systemName}}</div></td>
                         @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
-                            <td>{{statement.domainName}}</td>
+                            <td><div class="cell-content">{{statement.domainName}}</div></td>
                         }
-                        <td>{{statement.specName}}</td>
-                        <td>{{statement.actorName}}</td>
-                        <td class="td-min">
-                            @if (statement.updateTime) {
-                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="statement.updateTime"></app-tag>
-                            }
+                        <td><div class="cell-content">{{statement.specName}}</div></td>
+                        <td><div class="cell-content">{{statement.actorName}}</div></td>
+                        <td class="td-min centered">
+                            <div class="cell-content">
+                                @if (statement.updateTime) {
+                                    <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="statement.updateTime" [inTable]="true"></app-tag>
+                                }
+                            </div>
                         </td>
-                        <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
-                        <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                        <td class="td-min centered">
+                            <div class="cell-content">
+                                <app-test-status-icons #testStatusDisplay
+                                                       [counters]="statement.counters!"
+                                                       [asLine]="true"
+                                                       (opened)="expandedStatusIcons($event)"
+                                ></app-test-status-icons>
+                            </div>
+                        </td>
+                        <td class="td-min centered">
+                            <div class="cell-content">
+                                <span class="d-flex"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span>
+                            </div>
+                        </td>
                         @if (showExportControls) {
-                            <td class="td-min-centered">
-                                <app-statement-options-button [item]="statement"
-                                                              [snapshotId]="snapshotId"
-                                                              [communityId]="communityId"
-                                                              [organisationId]="organisationId"
-                                                              [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
-                                                              (export)="onExportConformanceStatement($event.item, $event.format)"></app-statement-options-button>
+                            <td class="td-min centered">
+                                <div class="cell-content">
+                                    <app-statement-options-button #optionButtons
+                                                                  [inTable]="true"
+                                                                  [item]="statement"
+                                                                  [snapshotId]="snapshotId"
+                                                                  [communityId]="communityId"
+                                                                  [organisationId]="organisationId"
+                                                                  [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
+                                                                  (export)="onExportConformanceStatement($event.item, $event.format)"></app-statement-options-button>
+                                </div>
                             </td>
                         }
                     </tr>

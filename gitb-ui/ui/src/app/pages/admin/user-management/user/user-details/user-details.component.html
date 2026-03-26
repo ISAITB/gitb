@@ -2,42 +2,44 @@
     <div class="card mb-0">
         <div class="card-header">
             <div class="card-title">User details</div>
+            <div app-community-tag-indicator></div>
         </div>
         <form>
             <div class="card-body" [class.pb-0]="dataService.configuration.ssoEnabled" [pending]="!loaded" [focus]="focusField">
                 <!-- Error messages -->
                 <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
-                    <div class="col-11">
-                        <app-user-form
-                            [user]="user"
-                            [new]="false"
-                            [admin]="false"
-                            [roles]="roleChoices"
-                            [sso]="dataService.configuration.ssoEnabled"
-                            [showOrganisation]="fromCommunityManagement"
-                            [roleReadonly]="isSelf"
-                            [showChangePassword]="!isSelf"
-                            (passwordChanged)="changePassword = $event"
-                            [validation]="validation"></app-user-form>
-                    </div>
+                    <app-user-form
+                        [user]="user"
+                        [new]="false"
+                        [admin]="false"
+                        [roles]="roleChoices"
+                        [sso]="dataService.configuration.ssoEnabled"
+                        [showOrganisation]="fromCommunityManagement"
+                        [roleReadonly]="isSelf"
+                        [showChangePassword]="!isSelf"
+                        (passwordChanged)="changePassword = $event"
+                        [validation]="validation"></app-user-form>
                 </div>
                 @if (!dataService.configuration.ssoEnabled) {
                     <div class="row">
                         <div class="col-10 col-centered">
-                            <div class="alert alert-info rounded mb-0"><b>Privacy note:</b> By clicking 'Update' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</div>
+                            <div class="alert alert-info rounded mb-0">
+                                <span class="alert-label">Privacy note</span>
+                                By completing this form you grant the user's consent on his/her behalf to record the provided information.
+                            </div>
                         </div>
                     </div>
                 }
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="updateUser()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancelDetailUser()">Back</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="updateUser()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancelDetailUser()">Back</button>
                 </div>
                 @if (!isSelf) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button class="btn btn-outline-danger" type="button" (click)="deleteUser()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="deleteUser()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>

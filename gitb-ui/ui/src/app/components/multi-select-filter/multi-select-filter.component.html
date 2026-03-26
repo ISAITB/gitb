@@ -1,10 +1,17 @@
 <div class="filterContainer">
-    <button #filterControl [attr.id]="id" (mousedown)="controlMouseDown($event)" (click)="controlClicked()" type="button" [ngClass]="config.showAsFormControl == true?['form-select']:['btn', 'btn-secondary', 'dropdown-toggle']" class="filterControl" [disabled]="pending || disable">
+    <button #filterControl [attr.id]="id" (mousedown)="controlMouseDown($event)" (click)="controlClicked()" type="button" [ngClass]="config.showAsFormControl == true?['form-select']:['btn', 'btn-secondary', 'dropdown-toggle']" class="filterControl" [class.open]="formVisible" [disabled]="pending || disable">
         <div class="button-label w-100 align-items-center">
             @if (pending) {
                 <app-pending-block></app-pending-block>
             }
-            <div class="button-label-text" [style.max-width]="config.maxWidth?(config.maxWidth+'px'):null">{{filterLabel}}</div>
+            <div class="button-label-text" [style.max-width]="config.maxWidth?(config.maxWidth+'px'):null">
+                @if (config.filterLabelIcon != undefined) {
+                    <span class="mini-tab">
+                        <i [class]="config.filterLabelIcon"></i>
+                    </span>
+                }
+                {{filterLabel}}
+            </div>
         </div>
     </button>
     @if (formVisible) {
@@ -14,19 +21,26 @@
                     <div class="inputDiv" [class.withClear]="showClearIcon"><input #filterText type="text" class="form-control" [placeholder]="searchPlaceholder" [(ngModel)]="textValue" (ngModelChange)="searchApplied()" (focus)="filterTextFocused()"/></div>
                     <div class="iconDiv" [class.withClear]="showClearIcon"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>
                     @if (showClearIcon) {
-                        <div class="clearDiv" (click)="clearSingleSelection()" containerClass="shortTooltip" container="body" tooltip="Clear selected item" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa fa-times" aria-hidden="true"></i></span></div>
+                        <div class="clearDiv" (click)="clearSingleSelection()" tooltipClass="shortTooltip" container="body" ngbTooltip="Clear selected item" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa fa-times" aria-hidden="true"></i></span></div>
                     }
                 </div>
             }
             @if (!config.singleSelection && selectedItems.length > 0) {
                 <div class="itemsContainer" tabIndex="-1">
                     @for (item of selectedItems; track item.id) {
-                        <div class="itemContainer" [class]="'selected-item-'+$index" [class.focused]="$index == focusedSelectedItemIndex" (click)="selectedItemClicked(item)">
-                            <div class="d-flex">
-                                <input class="form-check-input" type="checkbox" tabIndex="-1" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="selectedItemCheckFocused($event)">
-                                <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+$index">{{item[config.textField]}}</label>
+                        @if (item[config.textField] != '') {
+                            <div class="itemContainer" [class]="'selected-item-'+$index" [class.focused]="$index == focusedSelectedItemIndex" (click)="selectedItemClicked(item)">
+                                <div class="d-flex">
+                                    <input class="form-check-input" type="checkbox" tabIndex="-1" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="selectedItemCheckFocused($event)">
+                                    <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+$index">
+                                        {{ item[config.textField] }}
+                                        @if (config.textDecorator) {
+                                            <span class="item-text-decoration">{{ config.textDecorator(item) }}</span>
+                                        }
+                                    </label>
+                                </div>
                             </div>
-                        </div>
+                        }
                     }
                 </div>
             }
@@ -40,11 +54,16 @@
                         @for (item of visibleAvailableItems; track item.id) {
                             <div class="itemContainer" [class]="'available-item-'+$index" [class.focused]="$index == focusedAvailableItemIndex" (click)="availableItemClicked(item)">
                                 @if (config.singleSelection) {
-                                    <div>{{item[config.textField]}}</div>
+                                    <div>{{ item[config.textField] }}</div>
                                 } @else {
                                     <div class="d-flex">
                                         <input class="form-check-input" tabIndex="-1" [attr.id]="'a_item-'+$index" [attr.name]="'a_item-'+$index" type="checkbox" [(ngModel)]="selectedAvailableItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="availableItemCheckFocused($event)">
-                                        <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+$index">{{item[config.textField]}}</label>
+                                        <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+$index">
+                                            {{ item[config.textField] }}
+                                            @if (config.textDecorator) {
+                                                <span class="item-text-decoration">{{ config.textDecorator(item) }}</span>
+                                            }
+                                        </label>
                                     </div>
                                 }
                             </div>
@@ -55,11 +74,24 @@
             @if (!config.singleSelection) {
                 <div class="formButtons btn-toolbar">
                     @if (selectedItems.length > 0 || visibleAvailableItems.length > 0) {
-                        <button type="button" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                        @if (config.enableSelectAll) {
+                            <div class="btn-group" ngbDropdown>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                                <button id="button-select-all" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Apply</span>
+                                </button>
+                                <div id="dropdown-select-all" ngbDropdownMenu aria-labelledby="button-select-all">
+                                    <button ngbDropdownItem type="button" (click)="applyAllItems()">Apply all</button>
+                                </div>
+                            </div>
+                        } @else {
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                        }
                     }
-                    <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
                     @if (hasCheckedSelectedItem) {
-                        <button type="button" class="btn btn-secondary" (click)="clearSelectedItems(); $event.stopPropagation()">Clear selected items</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NONE" class="btn btn-secondary" (click)="clearSelectedItems(); $event.stopPropagation()">Clear</button>
                     }
                 </div>
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,7 +15,6 @@
 
 import {Component, Input, OnInit} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
-import {filter} from 'lodash';
 import {Parameter} from 'src/app/types/parameter';
 import {Constants} from 'src/app/common/constants';
 
@@ -45,7 +44,7 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   ngOnInit(): void {
     this.isAdmin = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin
     if (this.parameters != undefined) {
-      this.parameters = filter(this.parameters, (parameter) => {
+      this.parameters = this.parameters.filter((parameter) => {
         return ((parameter.configured == undefined || !parameter.configured)) && (this.isAdmin || !parameter.hidden) && (parameter.prerequisiteOk == undefined || parameter.prerequisiteOk) && this.isRequired(parameter)
       })
     }

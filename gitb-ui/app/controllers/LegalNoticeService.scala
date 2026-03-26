@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -38,6 +38,17 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageLegalNotices(request, communityId).flatMap { _ =>
       legalNoticeManager.getLegalNoticesByCommunityWithoutContent(communityId).map { list =>
         val json: String = JsonUtil.jsLegalNotices(list).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchLegalNoticesByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageLegalNotices(request, communityId).flatMap { _=>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      legalNoticeManager.searchLegalNoticesByCommunityWithoutContent(communityId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsLegalNotices).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }

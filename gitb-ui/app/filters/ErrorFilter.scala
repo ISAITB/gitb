@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,11 +16,12 @@
 package filters
 
 import java.util.concurrent.TimeoutException
-
 import org.apache.pekko.stream.Materializer
 import com.gitb.tbs.Error
 import controllers.util.ResponseConstructor
 import exceptions._
+import org.apache.commons.lang3.StringUtils
+
 import javax.inject.Inject
 import play.api.mvc._
 
@@ -34,7 +35,12 @@ class ErrorFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Ma
     next(requestHeader) recover  {
 
       case e:Error =>
-        ResponseConstructor.constructServerError(e.getFaultInfo.getErrorCode.value(), e.getFaultInfo.getDescription, None)
+        val errorDescription = if (StringUtils.isBlank(e.getFaultInfo.getDescription)) {
+          "An unexpected test engine error occurred."
+        } else {
+          e.getFaultInfo.getDescription
+        }
+        ResponseConstructor.constructServerError(e.getFaultInfo.getErrorCode.value(), errorDescription, None)
 
       case e:InvalidRequestException =>
         ResponseConstructor.constructBadRequestResponse(e.error, e.msg)

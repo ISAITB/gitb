@@ -4,10 +4,10 @@
             <div><app-collapsing-icon [isCollapsed]="collapsed" [asDiv]="true"></app-collapsing-icon></div>
             <div class="panelTitle">{{header}}</div>
         </div>
-        <div [collapse]="collapsed" [isAnimated]="true" (collapsed)="headerCollapsed = true" (expands)="panelExpanding()">
-            <div class="panelContent pb-3">
-                <app-custom-property-form 
-                    [tbProperties]="properties" 
+        <div [ngbCollapse]="collapsed" [animation]="true" (hidden)="headerCollapsed = true" (shown)="panelExpanding()">
+            <div class="panelContent ps-3 pe-3 pb-3">
+                <app-custom-property-form
+                    [tbProperties]="properties"
                     [tbReadonly]="readonly"
                     [tbPropertyType]="propertyType"
                     [tbOwner]="owner"

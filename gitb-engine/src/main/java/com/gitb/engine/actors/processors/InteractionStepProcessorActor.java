@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,10 +16,7 @@
 package com.gitb.engine.actors.processors;
 
 import com.gitb.PropertyConstants;
-import com.gitb.core.AnyContent;
-import com.gitb.core.ErrorCode;
-import com.gitb.core.InputRequestInputType;
-import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.core.*;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.commands.messaging.NotificationReceived;
@@ -69,12 +66,15 @@ import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
+import org.springframework.util.MimeType;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -451,6 +451,24 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setEncoding(instructionCommand.getEncoding());
         instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), expressionHandler.getVariableResolver(), null));
         instruction.setForceDisplay(instructionCommand.isForceDisplay());
+        instruction.setShowControls(instructionCommand.isShowControls());
+        if (instructionCommand.getLevel() != null) {
+            String level;
+            if (VariableResolver.isVariableReference(instructionCommand.getLevel())) {
+                level = expressionHandler.getVariableResolver().resolveVariableAsString(instructionCommand.getLevel()).getValue();
+            } else {
+                level = instructionCommand.getLevel();
+            }
+            InstructionLevel levelToSet = null;
+            try {
+                levelToSet = InstructionLevel.fromValue(level);
+            } catch (Exception e) {
+                logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'level' on interaction step instruction as it was invalid");
+            }
+            if (levelToSet != null && levelToSet != InstructionLevel.NONE) {
+                instruction.setLevel(levelToSet);
+            }
+        }
 
         ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
         DataType computedValue = exprHandler.processExpression(instructionCommand, instructionCommand.getType());
@@ -458,6 +476,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 	    DataTypeUtils.setContentValueWithDataType(instruction, computedValue);
 
         return instruction;
+    }
+
+    private boolean validMimeType(String value) {
+        try {
+            MimeType.valueOf(value);
+            return true;
+        } catch (Exception e) {
+            logger.warn(addMarker(), "Ignored invalid content type [{}]", value);
+            return false;
+        }
     }
 
     /**
@@ -479,8 +507,25 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         inputRequest.setInputType(request.getInputType());
         inputRequest.setMimeType(fixedValueOrVariable(request.getMimeType(), variableResolver, null));
         inputRequest.setRequired(TestCaseUtils.resolveBooleanFlag(request.getRequired(), false, () -> variableResolver));
-        // Handle text inputs.
-        if (request.getInputType() != InputRequestInputType.UPLOAD) {
+        if (request.getInputType() == InputRequestInputType.UPLOAD) {
+            // Handle uploads.
+            if (request.getAccept() != null) {
+                // Parse, calculate and validate accepted mime types.
+                String acceptValues;
+                if (VariableResolver.isVariableReference(request.getAccept())) {
+                    acceptValues = resolveTokenValues(variableResolver, request.getAccept(), this::validMimeType);
+                } else {
+                    acceptValues = Arrays.stream(StringUtils.split(request.getAccept(), ','))
+                            .filter(this::validMimeType)
+                            .map(String::trim)
+                            .collect(Collectors.joining(","));
+                }
+                if (acceptValues != null && !acceptValues.isEmpty()) {
+                    inputRequest.setAccept(acceptValues);
+                }
+            }
+        } else {
+            // Handle text inputs.
             // Select options.
             if (request.getOptions() != null) {
                 String options = request.getOptions();
@@ -525,13 +570,52 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             if (inputRequest.getInputType() == null) {
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
-            // Set this on the original object as we have now resolved any option-related expressions as well.
+            // Rows for multiline text, code editors and select multiple.
+            if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT
+                    || inputRequest.getInputType() == InputRequestInputType.CODE
+                    || inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
+                if (request.getSize() != null) {
+                    Integer rowsToSet = null;
+                    if (VariableResolver.isVariableReference(request.getSize())) {
+                        rowsToSet = variableResolver.resolveVariableAsNumber(request.getSize()).intValue();
+                    } else {
+                        try {
+                            rowsToSet = Integer.parseInt(request.getSize());
+                        } catch (NumberFormatException e) {
+                            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'size' on interaction step request as it was not a valid number");
+                        }
+                    }
+                    if (rowsToSet != null && rowsToSet < 1) {
+                        // Ignore if not at least 1.
+                        logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'size' on interaction step request as it was not a positive integer");
+                        rowsToSet = null;
+                    }
+                    if (rowsToSet != null) {
+                        inputRequest.setSize(BigInteger.valueOf(rowsToSet));
+                    }
+                }
+            }
+            // Default value(s)
+            if (request.getDefault() != null) {
+                String defaultValue;
+                if (VariableResolver.isVariableReference(request.getDefault())) {
+                    defaultValue = variableResolver.resolveVariableAsString(request.getDefault()).getValue();
+                } else {
+                    defaultValue = request.getDefault();
+                }
+                inputRequest.setDefault(defaultValue);
+            }
+            // Set this on the original object as we have now resolved any expressions as well.
             request.setInputType(inputRequest.getInputType());
         }
         return inputRequest;
     }
 
     private String resolveTokenValues(VariableResolver variableResolver, String expression) {
+        return resolveTokenValues(variableResolver, expression, null);
+    }
+
+    private String resolveTokenValues(VariableResolver variableResolver, String expression, Function<String, Boolean> tokenValidator) {
         String tokenValues;
         DataType referencedType = variableResolver.resolveVariable(expression);
         if (DataType.isListType(referencedType.getType())) {
@@ -540,8 +624,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             List<DataType> items = (List<DataType>)referencedType.getValue();
             if (items != null && !items.isEmpty()) {
                 for (DataType item: items) {
-                    str.append(item.convertTo(DataType.STRING_DATA_TYPE));
-                    str.append(',');
+                    String itemAsString = item.convertTo(DataType.STRING_DATA_TYPE).toString().trim();
+                    if (tokenValidator == null || tokenValidator.apply(itemAsString)) {
+                        str.append(itemAsString);
+                        str.append(',');
+                    }
                 }
                 str.deleteCharAt(str.length()-1);
             }
@@ -551,7 +638,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
         return tokenValues;
     }
-
 
     @Override
     protected void handleInputEvent(InputEvent event) {
@@ -564,7 +650,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
             List<UserInput> userInputs = event.getUserInputs();
             DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
-            //Create the Variable for Interaction Result if an id is given for the Interaction
+            // Create the Variable for Interaction Result if an id is given for the Interaction
             MapType interactionResult = (MapType) dataTypeFactory.create(DataType.MAP_DATA_TYPE);
             TAR report = new TAR();
             report.setResult(TestResultType.SUCCESS);
@@ -574,24 +660,63 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 throw new IllegalStateException(e);
             }
             if (!step.getInstructOrRequest().isEmpty()) {
-                VariableResolver variableResolver = new VariableResolver(scope);
+                report.setContext(new AnyContent());
+                report.getContext().setType("list");
+                ExpressionHandler expressionHandler = new ExpressionHandler(scope);
+                VariableResolver variableResolver = expressionHandler.getVariableResolver();
                 // Determine the required request elements for which we expect inputs.
                 Set<Integer> requiredInputIndexes = IntStream.range(0, step.getInstructOrRequest().size())
                         .filter(i -> step.getInstructOrRequest().get(i) instanceof UserRequest userRequest && isRequired(userRequest, variableResolver))
                         .boxed()
                         .collect(Collectors.toSet());
-                if (!userInputs.isEmpty()) {
-                    report.setContext(new AnyContent());
-                    report.getContext().setType("list");
-                    //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
-                    for (UserInput userInput : userInputs) {
+                int index = 0;
+                for (InstructionOrRequest instructionOrRequest : step.getInstructOrRequest()) {
+                    if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
+                        // Process instruction.
+                        if (instruction.isReport()) {
+                            var instructionContent = new AnyContent();
+                            instructionContent.setName(fixedValueOrVariable(instruction.getDesc(), variableResolver, null));
+                            instructionContent.setMimeType(instruction.getMimeType());
+                            DataType computedValue = expressionHandler.processExpression(instruction, instruction.getType());
+                            DataTypeUtils.setContentValueWithDataType(instructionContent, computedValue);
+                            report.getContext().getItem().add(instructionContent);
+                        }
+                    } else if (instructionOrRequest instanceof UserRequest request) {
+                        // Process request.
+                        processUserInput(request, index, event, variableResolver, dataTypeFactory, requiredInputIndexes, report, interactionResult);
+                    }
+                    index += 1;
+                }
+                if (!requiredInputIndexes.isEmpty()) {
+                    // Not all required inputs were provided with inputs - fail.
+                    throw new GITBEngineInternalError("Required request elements were found that were not provided with corresponding inputs");
+                }
+            }
+            if (step.getId() != null && (!userInputs.isEmpty() || !scope.getVariable(step.getId()).isDefined())) {
+                // We may want to skip creating a map in the scope in case this is a headless session (in which case no inputs
+                // are provided) but we already have a variable in the session matching the step ID. This can be the case if
+                // The test has started via REST call and the relevant map is provided as input.
+                TestCaseScope.ScopedVariable scopedVariable = scope.createVariable(step.getId());
+                scopedVariable.setValue(interactionResult);
+            }
+            promise.trySuccess(report);
+        }
+    }
+
+    private void processUserInput(UserRequest targetRequest, int requestIndex, InputEvent inputEvent, VariableResolver variableResolver, DataTypeFactory dataTypeFactory, Set<Integer> requiredInputIndexes, TAR report, MapType interactionResult) {
+        if (inputEvent.getUserInputs() != null) {
+            inputEvent.getUserInputs().stream()
+                    .filter(userInput -> {
                         int stepIndex = Integer.parseInt(userInput.getId());
-                        InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-                        if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
-                            requiredInputIndexes.remove(stepIndex - 1);
-                            if (requestInfo.isReport()) {
+                        return requestIndex == stepIndex - 1;
+                    })
+                    .findFirst()
+                    .ifPresent((userInput) -> {
+                        if (userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                            requiredInputIndexes.remove(requestIndex);
+                            if (targetRequest.isReport()) {
                                 // Construct the value to return for the step's report.
-                                report.getContext().getItem().add(getAnyContent(userInput, requestInfo));
+                                report.getContext().getItem().add(getAnyContent(userInput, targetRequest));
                             }
                         }
                         if (StringUtils.isNotBlank(targetRequest.getValue())) {
@@ -617,36 +742,22 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                             } else {
                                 DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
                             }
-                            //Put it to the Interaction Result map
+                            // Put it to the Interaction Result map
                             if (targetRequest.getName() != null) {
                                 interactionResult.addItem(targetRequest.getName(), assignedValue);
                             }
-                            if (targetRequest instanceof UserRequest userRequest && StringUtils.isNotBlank(userRequest.getFileName()) && StringUtils.isNotBlank(userInput.getFileName())) {
+                            if (StringUtils.isNotBlank(targetRequest.getFileName()) && StringUtils.isNotBlank(userInput.getFileName())) {
                                 // Record the file name under the provided variable
                                 String variableName;
-                                if (VariableResolver.isVariableReference(userRequest.getFileName())) {
-                                    variableName = variableResolver.resolveVariableAsString(userRequest.getFileName()).toString();
+                                if (VariableResolver.isVariableReference(targetRequest.getFileName())) {
+                                    variableName = variableResolver.resolveVariableAsString(targetRequest.getFileName()).toString();
                                 } else {
-                                    variableName = userRequest.getFileName().trim();
+                                    variableName = targetRequest.getFileName().trim();
                                 }
                                 interactionResult.addItem(variableName, new StringType(userInput.getFileName()));
                             }
                         }
-                    }
-                    if (!requiredInputIndexes.isEmpty()) {
-                        // Not all required inputs were provided with inputs - fail.
-                        throw new GITBEngineInternalError("Required request elements were found that were not provided with corresponding inputs");
-                    }
-                }
-            }
-            if (step.getId() != null && (!userInputs.isEmpty() || !scope.getVariable(step.getId()).isDefined())) {
-                // We may want to skip creating a map in the scope in case this is a headless session (in which case no inputs
-                // are provided) but we already have a variable in the session matching the step ID. This can be the case if
-                // The test has started via REST call and the relevant map is provided as input.
-                TestCaseScope.ScopedVariable scopedVariable = scope.createVariable(step.getId());
-                scopedVariable.setValue(interactionResult);
-            }
-            promise.trySuccess(report);
+                    });
         }
     }
 

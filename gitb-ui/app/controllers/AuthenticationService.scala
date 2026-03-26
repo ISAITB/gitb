@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -19,7 +19,13 @@ import config.Configurations
 import controllers.util._
 import exceptions._
 import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
-import models.Enums
+import models.{Constants, Enums, Token}
+import org.pac4j.core.context.session.SessionStore
+import org.pac4j.core.context.{CallContext, WebContext}
+import org.pac4j.core.credentials.UsernamePasswordCredentials
+import org.pac4j.core.profile.ProfileManager
+import org.pac4j.oidc.profile.OidcProfile
+import org.pac4j.play.PlayWebContext
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import play.api.mvc._
@@ -27,6 +33,8 @@ import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, MapHasAsScala}
+import scala.jdk.OptionConverters._
 
 class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
                                        cc: ControllerComponents,
@@ -34,7 +42,9 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
                                        authManager: AuthenticationManager,
                                        authorizationManager: AuthorizationManager,
                                        userManager: UserManager,
-                                       repositoryUtils: RepositoryUtils)
+                                       repositoryUtils: RepositoryUtils,
+                                       config: org.pac4j.core.config.Config,
+                                       playSessionStore: SessionStore)
                                       (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
@@ -42,10 +52,14 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getUserFunctionalAccounts: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewUserFunctionalAccounts(request).flatMap { _ =>
-      authorizationManager.getAccountInfo(request).map { accountInfo =>
-        val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
-        ResponseConstructor.constructJsonResponse(json)
-      }
+      getUserFunctionalAccountsInternal(request)
+    }
+  }
+
+  private def getUserFunctionalAccountsInternal(request: RequestWithAttributes[_], context: Option[WebContext] = None): Future[Result] = {
+    authorizationManager.getAccountInfo(request, context).map { accountInfo =>
+      val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
+      ResponseConstructor.constructJsonResponse(json)
     }
   }
 
@@ -116,7 +130,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
   def selectFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
     val userId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ID).toLong
     authorizationManager.canSelectFunctionalAccount(request, userId).map { _ =>
-      completeAccessTokenLogin(userId)
+      completeAccessTokenLogin(userId, request)
     }
   }
 
@@ -144,10 +158,29 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
-  private def completeAccessTokenLogin(userId: Long): Result = {
+  private def completeAccessTokenLogin(userId: Long, request: RequestWithAttributes[AnyContent]): Result = {
     val tokens = authManager.generateTokens(userId)
     disableDataBootstrap()
-    ResponseConstructor.constructOauthResponse(tokens, userId)
+    // Add the access token to the session cookie - this is the key recorded in Redis that allows session timeout enforcement and role resolution
+    ResponseConstructor.constructOauthResponse(tokens, userId).withSession(request.session + (Constants.AccessTokenKey -> tokens.accessToken))
+  }
+
+  def retrieveAccessToken: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canRetrieveAccessToken(request).map { _ =>
+      request.session.get(Constants.AccessTokenKey).flatMap { token =>
+        TokenCache.checkAccessToken(token).map { userId =>
+          ResponseConstructor.constructOauthResponse(Token(token), userId)
+        }
+      }.getOrElse {
+        val webContext = new PlayWebContext(request)
+        val profileManager = new ProfileManager(webContext, playSessionStore)
+        if (profileManager.isAuthenticated) {
+          ResponseConstructor.constructJsonResponse("{ \"profileExists\": true }")
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
   }
 
   def replaceOnetimePassword: Action[AnyContent] = authorizedAction.async { request =>
@@ -160,13 +193,35 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
           if (result.isEmpty) {
             ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
           } else {
-            completeAccessTokenLogin(result.get)
+            completeAccessTokenLogin(result.get, request)
           }
         }
       } else {
         Future.successful {
           ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.", Some("new"))
         }
+      }
+    }
+  }
+
+  def ssoLoginViaNativeForm: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canLogin(request).flatMap { _ =>
+      val email = ParameterExtractor.requiredBodyParameter(request, ParameterNames.EMAIL)
+      val passwd = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PASSWORD)
+      val credentials = new UsernamePasswordCredentials(email, passwd)
+      val webContext = new PlayWebContext(request)
+      val callContext = new CallContext(webContext, playSessionStore)
+      val validationResult = config.getClients.getClients.getFirst.validateCredentials(callContext, credentials).toScala
+      validationResult match {
+        case Some(credentials) =>
+          val profileManager = new ProfileManager(webContext, playSessionStore)
+          profileManager.save(true, credentials.getUserProfile, false)
+          getUserFunctionalAccountsInternal(request, Some(webContext)).map { result =>
+            playSessionStore.renewSession(webContext)
+            val session = webContext.getNativeSession
+            result.withSession(Session(session.data().asScala.toMap))
+          }
+        case None => Future.successful(ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials"))
       }
     }
   }
@@ -188,7 +243,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
             Ok("{\"weakPassword\": true}").as(JSON)
           } else {
             // All ok.
-            completeAccessTokenLogin(result.get.id)
+            completeAccessTokenLogin(result.get.id, request)
           }
         } else {
           // No user with given credentials
@@ -289,6 +344,22 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       if (isFullLogout) {
+        val webContext = new PlayWebContext(request)
+        val profileManager = new ProfileManager(webContext, playSessionStore)
+        /*
+         * Besides removing the profiles we could go over them here to ensure that upon full logout
+         * we will never have a cached profile being reused. This is achieved by setting the expiration date
+         * explicitly on the profile.
+         *
+         * This problem comes up when using OIDC where if the user logs out, and then we terminate the OIDC session,
+         * there is still a cached reference to a profile that is considered fresh. By manually expiring the profile in
+         * question we ensure that a logout action always triggers a profile re-check.
+         *
+         * This was not implemented in the end because it creates race conditions in profile updates resulting in 401
+         * errors due to token mismatches.
+         */
+        profileManager.removeProfiles()
+        playSessionStore.destroySession(webContext)
         ResponseConstructor.constructEmptyResponse.withNewSession
       } else {
         ResponseConstructor.constructEmptyResponse

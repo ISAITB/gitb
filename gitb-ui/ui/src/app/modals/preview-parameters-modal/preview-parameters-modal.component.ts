@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,10 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { DataService } from 'src/app/services/data.service';
-import { CustomProperty } from 'src/app/types/custom-property.type';
+import {Component, Input, OnInit} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {CustomProperty} from 'src/app/types/custom-property.type';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-preview-parameters-modal',
@@ -36,7 +37,7 @@ export class PreviewParametersModalComponent implements OnInit {
 
   constructor(
     public readonly dataService: DataService,
-    private readonly modalRef: BsModalRef
+    private readonly modalRef: NgbActiveModal
   ) { }
 
   ngOnInit(): void {
@@ -72,6 +73,8 @@ export class PreviewParametersModalComponent implements OnInit {
   }
 
 	close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
+
+  protected readonly Constants = Constants;
 }

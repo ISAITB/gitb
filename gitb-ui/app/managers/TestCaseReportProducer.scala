@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -19,6 +19,7 @@ import com.gitb.core.Metadata
 import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
+import com.gitb.tpl
 import com.gitb.tpl._
 import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
@@ -45,7 +46,7 @@ import scala.util.Using
 
 object TestCaseReportProducer {
 
-  case class ReportGenerationInput(stepReports: List[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], sessionId: String)
+  case class ReportGenerationInput(stepReports: List[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], sessionId: String, keepStepContexts: Boolean)
 
 }
 
@@ -82,7 +83,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
             case Some(Constants.MimeTypePDF) => (".report.pdf", (input: ReportGenerationInput) => {
               generateDetailedTestCaseReportPdf(input, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
             })
-            case _ => (".report.v2.xml", (input: ReportGenerationInput) => {
+            case Some(Constants.MimeTypeZIP) =>  (".reportData.v1.xml", (input: ReportGenerationInput) => {
+              generateDetailedTestCaseReportXml(input)
+            })
+            case _ => (".report.v3.xml", (input: ReportGenerationInput) => {
               generateDetailedTestCaseReportXml(input)
             })
           }
@@ -97,7 +101,8 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
             testCaseManager.getTestCase(testResult.get._1.testCaseId.get.toString).flatMap { testCase =>
               val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
               val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
-              reportData._2.apply(ReportGenerationInput(list, exportedReport, testCase, sessionId)).map { _ =>
+              val keepStepContexts = contentType.contains(Constants.MimeTypeZIP)
+              reportData._2.apply(ReportGenerationInput(list, exportedReport, testCase, sessionId, keepStepContexts)).map { _ =>
                 Some(exportedReport)
               }
             }
@@ -135,6 +140,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
               overview.getMessage.add(msg)
             }
           }
+          overview.setSessionId(testResult.sessionId)
           overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
           if (testResult.endTime.isDefined) {
             overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
@@ -162,7 +168,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
       reportPath <- {
         Files.createDirectories(reportPath.getParent)
         Using.resource(Files.newOutputStream(reportPath)) { fos =>
-          ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(overview, fos)
+          ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(overview, fos, input.keepStepContexts)
           fos.flush()
         }
         Future.successful(reportPath)
@@ -199,6 +205,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
               overview.getOutputMessages.add(msg)
             }
           }
+          overview.setSessionId(testResult.sessionId)
           // Start time
           val start = testResult.startTime
           overview.setStartTime(sdf.format(new Date(start.getTime)))
@@ -308,29 +315,42 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
     } yield reportPath
   }
 
+  private def getStepDescriptionForReport(testStep: TestStep): Option[String] = {
+    if (StringUtils.isBlank(testStep.getDesc)) {
+      testStep match {
+        case step: tpl.Sequence => Option(step.getTitle)
+        case step: FlowStep => Option(step.getTitle)
+        case step: DecisionStep => Option(step.getTitle)
+        case step: UserInteractionStep => Option(step.getTitle)
+        case _ => None
+      }
+    } else {
+      Some(testStep.getDesc)
+    }
+  }
+
   private def collectStepReports(testStep: TestStep, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
     val reportFile = new File(folder, testStep.getId + ".xml")
     if (reportFile.exists()) {
       val stepReport = new TitledTestStepReportType()
       val sequenceNumber = collectedSteps.size + 1
-      if (StringUtils.isBlank(testStep.getDesc)) {
-        stepReport.setTitle("Step " + sequenceNumber)
-      } else {
-        stepReport.setTitle("Step " + sequenceNumber + ": " + testStep.getDesc)
+      getStepDescriptionForReport(testStep) match {
+        case Some(stepDescription) => stepReport.setTitle("Step %s: %s".formatted(sequenceNumber, stepDescription))
+        case None => stepReport.setTitle("Step %s".formatted(sequenceNumber))
       }
-      val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath))
-      val string = new String(bytes)
+      Using (Files.newInputStream(Paths.get(reportFile.getAbsolutePath))) { stream =>
+        val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(stream))
+        stepReport.setWrapped(report.getReport)
+        if (report.getReport != null && report.getReport.isInstanceOf[TAR]
+          && report.getReport.asInstanceOf[TAR].getReports != null
+          && report.getReport.asInstanceOf[TAR].getReports.getReports.isEmpty
+          && report.getReport.asInstanceOf[TAR].getReports.getInfoOrWarningOrError.isEmpty) {
+          // If not set to null this would result in an empty element that is not schema-valid.
+          report.getReport.asInstanceOf[TAR].setReports(null)
+        }
+        collectedSteps += stepReport
+      }
       //convert string in xml format into its object representation
-      val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-      stepReport.setWrapped(report.getReport)
-      if (report.getReport != null && report.getReport.isInstanceOf[TAR]
-        && report.getReport.asInstanceOf[TAR].getReports != null
-        && report.getReport.asInstanceOf[TAR].getReports.getReports.isEmpty
-        && report.getReport.asInstanceOf[TAR].getReports.getInfoOrWarningOrError.isEmpty) {
-        // If not set to null this would result in an empty element that is not schema-valid.
-        report.getReport.asInstanceOf[TAR].setReports(null)
-      }
-      collectedSteps += stepReport
       // Process child steps as well if applicable
       testStep match {
         case step: GroupStep =>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,6 +17,7 @@ package managers
 
 import config.Configurations
 import managers.SystemConfigurationManager.ThemeStatus
+import managers.ratelimit.RateLimitManager
 import models.Enums.UserRole
 import models._
 import models.health.SoftwareVersionCheckSettings
@@ -26,17 +27,19 @@ import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.{JsObject, JsString, Json}
 import slick.collection.heterogeneous.HNil
 import utils._
 
 import java.io.File
+import java.nio.file.Files
 import java.sql.Timestamp
 import java.util.{Calendar, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Using}
 
 object SystemConfigurationManager {
 
@@ -46,7 +49,9 @@ object SystemConfigurationManager {
 
 @Singleton
 class SystemConfigurationManager @Inject() (testResultManager: TestResultManager,
+                                            testExecutionManager: TestExecutionManager,
                                             repositoryUtils: RepositoryUtils,
+                                            rateLimitManager: RateLimitManager,
                                             dbConfigProvider: DatabaseConfigProvider)
                                            (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -54,9 +59,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
   private final val editableSystemConfigurationTypes = Set(
-    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
+    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips
   )
 
   private var activeThemeId: Option[Long] = None
@@ -229,10 +234,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
         val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
         val startupWizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard)
+        val usageTipsConfig = persistedConfigs.find(config => config.config.name == Constants.UsageTips)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
         val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
+        val rateLimitConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits)
         if (restApiEnabledConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
         }
@@ -241,6 +248,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         if (startupWizardConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
+        }
+        if (usageTipsConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.UsageTips, Some(JsonUtil.serializeUsageTipsConfiguration(Configurations.USAGE_TIPS_CONFIGURATION).toString), None), defaultSetting = true, environmentSetting = sys.env.contains("USAGE_TIPS_ENABLED"))
         }
         if (demoAccountConfig.isEmpty) {
           if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT != -1) {
@@ -264,6 +274,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         if (softwareVersionCheckConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(SoftwareVersionCheckSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED"))
+        }
+        if (rateLimitConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiRateLimits, Some(JsonUtil.jsRestApiLimits(RestApiLimits.defaultSettings(), withDescriptions = false).toString()), None), defaultSetting = true, environmentSetting = false)
         }
       }
       persistedConfigs
@@ -311,11 +324,21 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   private [managers] def updateSystemParameterInternal(name: String, providedValue: Option[String] = None, applySetting: Boolean): DBIO[Option[SystemConfigurationsWithEnvironment]] = {
     // Do any pre-processing as needed.
-    var parsedEmailSettings: Option[EmailSettings] = None
+    var rateApiLimits: Option[RestApiLimits] = None
     val value = if (name == Constants.EmailSettings && providedValue.isDefined) {
       Some(JsonUtil.jsEmailSettings(processReceivedEmailSettings(providedValue.get), maskPassword = false).toString())
-    } else if (name == Constants.RestApiAdminKey  && providedValue.isEmpty) {
+    } else if (name == Constants.RestApiRateLimits && providedValue.isDefined) {
+      // Parse and serialize as we want to only record what we expect. Also the parsed object is used later to reset the live settings.
+      rateApiLimits = Some(JsonUtil.parseJsRestApiLimits(providedValue.get, withDescriptions = false))
+      Some(JsonUtil.jsRestApiLimits(rateApiLimits.get, withDescriptions = false).toString())
+    } else if (name == Constants.RestApiAdminKey && providedValue.isEmpty) {
       Some(CryptoUtil.generateApiKey())
+    } else if (name == Constants.UsageTips && providedValue.isDefined) {
+      var config = JsonUtil.parseJsUsageTipsConfiguration(providedValue.get)
+      if (!config.enabled) {
+        config = config.copy(disabledForScreens = Set())
+      }
+      Some(JsonUtil.serializeUsageTipsConfiguration(config).toString())
     } else {
       providedValue
     }
@@ -324,7 +347,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -346,6 +369,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             DBIO.successful(value.map(_ => {
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiAdminKey, value, None), defaultSetting = false, environmentSetting = false)
             }))
+          case Constants.RestApiRateLimits =>
+            val settings = rateApiLimits match {
+              case Some(limits) => limits
+              case None => RestApiLimits.defaultSettings()
+            }
+            rateLimitManager.reset(settings)
+            DBIO.successful(value.map(_ => {
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiRateLimits, value, None), defaultSetting = false, environmentSetting = false)
+            }))
           case Constants.SelfRegistrationEnabled =>
             if (value.isDefined) {
               Configurations.REGISTRATION_ENABLED = value.get.toBoolean
@@ -355,6 +387,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             Configurations.STARTUP_WIZARD_ENABLED = value.exists(_.toBoolean)
             DBIO.successful(Some(
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = false, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
+            ))
+          case Constants.UsageTips =>
+            if (value.isDefined) {
+              Configurations.USAGE_TIPS_CONFIGURATION = JsonUtil.parseJsUsageTipsConfiguration(value.get)
+            } else {
+              Configurations.USAGE_TIPS_CONFIGURATION = UsageTipsConfiguration.defaultConfiguration()
+            }
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.UsageTips, Some(JsonUtil.serializeUsageTipsConfiguration(Configurations.USAGE_TIPS_CONFIGURATION).toString()), None), defaultSetting = false, environmentSetting = sys.env.contains("USAGE_TIPS_ENABLED"))
             ))
           case Constants.DemoAccount =>
             if (value.isDefined) {
@@ -393,10 +434,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             }
           case Constants.EmailSettings =>
             if (value.isDefined) {
-              if (parsedEmailSettings.isEmpty) {
-                parsedEmailSettings = Some(JsonUtil.parseJsEmailSettings(value.get))
-              }
-              parsedEmailSettings.get.toEnvironment()
+              val emailSettings = JsonUtil.parseJsEmailSettings(value.get)
+              emailSettings.toEnvironment()
               testResultManager.schedulePendingTestInteractionNotifications()
               DBIO.successful(Some(
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = false, environmentSetting = false)
@@ -519,8 +558,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     DB.run(dbAction.transactionally)
   }
 
-  def getThemes(): Future[List[Theme]] = {
-    DB.run(PersistenceSchema.themes.sortBy(_.key.asc).result).map(_.toList)
+  def getThemes(page: Long, limit: Long): Future[SearchResult[Theme]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      if (forCount) {
+        PersistenceSchema.themes
+      } else {
+        PersistenceSchema.themes.sortBy(_.key.asc)
+      }
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   def getTheme(themeId: Long): Future[Theme] = {
@@ -881,7 +932,95 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   }
 
   def disableStartupWizard(): Future[Unit] = {
-    DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(() => _)
+    DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(_ => ())
+  }
+
+  def terminateIdleSessions(): Future[Unit] = {
+    for {
+      timeoutConfig <- {
+        getSystemConfiguration(Constants.SessionAliveTime).map { config =>
+          config.flatMap(_.parameter).map(x => JsonUtil.parseJsSessionTimeoutConfiguration(x))
+        }
+      }
+      sessionsToTerminate <- {
+        if (timeoutConfig.exists(_.enabled)) {
+          getIdleSessions(timeoutConfig.get).map(Some(_))
+        } else {
+          Future.successful(None)
+        }
+      }
+      _ <- {
+        if (sessionsToTerminate.isDefined) {
+          Future.sequence {
+            sessionsToTerminate.get.map { sessionId =>
+              testExecutionManager.endSession(sessionId).map { _ =>
+                logger.info("Terminated idle session [{}]", sessionId)
+              }.recover {
+                case e: Exception =>
+                  logger.warn("Failure while terminating idle session [%s]".formatted(sessionId), e)
+              }
+            }
+          }
+        } else {
+          Future.successful(())
+        }
+      }
+    } yield ()
+  }
+
+  private def getIdleSessions(config: SessionTimeoutConfiguration): Future[Iterable[String]] = {
+    DB.run {
+      for {
+        activeSessions <- PersistenceSchema.testResults
+          .filter(_.endTime.isEmpty)
+          .map(x => (x.testSessionId, x.startTime))
+          .result
+        pendingInteractions <- PersistenceSchema.testInteractions
+          .map(x => (x.testSessionId, x.admin))
+          .result
+          .map { results =>
+            results.map(x => x._1 -> x._2).toMap
+          }
+        idleSessions <- {
+          DBIO.successful {
+            activeSessions.filter(x => {
+              val difference = TimeUtil.getTimeDifferenceInSeconds(x._2)
+              if (pendingInteractions.contains(x._1)) {
+                if (pendingInteractions(x._1)) {
+                  // Pending admin interaction
+                  difference >= config.adminPendingTimeout
+                } else {
+                  // Pending user interaction
+                  difference >= config.userPendingTimeout
+                }
+              } else {
+                // Not pending interaction
+                difference >= config.otherTimeout
+              }
+            }).map(_._1)
+          }
+        }
+      } yield idleSessions
+    }
+  }
+
+  def getRestApiEndpointsFromDocumentation(): collection.Seq[RestApiEndpointLimit] = {
+    Using(Files.newInputStream(repositoryUtils.getRestApiDocsDocumentation().toPath)) { stream =>
+      val json = Json.parse(stream)
+      val paths = (json \ "paths").as[JsObject]
+      paths.fields.flatMap { pathItem =>
+        pathItem._2.as[JsObject].fields
+          .filter(x => Constants.HttpMethods.contains(x._1))
+          .map { methodItem =>
+            RestApiEndpointLimit(
+              path = pathItem._1,
+              method = methodItem._1,
+              limit = 0,
+              description = methodItem._2.as[JsObject].value.get("summary").map(_.as[JsString].value)
+            )
+          }
+      }
+    }.get
   }
 
 }

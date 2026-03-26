@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,40 +13,40 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { FilterState } from 'src/app/types/filter-state';
-import { Observable, forkJoin, of } from 'rxjs';
-import { mergeMap } from 'rxjs/operators'
-import { map, remove, filter } from 'lodash';
-import { BsDatepickerConfig } from 'ngx-bootstrap/datepicker';
-import { formatDate } from '@angular/common';
-import { Domain } from 'src/app/types/domain';
-import { Specification } from 'src/app/types/specification';
-import { Actor } from 'src/app/types/actor';
-import { TestCase } from 'src/app/types/test-case';
-import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
-import { Community } from 'src/app/types/community';
-import { Organisation } from 'src/app/types/organisation.type';
-import { System } from 'src/app/types/system';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { CustomProperty } from '../custom-property-filter/custom-property';
-import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
-import { IdLabel } from 'src/app/types/id-label';
-import { NumberSet } from 'src/app/types/number-set';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { TestSuiteService } from 'src/app/services/test-suite.service';
-import { ReportService } from 'src/app/services/report.service';
-import { CommunityService } from 'src/app/services/community.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { SystemService } from 'src/app/services/system.service';
-import { SpecificationGroup } from 'src/app/types/specification-group';
-import { SpecificationService } from 'src/app/services/specification.service';
-import { FilterValues } from './filter-values';
-import { FilterUpdate } from './filter-update';
-import { EntityWithId } from 'src/app/types/entity-with-id';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {FilterState} from 'src/app/types/filter-state';
+import {forkJoin, Observable, of} from 'rxjs';
+import {mergeMap} from 'rxjs/operators';
+import {formatDate} from '@angular/common';
+import {Domain} from 'src/app/types/domain';
+import {Specification} from 'src/app/types/specification';
+import {Actor} from 'src/app/types/actor';
+import {TestCase} from 'src/app/types/test-case';
+import {TestSuiteWithTestCases} from 'src/app/types/test-suite-with-test-cases';
+import {Community} from 'src/app/types/community';
+import {Organisation} from 'src/app/types/organisation.type';
+import {System} from 'src/app/types/system';
+import {OrganisationParameter} from 'src/app/types/organisation-parameter';
+import {SystemParameter} from 'src/app/types/system-parameter';
+import {CustomProperty} from '../custom-property-filter/custom-property';
+import {MultiSelectConfig} from '../multi-select-filter/multi-select-config';
+import {IdLabel} from 'src/app/types/id-label';
+import {NumberSet} from 'src/app/types/number-set';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {TestSuiteService} from 'src/app/services/test-suite.service';
+import {ReportService} from 'src/app/services/report.service';
+import {CommunityService} from 'src/app/services/community.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {SystemService} from 'src/app/services/system.service';
+import {SpecificationGroup} from 'src/app/types/specification-group';
+import {SpecificationService} from 'src/app/services/specification.service';
+import {FilterValues} from './filter-values';
+import {FilterUpdate} from './filter-update';
+import {EntityWithId} from 'src/app/types/entity-with-id';
+import {Utils} from '../../common/utils';
+import {DateRange} from '../date-range/date-range';
 
 @Component({
     selector: 'app-test-filter',
@@ -62,6 +62,8 @@ export class TestFilterComponent implements OnInit {
   @Input() embedded = false
   @Input() commands?: EventEmitter<number>
   @Input() initialSessionId?: string
+  @Input() initialTestCaseId?: number
+  @Input() initialSystemId?: number
   @Input() snapshotId?: number
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
@@ -91,14 +93,9 @@ export class TestFilterComponent implements OnInit {
   availableOrganisationProperties: OrganisationParameter[] = []
   availableSystemProperties: SystemParameter[] = []
   filterDropdownSettings: {[key: string]: MultiSelectConfig<EntityWithId>} = {}
-  datePickerSettings: Partial<BsDatepickerConfig> = {
-    adaptivePosition: true,
-    rangeInputFormat: 'DD-MM-YYYY',
-    containerClass: 'theme-default'
-  }
 
-  startDateModel?: Date[]
-  endDateModel?: Date[]
+  startDateModel?: DateRange
+  endDateModel?: DateRange
   addingOrganisationProperty = false
   addingSystemProperty = false
   loadingOrganisationProperties = false
@@ -169,6 +166,14 @@ export class TestFilterComponent implements OnInit {
     }
     this.filterCollapsedFinished = !this.showFiltering || !this.initialised
     this.sessionId = this.initialSessionId
+    if (this.initialTestCaseId != undefined) {
+      const initialTestCase: TestCase = { id: this.initialTestCaseId, identifier: '', sname: '' } // This will be replaced on load
+      this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE].initialValues = [ initialTestCase ]
+    }
+    if (this.initialSystemId != undefined) {
+      const initialSystem: System = { id: this.initialSystemId, identifier: '', sname: '', fname: '', apiKey: '', owner: -1 } // This will be replaced on load
+      this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM].initialValues = [ initialSystem ]
+    }
   }
 
   private handleCommand(command: number) {
@@ -187,7 +192,7 @@ export class TestFilterComponent implements OnInit {
     if (this.filterDefined(Constants.FILTER_TYPE.DOMAIN) && this.loadDomainsFn == undefined) {
       this.loadDomainsFn = (() => {
         return this.conformanceService.getDomains(undefined, undefined, this.snapshotId)
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) && this.loadSpecificationsFn == undefined) {
       this.loadSpecificationsFn = (() => {
@@ -196,7 +201,7 @@ export class TestFilterComponent implements OnInit {
         } else {
           return this.conformanceService.getSpecificationsWithIds(undefined, [this.dataService.community!.domainId], this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.snapshotId)
         }
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP) && this.loadSpecificationGroupsFn == undefined) {
       this.loadSpecificationGroupsFn = (() => {
@@ -205,7 +210,7 @@ export class TestFilterComponent implements OnInit {
         } else {
           return this.specificationService.getSpecificationGroups(this.dataService.community!.domainId, this.snapshotId)
         }
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ACTOR) && this.loadActorsFn == undefined) {
       this.loadActorsFn = (() => {
@@ -214,7 +219,7 @@ export class TestFilterComponent implements OnInit {
         } else {
           return this.conformanceService.searchActorsInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.snapshotId)
         }
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE) && this.loadTestSuitesFn == undefined) {
       this.loadTestSuitesFn = (() => {
@@ -224,7 +229,7 @@ export class TestFilterComponent implements OnInit {
           return this.testSuiteService.searchTestSuitesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.filterValue(Constants.FILTER_TYPE.ACTOR))
         }
 
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.TEST_CASE) && this.loadTestCasesFn == undefined) {
       this.loadTestCasesFn = (() => {
@@ -233,12 +238,12 @@ export class TestFilterComponent implements OnInit {
         } else {
           return this.reportService.searchTestCasesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.filterValue(Constants.FILTER_TYPE.ACTOR), this.filterValue(Constants.FILTER_TYPE.TEST_SUITE))
         }
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.COMMUNITY) && this.loadCommunitiesFn == undefined) {
       this.loadCommunitiesFn = (() => {
         return this.communityService.getCommunities()
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION) && this.loadOrganisationsFn == undefined) {
       this.loadOrganisationsFn = (() => {
@@ -247,7 +252,7 @@ export class TestFilterComponent implements OnInit {
         } else {
           return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
         }
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM) && this.loadSystemsFn == undefined) {
       this.loadSystemsFn = (() => {
@@ -260,32 +265,32 @@ export class TestFilterComponent implements OnInit {
             return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION), this.snapshotId)
           }
         }
-      }).bind(this)
+      })
     }
     // Custom properties
     const onlyPublicProperties = !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY) && this.loadOrganisationPropertiesFn == undefined) {
       this.loadOrganisationPropertiesFn = (() => {
         return this.communityService.getOrganisationParameters(this.applicableCommunityId!, true, onlyPublicProperties)
-      }).bind(this)
+      })
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY) && this.loadSystemPropertiesFn == undefined) {
       this.loadSystemPropertiesFn = (() => {
         return this.communityService.getSystemParameters(this.applicableCommunityId!, true, onlyPublicProperties)
-      }).bind(this)
+      })
     }
   }
 
   private getRemainingFilterValues<T extends EntityWithId>(currentValues: FilterValues<T>, filterFunctionActive: (item: T) => boolean, filterFunctionOther: (item: T) => boolean): FilterValues<T> {
     if (currentValues) {
       // Active downstream items that match parent active items
-      const active = filter(currentValues.active, (itemToCheck) => { return filterFunctionActive(itemToCheck) })
+      const active = currentValues.active.filter((itemToCheck) => { return filterFunctionActive(itemToCheck) })
       // Inactive downstream items that match parent active items
-      const newlyActive = filter(currentValues.other, (itemToCheck) => { return filterFunctionActive(itemToCheck) })
+      const newlyActive = currentValues.other.filter((itemToCheck) => { return filterFunctionActive(itemToCheck) })
       // Inactive downstream items that match parent inactive items
-      const inactive = filter(currentValues.other, (itemToCheck) => { return filterFunctionOther(itemToCheck) })
+      const inactive = currentValues.other.filter((itemToCheck) => { return filterFunctionOther(itemToCheck) })
       // Active downstream items that match parent inactive items
-      const newlyInactive = filter(currentValues.active, (itemToCheck) => { return filterFunctionOther(itemToCheck) })
+      const newlyInactive = currentValues.active.filter((itemToCheck) => { return filterFunctionOther(itemToCheck) })
       return { active: active.concat(newlyActive), other: inactive.concat(newlyInactive) }
     } else {
       return { active: [], other: [] }
@@ -472,21 +477,9 @@ export class TestFilterComponent implements OnInit {
   filterValue(filterType: string) {
     let values: number[]|undefined
     if (this.filterDefined(filterType) && this.filterValues[filterType] && this.filterValues[filterType].active) {
-      values = map(this.filterValues[filterType].active, (item) => {return item.id})
+      values = this.filterValues[filterType].active.map((item) => {return item.id})
     }
     return values
-  }
-
-  private toDateStart(date: Date): Date {
-    const newDate = new Date(date.getTime())
-    newDate.setHours(0, 0, 0, 0)
-    return newDate
-  }
-
-  private toDateEnd(date: Date) {
-    const newDate = new Date(date.getTime())
-    newDate.setHours(23, 59, 59, 999)
-    return newDate
   }
 
   currentFilters() {
@@ -502,7 +495,7 @@ export class TestFilterComponent implements OnInit {
     filters[Constants.FILTER_TYPE.SYSTEM] = this.filterValue(Constants.FILTER_TYPE.SYSTEM)
     const resultValues = this.filterValue(Constants.FILTER_TYPE.RESULT)
     if (resultValues) {
-      filters[Constants.FILTER_TYPE.RESULT] = map(resultValues, (value: number) => {
+      filters[Constants.FILTER_TYPE.RESULT] = resultValues.map((value: number) => {
         if (value == 0) return Constants.TEST_CASE_RESULT.SUCCESS
         else if (value == 1) return Constants.TEST_CASE_RESULT.FAILURE
         else return Constants.TEST_CASE_RESULT.UNDEFINED
@@ -510,18 +503,26 @@ export class TestFilterComponent implements OnInit {
     }
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
-        filters.startTimeBegin = this.toDateStart(this.startDateModel[0])
-        filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.startTimeEnd = this.toDateEnd(this.startDateModel[1])
-        filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
+        if (this.startDateModel.start !== undefined) {
+          filters.startTimeBegin = this.startDateModel.start
+          filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
+        if (this.startDateModel.end !== undefined) {
+          filters.startTimeEnd = this.startDateModel.end
+          filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.END_TIME)) {
       if (this.endDateModel !== undefined) {
-        filters.endTimeBegin = this.toDateStart(this.endDateModel[0])
-        filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.endTimeEnd = this.toDateEnd(this.endDateModel[1])
-        filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
+        if (this.endDateModel.start !== undefined) {
+          filters.endTimeBegin = this.endDateModel.start
+          filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
+        if (this.endDateModel.end !== undefined) {
+          filters.endTimeEnd = this.endDateModel.end
+          filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
@@ -594,13 +595,16 @@ export class TestFilterComponent implements OnInit {
     this.loadingOrganisationProperties = false
     this.loadingSystemProperties = false
     this.resetFilters()
-    if (skipReload == true) {
+    if (skipReload !== true) {
       this.applyFilters()
     }
   }
 
   clickedHeader() {
     this.showFiltering = !this.showFiltering
+    if (this.showFiltering) {
+      this.toggleFilterCollapsedFinished(false)
+    }
     if (!this.initialised) {
       this.resetCustomProperties().subscribe(() => {
         this.initialised = true
@@ -703,12 +707,12 @@ export class TestFilterComponent implements OnInit {
   }
 
   clearOrganisationProperty(propertyDefinition: CustomProperty) {
-    remove(this.organisationProperties, (prop) => prop.uuid == propertyDefinition.uuid)
+    Utils.removeFromArray(this.organisationProperties, (prop) => prop.uuid == propertyDefinition.uuid)
     this.applyFilters()
   }
 
   clearSystemProperty(propertyDefinition: CustomProperty) {
-    remove(this.systemProperties, (prop) => prop.uuid == propertyDefinition.uuid)
+    Utils.removeFromArray(this.systemProperties, (prop) => prop.uuid == propertyDefinition.uuid)
     this.applyFilters()
   }
 
@@ -766,27 +770,6 @@ export class TestFilterComponent implements OnInit {
         })
       )
     }
-  }
-
-  createDropdownSettings(idField: string, labelField: string) {
-    return {
-      idField: idField,
-      textField: labelField,
-      searchPlaceholderText: 'Search...',
-      itemsShowLimit: 1,
-      allowSearchFilter: true,
-      enableCheckAll: true,
-      selectAllText: 'Select all',
-      unSelectAllText: 'Clear all',
-    }
-  }
-
-  clearStartRange() {
-    this.startDateModel = undefined
-  }
-
-  clearEndRange() {
-    this.endDateModel = undefined
   }
 
   toggleFilterCollapsedFinished(value: boolean) {

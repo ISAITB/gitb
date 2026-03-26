@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,35 +13,27 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { DataService } from 'src/app/services/data.service';
-import { TestCaseTag } from 'src/app/types/test-case-tag';
+import {Component, Input, OnInit} from '@angular/core';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {TagData} from 'src/app/types/tag-data';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-edit-tag',
     templateUrl: './create-edit-tag.component.html',
     standalone: false
 })
-export class CreateEditTagComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CreateEditTagComponent extends BaseComponent implements OnInit {
 
-  @Input() tag?: Partial<TestCaseTag>
-  @Input() tagToUse!: Partial<TestCaseTag>
-  @Output() createdTag = new EventEmitter<TestCaseTag>()
-  @Output() updatedTag = new EventEmitter<TestCaseTag>()
+  @Input() tag?: Partial<TagData>
 
+  tagToUse!: Partial<TagData>
   isUpdate!: boolean
   title!: string
 
   constructor(
-    private readonly modalInstance: BsModalRef,
-    private readonly dataService: DataService
+    private readonly modalInstance: NgbActiveModal
   ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('nameIdentifier', 200)
-  }
 
   ngOnInit(): void {
     this.isUpdate = this.tag != undefined
@@ -71,15 +63,12 @@ export class CreateEditTagComponent extends BaseComponent implements OnInit, Aft
   }
 
   save() {
-    if (this.isUpdate) {
-      this.updatedTag.emit(this.tagToUse! as TestCaseTag)
-    } else {
-      this.createdTag.emit(this.tagToUse! as TestCaseTag)
+    if (!this.saveDisabled()) {
+      this.modalInstance.close(this.tagToUse! as TagData)
     }
-    this.cancel();
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -42,6 +42,18 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
       val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SIMPLE).getOrElse(false)
       domainParameterManager.getDomainParameters(domainId, loadValues, None, onlySimple).map { result =>
         val json = JsonUtil.jsDomainParameters(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchDomainParameters(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainParameterManager.searchDomainParameters(domainId, filter, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsDomainParameters).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -161,10 +173,13 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
-  def getTestServices(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+  def searchTestServices(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageTestServices(request, domainId).flatMap { _ =>
-      domainParameterManager.getTestServicesWithParameters(domainId).map { result =>
-        val json = JsonUtil.jsTestServicesWithParameters(result).toString()
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainParameterManager.searchTestServicesWithParameters(domainId, filter, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsTestServicesWithParameters).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -270,6 +285,26 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
       val testService = ParameterExtractor.extractTestServiceWithParameter(request, domainId, serviceId)
       domainParameterManager.testTestService(testService).map { result =>
         val json = JsonUtil.jsServiceTestResult(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getTestServicesForHealthCheck(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCheckCoreServiceHealth(request).flatMap { _ =>
+      val domainId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.DOMAIN)
+      domainParameterManager.getTestServicesForHealthCheck(None, domainId).map { result =>
+        val json = JsonUtil.jsTestServicesBasicInfo(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getCommunityTestServicesForHealthCheck(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      val domainId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.DOMAIN)
+      domainParameterManager.getTestServicesForHealthCheck(Some(communityId), domainId).map { result =>
+        val json = JsonUtil.jsTestServicesBasicInfo(result).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }

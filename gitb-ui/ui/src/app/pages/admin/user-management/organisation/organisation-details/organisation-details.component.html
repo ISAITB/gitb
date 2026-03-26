@@ -2,9 +2,15 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title">{{dataService.labelOrganisation()}} details</div>
+            <div app-community-tag-indicator></div>
         </div>
         <form>
             <div class="card-body" [pending]="!loaded" focus="sname">
+                @if (dataService.configuration.registrationEnabled && organisation.selfRegistrationDefault) {
+                    <div class="alert alert-info rounded">
+                        <span>This {{dataService.labelOrganisationLower()}} is configured as the default for self-registering users.</span>
+                    </div>
+                }
                 <app-organisation-form #form
                                        [organisation]="organisation"
                                        [communityId]="communityId"
@@ -22,16 +28,16 @@
                 <div class="card-footer button-container">
                     <div class="btn-toolbar">
                         @if (!readonly) {
-                            <button class="btn btn-secondary" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
                         }
-                        <button class="btn btn-secondary" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS" type="button" (click)="manageOrganisationTests()">Manage tests</button>
                         @if (showAdminInfo) {
-                            <button class="btn btn-secondary" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancelDetailOrganisation()">Back</button>
                         }
                     </div>
                     @if (showAdminInfo) {
                         <div class="btn-toolbar btn-toolbar-delete">
-                            <button class="btn btn-outline-danger" type="button" (click)="deleteOrganisation()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                            <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="deleteOrganisation()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                         </div>
                     }
                 </div>
@@ -39,67 +45,74 @@
         </form>
     </div>
     <div>
-        <tabset #tabs>
-            <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.SYSTEMS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    @if (showCreateSystem) {
-                        <div class="tabControls">
-                            <div class="btn-toolbar">
-                                <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
-                            </div>
-                        </div>
-                    }
-                    <div class="card">
-                        <div table-directive
-                            [columns]="systemColumns"
-                            [data]="systems"
-                            [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
-                            [loadingStatus]="systemsStatus"
-                            [allowSelect]="true"
-                            (onSelect)="systemSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            @if (showUsersTab) {
-                <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.USERS)" customClass="tabClass">
-                    <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.ORGANISATION.SYSTEMS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.SYSTEM" [text]="dataService.labelSystems()"></app-tab-title></button>
+                <ng-template ngbNavContent>
                     <div class="tabPanel">
-                        @if (showCreateUser) {
+                        @if (showCreateSystem) {
                             <div class="tabControls">
                                 <div class="btn-toolbar">
-                                    <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
                                 </div>
                             </div>
                         }
                         <div class="card">
-                            <div table-directive
-                                [columns]="userColumns"
-                                [data]="users"
-                                [noDataMessage]="'No users found'"
-                                [loadingStatus]="usersStatus"
-                                [allowSelect]="showCreateUser"
-                                (onSelect)="userSelect($event)">
+                            <div #systemsTable table-directive
+                                 [columns]="systemColumns"
+                                 [data]="systems"
+                                 [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
+                                 [loadingStatus]="systemsStatus"
+                                 [contentRefreshing]="systemsRefreshing"
+                                 (pageNavigation)="doSystemPaging($event)"
+                                 [allowSelect]="true"
+                                 (onSelect)="systemSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>
-                </tab>
+                </ng-template>
+            </li>
+            @if (showUsersTab) {
+                <li [ngbNavItem]="Constants.TAB.ORGANISATION.USERS">
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.USER" text="Users"></app-tab-title></button>
+                    <ng-template ngbNavContent>
+                        <div class="tabPanel">
+                            @if (showCreateUser) {
+                                <div class="tabControls">
+                                    <div class="btn-toolbar">
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                    </div>
+                                </div>
+                            }
+                            <div class="card">
+                                <div #usersTable table-directive
+                                     [columns]="userColumns"
+                                     [data]="users"
+                                     [noDataMessage]="'No users found'"
+                                     [loadingStatus]="usersStatus"
+                                     [contentRefreshing]="usersRefreshing"
+                                     (pageNavigation)="doUserPaging($event)"
+                                     [allowSelect]="showCreateUser"
+                                     (onSelect)="userSelect($event)"
+                                     [supportPaging]="true">
+                                </div>
+                            </div>
+                        </div>
+                    </ng-template>
+                </li>
             }
-            @if (apiInfoVisible) {
-                <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.API_KEYS)" customClass="tabClass">
-                    <ng-template tabHeading><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></ng-template>
-                    <div class="tabPanel">
-                        <app-api-key-info
-                            [organisationId]="orgId"
-                            [organisationName]="organisation.fname"
-                            [adminOrganisation]="organisation.adminOrganization == true"
-                            [communityId]="communityId"
-                            [loadData]="loadApiInfo">
-                        </app-api-key-info>
-                    </div>
-                </tab>
+            @if (apiInfoVisible && apiKeyState) {
+                <li [ngbNavItem]="Constants.TAB.ORGANISATION.API_KEYS">
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.API_KEY" text="REST API keys"></app-tab-title></button>
+                    <ng-template ngbNavContent>
+                        <div class="tabPanel">
+                            <app-api-key-info [state]="apiKeyState"></app-api-key-info>
+                        </div>
+                    </ng-template>
+                </li>
             }
-        </tabset>
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
     </div>
 </div>

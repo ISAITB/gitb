@@ -1,11 +1,15 @@
 @if (checkboxEnabled) {
-    <td class="td-min-centered" (click)="$event.stopPropagation();">
-        <input class="form-check-input" type="checkbox" [(ngModel)]="data.checked" (change)="check()">
+    <td class="td-min centered" (click)="$event.stopPropagation();">
+        <div class="cell-content row-control">
+            <input class="form-check-input" type="checkbox" [(ngModel)]="data.checked" (change)="check()">
+        </div>
     </td>
 }
 @if (expandableRowProperty != undefined) {
-    <td class="td-min-centered">
-        <app-collapsing-icon [padded]="false" [isCollapsed]="data[expandableRowProperty] == undefined || !data[expandableRowProperty]"></app-collapsing-icon>
+    <td class="td-min centered">
+        <div class="cell-content row-control">
+            <app-collapsing-icon [padded]="false" [isCollapsed]="data[expandableRowProperty] == undefined || !data[expandableRowProperty]"></app-collapsing-icon>
+        </div>
     </td>
 }
 @for (item of columnDataItemsAtLeft; track i; let i = $index) {
@@ -14,34 +18,39 @@
     </td>
 }
 @if (showOptions) {
-    <td class="td-min-centered">
-        <app-checkbox-option-panel #optionButton
-                                   label="Options"
-                                   icon="fa-solid fa-bars"
-                                   placement="left"
-                                   [optionProvider]="loadAvailableOptionsFactory()"
-                                   [singleSelection]="true"
-                                   [pending]="data[actionPendingProperty] || data[deletePendingProperty] || data[exportPendingProperty]"
-                                   (updated)="handleOption($event)"></app-checkbox-option-panel>
+    <td class="td-min centered">
+        <div class="cell-content">
+            <app-checkbox-option-panel #optionButton
+                                       label="Options"
+                                       [icon]="Constants.BUTTON_ICON.ACTIONS"
+                                       placement="left"
+                                       [optionProvider]="loadAvailableOptionsFactory()"
+                                       [singleSelection]="true"
+                                       [pending]="data[optionPendingProperty] || data[actionPendingProperty] || data[deletePendingProperty] || data[exportPendingProperty]"
+                                       [smallButton]="true"
+                                       (updated)="handleOption($event)"></app-checkbox-option-panel>
+        </div>
     </td>
-} @else if (actionVisible || operationsVisible || exportVisible) {
-    <td class="td-min-centered">
-        <div class="btn-toolbar">
-            @if (actionVisible && (!actionVisibleForRow || actionVisibleForRow(data))) {
-                <button type="button" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-secondary" (click)="action(); $event.stopPropagation();" container="body" containerClass="shortTooltip" [tooltip]="actionTooltip" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i [ngClass]="actionIcon"></i>
-                </button>
-            }
-            @if (operationsVisible && (!deleteVisibleForRow || deleteVisibleForRow(data))) {
-                <button type="button" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-secondary" (click)="delete(); $event.stopPropagation();" container="body" containerClass="shortTooltip" [tooltip]="deleteTooltip" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i [ngClass]="deleteIcon"></i>
-                </button>
-            }
-            @if (exportVisible && (!exportVisibleForRow || exportVisibleForRow(data))) {
-                <button type="button" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-secondary" (click)="export(); $event.stopPropagation();" container="body" containerClass="shortTooltip" [tooltip]="exportTooltip" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i [ngClass]="exportIcon"></i>
-                </button>
-            }
+} @else if (optionsVisible || actionVisible || operationsVisible || exportVisible) {
+    <td class="td-min centered">
+        <div class="cell-content">
+            <div class="btn-toolbar">
+                @if (actionVisible && (!actionVisibleForRow || actionVisibleForRow(data))) {
+                    <button type="button" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-sm btn-secondary" (click)="action(); $event.stopPropagation();" container="body" tooltipClass="shortTooltip" [ngbTooltip]="actionTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                        <i [ngClass]="actionIcon"></i>
+                    </button>
+                }
+                @if (operationsVisible && (!deleteVisibleForRow || deleteVisibleForRow(data))) {
+                    <button type="button" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-sm btn-secondary" (click)="delete(); $event.stopPropagation();" container="body" tooltipClass="shortTooltip" [ngbTooltip]="deleteTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                        <i [ngClass]="deleteIcon"></i>
+                    </button>
+                }
+                @if (exportVisible && (!exportVisibleForRow || exportVisibleForRow(data))) {
+                    <button type="button" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-sm btn-secondary" (click)="export(); $event.stopPropagation();" container="body" tooltipClass="shortTooltip" [ngbTooltip]="exportTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                        <i [ngClass]="exportIcon"></i>
+                    </button>
+                }
+            </div>
         </div>
     </td>
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
@@ -23,6 +23,7 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import {TableApi} from '../../../components/table/table-api';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {CommunityLimited} from '../../../types/community-limited';
+import {UsageTipService} from '../../../services/usage-tip.service';
 
 @Component({
     selector: 'app-user-management',
@@ -30,14 +31,15 @@ import {CommunityLimited} from '../../../types/community-limited';
     styles: [],
     standalone: false
 })
-export class UserManagementComponent implements OnInit {
+export class UserManagementComponent implements OnInit, AfterViewInit {
 
   @ViewChild("communityTable") communityTable?: TableApi
 
   communityStatus = {status: Constants.STATUS.PENDING}
   communityColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
-    { field: 'fname', title: 'Full name' }
+    { field: 'fname', title: 'Full name' },
+    { field: 'tags', title: '', tagData: true, headerClass: 'th-min', cellClass: 'td-min centered' }
   ]
   communities: CommunityLimited[] = []
   communityFilter?: string
@@ -46,7 +48,8 @@ export class UserManagementComponent implements OnInit {
   constructor(
     private readonly dataService: DataService,
     private readonly communityService: CommunityService,
-    private readonly routingService: RoutingService
+    private readonly routingService: RoutingService,
+    private readonly usageTipService: UsageTipService
   ) { }
 
   ngOnInit(): void {
@@ -55,6 +58,12 @@ export class UserManagementComponent implements OnInit {
     }
     this.refreshCommunities()
     this.routingService.communitiesBreadcrumbs()
+  }
+
+  ngAfterViewInit(): void {
+    if (this.dataService.isSystemAdmin) {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_ADMIN_COMMUNITIES)
+    }
   }
 
   communitySelect(community: Community) {
@@ -87,7 +96,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   refreshCommunities() {
-    this.loadCommunities({ targetPage: 1, targetPageSize: this.communityTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    this.loadCommunities({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doCommunityPaging(event: PagingEvent) {
@@ -97,4 +106,6 @@ export class UserManagementComponent implements OnInit {
   private updatePagination(page: number, count: number) {
     this.communityTable?.getPagingControls()?.updateStatus(page, count)
   }
+
+  protected readonly Constants = Constants;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -129,7 +129,7 @@ export class OrganisationFormComponent implements OnInit {
     let proceed$: Observable<any>
     let isUpdate = true
     if (this.organisation.selfRegistrationToken != undefined) {
-      proceed$ = this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the self-registration token?", "Update", "Cancel")
+      proceed$ = this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the self-registration token?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
     } else {
       isUpdate = false
       proceed$ = of(true)
@@ -148,7 +148,7 @@ export class OrganisationFormComponent implements OnInit {
   }
 
   deleteSelfRegistrationToken() {
-      this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete the self-registration token?", "Delete", "Cancel").subscribe(() => {
+      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the self-registration token?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
         if (this.organisation.id) {
           this.selfRegistrationTokenDeletePending = true
           this.organisationService.deleteSelfRegistrationToken(this.organisation.id).subscribe(() => {
@@ -185,7 +185,7 @@ export class OrganisationFormComponent implements OnInit {
       if (this.organisation.landingPage != undefined) {
         const item = this.landingPages.find(x => x.id == this.organisation.landingPage)
         if (item) {
-          this.landingPageSelectionConfig.replaceSelectedItems!.emit([item])
+          this.landingPageSelectionConfig.replaceSelectedItems!.emit([item]);
         }
       }
       if (this.organisation.legalNotice != undefined) {

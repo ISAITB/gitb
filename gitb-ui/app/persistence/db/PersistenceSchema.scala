@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -46,6 +46,8 @@ object PersistenceSchema {
     def selfRegAllowOrganisationTokens = column[Boolean]("selfreg_allow_org_tokens")
     def selfRegAllowOrganisationTokenManagement = column[Boolean]("selfreg_allow_org_token_management")
     def selfRegForceOrganisationTokenInput = column[Boolean]("selfreg_force_org_token_input")
+    def selfRegJoinExisting = column[Boolean]("selfreg_join_existing")
+    def selfRegJoinAsAdmin = column[Boolean]("selfreg_join_as_admin")
     def allowCertificateDownload = column[Boolean]("allow_certificate_download")
     def allowStatementManagement = column[Boolean]("allow_statement_management")
     def allowSystemManagement = column[Boolean]("allow_system_management")
@@ -55,10 +57,12 @@ object PersistenceSchema {
     def allowAutomationApi = column[Boolean]("allow_automation_api")
     def allowCommunityView = column[Boolean]("allow_community_view")
     def allowUserManagement = column[Boolean]("allow_user_management")
+    def allowXmlReports = column[Boolean]("allow_xml_reports")
     def apiKey = column[String]("api_key")
     def latestStatusLabel = column[Option[String]]("latest_status_label")
+    def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
     def domain = column[Option[Long]] ("domain")
-    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: apiKey :: latestStatusLabel :: domain :: HNil).mapTo[Communities]
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -77,8 +81,9 @@ object PersistenceSchema {
     def apiKey = column[Option[String]]("api_key")
     def updateTime = column[Timestamp]("updated_on", O.SqlType("TIMESTAMP"))
     def selfRegToken = column[Option[String]]("selfreg_token")
+    def selfRegDefault = column[Boolean]("selfreg_default")
     def community = column[Long] ("community")
-    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, selfRegToken, community) <> (Organizations.tupled, Organizations.unapply)
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, selfRegToken, selfRegDefault, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -122,7 +127,8 @@ object PersistenceSchema {
   	def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def apiKey = column[String]("api_key")
-    def * = (id, shortname, fullname, description, reportMetadata, apiKey) <> (Domain.tupled, Domain.unapply)
+    def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
+    def * = (id, shortname, fullname, description, reportMetadata, apiKey, tags) <> (Domain.tupled, Domain.unapply)
   }
   val domains = TableQuery[DomainsTable]
 
@@ -215,8 +221,9 @@ object PersistenceSchema {
     def authTokenUsername = column[Option[String]]("auth_token_username")
     def authTokenPassword = column[Option[String]]("auth_token_password")
     def authTokenPasswordType = column[Option[Short]]("auth_token_password_type")
+    def monitorHealth = column[Boolean]("monitor_health")
     def parameter = column[Long]("parameter")
-    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, parameter) <> (models.TestService.tupled, models.TestService.unapply)
+    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, monitorHealth, parameter) <> (models.TestService.tupled, models.TestService.unapply)
   }
   val testServices = TableQuery[TestServicesTable]
 
@@ -310,6 +317,7 @@ object PersistenceSchema {
 		def shortname = column[String]("sname")
 		def fullname = column[String]("fname")
 		def version = column[String]("version")
+    def order = column[Short]("order")
 		def authors = column[Option[String]]("authors")
 		def originalDate = column[Option[String]]("original_date")
 		def modificationDate = column[Option[String]]("modification_date")
@@ -325,7 +333,7 @@ object PersistenceSchema {
     def specReference = column[Option[String]]("spec_reference")
     def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
     def specLink = column[Option[String]]("spec_link")
-    def * = (id :: shortname :: fullname :: version :: authors :: originalDate :: modificationDate :: description :: keywords :: filename :: hasDocumentation :: documentation :: identifier :: hidden :: shared :: domain :: definitionPath :: specReference :: specDescription :: specLink :: HNil).mapTo[TestSuites]
+    def * = (id :: shortname :: fullname :: version :: order :: authors :: originalDate :: modificationDate :: description :: keywords :: filename :: hasDocumentation :: documentation :: identifier :: hidden :: shared :: domain :: definitionPath :: specReference :: specDescription :: specLink :: HNil).mapTo[TestSuites]
 	}
 	val testSuites = TableQuery[TestSuitesTable]
 
@@ -806,11 +814,12 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def version = column[String]("version")
     def identifier = column[String]("identifier")
+    def order = column[Short]("order")
     def specReference = column[Option[String]]("spec_reference")
     def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
     def specLink = column[Option[String]]("spec_link")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: shortname :: fullname :: description :: version :: identifier :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestSuite]
+    def * = (id :: shortname :: fullname :: description :: version :: order :: identifier :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestSuite]
   }
   val conformanceSnapshotTestSuites = TableQuery[ConformanceSnapshotTestSuitesTable]
 
@@ -977,5 +986,27 @@ object PersistenceSchema {
   }
   val processedArchives = TableQuery[ProcessedArchivesTable]
   val insertProcessedArchive = processedArchives returning processedArchives.map(_.id)
+
+  class UserPreferencesTable(tag: Tag) extends Table[UserPreferences](tag, "UserPreferences") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def menuCollapsed = column[Boolean]("menu_collapsed")
+    def statementsCollapsed = column[Boolean]("statements_collapsed")
+    def pageSize = column[Short]("page_size")
+    def homePageType = column[Short]("home_page_type")
+    def user = column[Long] ("user")
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: user :: HNil).mapTo[UserPreferences]
+  }
+  val userPreferences = TableQuery[UserPreferencesTable]
+
+  class UserPreferenceDefaultsTable(tag: Tag) extends Table[UserPreferenceDefaults](tag, "UserPreferenceDefaults") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def menuCollapsed = column[Boolean]("menu_collapsed")
+    def statementsCollapsed = column[Boolean]("statements_collapsed")
+    def pageSize = column[Short]("page_size")
+    def homePageType = column[Short]("home_page_type")
+    def community = column[Long] ("community")
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: community :: HNil).mapTo[UserPreferenceDefaults]
+  }
+  val userPreferenceDefaults = TableQuery[UserPreferenceDefaultsTable]
 
 }

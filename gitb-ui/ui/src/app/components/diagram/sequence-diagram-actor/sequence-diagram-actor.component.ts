@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,36 +15,32 @@
 
 import { Component, Input, OnInit } from '@angular/core';
 import { ActorInfo } from '../actor-info';
+import {ActorRole} from '../../../types/actor-role';
+import {Constants} from '../../../common/constants';
 
 @Component({
     selector: 'app-sequence-diagram-actor',
     templateUrl: './sequence-diagram-actor.component.html',
-    styles: [],
+    styleUrl: './sequence-diagram-actor.component.less',
     standalone: false
 })
 export class SequenceDiagramActorComponent implements OnInit {
 
-  @Input() actor!: string
-  @Input() actorInfo!: ActorInfo[]
+  @Input() actor!: ActorInfo
+  @Input() index!: number
 
   actorForDisplay!: string
 
   constructor() { }
 
   ngOnInit(): void {
-    this.actorForDisplay = this.actor
-    for (let info of this.actorInfo) {
-      if (this.actor == info.id) {
-        if (info.name != undefined) {
-          this.actorForDisplay = info.name
-        } else {
-          this.actorForDisplay = info.id
-        }
-        if (info.role != undefined) {
-          this.actorForDisplay += " (" + info.role + ")"
-        }
-      }
+    if (this.actor.name != undefined) {
+      this.actorForDisplay = this.actor.name
+    } else {
+      this.actorForDisplay = this.actor.id
     }
   }
 
+  protected readonly ActorRole = ActorRole;
+  protected readonly Constants = Constants;
 }

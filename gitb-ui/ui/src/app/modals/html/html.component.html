@@ -4,10 +4,11 @@
     </div>
 }
 <div class="modal-body html-modal">
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
     <div id="content" [innerHtml]="html | sanitizeHtml"></div>
 </div>
 <div class="modal-footer html-modal">
     <div class="btn-toolbar">
-        <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
     </div>
 </div>

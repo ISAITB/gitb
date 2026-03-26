@@ -10,9 +10,10 @@
             type="text"
             class="form-control colour-holder-readonly"
             readonly="readonly"
-            [tooltip]="value"
-            containerClass="shortTooltip"
-            [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"
+            [ngbTooltip]="value"
+            tooltipClass="shortTooltip"
+            [openDelay]="Constants.TOOLTIP_DELAY"
+            [triggers]="'mouseover:mouseout'"
             [style.background]="value"
             (click)="copyColor()">
     } @else {
@@ -23,6 +24,14 @@
             [style.background]="value"
             [colorPicker]="value!"
             [cpOutputFormat]="'hex'"
-            (colorPickerChange)="value = $event">    
+            [cpOKButton]="true"
+            [cpOKButtonText]="'Apply'"
+            [cpOKButtonClass]="'btn btn-secondary'"
+            [cpCancelButton]="true"
+            [cpCancelButtonText]="'Cancel'"
+            [cpCancelButtonClass]="'btn btn-secondary'"
+            [cpSaveClickOutside]="false"
+            [cpAlphaChannel]="'disabled'"
+            (colorPickerChange)="value = $event">
     }
 </div>

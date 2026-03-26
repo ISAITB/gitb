@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {CloseEvent} from './close-event';
 import {TestResultStatusDisplayComponentApi} from './test-result-status-display-component-api';
+import {NgbPopover} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-result-status-display',
     templateUrl: './test-result-status-display.component.html',
-    styleUrls: ['./test-result-status-display.component.less'],
     standalone: false
 })
 export class TestResultStatusDisplayComponent implements TestResultStatusDisplayComponentApi, OnInit {
@@ -33,6 +33,7 @@ export class TestResultStatusDisplayComponent implements TestResultStatusDisplay
   @Input() ignored = false
   @Input() close?: EventEmitter<CloseEvent>
   @Output() open = new EventEmitter<number>()
+  @ViewChild('popover') popover?: NgbPopover
   isOpen = false
 
   iconToShow!: string
@@ -50,6 +51,7 @@ export class TestResultStatusDisplayComponent implements TestResultStatusDisplay
       this.close.subscribe((event) => {
         if (event.idToSkip != this.popupId && this.isOpen) {
           this.isOpen = false
+          this.popover?.close()
         }
       })
     }
@@ -70,6 +72,7 @@ export class TestResultStatusDisplayComponent implements TestResultStatusDisplay
       this.popoverClass = 'result-message-popover undefined'
     }
     this.isOpen = false
+    this.popover?.close()
   }
 
   clicked(event: Event) {
@@ -77,8 +80,10 @@ export class TestResultStatusDisplayComponent implements TestResultStatusDisplay
       event.stopPropagation()
       if (!this.isOpen) {
         this.isOpen = true
+        this.popover?.open()
         this.open.emit(this.popupId)
       } else {
+        this.popover?.close()
         this.isOpen = false
       }
     }

@@ -1,29 +1,35 @@
 <div class="root-container">
-    <div class="summary" (click)="collapsed = !collapsed" [class.hide-border]="!withSummaryBorder">
+    <div class="summary" (click)="collapsed = !collapsed; expanding()" [class.hide-border]="!withSummaryBorder">
         <div class="summary-title"><app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>Details</div>
         <div class="summary-labels">
             @if (errors > 0) {
-                <div class="tag-container">
-                    <app-tag label="fa-solid fa-times-circle" [value]="errors + (errors == 1 ?' error':' errors')" [icon]="true" styleClass="summaryErrors"></app-tag>
+                <div class="ms-2">
+                    <app-tag [label]="Constants.BUTTON_ICON.SEVERITY_ERROR" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="errorsToggled($event)" [value]="errors + (errors == 1 ?' error':' errors')" [icon]="true" styleClass="summaryErrors"></app-tag>
                 </div>
             }
             @if (warnings > 0) {
-                <div class="tag-container">
-                    <app-tag label="fa-solid fa-warning" [value]="warnings + (warnings == 1 ?' warning':' warnings')" [icon]="true" styleClass="summaryWarnings"></app-tag>
+                <div class="ms-2">
+                    <app-tag [label]="Constants.BUTTON_ICON.SEVERITY_WARNING" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="warningsToggled($event)" [value]="warnings + (warnings == 1 ?' warning':' warnings')" [icon]="true" styleClass="summaryWarnings"></app-tag>
                 </div>
             }
             @if (messages > 0) {
-                <div class="tag-container">
-                    <app-tag label="fa-solid fa-info-circle" [value]="messages + (messages == 1 ?' message':' messages')" [icon]="true" styleClass="summaryMessages"></app-tag>
+                <div class="ms-2">
+                    <app-tag [label]="Constants.BUTTON_ICON.SEVERITY_INFO" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="messagesToggled($event)" [value]="messages + (messages == 1 ?' message':' messages')" [icon]="true" styleClass="summaryMessages"></app-tag>
                 </div>
             }
         </div>
     </div>
-    <div [collapse]="collapsed" [isAnimated]="true" (collapsed)="withSummaryBorder = false" (expands)="expanding()">
-        <div class="details">
-            @for (assertionReport of reports; track $index) {
-                <app-test-assertion-report (click)="selectedItem(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
+    <div [ngbCollapse]="collapsed" [animation]="true" (hidden)="withSummaryBorder = false">
+        <div class="report-item-container">
+            @if (reportsToShow.length > 0) {
+                @for (assertionReport of reportsToShow; track assertionReport.trackingId) {
+                    <app-test-assertion-report (click)="selectedItem(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
+                }
+            } @else {
+                <div class="pending-container">
+                    <div class="pending-message">No report items to display.</div>
+                </div>
             }
-        </div>            
+        </div>
     </div>
 </div>

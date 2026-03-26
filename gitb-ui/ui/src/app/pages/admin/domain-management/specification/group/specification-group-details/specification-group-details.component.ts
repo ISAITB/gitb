@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -67,7 +67,7 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
     } else {
       message = "Are you sure you want to delete this "+this.dataService.labelSpecificationGroupLower()+" ("+this.dataService.labelSpecificationInGroupsLower()+" will not be deleted)?"
     }
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.specificationService.deleteSpecificationGroup(this.groupId, withSpecs)
@@ -81,18 +81,20 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
   }
 
 	saveDisabled() {
-    return !(this.textProvided(this.group?.sname) && this.textProvided(this.group?.fname))
+    return !this.loaded || this.savePending || this.deletePending || !(this.textProvided(this.group?.sname) && this.textProvided(this.group?.fname))
   }
 
   saveGroupChanges() {
-    this.savePending = true
-		this.specificationService.updateSpecificationGroup(this.groupId, this.group.sname!, this.group.fname!, this.group.description, this.group.reportMetadata)
-		.subscribe(() => {
-			this.popupService.success(this.dataService.labelSpecificationGroup()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.groupId, type: BreadcrumbType.specificationGroup, label: this.group.sname!})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.specificationService.updateSpecificationGroup(this.groupId, this.group.sname!, this.group.fname!, this.group.description, this.group.reportMetadata)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelSpecificationGroup()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.groupId, type: BreadcrumbType.specificationGroup, label: this.group.sname!})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
   back() {

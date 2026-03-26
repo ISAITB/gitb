@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,7 +18,6 @@ import {ActivatedRoute} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {SystemService} from 'src/app/services/system.service';
-import {find} from 'lodash';
 import {RoutingService} from 'src/app/services/routing.service';
 import {System} from 'src/app/types/system';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
@@ -90,6 +89,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       singleSelection: true,
       singleSelectionPersistent: true,
       filterLabel: 'Select ' + this.dataService.labelSystemLower()+ '...',
+      filterLabelIcon: Constants.BUTTON_ICON.SYSTEM,
       noItemsMessage: 'No ' + this.dataService.labelSystemsLower() + ' available.',
       searchPlaceholder: 'Search ' + this.dataService.labelSystemsLower() + "...",
       replaceSelectedItems: new EventEmitter(),
@@ -113,7 +113,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
         this.latestSnapshotButtonLabel = Constants.LATEST_CONFORMANCE_STATUS_LABEL
       }
       if (snapshotId != undefined) {
-        const referencedSnapshot = find(this.conformanceSnapshots, (snapshot) => snapshot.id == snapshotId)
+        const referencedSnapshot = this.conformanceSnapshots.find((snapshot) => snapshot.id == snapshotId)
         if (referencedSnapshot) {
           this.activeConformanceSnapshot = referencedSnapshot
           this.snapshotButtonLabel = this.activeConformanceSnapshot.label
@@ -140,9 +140,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
         systemToSelect = systems[0]
       } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
         const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
-        systemToSelect = find(this.systems, (sys) => {
-          return sys.id == systemId
-        })
+        systemToSelect = this.systems.find((sys) => sys.id == systemId)
       }
       if (systemToSelect) {
         this.systemSelectionConfig.replaceSelectedItems!.emit([systemToSelect])
@@ -169,7 +167,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
 
   getConformanceStatements() {
     this.restoreState()
-    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE }
+    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
     if (this.initialPagingStatus != undefined) {
       pagingEvent = { targetPage: this.initialPagingStatus.currentPage, targetPageSize: this.initialPagingStatus.pageSize }
       this.initialPagingStatus = undefined

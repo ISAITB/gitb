@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -24,24 +24,29 @@ public class DeferredMessagingReport extends MessagingReport {
 
     private final CompletableFuture<MessagingReport> deferredReport;
     private final CallbackData callbackData;
+    private final DeferredTask<?> deferredTask;
 
     public DeferredMessagingReport() {
-        this(null, null);
+        this(null, null, null);
     }
 
     public DeferredMessagingReport(CompletableFuture<MessagingReport> deferredReport) {
-        this(deferredReport, null);
+        this(deferredReport, null, null);
     }
 
     public DeferredMessagingReport(CallbackData callbackData) {
-        this(null, callbackData);
+        this(null, callbackData, null);
     }
 
-    private DeferredMessagingReport(CompletableFuture<MessagingReport> deferredReport, CallbackData callbackData) {
+    public DeferredMessagingReport(CallbackData callbackData, DeferredTask<?> deferredTask) {
+        this(null, callbackData, deferredTask);
+    }
+
+    private DeferredMessagingReport(CompletableFuture<MessagingReport> deferredReport, CallbackData callbackData, DeferredTask<?> deferredTask) {
         super(null);
         this.deferredReport = deferredReport;
         this.callbackData = callbackData;
-
+        this.deferredTask = deferredTask;
     }
 
     @Override
@@ -60,5 +65,9 @@ public class DeferredMessagingReport extends MessagingReport {
 
     public CallbackData getCallbackData() {
         return callbackData;
+    }
+
+    public DeferredTask<?> getDeferredTask() {
+        return deferredTask;
     }
 }

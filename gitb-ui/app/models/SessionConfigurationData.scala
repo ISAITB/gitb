@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -23,7 +23,8 @@ case class SessionConfigurationData(statementParameters: Option[List[TypedActorC
                                     domainParameters: Option[TypedActorConfiguration],
                                     organisationParameters: Option[TypedActorConfiguration],
                                     systemParameters: Option[TypedActorConfiguration],
-                                    testServiceParameters: Option[List[TypedActorConfiguration]]) {
+                                    testServiceParameters: Option[List[TypedActorConfiguration]],
+                                    predefinedVariables: Option[TypedActorConfiguration]) {
 
   def apply(aggregatedConfiguration: util.List[ActorConfiguration]): Unit = {
     import scala.jdk.CollectionConverters._
@@ -41,6 +42,9 @@ case class SessionConfigurationData(statementParameters: Option[List[TypedActorC
     }
     if (testServiceParameters.nonEmpty) {
       aggregatedConfiguration.addAll(testServiceParameters.get.map(toActorConfiguration).asJava)
+    }
+    if (predefinedVariables.nonEmpty) {
+      aggregatedConfiguration.add(toActorConfiguration(predefinedVariables.get))
     }
   }
 

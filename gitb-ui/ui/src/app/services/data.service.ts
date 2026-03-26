@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -47,11 +47,12 @@ import {ConformanceStatementItem} from '../types/conformance-statement-item';
 import {EndpointParameter} from '../types/endpoint-parameter';
 import {CookieOptions, CookieService} from 'ngx-cookie-service';
 import {LocationData} from '../types/location-data';
-import {TestCaseTag} from '../types/test-case-tag';
+import {TagData} from '../types/tag-data';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
 import {MenuItemStatusChange} from '../types/menu-item-status-change';
 import {MenuItem} from '../types/menu-item.enum';
 import {MenuItemStatus} from '../types/menu-item-status.enum';
+import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
 
 @Injectable({
   providedIn: 'root'
@@ -80,21 +81,35 @@ export class DataService {
   public cookiePath?: string
   private locationData?: LocationData
   private loginOption?: string
-
+  public defaultPagingTableSize: number = Constants.TABLE_PAGE_SIZE
   public latestPageChange?: PageChange
+  public menuVisibility: boolean = false
+  public conformanceStatementDetailVisibility: boolean = false
+  public homePageType: number = Constants.HOME_PAGE_TYPE.LANDING_PAGE
+  private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
+
   private onBannerChangeSource = new Subject<string>()
   public onBannerChange$ = this.onBannerChangeSource.asObservable()
   private onPageChangeSource = new Subject<PageChange>()
   public onPageChange$ = this.onPageChangeSource.asObservable()
   private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
   public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
-  private onUserLoaded = new ReplaySubject<void>()
+  private onUserLoaded = new ReplaySubject<void>(1)
   public onUserLoaded$ = this.onUserLoaded.asObservable()
-  private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>()
+  private onCommunityLoaded = new ReplaySubject<void>(1)
+  public onCommunityLoaded$ = this.onCommunityLoaded.asObservable()
+  private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>(1)
   public onMenuItemStatusChange$ = this.onMenuItemStatusChangeSource.asObservable()
-  private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
-  private buttonPopupOpenSource = new Subject<any>()
-  public buttonPopupOpenSource$ = this.buttonPopupOpenSource.asObservable()
+  private onButtonPopupOpenSource = new Subject<any>()
+  public onButtonPopupOpen$ = this.onButtonPopupOpenSource.asObservable()
+  private onPageSizeChangeSource = new Subject<number>()
+  public onPageSizeChange$ = this.onPageSizeChangeSource.asObservable()
+  private menuVisibilityChangeSource = new Subject<boolean>()
+  public onMenuVisibilityChange$ = this.menuVisibilityChangeSource.asObservable()
+  private conformanceStatementDetailVisibilityChangeSource = new Subject<boolean>()
+  public onConformanceStatementDetailVisibilityChange$ = this.conformanceStatementDetailVisibilityChangeSource.asObservable()
+  private preparingForShutdownSource = new ReplaySubject<boolean>(1)
+  public onPreparingForShutdown$ = this.preparingForShutdownSource.asObservable()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
@@ -102,7 +117,8 @@ export class DataService {
   private static STORAGE_LOCATION = "com.itb.location"
   private static STORAGE_USER = "com.itb.user"
   private static STORAGE_USER_OPTIONAL = "com.itb.userOptional"
-  private static STORAGE_LOGIN_OPTION = "com.itb.loginOption"
+  private static COOKIE_LOGIN_OPTION = "LOGIN_OPTION"
+  private static COOKIE_REQUESTED_URL = "ITB_REQUESTED_URL"
 
   constructor(
     private readonly cookieService: CookieService
@@ -127,6 +143,7 @@ export class DataService {
     this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
     this.cookiePath = undefined
+    this.defaultPagingTableSize = Constants.TABLE_PAGE_SIZE
     if (full) {
       this.clearAllDisplayStates()
       this.clearTestsToExecute()
@@ -153,11 +170,14 @@ export class DataService {
       userGuideCA: (this.configuration?.userGuideCA != undefined)?this.configuration!.userGuideCA:'',
       userGuideTA: (this.configuration?.userGuideTA != undefined)?this.configuration!.userGuideTA:'',
       ssoEnabled: (this.configuration?.ssoEnabled != undefined)?this.configuration!.ssoEnabled:false,
+      ssoWithNativeLogin: (this.configuration?.ssoWithNativeLogin != undefined)?this.configuration!.ssoWithNativeLogin:false,
       ssoInMigration: (this.configuration?.ssoInMigration != undefined)?this.configuration!.ssoInMigration:false,
       demosEnabled: (this.configuration?.demosEnabled != undefined)?this.configuration!.demosEnabled:false,
       demosAccount: (this.configuration?.demosAccount != undefined)?this.configuration!.demosAccount:-1,
       registrationEnabled: (this.configuration?.registrationEnabled != undefined)?this.configuration!.registrationEnabled:false,
       startupWizardEnabled: (this.configuration?.startupWizardEnabled != undefined)?this.configuration!.startupWizardEnabled:false,
+      usageTipsEnabled: (this.configuration?.usageTipsEnabled != undefined)?this.configuration!.usageTipsEnabled:false,
+      usageTipsDisabledForScreens: (this.configuration?.usageTipsDisabledForScreens != undefined)?this.configuration!.usageTipsDisabledForScreens:[],
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
@@ -165,7 +185,8 @@ export class DataService {
       hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
       conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,
       headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH",
-      welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:''
+      welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:'',
+      preparingForShutdown: this.configuration?.preparingForShutdown === true
     }
   }
 
@@ -191,6 +212,10 @@ export class DataService {
     this.isDomainUser = (user.role == Constants.USER_ROLE.DOMAIN_USER)
     this.isSystemAdmin = (user.role == Constants.USER_ROLE.SYSTEM_ADMIN)
     this.isCommunityAdmin = (user.role == Constants.USER_ROLE.COMMUNITY_ADMIN)
+    this.defaultPagingTableSize = user.preferences?.pageSize??Constants.TABLE_PAGE_SIZE
+    this.menuVisibility = user.preferences?.menuCollapsed === false // Collapsed by default
+    this.conformanceStatementDetailVisibility = user.preferences?.statementsCollapsed !== true // Not collapsed by default
+    this.homePageType = user.preferences?.homePageType??Constants.HOME_PAGE_TYPE.LANDING_PAGE
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
@@ -271,7 +296,12 @@ export class DataService {
     }
     setTimeout(() => {
       this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && community.allowCommunityView
+      this.signalCommunityUpdated()
     })
+  }
+
+  signalCommunityUpdated() {
+    this.onCommunityLoaded.next()
   }
 
   createLabels(customLabels?: TypedLabelConfig[]): {[key: number]: TypedLabelConfig} {
@@ -570,6 +600,11 @@ export class DataService {
     }
   }
 
+  base64ToString(base64: string) {
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
   dataUrlFromBase64(base64: string, mimeType: string) {
     return "data:"+mimeType+";base64,"+base64
   }
@@ -657,7 +692,7 @@ export class DataService {
 
   b64toBlob(b64Data: string, contentType = '', sliceSize = 512): Blob {
     const byteCharacters = atob(b64Data)
-    let byteArrays: Uint8Array[] = []
+    let byteArrays: BlobPart[] = []
     let offset = 0
     while (offset < byteCharacters.length) {
       let slice = byteCharacters.slice(offset, offset + sliceSize)
@@ -1105,8 +1140,8 @@ export class DataService {
     this.tests = undefined
   }
 
-  isDataURL(configuration: string) {
-   return Constants.DATA_URL_REGEX.test(configuration)
+  isDataURL(str: string) {
+    return str.startsWith('data:') && str.slice(0, 50).includes(';base64,');
   }
 
 	getFileInfo(blob: Blob, filename?: string): Observable<{type: string, extension: string, filename: string}> {
@@ -1224,6 +1259,16 @@ export class DataService {
     if (items) {
       for (let item of items) {
         idSet[item.id] = true
+      }
+    }
+    return idSet
+  }
+
+  asIdSetFromIds(ids: number[]|undefined): NumberSet {
+    const idSet: NumberSet = {}
+    if (ids) {
+      for (let id of ids) {
+        idSet[id] = true
       }
     }
     return idSet
@@ -1510,7 +1555,7 @@ export class DataService {
 
   private closeGroup(currentGroup: ConformanceTestCase[], groups: Map<number, ConformanceTestCaseGroup>|undefined) {
     if (currentGroup.length > 0) {
-      let groupTag: TestCaseTag|undefined
+      let groupTag: TagData|undefined
       if (currentGroup[0].group != undefined && groups) {
         const groupInfo = groups.get(currentGroup[0].group)!
         if (groupInfo.name) {
@@ -1658,7 +1703,7 @@ export class DataService {
     return this.locationData
   }
 
-  private removeLocationData(): void {
+  removeLocationData(): void {
     this.locationData = {}
     if (sessionStorage) {
       sessionStorage.removeItem(DataService.STORAGE_LOCATION)
@@ -1688,24 +1733,17 @@ export class DataService {
 
   recordLoginOption(option: string) {
     this.loginOption = option
-    if (sessionStorage) {
-      sessionStorage.setItem(DataService.STORAGE_LOGIN_OPTION, option)
-    }
+    this.cookieService.set(DataService.COOKIE_LOGIN_OPTION, option, undefined, "/")
   }
 
   retrieveLoginOption(): string|undefined {
     let optionToReturn: string|undefined
     if (this.loginOption) {
       optionToReturn = this.loginOption
-      this.loginOption = undefined
-      if (sessionStorage) {
-        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
-      }
-    } else if (sessionStorage) {
-      const option = sessionStorage.getItem(DataService.STORAGE_LOGIN_OPTION)
+    } else {
+      const option = this.cookieService.get(DataService.COOKIE_LOGIN_OPTION)
       if (option) {
         optionToReturn = option
-        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
       }
     }
     return optionToReturn
@@ -1713,16 +1751,14 @@ export class DataService {
 
   clearLoginOption() {
     this.loginOption = undefined
-    if (sessionStorage) {
-      sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
-    }
+    this.cookieService.delete(DataService.COOKIE_LOGIN_OPTION, "/")
   }
 
   applyRequestedRoute(): boolean {
     let hasRequestedRoute = false
-    const requestedUrl = this.cookieService.get("ITB_REQUESTED_URL")
+    const requestedUrl = this.cookieService.get(DataService.COOKIE_REQUESTED_URL)
     if (requestedUrl && requestedUrl.length > 0) {
-      this.cookieService.delete("ITB_REQUESTED_URL", "/")
+      this.cookieService.delete(DataService.COOKIE_REQUESTED_URL, "/")
       let requestedPath: string|undefined
       if (requestedUrl.indexOf("://") != -1) {
         // This is a complete URL.
@@ -1891,7 +1927,7 @@ export class DataService {
   }
 
   signalButtonPopup(source: any) {
-    this.buttonPopupOpenSource.next(source)
+    this.onButtonPopupOpenSource.next(source)
   }
 
   clearAllDisplayStates() {
@@ -1906,6 +1942,116 @@ export class DataService {
       keySet.forEach(key => {
         sessionStorage.removeItem(key)
       })
+    }
+  }
+
+  addControlSubmitBehaviourToCodeEditor(editor: CodemirrorComponent) {
+    if (editor.codeMirror) {
+      editor.codeMirror.on('keydown', (cm: any, event: KeyboardEvent) => {
+        // Detect Ctrl + Enter
+        if (event.ctrlKey && event.key === 'Enter') {
+          event.preventDefault();
+          // Find nearest form and submit
+          const form = (cm.getWrapperElement() as HTMLElement).closest('form');
+          if (form) {
+            form.requestSubmit(); // triggers ngSubmit
+          }
+        }
+      });
+    }
+  }
+
+  generateApiKeyValue() {
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    const next = () => chars[bytes[i++] % 36];
+    let i = 0;
+    return (
+      Array.from({ length: 8 }, next).join('') + 'X' +
+      Array.from({ length: 4 }, next).join('') + 'X' +
+      Array.from({ length: 4 }, next).join('') + 'X' +
+      Array.from({ length: 4 }, next).join('') + 'X' +
+      Array.from({ length: 12 }, next).join('')
+    );
+  }
+
+  setDefaultPageSize(pageSize: number) {
+    if (this.defaultPagingTableSize != pageSize) {
+      this.defaultPagingTableSize = pageSize
+      this.onPageSizeChangeSource.next(pageSize)
+    }
+  }
+
+  setMenuVisibility(visible: boolean) {
+    if (this.menuVisibility != visible) {
+      this.menuVisibility = visible
+      this.menuVisibilityChangeSource.next(visible)
+    }
+  }
+
+  setHomePageType(homePageType: number) {
+    this.homePageType = homePageType
+  }
+
+  setConformanceStatementDetailVisibility(visible: boolean) {
+    if (this.conformanceStatementDetailVisibility != visible) {
+      this.conformanceStatementDetailVisibility = visible
+      this.conformanceStatementDetailVisibilityChangeSource.next(visible)
+    }
+  }
+
+  togglePrepareForShutdown(enable: boolean) {
+    this.configuration.preparingForShutdown = enable
+    this.preparingForShutdownSource.next(this.configuration.preparingForShutdown)
+  }
+
+  serializeTags(tags: TagData[]|undefined): string | undefined {
+    if (tags && tags.length > 0) {
+      const cleanTags = tags.map(tag => {
+        const copy = {...tag} as TagData;
+        delete copy.id;
+        return copy;
+      })
+      return JSON.stringify(cleanTags);
+    }
+    return undefined;
+  }
+
+  retrieveCachedDomainTags(id: number): TagData[]|undefined {
+    return this.retrieveCachedTags(id, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_ID, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_VALUE)
+  }
+
+  retrieveCachedCommunityTags(id: number): TagData[]|undefined {
+    return this.retrieveCachedTags(id, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_ID, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_VALUE)
+  }
+
+  cacheDomainTags(id: number, tags: TagData[]|undefined) {
+    return this.cacheTags(id, tags, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_ID, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_VALUE)
+  }
+
+  cacheCommunityTags(id: number, tags: TagData[]|undefined) {
+    return this.cacheTags(id, tags, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_ID, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_VALUE)
+  }
+
+  private retrieveCachedTags(id: number, idKey: string, valueKey: string): TagData[]|undefined {
+    let cachedTags: TagData[]|undefined
+    if (sessionStorage) {
+      const cachedIdEntry = sessionStorage.getItem(idKey)
+      if (cachedIdEntry != null && Number(cachedIdEntry) === id) {
+        // Cached tags found and match what we need
+        const cachedTagsEntry = sessionStorage.getItem(valueKey)
+        if (cachedTagsEntry) {
+          cachedTags = JSON.parse(cachedTagsEntry)
+        }
+      }
+    }
+    return cachedTags
+  }
+
+  private cacheTags(id: number, tags: TagData[]|undefined, idKey: string, valueKey: string) {
+    if (sessionStorage) {
+      sessionStorage.setItem(idKey, id.toString())
+      sessionStorage.setItem(valueKey, JSON.stringify((tags == undefined)?[]:tags))
     }
   }
 

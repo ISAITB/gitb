@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -30,6 +30,7 @@ export interface Organisation extends EntityWithId {
     templateName?: string
     adminOrganization: boolean
     selfRegistrationToken?: string
+    selfRegistrationDefault: boolean
     community: number
 
     landingPages?: LandingPage

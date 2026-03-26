@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -23,9 +23,9 @@ import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {LandingPage} from 'src/app/types/landing-page';
 import {Constants} from 'src/app/common/constants';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {PreviewLandingPageComponent} from '../preview-landing-page/preview-landing-page.component';
 import {ValidationState} from 'src/app/types/validation-state';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-landing-page',
@@ -51,7 +51,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly popupService: PopupService,
     public readonly dataService: DataService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -75,17 +75,19 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   saveDisabled() {
-    return !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
+    return this.savePending || !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
   }
 
   createLandingPage() {
-    if (this.page.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (this.page.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
+          .subscribe(() => {
+            this.doCreate()
+          })
+      } else {
         this.doCreate()
-      })
-    } else {
-      this.doCreate()
+      }
     }
   }
 
@@ -123,11 +125,9 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   preview() {
-    this.modalService.show(PreviewLandingPageComponent, {
-      initialState: {
-        previewContent: this.page.content!
-      }
-    })
+    const modal = this.modalService.open(PreviewLandingPageComponent, { modalDialogClass: 'landingPagePreview' })
+    const modalInstance = modal.componentInstance as PreviewLandingPageComponent
+    modalInstance.previewContent = this.page.content!
   }
 
 }

@@ -4,12 +4,12 @@
         <div class="card-title"><app-collapsing-icon [isCollapsed]="!showFiltering || !initialised"></app-collapsing-icon>Filters</div>
         <div class="btn-toolbar">
           <div class="pending-icon"><app-pending-block [pending]="showFiltering && !initialised"></app-pending-block></div>
-          <button type="button" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending" [disable]="filterState.updatePending || filterState.updateDisabled">Refresh</button>
-          <button type="button" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending || filterState.updateDisabled">Clear filters</button>
+          <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending" [disable]="filterState.updatePending || filterState.updateDisabled">Refresh</button>
+          <button type="button" [labelIcon]="Constants.BUTTON_ICON.FILTER_CLEAR" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disable]="filterState.updatePending || filterState.updateDisabled">Clear filters</button>
         </div>
     </div>
   }
-  <div [collapse]="!showFiltering || !initialised" [isAnimated]="true" (collapsed)="toggleFilterCollapsedFinished(true)" (expands)="toggleFilterCollapsedFinished(false)">
+  <div [ngbCollapse]="!showFiltering || !initialised" [animation]="true" (hidden)="toggleFilterCollapsedFinished(true)">
     <div class="table-responsive session-filter">
       @if (filterDefined(Constants.FILTER_TYPE.DOMAIN) || filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || filterDefined(Constants.FILTER_TYPE.ACTOR) || filterDefined(Constants.FILTER_TYPE.TEST_SUITE) || filterDefined(Constants.FILTER_TYPE.TEST_CASE) || filterDefined(Constants.FILTER_TYPE.COMMUNITY) || filterDefined(Constants.FILTER_TYPE.ORGANISATION) || filterDefined(Constants.FILTER_TYPE.SYSTEM)) {
         <div class="filterRow">
@@ -101,10 +101,7 @@
             <div class="filterCell timeFilter">
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.START_TIME]}}</span></div>
               <div class="filterValue">
-                <div class="input-group">
-                  <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                  <button class="btn btn-secondary" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
-                </div>
+                  <app-date-range [(ngModel)]="startDateModel" (ngModelChange)="applyTimeFiltering()"></app-date-range>
               </div>
             </div>
           }
@@ -112,10 +109,7 @@
             <div class="filterCell timeFilter">
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.END_TIME]}}</span></div>
               <div class="filterValue">
-                <div class="input-group">
-                  <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                  <button class="btn btn-secondary" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
-                </div>
+                  <app-date-range [(ngModel)]="endDateModel" (ngModelChange)="applyTimeFiltering()"></app-date-range>
               </div>
             </div>
           }
@@ -140,6 +134,7 @@
                     <app-custom-property-filter
                       [propertyFilter]="propFilter"
                       [properties]="availableOrganisationProperties"
+                      [embedded]="embedded"
                       (onApply)="applyOrganisationProperty()"
                       (onClear)="clearOrganisationProperty($event)"
                       (onCancel)="cancelOrganisationProperty()">
@@ -148,7 +143,9 @@
                 }
                 <div class="property-filters-control" [ngClass]="{'padded': organisationProperties && organisationProperties.length > 0}">
                   @if (!addingOrganisationProperty || loadingOrganisationProperties) {
-                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" class="btn btn-secondary" (click)="addOrganisationProperty()">Add</button>
+                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" class="btn btn-secondary" (click)="addOrganisationProperty()" [icon]="true" ngbTooltip="Add" tooltipClass="shortTooltip" container="body" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                        <span><i [class]="Constants.BUTTON_ICON.NEW"></i></span>
+                    </button>
                   }
                 </div>
               </div>
@@ -167,6 +164,7 @@
                     <app-custom-property-filter
                       [propertyFilter]="propFilter"
                       [properties]="availableSystemProperties"
+                      [embedded]="embedded"
                       (onApply)="applySystemProperty()"
                       (onClear)="clearSystemProperty($event)"
                       (onCancel)="cancelSystemProperty()">
@@ -175,7 +173,9 @@
                 }
               <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
                   @if (!addingSystemProperty || loadingSystemProperties) {
-                      <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()">Add</button>
+                      <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()" [icon]="true" ngbTooltip="Add" tooltipClass="shortTooltip" container="body" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                          <span><i [class]="Constants.BUTTON_ICON.NEW"></i></span>
+                      </button>
                   }
               </div>
               </div>

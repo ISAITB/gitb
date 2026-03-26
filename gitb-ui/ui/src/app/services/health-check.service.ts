@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -21,6 +21,9 @@ import {ROUTES} from '../common/global';
 import {WebSocketService} from './web-socket.service';
 import {WebSocketSubject} from 'rxjs/webSocket';
 import {HealthStatus} from '../types/health-status';
+import {TestServiceBasicInfo} from '../types/test-service-basic-info';
+import {TestServiceWithParameter} from '../types/test-service-with-parameter';
+import {ServiceCallResult} from '../types/service-call-result';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +34,26 @@ export class HealthCheckService {
     private readonly restService: RestService,
     private readonly webSocketService: WebSocketService
   ) { }
+
+  getTestServicesForHealthCheck(domainId: number|undefined): Observable<TestServiceBasicInfo[]> {
+    return this.restService.get<TestServiceBasicInfo[]>({
+      path: ROUTES.controllers.DomainParameterService.getTestServicesForHealthCheck().url,
+      authenticate: true,
+      params: {
+        domain: domainId
+      }
+    })
+  }
+
+  getCommunityTestServicesForHealthCheck(communityId: number, domainId: number|undefined): Observable<TestServiceBasicInfo[]> {
+    return this.restService.get<TestServiceBasicInfo[]>({
+      path: ROUTES.controllers.DomainParameterService.getCommunityTestServicesForHealthCheck(communityId).url,
+      authenticate: true,
+      params: {
+        domain: domainId
+      }
+    })
+  }
 
   runPostLoginChecks(): Observable<HealthStatus> {
     return this.restService.get<HealthStatus>({
@@ -146,4 +169,15 @@ export class HealthCheckService {
       return this.checkUserInterfaceCommunicationErrorDetails()
     }
   }
+
+  testTestServiceById(serviceId: number, domainId: number) {
+    return this.restService.post<HealthInfo>({
+      path: ROUTES.controllers.HealthCheckService.testTestServiceById(domainId).url,
+      authenticate: true,
+      data: {
+        id: serviceId
+      }
+    })
+  }
+
 }

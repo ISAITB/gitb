@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -29,6 +29,7 @@ import {CommunityService} from 'src/app/services/community.service';
 import {LandingPageService} from 'src/app/services/landing-page.service';
 import {LegalNoticeService} from 'src/app/services/legal-notice.service';
 import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
 
 @Component({
     selector: 'app-organisation',
@@ -89,7 +90,7 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   }
 
   override isShowUsersTab() {
-    return (this.dataService.isVendorAdmin || this.dataService.isVendorUser) && !this.dataService.isDemoAccount()
+    return (this.dataService.isVendorAdmin && this.dataService.community?.allowUserManagement == true) && !this.dataService.isDemoAccount()
   }
 
   override isApiInfoVisible() {
@@ -100,16 +101,19 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     this.routingService.ownOrganisationBreadcrumbs()
   }
 
-  override getUsers() {
-    return this.accountService.getVendorUsers()
+  override getUsers(pagingInfo: PagingEvent) {
+    return this.accountService.getVendorUsers(pagingInfo.targetPage, pagingInfo.targetPageSize)
       .pipe(
         map((data) => {
-          return data.map((user) => {
-            if (user.id == this.dataService.user!.id) {
-              user.name = user.name + ' (You)'
-            }
-            return user
-          })
+          return {
+            data: data.data.map((user) => {
+              if (user.id == this.dataService.user!.id) {
+                user.name = user.name + ' (You)'
+              }
+              return user
+            }),
+            count: data.count
+          }
         })
       )
   }

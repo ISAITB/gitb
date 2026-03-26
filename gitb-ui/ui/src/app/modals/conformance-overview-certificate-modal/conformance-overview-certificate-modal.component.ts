@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,7 +14,6 @@
  */
 
 import {Component, ElementRef, EventEmitter, Input, ViewChild} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {ReportService} from 'src/app/services/report.service';
@@ -24,6 +23,7 @@ import {BaseComponent} from 'src/app/pages/base-component.component';
 import {Observable} from 'rxjs';
 import {ConformanceOverviewMessage} from 'src/app/pages/admin/user-management/community-reports/conformance-overview-message';
 import {ConformanceService} from 'src/app/services/conformance.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-overview-certificate-modal',
@@ -52,13 +52,15 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
 
   constructor(
     public readonly dataService: DataService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly reportService: ReportService,
     private readonly conformanceService: ConformanceService
   ) { super() }
 
   expandModal(): void {
-    this.modalInstance.setClass("conformanceCertificatePreview")
+    this.modalInstance.update({
+      modalDialogClass: "conformanceCertificatePreview"
+    })
     this.maximised = true
     if (this.editorContainerRef) {
       const editorBottom = this.editorContainerRef.nativeElement.getBoundingClientRect().bottom
@@ -148,14 +150,14 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
     exportObservable.subscribe((data) => {
       const blobData = new Blob([data], {type: contentType});
       saveAs(blobData, fileName);
-      this.modalInstance.hide()
+      this.modalInstance.dismiss()
     }).add(() => {
       this.exportPending = false
     })
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
 }

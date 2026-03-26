@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -194,7 +194,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
     }
 
 	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
-		return context.actorOf(props(SendStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+		return create(SendStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 
 	@Override

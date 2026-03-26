@@ -16,7 +16,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - image: "isaitb/gitb-mysql:1.28.5"
+        - image: "isaitb/gitb-mysql:1.29.0"
           imagePullPolicy: "IfNotPresent"
           name: itb-mysql
           livenessProbe:

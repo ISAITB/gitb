@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -219,7 +219,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy,
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.LANDING_PAGE] = 'Landing pages'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.LEGAL_NOTICE] = 'Legal notices'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ERROR_TEMPLATE] = 'Error templates'
-    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.TRIGGER] = 'Triggers'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.TRIGGER] = 'Webhooks'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.RESOURCE] = 'Resources'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION] = this.dataService.labelOrganisations()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION_USER] = 'Users'

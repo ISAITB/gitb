@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,7 +16,6 @@
 package persistence.cache
 
 import config.Configurations
-import exceptions.{ErrorCodes, InvalidTokenException}
 import models.Token
 import persistence.cache.Keys._
 
@@ -45,26 +44,29 @@ object TokenCache {
     }
   }
 
-  def checkAccessToken(accessToken:String): Long = {
+  def checkAccessToken(accessToken:String): Option[Long] = {
     val act_key =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + accessToken
     val redisClient = Redis.getClient()
     try {
-      val userData:Option[String] = redisClient.get(act_key)
-      if(userData.isEmpty){
-        throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Invalid access token")
+      val userData: Option[String] = redisClient.get(act_key)
+      if (userData.isEmpty) {
+        None
       } else {
         val userDataParts = userData.get.split(':')
         if (userDataParts.length > 1) {
           val sessionCreationTimeStamp = userDataParts(1).toLong
           if (sessionMaxAgeMillis > 0 && (System.currentTimeMillis() - sessionCreationTimeStamp > sessionMaxAgeMillis)) {
             redisClient.del(act_key)
-            throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Expired access token")
+            None
+          } else {
+            // Reset the token expiry.
+            redisClient.expire(act_key, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME)
+            // Return user ID.
+            Some(userDataParts(0).toLong)
           }
+        } else {
+          None
         }
-        // Reset the token expiry.
-        redisClient.expire(act_key, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME)
-        // Return user ID.
-        userDataParts(0).toLong
       }
     } finally {
       Redis.releaseClient(redisClient)

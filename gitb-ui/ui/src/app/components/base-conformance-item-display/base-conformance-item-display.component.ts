@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, NgZone, OnDestroy, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, NgZone, OnDestroy, ViewChild} from '@angular/core';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {DataService} from 'src/app/services/data.service';
@@ -38,6 +38,8 @@ import {ConformanceStatementSearchResult} from '../../types/conformance-statemen
 import {PagingPlacement} from '../paging-controls/paging-placement';
 import {DisplayState} from '../../types/display-state';
 import {PagingStatus} from '../paging-controls/paging-status';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 
 @Component({
     template: '',
@@ -52,6 +54,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   @ViewChild('selectorControls') selectorControls?: ElementRef
   @ViewChild('conformanceItemPage') conformanceItemPage?: ElementRef
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChild('showStatementFilter') showStatementFilter?: CheckBoxOptionPanelComponentApi
 
   protected static SHOW_SUCCEEDED = '0'
   protected static SHOW_FAILED = '1'
@@ -244,6 +247,22 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
         this.clearDisplayState(this.displayStateKey())
       }
     }
+  }
+
+  @HostListener('document:keyup.escape')
+  documentEscape(): void {
+    this.showStatementFilter?.documentEscape()
+    this.conformanceItemTree?.documentEscape()
+  }
+
+  @HostListener('document:click', ['$event'])
+  documentClick(event: Event): void {
+    this.showStatementFilter?.documentClick(event)
+    this.conformanceItemTree?.documentClick(event)
+  }
+
+  manageTestStatusOpened(source: TestStatusBaseApi) {
+    this.conformanceItemTree?.manageTestStatusOpened(source)
   }
 
   protected abstract displayStateKey(): string

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import {HealthCardInfo} from '../../types/health-card-info';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {HealthStatus} from '../../types/health-status';
 import {BaseComponent} from '../../pages/base-component.component';
 import {MarkdownService} from 'ngx-markdown';
 import {marked} from 'marked';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 import Parser = marked.Parser;
 
 @Component({
@@ -31,11 +32,12 @@ import Parser = marked.Parser;
 export class ServiceHealthModalComponent extends BaseComponent implements OnInit {
 
   @Input() serviceInfo!: HealthCardInfo
-  @Output() updated = new EventEmitter<void>();
+  @Input() updated!: EventEmitter<void>
+
   checkPending = false
 
   constructor(
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     private readonly markdownService: MarkdownService,
   ) {
     super()
@@ -62,7 +64,7 @@ export class ServiceHealthModalComponent extends BaseComponent implements OnInit
   }
 
   close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   checkStatus() {
@@ -76,4 +78,5 @@ export class ServiceHealthModalComponent extends BaseComponent implements OnInit
     })
   }
 
+  protected readonly Constants = Constants;
 }

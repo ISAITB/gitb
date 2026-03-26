@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,18 +16,21 @@
 @import "../../../styles/less/_common.less";
 
 .table-paging-controls {
+    min-height: 40px;
     border-top: 2px solid @gray-dark-1;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0.5rem;
+    padding: 0 5px;
     flex-wrap: wrap;
     &.in-card {
-        margin: 8px -16px -16px -16px;
+        margin: 0px -16px -16px -16px;
+        padding: 16px;
         border-top-width: 0;
     }
     &.in-tab {
-        margin: 8px -8px -8px -8px;
+        margin: 4px -8px -8px -8px;
+        padding: 0.5rem;
         border-top-width: 0;
     }
     .paging-controls {
@@ -72,6 +75,6 @@
     .summary {
         font-size: 0.765625rem;
         opacity: 0.8;
-        margin: 0.25rem;
+        margin-right: 0.1rem;
     }
 }

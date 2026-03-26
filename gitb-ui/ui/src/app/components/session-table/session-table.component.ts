@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,12 +13,22 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {BsModalService} from 'ngx-bootstrap/modal';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnInit,
+  Output,
+  QueryList,
+  Renderer2,
+  ViewChild,
+  ViewChildren
+} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {ReportService} from 'src/app/services/report.service';
-import {RoutingService} from 'src/app/services/routing.service';
 import {TestResultForDisplay} from 'src/app/types/test-result-for-display';
 import {BaseTableComponent} from '../base-table/base-table.component';
 import {SessionData} from '../diagram/test-session-presentation/session-data';
@@ -29,10 +39,11 @@ import {TestService} from 'src/app/services/test.service';
 import {TestResultReport} from 'src/app/types/test-result-report';
 import {LogLevel} from 'src/app/types/log-level';
 import {TestInteractionData} from 'src/app/types/test-interaction-data';
-import {filter, find} from 'lodash';
 import {PopupService} from 'src/app/services/popup.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 import {NavigationControlsConfig} from '../navigation-controls/navigation-controls-config';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {UserInteractionInput} from '../../types/user-interaction-input';
 
 @Component({
     selector: '[app-session-table]',
@@ -51,6 +62,8 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() showNavigationControls = true
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChild("tableContainer") tableContainer?: ElementRef
+  @ViewChildren("sessionContainer") sessionContainers?: QueryList<ElementRef>
 
   Constants = Constants
   columnCount = 0
@@ -61,16 +74,18 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   constructor(
     private readonly reportService: ReportService,
-    private readonly modalService: BsModalService,
-    private readonly routingService: RoutingService,
+    private readonly modalService: NgbModal,
     private readonly testService: TestService,
     public readonly dataService: DataService,
-    private readonly popupService: PopupService
+    private readonly popupService: PopupService,
+    private renderer: Renderer2
   ) { super() }
 
   ngOnInit(): void {
     for (let column of this.columns) {
-      column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
+      if (column.headerClass == undefined) {
+        column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
+      }
       if (column.sortable) {
         column.headerClass = column.headerClass + ' sortable'
       }
@@ -78,14 +93,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     this.splitColumns()
     this.columnCount = this.columns.length + 1 // PLus one for expandable.
     if (this.checkboxEnabled) this.columnCount += 1
-    if (this.actionVisible || this.operationsVisible || this.exportVisible) this.columnCount += 1
-    if (this.operationsVisible) {
-      // Session termination
-      this.deleteVisibleForRow = (row: TestResultForDisplay) => {
-        // This is needed because we may have refreshed a session in a table displaying active sessions that has completed.
-        return row.endTime == undefined
-      }
-    }
+    if (this.actionVisible || this.operationsVisible || this.exportVisible || this.optionsVisible) this.columnCount += 1
     if (this.refreshComplete) {
       this.refreshComplete.subscribe((report) => {
         this.refreshTestSession(report)
@@ -108,6 +116,29 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.updateSessionWidths();
+  }
+
+  updateSessionWidthsWrapper() {
+    setTimeout(() => {
+      this.updateSessionWidths()
+    }, 1)
+  }
+
+  private updateSessionWidths() {
+    if (!this.tableContainer || !this.sessionContainers) return;
+
+    const tableWidth = this.tableContainer.nativeElement.offsetWidth;
+    const padding = 16; // 2 * 8px
+    const targetWidth = tableWidth - padding;
+
+    this.sessionContainers.forEach(sessionEl => {
+      this.renderer.setStyle(sessionEl.nativeElement, 'width', `${targetWidth}px`);
+    });
+  }
+
   diagramReady(test: SessionData) {
     if (test.diagramState?.interactions) {
       test.diagramState.interactions = this.extractApplicableInteractions(test.diagramState.interactions)
@@ -115,6 +146,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     test.diagramLoaded = true
     this.updateButtonBadges(test)
     setTimeout(() => {
+      this.updateSessionWidths()
       test.hideLoadingIcon = true
       test.diagramExpanded = true
     }, 200)
@@ -179,7 +211,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   private extractApplicableInteractions(interactions: TestInteractionData[]) {
-    return filter(interactions, (interaction) => !interaction.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
+    return interactions.filter((interaction) => !interaction.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
   }
 
   private refreshTestSession(testReport: TestResultReport|undefined) {
@@ -201,23 +233,20 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         if (stepId == undefined) {
           interactionData = row.diagramState.interactions[0]
         } else {
-          interactionData = find(row.diagramState.interactions, (interaction) => interaction.stepId == stepId)
+          interactionData = row.diagramState.interactions.find((interaction) => interaction.stepId == stepId)
         }
         if (interactionData) {
-          const modalRef = this.modalService.show(ProvideInputModalComponent, {
-            class: 'modal-lg',
-            initialState: {
-              interactions: interactionData.interactions,
-              inputTitle: interactionData.inputTitle,
-              sessionId: row.session
-            }
-          })
-          modalRef.content!.result.subscribe((result) => {
+          const modalRef = this.modalService.open(ProvideInputModalComponent, { size: 'lg' })
+          const modalInstance = modalRef.componentInstance as ProvideInputModalComponent
+          modalInstance.interactions = interactionData.interactions
+          modalInstance.inputTitle = interactionData.inputTitle!
+          modalInstance.sessionId = row.session
+          modalRef.closed.subscribe((result: UserInteractionInput[]) => {
             if (result != undefined) {
               this.testService.provideInput(row.session, interactionData!.stepId, result, interactionData!.admin)
-              .subscribe(() => {
-                this.refresh(row)
-              })
+                .subscribe(() => {
+                  this.refresh(row)
+                })
             }
           })
         }
@@ -249,113 +278,11 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         )
       }
       logsObservable.subscribe((logs) => {
-        this.modalService.show(SessionLogModalComponent, {
-          class: 'modal-lg',
-          initialState: {
-            messages: logs
-          }
-        })
+        const modal = this.modalService.open(SessionLogModalComponent, { size: 'lg' })
+        const modalInstance = modal.componentInstance as SessionLogModalComponent
+        modalInstance.messages = logs
       })
     }
-  }
-
-  toSystem(row: TestResultForDisplay) {
-    if (row.organizationId! == this.dataService.vendor!.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnSystemDetails(row.systemId!)
-    } else {
-      this.routingService.toSystemDetails(row.communityId!, row.organizationId!, row.systemId!)
-    }
-  }
-
-  toStatement(row: TestResultForDisplay) {
-    if (row.organizationId! == this.dataService.vendor?.id) {
-      this.routingService.toOwnConformanceStatement(row.organizationId!, row.systemId!, row.actorId!)
-    } else {
-      this.routingService.toConformanceStatement(row.organizationId!, row.systemId!, row.actorId!, row.communityId!)
-    }
-  }
-
-  toOrganisation(row: TestResultForDisplay) {
-    if (row.organizationId! == this.dataService.vendor!.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnOrganisationDetails()
-    } else {
-      // Another organisation
-      this.routingService.toOrganisationDetails(row.communityId!, row.organizationId!)
-    }
-  }
-
-  toCommunity(row: TestResultForDisplay) {
-    this.routingService.toCommunity(row.communityId!)
-  }
-
-  toDomain(row: TestResultForDisplay) {
-    this.routingService.toDomain(row.domainId!)
-  }
-
-  toSpecification(row: TestResultForDisplay) {
-    this.routingService.toSpecification(row.domainId!, row.specificationId!)
-  }
-
-  toActor(row: TestResultForDisplay) {
-    this.routingService.toActor(row.domainId!, row.specificationId!, row.actorId!)
-  }
-
-  toTestSuite(row: TestResultForDisplay) {
-    this.routingService.toTestSuite(row.domainId!, row.specificationId!, row.testSuiteId!)
-  }
-
-  toTestCase(row: TestResultForDisplay) {
-    this.routingService.toTestCase(row.domainId!, row.specificationId!, row.testSuiteId!, row.testCaseId!)
-  }
-
-  showToCommunity(row: TestResultForDisplay) {
-    return row.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
-  }
-
-  showToOrganisation(row: TestResultForDisplay) {
-    return row.organizationId != undefined
-  }
-
-  showToSystem(row: TestResultForDisplay) {
-    return this.showToOrganisation(row) && row.systemId != undefined
-  }
-
-  showToDomain(row: TestResultForDisplay) {
-    return row.domainId != undefined && (
-      this.dataService.isSystemAdmin || (
-        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
-      )
-    )
-  }
-
-  showToSpecification(row: TestResultForDisplay) {
-    return this.showToDomain(row) && row.specificationId != undefined
-  }
-
-  showToActor(row: TestResultForDisplay) {
-    return this.showToSpecification(row) && row.actorId != undefined
-  }
-
-  showToTestSuite(row: TestResultForDisplay) {
-    return this.showToSpecification(row) && row.testSuiteId != undefined
-  }
-
-  showToTestCase(row: TestResultForDisplay) {
-    return this.showToTestSuite(row) && row.testCaseId != undefined
-  }
-
-  showToStatement(row: TestResultForDisplay) {
-    return row.organizationId != undefined && row.systemId != undefined && row.communityId != undefined && row.actorId != undefined && row.specificationId != undefined
-  }
-
-  showPartyNavigation(row: TestResultForDisplay) {
-    return this.showToCommunity(row) || this.showToOrganisation(row) || this.showToSystem(row)
-  }
-
-  showSpecificationNavigation(row: TestResultForDisplay) {
-    return this.showToDomain(row) || this.showToSpecification(row) || this.showToActor(row)
   }
 
   refresh(row: TestResultForDisplay) {
@@ -368,6 +295,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   toggleDiagramCollapsedFinished(session: string, value: boolean) {
     setTimeout(() => {
       this.diagramCollapsedFinished[session] = value
+      this.updateSessionWidths()
     }, 1)
   }
 

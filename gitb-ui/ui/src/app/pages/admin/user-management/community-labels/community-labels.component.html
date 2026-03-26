@@ -2,20 +2,21 @@
     <div class="card mb-0">
         <div class="card-header">
             <div class="card-title">Custom community labels</div>
+            <div app-community-tag-indicator></div>
         </div>
         <form>
             <div class="card-body">
                 <div class="alert alert-info rounded">
                     <span>Override the default labels of Test Bed concepts to align them with your community. The labels you provide will be used in all screens, reports and exports.</span>
                 </div>
-                <table id="labelTable" class="table mb-0">
+                <table id="labelTable" class="table mb-0 extra-padding">
                     <thead>
                         <tr>
-                            <th><span>Concept</span><span class="spaced-left" [tooltip]="'The Test Bed concept to describe with a custom label.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Override?</span><span class="spaced-left" [tooltip]="'Whether or not to override the default label.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Singular form</span><span class="spaced-left" [tooltip]="'The label when referring to a single element.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Plural form</span><span class="spaced-left" [tooltip]="'The label when referring to a multiple elements.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Fixed casing?</span><span class="spaced-left" [tooltip]="'Whether or not the label\'s casing should never be adapted.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Concept</span><span class="spaced-left" [ngbTooltip]="'The Test Bed concept to describe with a custom label.'" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span></th>
+                            <th><span>Override?</span><span class="spaced-left" [ngbTooltip]="'Whether or not to override the default label.'" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span></th>
+                            <th><span>Singular form</span><span class="spaced-left" [ngbTooltip]="'The label when referring to a single element.'" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span></th>
+                            <th><span>Plural form</span><span class="spaced-left" [ngbTooltip]="'The label when referring to a multiple elements.'" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span></th>
+                            <th><span>Fixed casing?</span><span class="spaced-left" [ngbTooltip]="'Whether or not the label\'s casing should never be adapted.'" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -25,7 +26,7 @@
                                     <td>
                                         <div>
                                             <span>{{labelTypeLabel(label.labelType)}}</span>
-                                            <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
+                                            <span class="spaced-left" [ngbTooltip]="labelTypeDescription[label.labelType]"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                                         </div>
                                     </td>
                                     <td>
@@ -36,15 +37,19 @@
                                         <td><div><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div></td>
                                         <td><input type="checkbox" class="form-check-input" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></td>
                                     } @else {
-                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div></td>
-                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div></td>
+                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="readonly"/></div></td>
+                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="readonly"/></div></td>
                                         <td><input type="checkbox" class="form-check-input" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></td>
                                     }
                                 </tr>
                             }
                         } @else {
                             <tr>
-                                <td colspan="5" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                <td colspan="5" class="td-data-loading">
+                                    <div class="cell-content">
+                                        <app-pending-block></app-pending-block>
+                                    </div>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -52,8 +57,8 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="!loaded || saveDisabled()" [pending]="busy">Save</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancel()">Back</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="save()" [disable]="!loaded || saveDisabled()" [pending]="busy">Save</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancel()">Back</button>
                 </div>
             </div>
         </form>

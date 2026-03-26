@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -22,12 +22,13 @@ import com.gitb.repository.ITestCaseRepository;
 import com.google.gson.JsonParser;
 import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.resource.InputStreamSource;
-import com.networknt.schema.resource.SchemaLoader;
-import com.networknt.schema.resource.UriSchemaLoader;
+import com.networknt.schema.resource.IriResourceLoader;
+import com.networknt.schema.resource.ResourceLoader;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -35,11 +36,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class LocalSchemaResolver implements SchemaLoader {
+public class LocalSchemaResolver implements ResourceLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalSchemaResolver.class);
 
-    private final UriSchemaLoader uriSchemaLoader = new UriSchemaLoader();
     private final ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
     private final TestCaseContext testCaseContext;
     private final SharedSchemaInfo sharedSchemaInfo;
@@ -52,12 +52,12 @@ public class LocalSchemaResolver implements SchemaLoader {
     }
 
     @Override
-    public InputStreamSource getSchema(AbsoluteIri absoluteIri) {
+    public InputStreamSource getResource(AbsoluteIri absoluteIri) {
         String idToCheck = schemaIdToUse(absoluteIri.toString());
         Optional<ResourceInfo> schemaInfo = testCaseContext.getCachedResource(idToCheck, cacheLoader);
         if (schemaInfo.isEmpty()) {
             LOG.debug("Schema with URI {} not found locally. Looking up remotely.", absoluteIri);
-            return uriSchemaLoader.getSchema(absoluteIri);
+            return IriResourceLoader.getInstance().getResource(absoluteIri);
         } else {
             LOG.debug("Schema with URI {} found locally.", absoluteIri);
             return () -> repository.getTestArtifact(schemaInfo.get().testSuiteId().orElse(null), sharedSchemaInfo.testCaseId(), schemaInfo.get().resourcePath());
@@ -72,14 +72,17 @@ public class LocalSchemaResolver implements SchemaLoader {
         return () -> {
             Map<String, ResourceInfo> entries = new HashMap<>();
             sharedSchemaInfo.schemaPaths().forEach(resourcePath -> {
-                InputStream resourceStream  = repository.getTestArtifact(sharedSchemaInfo.testSuiteId().orElse(null), sharedSchemaInfo.testCaseId(), resourcePath);
-                if (resourceStream != null) {
-                    String schemaId = readSchemaId(sharedSchemaInfo.testSuiteId(), resourcePath, resourceStream);
-                    if (schemaId != null) {
-                        entries.put(schemaIdToUse(schemaId), new ResourceInfo(sharedSchemaInfo.testSuiteId(), resourcePath));
+                try (InputStream resourceStream  = repository.getTestArtifact(sharedSchemaInfo.testSuiteId().orElse(null), sharedSchemaInfo.testCaseId(), resourcePath)) {
+                    if (resourceStream != null) {
+                        String schemaId = readSchemaId(sharedSchemaInfo.testSuiteId(), resourcePath, resourceStream);
+                        if (schemaId != null) {
+                            entries.put(schemaIdToUse(schemaId), new ResourceInfo(sharedSchemaInfo.testSuiteId(), resourcePath));
+                        }
+                    } else {
+                        throw new IllegalStateException("Unable to find shared schema at path [%s]%s".formatted(resourcePath, testSuiteReferenceForError(sharedSchemaInfo.testSuiteId())));
                     }
-                } else {
-                    throw new IllegalStateException("Unable to find shared schema at path [%s]%s".formatted(resourcePath, testSuiteReferenceForError(sharedSchemaInfo.testSuiteId())));
+                } catch (IOException e) {
+                    throw new IllegalStateException("IO error when reading shared schema at path [%s]%s".formatted(resourcePath, testSuiteReferenceForError(sharedSchemaInfo.testSuiteId())), e);
                 }
             });
             return entries;

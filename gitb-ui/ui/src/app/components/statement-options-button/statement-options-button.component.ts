@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -21,10 +21,11 @@ import {DataService} from '../../services/data.service';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {PreviewBadgeModalComponent} from '../../modals/preview-badge-modal/preview-badge-modal.component';
 import {ConformanceIds} from '../../types/conformance-ids';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {RoutingService} from '../../services/routing.service';
 import {StatementOptionsButtonApi} from './statement-options-button-api';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-statement-options-button',
@@ -38,6 +39,7 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
   @Input() communityId?: number
   @Input() snapshotId?: number
   @Input() pending?: boolean
+  @Input() inTable? = false
   @Output() opening = new EventEmitter<T>()
   @Output() export = new EventEmitter<{ item: T, format: 'xml'|'pdf' }>()
 
@@ -59,7 +61,7 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
   constructor(
     private readonly conformanceService: ConformanceService,
     private readonly dataService: DataService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly routingService: RoutingService
   ) {}
 
@@ -71,6 +73,14 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     if ((source == undefined || (this.item.systemId != source.systemId || this.item.actorId != source.actorId)) && this.optionButton) {
       this.optionButton.close()
     }
+  }
+
+  documentEscape(): void {
+    this.optionButton?.documentEscape()
+  }
+
+  documentClick(event: Event): void {
+    this.optionButton?.documentClick(event)
   }
 
   loadAvailableOptionsFactory() {
@@ -93,39 +103,40 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     return showBadgeOptions$.pipe(
       map((showBadgeOptions) => {
         this.showBadgeOptions = showBadgeOptions
-        const optionState: CheckboxOption[][] = [
-          [
-            {key: StatementOptionsButtonComponent.EXPORT_PDF, label: 'Download report', default: true, iconClass: 'fa-solid fa-file-pdf'},
-            {key: StatementOptionsButtonComponent.EXPORT_XML, label: 'Download report as XML', default: true, iconClass: 'fa-solid fa-file-lines'}
-          ]
-        ]
+        const optionState: CheckboxOption[][] = []
+        const reportOptions: CheckboxOption[] = []
+        reportOptions.push({key: StatementOptionsButtonComponent.EXPORT_PDF, label: 'Download report', default: true, iconClass: Constants.BUTTON_ICON.REPORT_PDF});
+        if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+          reportOptions.push({key: StatementOptionsButtonComponent.EXPORT_XML, label: 'Download report as XML', default: true, iconClass: Constants.BUTTON_ICON.REPORT_XML});
+        }
+        optionState.push(reportOptions)
         const viewOptions: CheckboxOption[] = []
         if (this.item.systemId != undefined && this.item.systemId >= 0) {
-          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SYSTEM, label: `View ${this.dataService.labelSystemLower()}`, default: true, iconClass: 'fa-solid fa-cube'})
+          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SYSTEM, label: `View ${this.dataService.labelSystemLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
         }
         if (this.organisationId != undefined && this.organisationId >= 0) {
-          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ORGANISATION, label: `View ${this.dataService.labelOrganisationLower()}`, default: true, iconClass: 'fa-solid fa-building'})
+          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ORGANISATION, label: `View ${this.dataService.labelOrganisationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
         }
         if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
           if (this.communityId != undefined && this.communityId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_COMMUNITY, label: 'View community', default: true, iconClass: 'fa-solid fa-people-group'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_COMMUNITY, label: 'View community', default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (this.item.actorId != undefined && this.item.actorId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ACTOR, label: `View ${this.dataService.labelActorLower()}`, default: true, iconClass: 'fa-solid fa-circle-user'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ACTOR, label: `View ${this.dataService.labelActorLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (this.item.specificationId != undefined && this.item.specificationId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SPECIFICATION, label: `View ${this.dataService.labelSpecificationLower()}`, default: true, iconClass: 'fa-solid fa-list-check'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SPECIFICATION, label: `View ${this.dataService.labelSpecificationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (this.item.domainId != undefined && this.item.domainId >= 0 && (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined))) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_DOMAIN, label: `View ${this.dataService.labelDomainLower()}`, default: true, iconClass: 'fa-solid fa-sitemap'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_DOMAIN, label: `View ${this.dataService.labelDomainLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (viewOptions.length > 0) {
             optionState.push(viewOptions)
           }
           if (showBadgeOptions) {
             optionState.push([
-              {key: StatementOptionsButtonComponent.COPY_BADGE_URL, label: 'Copy badge URL', default: true, iconClass: 'fa-solid fa-award'},
-              {key: StatementOptionsButtonComponent.PREVIEW_BADGE, label: 'Preview badge', default: true, iconClass: 'fa-solid fa-award'}
+              {key: StatementOptionsButtonComponent.COPY_BADGE_URL, label: 'Copy badge URL', default: true, iconClass: Constants.BUTTON_ICON.COPY_LINK},
+              {key: StatementOptionsButtonComponent.PREVIEW_BADGE, label: 'Preview badge', default: true, iconClass: Constants.BUTTON_ICON.PREVIEW}
             ])
           }
         }
@@ -157,15 +168,13 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
         this.pending = false
       })
     } else if (event[StatementOptionsButtonComponent.PREVIEW_BADGE]) {
-      this.modalService.show(PreviewBadgeModalComponent, {
-        initialState: {
-          config: {
-            systemId: this.item.systemId,
-            actorId: this.item.actorId,
-            snapshotId: this.snapshotId
-          }
-        }
-      })
+      const modal = this.modalService.open(PreviewBadgeModalComponent)
+      const modalInstance = modal.componentInstance as PreviewBadgeModalComponent
+      modalInstance.config = {
+        systemId: this.item.systemId,
+        actorId: this.item.actorId,
+        snapshotId: this.snapshotId
+      }
     }
   }
 
@@ -202,4 +211,5 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     this.routingService.toDomain(this.item.domainId)
   }
 
+  protected readonly Constants = Constants;
 }

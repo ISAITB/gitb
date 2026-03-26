@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,7 +18,7 @@ package managers.export
 import com.gitb.xml.export.{ReportType, SelfRegistrationRestriction => _, _}
 import config.Configurations
 import managers._
-import managers.`export`.ImportCompleteManager.SandboxImportResultWithHash
+import managers.`export`.ImportCompleteManager.{SandboxImportResultWithHash, logger}
 import managers.testsuite.TestSuitePaths
 import managers.triggers.TriggerHelper
 import models.Enums.ImportItemType.ImportItemType
@@ -47,6 +47,7 @@ import scala.util.Using
 object ImportCompleteManager {
 
   case class SandboxImportResultWithHash(result: Option[SandboxImportResult], hash: Option[String])
+  private val logger = LoggerFactory.getLogger("ImportCompleteManager")
 
 }
 
@@ -72,10 +73,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       importPreviewManager: ImportPreviewManager,
                                       repositoryUtils: RepositoryUtils,
                                       reportManager: ReportManager,
+                                      userManager: UserManager,
                                       dbConfigProvider: DatabaseConfigProvider)
                                      (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
-
-  private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
   import dbConfig.profile.api._
 
@@ -496,6 +496,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
+  private def toModelUserPreferenceDefaults(community: com.gitb.xml.export.Community, communityId: Long): Option[UserPreferenceDefaults] = {
+    Option(community.getDefaultUserPreferences).map(x => UserPreferenceDefaults(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), communityId))
+  }
+
   private def toModelConformanceOverCertificateSettingsWithMessages(exportedSettings: com.gitb.xml.export.ConformanceOverviewCertificateSettings, communityId: Long, ctx: ImportContext): ConformanceOverviewCertificateWithMessages = {
     val settings = models.ConformanceOverviewCertificate(
       0L, Option(exportedSettings.getTitle), exportedSettings.isAddTitle, exportedSettings.isAddMessage, exportedSettings.isAddResultOverview,
@@ -591,7 +595,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, domainId: Long, testSuiteFileName: String, hasTestCases: Boolean, testSuiteDefinitionPath: Option[String], shared: Boolean): models.TestSuites = {
-    models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
+    models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getOrder).map(_.toShort).getOrElse(0), Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
       testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases, shared, domainId, testSuiteDefinitionPath,
       Option(data.getSpecReference), Option(data.getSpecDescription), Option(data.getSpecLink)
@@ -714,6 +718,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       Option(data.getAuthBasicUsername), Option(data.getAuthBasicPassword).map(decrypt(importSettings, _)),
       Option(data.getAuthTokenUsername), Option(data.getAuthTokenPassword).map(decrypt(importSettings, _)),
       Option(data.getAuthTokenPasswordType).map(toModelTestServiceAuthTokenPasswordType(_).id.toShort),
+      Option(data.isMonitorHealth).getOrElse(true),
       parameterId
     )
   }
@@ -848,6 +853,20 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def toModelOrganisationUser(data: com.gitb.xml.export.OrganisationUser, userId: Option[Long], userRole: Short, organisationId: Long, importSettings: ImportSettings): models.Users = {
     toModelUser(data, userId, userRole, organisationId, importSettings)
+  }
+
+  private def toModelUserPreferences(data: com.gitb.xml.export.User): Option[models.UserPreferences] = {
+    Option(data.getPreferences).map(x => {
+      models.UserPreferences(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), 0L)
+    })
+  }
+
+  private def toModelHomePageType(data: com.gitb.xml.export.HomePageType): Short = {
+    val homePageType = data match {
+      case com.gitb.xml.export.HomePageType.CONFORMANCE_DASHBOARD => models.Enums.HomePageType.CONFORMANCE_DASHBOARD
+      case _ => models.Enums.HomePageType.LANDING_PAGE
+    }
+    homePageType.id.toShort
   }
 
   private def toModelUser(data: com.gitb.xml.export.User, userId: Option[Long], userRole: Short, organisationId: Long, importSettings: ImportSettings): models.Users = {
@@ -1323,7 +1342,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   (data: com.gitb.xml.export.SystemAdministrator, _: ImportItem) => {
                     if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase) && systemAdminOrganisationId.isDefined) {
                       referenceUserEmails += exportedUser.getEmail.toLowerCase
-                      PersistenceSchema.insertUser += toModelSystemAdministrator(data, None, systemAdminOrganisationId.get, ctx.importSettings)
+                      val user = toModelSystemAdministrator(data, None, systemAdminOrganisationId.get, ctx.importSettings)
+                      val preferences = toModelUserPreferences(data)
+                      userManager.createUserInternal(user, preferences, Constants.DefaultCommunityId)
                     } else {
                       DBIO.successful(())
                     }
@@ -1334,10 +1355,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       to be existing). Not updating the email avoids the need to check that the email is unique with respect
                       to other users.
                      */
-                    val query = for {
-                      user <- PersistenceSchema.users.filter(_.id === targetKey.toLong)
-                    } yield (user.name, user.password, user.onetimePassword)
-                    query.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword)
+                    userManager.updateUserInternal(targetKey.toLong, data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, None, toModelUserPreferences(data))
                   }
                 )
               )
@@ -1556,11 +1574,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               domainManager.createDomainForImport(models.Domain(0L,
                 shortNameToUse,
                 fullNameToUse,
-                Option(data.getDescription), Option(data.getReportMetadata), apiKey))
+                Option(data.getDescription), Option(data.getReportMetadata), apiKey, Option(data.getTags)))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, _: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), Some(apiKey))
+              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), Some(apiKey), Option(data.getTags))
             },
             (_: com.gitb.xml.export.Domain, targetKey: Any, _: ImportItem) => {
               // Record this in case we need to do a global cleanup.
@@ -2393,11 +2411,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     Option(data.getSupportEmail),
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                     data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement, data.getSelfRegistrationSettings.isForceOrganisationTokenInput,
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
+                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement,
-                    apiKey, None, domainId
-                  ), checkApiKeyUniqueness = true)
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports,
+                    apiKey, None, Option(data.getTags), domainId
+                  ), checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, 0L))
                 },
                 (data: com.gitb.xml.export.Community, _: String, _: ImportItem) => {
                   val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
@@ -2405,10 +2424,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                     data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement, data.getSelfRegistrationSettings.isForceOrganisationTokenInput,
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
+                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, Some(apiKey),
-                    domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports,
+                    Some(apiKey), domainId, checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, targetCommunity.get.id), overrideExistingUserPreferences = false, Option(data.getTags), ctx.onSuccessCalls
                   )
                 },
                 None,
@@ -2782,7 +2802,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     (data: com.gitb.xml.export.CommunityAdministrator, _: ImportItem) => {
                       if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
                         referenceUserEmails += exportedUser.getEmail.toLowerCase
-                        PersistenceSchema.insertUser += toModelAdministrator(data, None, communityAdminOrganisationId.get, ctx.importSettings)
+                        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx).get
+                        val user = toModelAdministrator(data, None, communityAdminOrganisationId.get, ctx.importSettings)
+                        val preferences = toModelUserPreferences(data)
+                        userManager.createUserInternal(user, preferences, communityId)
                       } else {
                         DBIO.successful(())
                       }
@@ -2793,10 +2816,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                         to be existing). Not updating the email avoids the need to check that the email is unique with respect
                         to other users.
                        */
-                      val query = for {
-                        user <- PersistenceSchema.users.filter(_.id === targetKey.toLong)
-                      } yield (user.name, user.password, user.onetimePassword)
-                      query.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword)
+                      userManager.updateUserInternal(targetKey.toLong, data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, None, toModelUserPreferences(data))
                     }
                   )
                 )
@@ -2837,7 +2857,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                               getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                               getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                               getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                              template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), Option(data.getSelfRegistrationToken), item.parentItem.get.targetKey.get.toLong
+                              template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), Option(data.getSelfRegistrationToken), data.isSelfRegDefault, item.parentItem.get.targetKey.get.toLong
                             ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
                             checkApiKeyUniqueness = true, setDefaultPropertyValues = false, ctx.onSuccessCalls
                           )
@@ -2853,7 +2873,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                           getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                           getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                           getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                          None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), Some(Option(data.getSelfRegistrationToken)), None, None,
+                          None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), Some(Option(data.getSelfRegistrationToken)), Some(data.isSelfRegDefault), None, None,
                           copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
                           checkApiKeyUniqueness = true, ctx.onSuccessCalls
                         )
@@ -2889,7 +2909,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                         (data: com.gitb.xml.export.OrganisationUser, item: ImportItem) => {
                           if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
                             referenceUserEmails += exportedUser.getEmail.toLowerCase
-                            PersistenceSchema.insertUser += toModelOrganisationUser(data, None, toModelUserRole(data.getRole), item.parentItem.get.targetKey.get.toLong, ctx.importSettings)
+                            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx).get
+                            val user = toModelOrganisationUser(data, None, toModelUserRole(data.getRole), item.parentItem.get.targetKey.get.toLong, ctx.importSettings)
+                            val preferences = toModelUserPreferences(data)
+                            userManager.createUserInternal(user, preferences, communityId)
                           } else {
                             DBIO.successful(())
                           }
@@ -2900,8 +2923,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                             to be existing). Not updating the email avoids the need to check that the email is unique with respect
                             to other users.
                            */
-                          val q = for { u <- PersistenceSchema.users.filter(_.id === targetKey.toLong) } yield (u.name, u.password, u.onetimePassword, u.role)
-                          q.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, toModelUserRole(data.getRole))
+                          userManager.updateUserInternal(targetKey.toLong, data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, Some(toModelUserRole(data.getRole)), toModelUserPreferences(data))
                         }
                       )
                     )
@@ -3111,7 +3133,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                 val key = s"${systemId}_${relatedActorId.get}"
                                 if (!hasExisting(ImportItemType.Statement, key, ctx)) {
                                   for {
-                                    _ <- systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, setDefaultParameterValues = false)
+                                    _ <- systemManager.defineConformanceStatementIfNotExisting(systemId, relatedSpecId.get, relatedActorId.get, setDefaultParameterValues = false)
                                     key <- DBIO.successful(key)
                                   } yield key
                                 } else {

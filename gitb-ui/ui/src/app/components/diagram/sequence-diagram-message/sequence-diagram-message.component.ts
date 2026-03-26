@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,18 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { ActorInfo } from '../actor-info';
-import { StepData } from '../step-data';
-import { map, max, flatten } from 'lodash'
-import { ReportService } from 'src/app/services/report.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { TestStepReportModalComponent } from '../test-step-report-modal/test-step-report-modal.component';
-import { HtmlService } from 'src/app/services/html.service';
-import { DiagramEvents } from '../diagram-events';
-import { Subscription } from 'rxjs';
-import { StepReport } from '../report/step-report';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ActorInfo} from '../actor-info';
+import {StepData} from '../step-data';
+import {ReportService} from 'src/app/services/report.service';
+import {TestStepReportModalComponent} from '../test-step-report-modal/test-step-report-modal.component';
+import {HtmlService} from 'src/app/services/html.service';
+import {DiagramEvents} from '../diagram-events';
+import {Subscription} from 'rxjs';
+import {StepReport} from '../report/step-report';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-sequence-diagram-message',
@@ -46,11 +45,12 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   eventSubscription?: Subscription
   expanded = true
   hoveringTitle = false
-  hoveringReport = false
+  containerMessage = false
+  reportableMessage = false
 
   constructor(
     private readonly reportService: ReportService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly htmlService: HtmlService
   ) { }
 
@@ -60,6 +60,8 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
     this.classForMessageFixed = this.calculateFixedMessageClass()
     this.classForWrapper = 'message-wrapper msg-offset-'+this.message.fromIndex+' '+this.message.type+'-type'
     this.classForReverseOffset = 'reverse-offset-'+this.message.fromIndex
+    this.containerMessage = this.message.type == 'loop' || this.message.type == 'decision' || this.message.type == 'flow' || this.message.type == 'group'
+    this.reportableMessage = this.message.type == 'exit' || this.message.type == 'verify' || this.message.type == 'process'
     if (this.message.type == 'loop') {
       this.onSequenceChange(false)
       this.eventSubscription = this.events.subscribeToLoopSequenceUpdate((event: {stepId: string}) => {
@@ -119,29 +121,29 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
 
   calculateDepth(message: StepData): number {
     if (message.type == 'loop') {
-      let childDepths = map(message.steps, this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = message.steps.map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'group') {
-      let childDepths = map(message.steps, this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = message.steps.map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'decision') {
       let childDepths: number[]
       if (message.else != undefined) {
-        childDepths = map((message.then!.concat(message.else)), this.calculateDepth.bind(this))
+        childDepths = message.then!.concat(message.else).map((step) => this.calculateDepth(step))
       } else {
-        childDepths = map(message.then, this.calculateDepth.bind(this))
+        childDepths = message.then!.map((step) => this.calculateDepth(step))
       }
-      return (max(childDepths)!) + 1
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'flow') {
-      let childDepths = map((flatten(message.threads)), this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = ((message.threads == undefined)?[]:message.threads.flat()).map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'interact') {
-      let childDepths = map(message.interactions, this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = message.interactions!.map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'instruction' || message.type == 'request') {
       return 1
     } else {
-      return message.level!
+      return 1
     }
   }
 
@@ -157,7 +159,7 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   }
 
   showReport() {
-    if (this.message.report != undefined) {
+    if (this.message.report != undefined && !this.containerMessage) {
       if (this.message.report.tcInstanceId != undefined && this.message.report.path != undefined && this.message.report.result == undefined) {
         this.reportService.getTestStepReport(this.message.report.tcInstanceId, this.message.report.path)
         .subscribe((report) => {
@@ -170,14 +172,11 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   }
 
   showTestStepReportModal(report: StepReport) {
-    this.modalService.show(TestStepReportModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        step: this.message,
-        report: report,
-        sessionId: this.message.report!.tcInstanceId
-      }
-    })
+    const modal = this.modalService.open(TestStepReportModalComponent, { modalDialogClass: 'modal-lg' })
+    const modalInstance = modal.componentInstance as TestStepReportModalComponent
+    modalInstance.step = this.message
+    modalInstance.report = report
+    modalInstance.sessionId = this.message.report!.tcInstanceId!
   }
 
   showStepDocumentation(documentation: string) {

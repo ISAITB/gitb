@@ -131,6 +131,12 @@
                                         <td class="cell-value">${endTime}</td>
                                     </#if>
                                 </tr>
+                                <#if sessionId??>
+                                    <tr>
+                                        <td class="cell-label">Session ID:</td>
+                                        <td class="cell-value"<#if endTime??> colspan="3"</#if>>${sessionId}</td>
+                                    </tr>
+                                </#if>
                             </table>
                         </div>
                     </div>

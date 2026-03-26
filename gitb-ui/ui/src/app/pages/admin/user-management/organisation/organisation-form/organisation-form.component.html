@@ -1,130 +1,123 @@
-<div class="row">
-    @if (readonly) {
-        <div class="col-10 offset-1">
-            <div class="row">
-                <label class="col-3 col-form-label text-end">Short name:</label>
-                <div class="col-7"><p class="form-control-plaintext">{{organisation.sname}}</p></div>
-            </div>
-            <div class="row mt-3">
-                <label class="col-3 col-form-label text-end">Full name:</label>
-                <div class="col-7"><p class="form-control-plaintext">{{organisation.fname}}</p></div>
-            </div>
-            @if (selfRegTokenEnabled && organisation.selfRegistrationToken != undefined) {
-                <div class="row mt-3">
-                    <label class="col-3 col-form-label text-end">Self-registration token:</label>
-                    <div class="col-7"><p class="form-control-plaintext"><app-copy-enabled-text [value]="organisation.selfRegistrationToken"></app-copy-enabled-text></p></div>
-                </div>
-            }
-        </div>
-    } @else {
-        <div class="col-10 offset-1">
-            <div class="row">
-                <label class="col-3 col-form-label text-end" for="sname">* Short name:</label>
-                <div class="col-7"><input id="sname" name="sname" [(ngModel)]="organisation.sname" class="form-control" type="text"></div>
-                <div app-tooltip class="col-auto" [tbTooltip]="'A short name to refer to the '+dataService.labelOrganisationLower()+' used in selection lists and tabular displays where space is limited.'"></div>
-            </div>
-            <div class="row mt-3">
-                <label class="col-3 col-form-label text-end" for="fname">* Full name:</label>
-                <div class="col-7"><input id="fname" name="fname" [(ngModel)]="organisation.fname" class="form-control" type="text"></div>
-                <div app-tooltip class="col-auto" [tbTooltip]="'The full name of the '+dataService.labelOrganisationLower()+' used in reports and detail screens.'"></div>
-            </div>
-            @if (showAdminInfo || showLandingPage) {
-                <div class="row mt-3">
-                    <label class="col-3 col-form-label text-end" for="landingPage">Landing page:</label>
-                    <div class="col-7">
-                        <app-multi-select-filter [disable]="landingPages == undefined || landingPages.length == 0" [config]="landingPageSelectionConfig" (apply)="landingPageSelected($event)"></app-multi-select-filter>
-                    </div>
-                    <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific landing page for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
-                </div>
-                @if (showAdminInfo) {
-                    <div class="row mt-3">
-                        <label class="col-3 col-form-label text-end" for="legalNotice">Legal notice:</label>
-                        <div class="col-7">
-                            <app-multi-select-filter [disable]="legalNotices == undefined || legalNotices.length == 0" [config]="legalNoticeSelectionConfig" (apply)="legalNoticeSelected($event)"></app-multi-select-filter>
-                        </div>
-                        <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific legal notice for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
-                    </div>
-                    <div class="row mt-3">
-                        <label class="col-3 col-form-label text-end" for="template">Error template:</label>
-                        <div class="col-7">
-                            <app-multi-select-filter [disable]="errorTemplates == undefined || errorTemplates.length == 0" [config]="errorTemplateSelectionConfig" (apply)="errorTemplateSelected($event)"></app-multi-select-filter>
-                        </div>
-                        <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific error template for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
-                    </div>
-                    <div class="row mt-3">
-                        <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
-                        <div class="col-7">
-                            <app-multi-select-filter [config]="copySelectionConfig" (apply)="otherOrganisationSelected($event)"></app-multi-select-filter>
-                        </div>
-                        <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelOrganisationLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelOrganisationLower()+' will be copied to the current one.'"></div>
-                    </div>
-                    <div [collapse]="!organisation.otherOrganisations" [isAnimated]="true">
-                        <div class="row mt-3 pt-1">
-                            <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
-                            <div class="col-7">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyOrgParams" name="copyOrgParams" [(ngModel)]="organisation.copyOrganisationParameters">
-                                    <label class="form-check-label" for="copyOrgParams">{{dataService.labelOrganisation()}} properties</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copySysParams" name="copySysParams" [(ngModel)]="organisation.copySystemParameters">
-                                    <label class="form-check-label" for="copySysParams">{{dataService.labelSystem()}} properties</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyStmtParams" name="copyStmtParams" [(ngModel)]="organisation.copyStatementParameters">
-                                    <label class="form-check-label" for="copyStmtParams">Conformance statement configurations</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            }
-            @if (selfRegEnabled) {
-                @if (selfRegTokenEnabled && organisation.id != undefined && !organisation.adminOrganization) {
-                    <div class="row mt-3">
-                        @if (organisation.selfRegistrationToken == undefined) {
-                            <legend class="col-3 col-form-label text-end">Self-registration token:</legend>
-                            <div class="col-auto">
-                                <button class="btn btn-secondary" (click)="updateSelfRegistrationToken()" [pending]="selfRegistrationTokenUpdatePending">Generate token</button>
-                            </div>
-                        } @else {
-                            <label class="col-3 col-form-label text-end" for="apiKey">Self-registration token:</label>
-                            <div class="col-7">
-                                <app-api-key-text idName="apiKey" name="apiKey"
-                                                  [key]="organisation.selfRegistrationToken"
-                                                  [supportDelete]="selfRegTokenUpdatable"
-                                                  [supportUpdate]="selfRegTokenUpdatable"
-                                                  [updatePending]="selfRegistrationTokenUpdatePending"
-                                                  [deletePending]="selfRegistrationTokenDeletePending"
-                                                  (update)="updateSelfRegistrationToken()"
-                                                  (delete)="deleteSelfRegistrationToken()"></app-api-key-text>
-                            </div>
-                        }
-                        <div app-tooltip class="col-auto" [tbTooltip]="'A token that can be used by a user during self-registration to register in this '+dataService.labelOrganisationLower()+'.'"></div>
-                    </div>
-                }
-                @if (showAdminInfo) {
-                    <div class="row mt-3 pt-1">
-                        <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
-                        <div class="col-7">
-                            <div class="form-check">
-                                <input class="form-check-input" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
-                        <div class="row mt-3">
-                            <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
-                            <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
-                            <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
-                        </div>
-                    </div>
-                }
-            }
+@if (readonly) {
+    <div class="row">
+        <label class="col-3 col-form-label text-end">Short name:</label>
+        <div class="col-8 col-md-6"><p class="form-control-plaintext">{{organisation.sname}}</p></div>
+    </div>
+    <div class="row mt-3">
+        <label class="col-3 col-form-label text-end">Full name:</label>
+        <div class="col-8 col-md-6"><p class="form-control-plaintext">{{organisation.fname}}</p></div>
+    </div>
+    @if (selfRegTokenEnabled && organisation.selfRegistrationToken != undefined) {
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end">Self-registration token:</label>
+            <div class="col-8 col-md-6"><p class="form-control-plaintext"><app-copy-enabled-text [value]="organisation.selfRegistrationToken"></app-copy-enabled-text></p></div>
         </div>
     }
-</div>
+} @else {
+    <div class="row">
+        <label class="col-3 col-form-label text-end" for="sname">* Short name:</label>
+        <div class="col-8 col-md-6"><input id="sname" name="sname" [(ngModel)]="organisation.sname" class="form-control" type="text"></div>
+        <div app-tooltip class="col-auto" [tbTooltip]="'A short name to refer to the '+dataService.labelOrganisationLower()+' used in selection lists and tabular displays where space is limited.'"></div>
+    </div>
+    <div class="row mt-3">
+        <label class="col-3 col-form-label text-end" for="fname">* Full name:</label>
+        <div class="col-8 col-md-6"><input id="fname" name="fname" [(ngModel)]="organisation.fname" class="form-control" type="text"></div>
+        <div app-tooltip class="col-auto" [tbTooltip]="'The full name of the '+dataService.labelOrganisationLower()+' used in reports and detail screens.'"></div>
+    </div>
+    @if (showAdminInfo || showLandingPage) {
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="landingPage">Landing page:</label>
+            <div class="col-8 col-md-6">
+                <app-multi-select-filter [disable]="landingPages == undefined || landingPages.length == 0" [config]="landingPageSelectionConfig" (apply)="landingPageSelected($event)"></app-multi-select-filter>
+            </div>
+            <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific landing page for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
+        </div>
+        @if (showAdminInfo) {
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="legalNotice">Legal notice:</label>
+                <div class="col-8 col-md-6">
+                    <app-multi-select-filter [disable]="legalNotices == undefined || legalNotices.length == 0" [config]="legalNoticeSelectionConfig" (apply)="legalNoticeSelected($event)"></app-multi-select-filter>
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific legal notice for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
+            </div>
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="template">Error template:</label>
+                <div class="col-8 col-md-6">
+                    <app-multi-select-filter [disable]="errorTemplates == undefined || errorTemplates.length == 0" [config]="errorTemplateSelectionConfig" (apply)="errorTemplateSelected($event)"></app-multi-select-filter>
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific error template for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
+            </div>
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
+                <div class="col-8 col-md-6">
+                    <app-multi-select-filter [config]="copySelectionConfig" (apply)="otherOrganisationSelected($event)"></app-multi-select-filter>
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelOrganisationLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelOrganisationLower()+' will be copied to the current one.'"></div>
+            </div>
+            <div [ngbCollapse]="!organisation.otherOrganisations" [animation]="true">
+                <div class="pt-1">
+                    <div class="row pt-3">
+                        <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
+                        <div class="col-8 col-md-6">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyOrgParams" name="copyOrgParams" [(ngModel)]="organisation.copyOrganisationParameters">
+                                <label class="form-check-label" for="copyOrgParams">{{dataService.labelOrganisation()}} properties</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copySysParams" name="copySysParams" [(ngModel)]="organisation.copySystemParameters">
+                                <label class="form-check-label" for="copySysParams">{{dataService.labelSystem()}} properties</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyStmtParams" name="copyStmtParams" [(ngModel)]="organisation.copyStatementParameters">
+                                <label class="form-check-label" for="copyStmtParams">Conformance statement configurations</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    @if (selfRegEnabled) {
+        @if (selfRegTokenEnabled && organisation.id != undefined && !organisation.adminOrganization) {
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="apiKey">Self-registration token:</label>
+                <div class="col-8 col-md-6">
+                    <app-api-key-text idName="apiKey" name="apiKey"
+                                      [key]="organisation.selfRegistrationToken"
+                                      [createLabel]="'Generate token'"
+                                      [supportCreate]="selfRegTokenUpdatable"
+                                      [supportDelete]="selfRegTokenUpdatable"
+                                      [supportUpdate]="selfRegTokenUpdatable"
+                                      [createPending]="selfRegistrationTokenUpdatePending"
+                                      [updatePending]="selfRegistrationTokenUpdatePending"
+                                      [deletePending]="selfRegistrationTokenDeletePending"
+                                      (create)="updateSelfRegistrationToken()"
+                                      (update)="updateSelfRegistrationToken()"
+                                      (delete)="deleteSelfRegistrationToken()"></app-api-key-text>
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'A token that can be used by a user during self-registration to register in this '+dataService.labelOrganisationLower()+'.'"></div>
+            </div>
+        }
+        @if (showAdminInfo) {
+            <div class="row mt-3 pt-1">
+                <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
+                <div class="col-8 col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
+                    </div>
+                </div>
+            </div>
+            <div [ngbCollapse]="!organisation.template" [animation]="true" (shown)="templateChoiceChanged()">
+                <div class="row pt-3">
+                    <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
+                    <div class="col-8 col-md-6"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
+                    <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
+                </div>
+            </div>
+        }
+    }
+}
 @if (!organisation.copyOrganisationParameters) {
     <app-optional-custom-property-form
         [tbPropertyData]="propertyData"
@@ -132,6 +125,5 @@
         [tbOwner]="organisation.id"
         [tbSetDefaults]="organisation.id == undefined"
         [tbReadonly]="readonly"
-        [tbColInputLess]="1"
         [tbTopMargin]="true"></app-optional-custom-property-form>
 }

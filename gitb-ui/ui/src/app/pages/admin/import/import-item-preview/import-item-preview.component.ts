@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -91,6 +91,7 @@ export class ImportItemPreviewComponent implements OnInit {
         this.closeItem(this.tbImportItem)
       } else {
         this.tbImportItem.open = true
+        this.collapsed = false
       }
     }
   }
@@ -105,18 +106,6 @@ export class ImportItemPreviewComponent implements OnInit {
         }
       }
     }
-  }
-
-  childrenCollapsed() {
-    setTimeout(() => {
-      this.collapsed = true
-    }, 1)
-  }
-
-  childrenExpanding() {
-    setTimeout(() => {
-      this.collapsed = false
-    }, 1)
   }
 
   applyProcessOption(item: ImportItemState, newOption: number, force: boolean) {

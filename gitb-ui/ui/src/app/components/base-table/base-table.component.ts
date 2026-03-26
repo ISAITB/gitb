@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,12 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {PagingEvent} from '../paging-controls/paging-event';
 import {TableRowApi} from '../table-row/table-row-api';
+import {Constants} from '../../common/constants';
+import {Observable} from 'rxjs';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 
 @Component({
     template: '',
@@ -36,8 +39,8 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() actionVisibleForRow?: (row: any) => boolean
 	@Input() actionPendingProperty = 'actionPending'
 	@Input() actionIcon = ''
-  @Input() deleteIcon = 'fa-solid fa-trash'
-  @Input() exportIcon = 'fa-solid fa-file-pdf'
+  @Input() deleteIcon = Constants.BUTTON_ICON.DELETE
+  @Input() exportIcon = Constants.BUTTON_ICON.REPORT_PDF
 	@Input() operationsVisible = false
 	@Input() deleteVisibleForRow?: (row: any) => boolean
 	@Input() deletePendingProperty = 'deletePending'
@@ -57,9 +60,14 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() clearSelection?: EventEmitter<void>
   @Input() refreshRows?: EventEmitter<void>
   @Input() supportPaging = false
+  @Input() optionsVisible: boolean = false
+  @Input() optionProvider?: (row: any) => Observable<CheckboxOption[][]>
+  @Input() optionsVisibleForRow?: (row: any) => boolean
+  @Input() optionPendingProperty = 'optionPending'
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()
+  @Output() onOption: EventEmitter<{data: any, option: string}> = new EventEmitter()
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
@@ -104,6 +112,10 @@ export abstract class BaseTableComponent extends BaseComponent {
     }
   }
 
+  handleOption(event: { data: any, option: string }) {
+    this.onOption.emit(event)
+  }
+
   handleAction(row: any) {
     this.onAction.emit(row)
   }
@@ -124,4 +136,13 @@ export abstract class BaseTableComponent extends BaseComponent {
     this.pageNavigation.emit(event)
   }
 
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.tableRowComponents?.forEach((component) => component.documentClick(event))
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.tableRowComponents?.forEach((component) => component.documentEscape())
+  }
 }

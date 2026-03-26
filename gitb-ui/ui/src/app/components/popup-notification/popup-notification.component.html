@@ -1,0 +1,29 @@
+<div class="notification" [ngClass]="notification.type"
+     (mouseenter)="mouseEntering()"
+     (mouseleave)="mouseLeaving()"
+     (click)="closeNotification()"
+     [class.removing]="removing">
+    <div class="icon">
+        <span class="fa-stack">
+            <i class="fa-solid fa-circle background-icon fa-stack-2x"></i>
+            @switch (notification.type) {
+                @case ('error') {
+                    <i class="fa-solid fa-xmark foreground-icon fa-stack-1x"></i>
+                }
+                @case ('warning') {
+                    <i class="fa-solid fa-exclamation foreground-icon fa-stack-1x"></i>
+                }
+                @case ('success') {
+                    <i class="fa-solid fa-check foreground-icon fa-stack-1x"></i>
+                }
+                @default {
+                    <i class="fa-solid fa-info foreground-icon fa-stack-1x"></i>
+                }
+            }
+        </span>
+    </div>
+    <div class="message" [innerHTML]="notification.message"></div>
+    <div class="close">
+        <span><i [class]="Constants.BUTTON_ICON.CANCEL"></i></span>
+    </div>
+</div>

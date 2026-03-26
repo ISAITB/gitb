@@ -2,47 +2,51 @@
     <description>
         Ant build file with extensions used in the maven build (via the antrun plugin).
     </description>
-    <!-- Generate the aggregate third party licence report for all GITB components (gitb-srv, gitb-ui, gitb-ui frontend) -->
+    <!--
+        Generate the aggregate third party licence report for all GITB components (gitb-srv, gitb-ui, gitb-ui frontend).
+    -->
     <target name="licence-report">
         <!-- Step 1: Check gitb-ui licences -->
         <echo level="info">Checking gitb-ui licences</echo>
         <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c sbt licenseCheck"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'sbt licenseCheck'"/>
+        <exec executable="sbt" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="licenseCheck"/>
         </exec>
         <!-- Step 2: Create gitb-ui licence report -->
         <echo level="info">Generating gitb-ui licence report</echo>
         <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c sbt dumpLicenseReport"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'sbt dumpLicenseReport'"/>
+        <exec executable="sbt" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="licenseCheck"/>
         </exec>
         <!-- Step 3: Check gitb-ui frontend licences -->
         <echo level="info">Checking gitb-ui frontend licences</echo>
         <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c npm run licence-check"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'npm run licence-check-linux'"/>
+        <exec executable="npm" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="run"/>
+            <arg value="licence-check-linux"/>
         </exec>
         <!-- Step 4: Create gitb-ui frontend licence report -->
         <echo level="info">Generating gitb-ui frontend licence report</echo>
         <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c npm run licence-report-save"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'npm run licence-report-save'"/>
+        <exec executable="npm" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="run"/>
+            <arg value="licence-report-save"/>
         </exec>
         <!-- Step 5: Create gitb-srv licence report -->
         <echo level="info">Generating gitb-srv licence report</echo>
         <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c mvn license:aggregate-add-third-party"/>
         </exec>
-        <exec executable="sh" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'mvn license:aggregate-add-third-party'"/>
+        <exec executable="mvn" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="license:aggregate-add-third-party"/>
         </exec>
         <!-- Step 5: Aggregate reports -->
         <echo level="info">Aggregating licence reports</echo>
@@ -73,5 +77,79 @@
                  value="${licence.placeholder2}" />
         <!-- Step 6: Done -->
         <echo level="info">Licence report ready at [target/generated-sources/license/NOTICE.md]</echo>
+    </target>
+    <!--
+        Install the Xerces binary distribution to enable XML Schema 1.1 support (artefacts not available in Maven Central).
+    -->
+    <target name="check-and-install-xerces-jars" depends="xerces-install-xercesImpl,xerces-install-xpath2,xerces-install-cupv10k,xerces-install-icu4j">
+        <echo level="info" message="Finished setup of xerces JARs."/>
+    </target>
+    <target name="xerces-check-xercesImpl">
+        <available file="${settings.localRepository}/eu/europa/ec/itb/xerces/xercesImpl/${version.xercesBuild}/xercesImpl-${version.xercesBuild}.jar" property="xercesImpl.exists"/>
+    </target>
+    <target name="xerces-check-xpath2">
+        <available file="${settings.localRepository}/eu/europa/ec/itb/xerces/org.eclipse.wst.xml.xpath2.processor_1.2.1/${version.xercesBuild}/org.eclipse.wst.xml.xpath2.processor_1.2.1-${version.xercesBuild}.jar" property="xpath2.exists"/>
+    </target>
+    <target name="xerces-check-cupv10k">
+        <available file="${settings.localRepository}/eu/europa/ec/itb/xerces/cupv10k-runtime/${version.xercesBuild}/cupv10k-runtime-${version.xercesBuild}.jar" property="cupv10k.exists"/>
+    </target>
+    <target name="xerces-check-icu4j">
+        <available file="${settings.localRepository}/eu/europa/ec/itb/xerces/icu4j/${version.xercesBuild}/icu4j-${version.xercesBuild}.jar" property="icu4j.exists"/>
+    </target>
+    <target name="xerces-install-xercesImpl" depends="xerces-check-xercesImpl" unless="xercesImpl.exists">
+        <echo level="info" message="xercesImpl not found - installing..."/>
+        <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c mvn install:install-file -Dfile=${project.basedir}/etc/xerces/xercesImpl.jar -DgroupId=eu.europa.ec.itb.xerces -DartifactId=xercesImpl -Dversion=${version.xercesBuild} -Dpackaging=jar"/>
+        </exec>
+        <exec executable="mvn" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="install:install-file"/>
+            <arg value="-Dfile=${project.basedir}/etc/xerces/xercesImpl.jar"/>
+            <arg value="-DgroupId=eu.europa.ec.itb.xerces"/>
+            <arg value="-DartifactId=xercesImpl"/>
+            <arg value="-Dversion=${version.xercesBuild}"/>
+            <arg value="-Dpackaging=jar"/>
+        </exec>
+    </target>
+    <target name="xerces-install-xpath2" depends="xerces-check-xpath2" unless="xpath2.exists">
+        <echo level="info" message="xpath2 not found - installing..."/>
+        <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c mvn install:install-file -Dfile=${project.basedir}/etc/xerces/org.eclipse.wst.xml.xpath2.processor_1.2.1.jar -DgroupId=eu.europa.ec.itb.xerces -DartifactId=org.eclipse.wst.xml.xpath2.processor_1.2.1 -Dversion=${version.xercesBuild} -Dpackaging=jar"/>
+        </exec>
+        <exec executable="mvn" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="install:install-file"/>
+            <arg value="-Dfile=${project.basedir}/etc/xerces/org.eclipse.wst.xml.xpath2.processor_1.2.1.jar"/>
+            <arg value="-DgroupId=eu.europa.ec.itb.xerces"/>
+            <arg value="-DartifactId=org.eclipse.wst.xml.xpath2.processor_1.2.1"/>
+            <arg value="-Dversion=${version.xercesBuild}"/>
+            <arg value="-Dpackaging=jar"/>
+        </exec>
+    </target>
+    <target name="xerces-install-cupv10k" depends="xerces-check-cupv10k" unless="cupv10k.exists">
+        <echo level="info" message="cupv10k not found - installing..."/>
+        <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c mvn install:install-file -Dfile=${project.basedir}/etc/xerces/cupv10k-runtime.jar -DgroupId=eu.europa.ec.itb.xerces -DartifactId=cupv10k-runtime -Dversion=${version.xercesBuild} -Dpackaging=jar"/>
+        </exec>
+        <exec executable="mvn" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="install:install-file"/>
+            <arg value="-Dfile=${project.basedir}/etc/xerces/cupv10k-runtime.jar"/>
+            <arg value="-DgroupId=eu.europa.ec.itb.xerces"/>
+            <arg value="-DartifactId=cupv10k-runtime"/>
+            <arg value="-Dversion=${version.xercesBuild}"/>
+            <arg value="-Dpackaging=jar"/>
+        </exec>
+    </target>
+    <target name="xerces-install-icu4j" depends="xerces-check-icu4j" unless="icu4j.exists">
+        <echo level="info" message="icu4j not found - installing..."/>
+        <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c mvn install:install-file -Dfile=${project.basedir}/etc/xerces/icu4j.jar -DgroupId=eu.europa.ec.itb.xerces -DartifactId=icu4j -Dversion=${version.xercesBuild} -Dpackaging=jar"/>
+        </exec>
+        <exec executable="mvn" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="install:install-file"/>
+            <arg value="-Dfile=${project.basedir}/etc/xerces/icu4j.jar"/>
+            <arg value="-DgroupId=eu.europa.ec.itb.xerces"/>
+            <arg value="-DartifactId=icu4j"/>
+            <arg value="-Dversion=${version.xercesBuild}"/>
+            <arg value="-Dpackaging=jar"/>
+        </exec>
     </target>
 </project>

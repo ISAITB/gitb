@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -44,6 +44,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 		authorizationManager.canEditTestSuite(request, testSuiteId).flatMap { _ =>
 			val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
 			val version:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VERSION)
+			val order:Short = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ORDER).toShort
 			val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
 			val specReference = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_REFERENCE)
 			val specDescription = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_DESCRIPTION)
@@ -52,7 +53,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 			if (documentation.isDefined) {
 				documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 			}
-			testSuiteManager.updateTestSuiteMetadata(testSuiteId, name, description, documentation, version, specReference, specDescription, specLink).map { _ =>
+			testSuiteManager.updateTestSuiteMetadata(testSuiteId, name, description, documentation, version, order, specReference, specDescription, specLink).map { _ =>
 				ResponseConstructor.constructEmptyResponse
 			}
 		}
@@ -200,8 +201,10 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 
 	def getLinkedSpecifications(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canManageTestSuite(request, testSuiteId).flatMap { _ =>
-			specificationManager.getSpecificationsLinkedToTestSuite(testSuiteId).map { specs =>
-				val json = JsonUtil.jsSpecifications(specs).toString()
+			val page = ParameterExtractor.extractPageNumber(request)
+			val limit = ParameterExtractor.extractPageLimit(request)
+			specificationManager.getSpecificationsLinkedToTestSuite(testSuiteId, page, limit).map { result =>
+				val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsSpecificationSearchResults).toString
 				ResponseConstructor.constructJsonResponse(json)
 			}
 		}

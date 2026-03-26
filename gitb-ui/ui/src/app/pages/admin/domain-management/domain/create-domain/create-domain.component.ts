@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -20,6 +20,7 @@ import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {Domain} from 'src/app/types/domain';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-create-domain',
@@ -29,7 +30,9 @@ import {Domain} from 'src/app/types/domain';
 })
 export class CreateDomainComponent extends BaseComponent implements AfterViewInit {
 
-  domain: Partial<Domain> = {}
+  domain: Partial<Domain> = {
+    tags: []
+  }
   pending = false
 
   constructor(
@@ -50,7 +53,11 @@ export class CreateDomainComponent extends BaseComponent implements AfterViewIni
 	createDomain() {
 		if (!this.saveDisabled()) {
       this.pending = true
-			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata)
+      if (this.domain.tags && this.domain.tags.length > 0) {
+        this.domain.tags[0].flag1 = this.domain.tagForCommunityAdmin
+        this.domain.tags[0].flag2 = this.domain.tagForTestBedAdmin
+      }
+			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' created.')
         this.routingService.toDomains()
@@ -64,4 +71,5 @@ export class CreateDomainComponent extends BaseComponent implements AfterViewIni
     this.routingService.toDomains()
   }
 
+  protected readonly Constants = Constants;
 }

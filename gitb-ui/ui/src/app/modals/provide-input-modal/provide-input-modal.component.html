@@ -1,7 +1,8 @@
 <div class="modal-header">
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
     <div class="modal-title" id="myModalLabel">{{inputTitle}}</div>
 </div>
-<form>
+<form (ngSubmit)="submit()">
 	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;" appFileDropTarget>
 		@for (interaction of interactions; let first = $first, index = $index; track index) {
 			<div>
@@ -28,7 +29,7 @@
 									}
 									@case ("SELECT_MULTIPLE") {
 										<!-- Select multiple -->
-										<select [name]="'input-'+index" [attr.id]="'input-'+index" multiple="multiple" class="form-select" [(ngModel)]="interaction.selectedOptions" [invalid]="validation.get('input_'+index)" [compareWith]="compareValueLabels">
+										<select [name]="'input-'+index" [attr.id]="'input-'+index" multiple="multiple" class="form-select" [attr.size]="(interaction.size != undefined && interaction.size > 1)?interaction.size:null" [(ngModel)]="interaction.selectedOptions" [invalid]="validation.get('input_'+index)" [compareWith]="compareValueLabels">
 											@for (option of interaction.optionData; track $index) {
 												<option [ngValue]="option">{{option.label}}</option>
 											}
@@ -37,16 +38,20 @@
 									@case ("UPLOAD") {
 										 <!-- Upload -->
 										<div>
-											<app-file-select [fileName]="interaction.file?.name" [reset]="interaction.reset" (onUpload)="onFileSelect(interaction, $event)" [validation]="validation.get('input_'+index)"></app-file-select>
+											<app-file-select [fileName]="interaction.file?.name"
+                                                             [reset]="interaction.reset"
+                                                             [accepts]="(interaction.accept != undefined)?interaction.accept.split(','):undefined"
+                                                             (onUpload)="onFileSelect(interaction, $event)"
+                                                             [validation]="validation.get('input_'+index)"></app-file-select>
 										</div>
 									}
 									@case ("CODE") {
 										<!-- Code editor -->
-										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></ngx-codemirror>
+										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" (codeMirrorLoaded)="editorInitialized($event, interaction)" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></ngx-codemirror>
 									}
 									@case ("MULTILINE_TEXT") {
 										<!-- Text area -->
-										<textarea [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
+										<textarea ctrlEnterSubmit [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [attr.rows]="(interaction.size != undefined && interaction.size > 1)?interaction.size:null" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
 									}
 									@case ("SECRET") {
 										<!-- Secret -->
@@ -61,7 +66,13 @@
 						 } @else if (interaction.type == 'instruction') {
 							 <!-- instruction interaction: server shows a message -->
 							 <div>
-								 <app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [preserveName]="false" [fileNameDownload]="interaction.name" [sessionId]="sessionId" [noMargin]="true"></app-any-content-view>
+								 <app-any-content-view [context]="instructionAsAnyContent(interaction)"
+                                                       [forceDisplay]="interaction.forceDisplay == true"
+                                                       [showControls]="interaction.showControls == undefined || interaction.showControls"
+                                                       [level]="interaction.level"
+                                                       [preserveName]="false"
+                                                       [fileNameDownload]="interaction.name"
+                                                       [sessionId]="sessionId"></app-any-content-view>
 							 </div>
 						 }
 					</div>
@@ -71,12 +82,12 @@
 	</div>
 	<div class="modal-footer">
 		<div class="btn-toolbar">
-			<button type="button" (click)="minimise()" class="btn btn-secondary">Minimise</button>
+			<button type="button" [labelIcon]="Constants.BUTTON_ICON.MINIMIZE" (click)="minimise()" class="btn btn-secondary">Minimise</button>
 			@if (needsInput) {
-				<button type="button" (click)="reset()" class="btn btn-secondary">Reset</button>
-				<button type="submit" (click)="submit()" class="btn btn-secondary">Submit</button>
+				<button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" (click)="reset()" class="btn btn-secondary">Reset</button>
+				<button type="submit" [labelIcon]="Constants.BUTTON_ICON.SEND" class="btn btn-secondary">Submit</button>
 			} @else {
-				<button type="button" (click)="close()" class="btn btn-secondary">Close</button>
+				<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" (click)="close()" class="btn btn-secondary">Close</button>
 			}
 		</div>
 	</div>

@@ -10,7 +10,7 @@
             @if (testCase.group != undefined) {
                 <div class="groupMarker">
                     @if (testCase.groupFirst && showResults) {
-                        <div class="groupMarkerIconContainer" [tooltip]="groupTooltip(testCase.resultToShow)" placement="right">
+                        <div class="groupMarkerIconContainer" [ngbTooltip]="groupTooltip(testCase.resultToShow)" placement="right">
                             <span class="groupMarkerIcon">
                                 <i [class.fa-solid]="testCase.resultToShow != undefined"
                                    [class.fa-regular]="testCase.resultToShow == undefined"
@@ -43,14 +43,14 @@
                     }
                     <div class="testCaseName">{{testCase.sname}}</div>
                     <div class="testCaseExecution">
-                        @if (testCase.tags) {
+                        @if (testCase.tags && testCase.tags.length > 0) {
                             <div class="testCaseTagsContainer">
-                                <app-tags-display [tags]="getParsedTags(testCase)"></app-tags-display>
+                                <app-tags-display [tags]="testCase.tags"></app-tags-display>
                             </div>
                         }
                         @if (testCase.updateTime) {
                             <div class="testCaseUpdateTimeContainer">
-                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>
+                                <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>
                             </div>
                         }
                         @if (testCase.sessionId != undefined || (testCase.hasDocumentation && showViewDocumentation) || showExportTestCase(testCase) || showExecute || showEdit) {
@@ -58,23 +58,23 @@
                                 @if (testCase.sessionId != undefined || showExportTestCase(testCase)) {
                                     <app-checkbox-option-panel #optionButton
                                                                label="Options"
-                                                               icon="fa-solid fa-bars"
+                                                               [icon]="Constants.BUTTON_ICON.ACTIONS"
                                                                placement="left"
                                                                [referenceItem]="testCase"
                                                                [optionProvider]="loadOptions(testCase)"
                                                                [singleSelection]="true"
-                                                               [pending]="exportXmlPending[testCase.id] || exportPdfPending[testCase.id]"
+                                                               [pending]="operationPending[testCase.id]"
                                                                (updated)="handleOption($event, testCase)"
                                                                (opening)="optionsOpening(testCase)"></app-checkbox-option-panel>
                                 }
                                 @if (testCase.hasDocumentation && showViewDocumentation) {
-                                    <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" tooltipClass="shortTooltip" container="body"  ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOCUMENTATION"></i></button>
                                 }
                                 @if (showEdit) {
-                                    <button type="button" class="btn btn-secondary" (click)="editTestcase(testCase)" containerClass="shortTooltip" container="body"  tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="editTestcase(testCase)" tooltipClass="shortTooltip" container="body"  ngbTooltip="Edit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.EDIT"></i></button>
                                 }
                                 @if (showExecute) {
-                                    <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                    <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run" [disabled]="testCase.disabled" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.EXECUTE"></i></button>
                                 }
                             </div>
                         }
@@ -92,7 +92,7 @@
                     </div>
                 </div>
                 @if (hasDescription[testCase.id]) {
-                    <div [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="animated" class="testCaseDescriptionContainer">
+                    <div [ngbCollapse]="!descriptionVisible[testCase.id]" [animation]="animated" class="testCaseDescriptionContainer">
                         <div class="testCaseDescription">{{testCase.description}}</div>
                         <app-specification-reference-display [reference]="testCase"></app-specification-reference-display>
                     </div>

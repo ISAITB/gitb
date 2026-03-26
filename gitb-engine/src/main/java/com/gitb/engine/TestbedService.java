@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -108,7 +108,6 @@ public class TestbedService {
 		}
 	}
 
-
 	/**
 	 * Provide the expected user inputs to the test engine for the interaction step or preliminary phase
 	 *
@@ -144,12 +143,7 @@ public class TestbedService {
 	 * Stop the TestCase session execution
 	 *
      */
-	public static void stop(String sessionId) {
-		boolean isClosedConnectionSignal = false;
-		if (sessionId.startsWith("CONNECTION_CLOSED|")) {
-			sessionId = sessionId.substring(sessionId.indexOf('|')+1);
-			isClosedConnectionSignal = true;
-		}
+	public static void stop(String sessionId, boolean isClosedConnectionSignal) {
 		if (SessionManager.getInstance().exists(sessionId)) {
 			Object msg;
 			if (isClosedConnectionSignal) {
@@ -206,7 +200,7 @@ public class TestbedService {
 		if (details.isEmpty()) {
 			message = "Error during test session configuration";
 		} else {
-			message = details.get(details.size() - 1);
+			message = details.getLast();
 		}
 
 		var request = new ConfigurationCompleteRequest();

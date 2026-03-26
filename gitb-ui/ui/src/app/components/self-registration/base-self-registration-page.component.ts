@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -48,9 +48,9 @@ export abstract class BaseSelfRegistrationPageComponent extends BaseComponent {
   }
 
   private organisationDataOk(selfRegData: SelfRegistrationModel) {
-    return (selfRegData.selfRegOption?.organisationTokensEnabled === false && this.newOrganisationDataOk(selfRegData)) ||
-           (selfRegData.selfRegOption?.organisationTokensEnabled === true && selfRegData.newOrganisation === true && this.newOrganisationDataOk(selfRegData)) ||
-           (selfRegData.selfRegOption?.organisationTokensEnabled === true && selfRegData.newOrganisation === false && this.textProvided(selfRegData.orgToken))
+    return (selfRegData.organisationChoice === 'new' && this.newOrganisationDataOk(selfRegData)) ||
+           (selfRegData.organisationChoice === 'token' && this.textProvided(selfRegData.orgToken)) ||
+           (selfRegData.organisationChoice === 'default')
   }
 
 }

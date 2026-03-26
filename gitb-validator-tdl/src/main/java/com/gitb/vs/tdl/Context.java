@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -56,6 +56,7 @@ public class Context {
     private JAXBContext jaxbContext;
     private Schema tdlSchema;
     private Path testSuiteRootPath;
+    private Path testSuiteDefinitionPath;
     private TestSuite testSuite;
     private boolean testSuiteLoaded;
     private Map<String, List<Path>> testSuitePaths;
@@ -115,22 +116,36 @@ public class Context {
         return externalConfiguration;
     }
 
+    private Path resolveTestSuiteResource(Path testSuiteRootPath, Path testSuiteDefinitionPath, String resourcePath) {
+        // First attempt to resolve against the test suite root.
+        Path resolvedPath = testSuiteRootPath.resolve(resourcePath);
+        if (!Files.exists(resolvedPath)) {
+            // If not found, attempt to resolve against the test suite definition file.
+            resolvedPath = testSuiteDefinitionPath.resolveSibling(resourcePath);
+        }
+        if (Files.exists(resolvedPath)) {
+            return resolvedPath;
+        } else {
+            return null;
+        }
+    }
+
     public Path resolveTestSuiteResourceIfValid(String resourcePath) {
         if (resourcePath.startsWith("/")) {
             resourcePath = resourcePath.substring(1);
         }
         Path testSuiteRootPath = getTestSuiteRootPath();
-        Path resolvedPath = testSuiteRootPath.resolve(resourcePath);
-        if (!Files.exists(resolvedPath)) {
+        // First resolve the resource relative to the test suite root or test suite definition file.
+        Path resolvedPath = resolveTestSuiteResource(testSuiteRootPath, testSuiteDefinitionPath, resourcePath);
+        if (resolvedPath == null) {
+            // If not found then also consider the case that the resource path is prefixed with the test suite identifier.
             if (getTestSuite() != null && getTestSuite().getMetadata() != null) {
                 String testSuiteIdentifier = getTestSuite().getId();
                 if (testSuiteIdentifier != null) {
                     String testSuiteIdentifierPath = testSuiteIdentifier+"/";
                     if (resourcePath.startsWith(testSuiteIdentifierPath) && resourcePath.length() > testSuiteIdentifier.length()) {
                         String pathWithoutTestSuiteIdentifier = resourcePath.substring(testSuiteIdentifierPath.length());
-                        resolvedPath = testSuiteRootPath.resolve(pathWithoutTestSuiteIdentifier);
-                    } else {
-                        resolvedPath = null;
+                        resolvedPath = resolveTestSuiteResource(testSuiteRootPath, testSuiteDefinitionPath, pathWithoutTestSuiteIdentifier);
                     }
                 }
             }
@@ -145,8 +160,8 @@ public class Context {
         if (!testSuiteLoaded) {
             testSuiteLoaded = true;
             if (getTestSuiteCount() == 1) {
-                Path testSuitePath = getTestSuitePaths().values().iterator().next().get(0);
-                try (InputStream in = Files.newInputStream(testSuitePath)) {
+                testSuiteDefinitionPath = getTestSuitePaths().values().iterator().next().getFirst();
+                try (InputStream in = Files.newInputStream(testSuiteDefinitionPath)) {
                     testSuite = Utils.unmarshal(in, TestSuite.class, getJAXBContext(), null, null).getValue();
                 } catch (Exception e) {
                     // Ignore parsing errors.

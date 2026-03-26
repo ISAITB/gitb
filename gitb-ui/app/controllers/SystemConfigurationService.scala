@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,6 +15,7 @@
 
 package controllers
 
+import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, StartupWizardManager, SystemConfigurationManager}
@@ -174,8 +175,11 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
 
   def getThemes: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageThemes(request).flatMap { _ =>
-      systemConfigurationManager.getThemes().map { themes =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsThemes(themes).toString)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      systemConfigurationManager.getThemes(page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsThemes).toString
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
@@ -277,6 +281,21 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
       startupWizardManager.completeStartupWizard(samples, updates, api).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
+    }
+  }
+
+  def prepareForShutdown: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSystemSettings(request).map { _ =>
+      val enable = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.ENABLE).getOrElse(false)
+      Configurations.PREPARE_FOR_SHUTDOWN = enable
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getRestApiEndpointsFromDocumentation: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSystemSettings(request).map { _ =>
+      val endpoints = systemConfigurationManager.getRestApiEndpointsFromDocumentation()
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsRestApiEndpointLimits(endpoints, withDescriptions = true).toString)
     }
   }
 

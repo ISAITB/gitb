@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -24,6 +24,7 @@ import {TableApi} from '../../../components/table/table-api';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {Observable, of} from 'rxjs';
 import {SearchResult} from '../../../types/search-result';
+import {UsageTipService} from '../../../services/usage-tip.service';
 
 @Component({
     selector: 'app-domain-management',
@@ -31,7 +32,7 @@ import {SearchResult} from '../../../types/search-result';
     styles: [],
     standalone: false
 })
-export class DomainManagementComponent implements OnInit {
+export class DomainManagementComponent implements OnInit, AfterViewInit {
 
   @ViewChild("domainTable") domainTable?: TableApi
 
@@ -39,7 +40,8 @@ export class DomainManagementComponent implements OnInit {
   tableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' },
-    { field: 'description', title: 'Description'}
+    { field: 'description', title: 'Description'},
+    { field: 'tags', title: '', tagData: true, headerClass: 'th-min', cellClass: 'td-min centered' }
   ]
   domains: Domain[] = []
   domainFilter?: string
@@ -48,12 +50,19 @@ export class DomainManagementComponent implements OnInit {
   constructor(
     public readonly dataService: DataService,
     private readonly conformanceService: ConformanceService,
-    private readonly routingService: RoutingService
+    private readonly routingService: RoutingService,
+    private readonly usageTipService: UsageTipService
   ) { }
 
   ngOnInit(): void {
 		this.refreshDomains()
     this.routingService.domainsBreadcrumbs()
+  }
+
+  ngAfterViewInit(): void {
+    if (this.dataService.isSystemAdmin) {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_ADMIN_DOMAINS)
+    }
   }
 
 	onDomainSelect(domain: Domain) {
@@ -92,7 +101,7 @@ export class DomainManagementComponent implements OnInit {
   }
 
   refreshDomains() {
-    this.loadDomains({ targetPage: 1, targetPageSize: this.domainTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    this.loadDomains({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doDomainPaging(event: PagingEvent) {
@@ -103,4 +112,5 @@ export class DomainManagementComponent implements OnInit {
     this.domainTable?.getPagingControls()?.updateStatus(page, count)
   }
 
+  protected readonly Constants = Constants;
 }

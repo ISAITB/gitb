@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,8 +18,9 @@ import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
 import {ServiceHealthCardComponentApi} from './service-health-card-component-api';
 import {map, Subject} from 'rxjs';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {ServiceHealthModalComponent} from '../../modals/service-health-modal/service-health-modal.component';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-service-health-card',
@@ -34,25 +35,25 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
 
   hovering = false
 
-  constructor(private readonly modalService: BsModalService) {
+  constructor(private readonly modalService: NgbModal) {
   }
 
   showDetails() {
     if (this.info.info != undefined) {
-      const modal = this.modalService.show(ServiceHealthModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          serviceInfo: this.info
-        }
-      })
-      modal.content?.updated.subscribe(() => {
+      const modal = this.modalService.open(ServiceHealthModalComponent, { size: 'lg' });
+      const modalInstance = modal.componentInstance as ServiceHealthModalComponent;
+      modalInstance.serviceInfo = this.info
+      modalInstance.updated = new EventEmitter<void>();
+      modalInstance.updated.subscribe(() => {
         this.updated.emit()
       })
     }
   }
 
   checkStatus() {
-    this.info.info = undefined
+    if (this.info.info) {
+      this.info.info.status = HealthStatus.PENDING
+    }
     const finished$ = new Subject<void>();
     this.info.checkFunction().pipe(
       map((result) => {
@@ -65,7 +66,7 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
     }).add(() => {
       if (this.info.info == undefined) {
         this.info.info = {
-          status: HealthStatus.UNKNOWN,
+          status: HealthStatus.UNABLE,
           summary: "Unable to complete service healthcheck.",
           details: "An unexpected error occurred while trying to determine the service's health status."
         }
@@ -74,4 +75,6 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
     return finished$.asObservable()
   }
 
+  protected readonly HealthStatus = HealthStatus;
+  protected readonly Constants = Constants;
 }

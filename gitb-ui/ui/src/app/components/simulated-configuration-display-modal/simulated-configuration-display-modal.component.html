@@ -1,5 +1,6 @@
 <div class="modal-header">
 	<div class="modal-title">Simulated configurations</div>
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
 </div>
 <div class="modal-body">
     @for (item of items; track $index) {
@@ -10,6 +11,6 @@
 </div>
 <div class="modal-footer">
     <div class="btn-toolbar">
-        <button type="button" (click)="close()" class="btn btn-secondary">Close</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" (click)="close()" class="btn btn-secondary">Close</button>
     </div>
 </div>

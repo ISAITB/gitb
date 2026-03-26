@@ -1,5 +1,6 @@
 <div class="modal-header">
     <div class="modal-title">Role removal options</div>
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
 </div>
 <form>
     <div class="modal-body">
@@ -35,13 +36,16 @@
             </div>
         </div>
         <div class="alert alert-info rounded mb-0">
-            <b>Privacy note:</b> Option <i>"Delete all{{ dataService.isSystemAdmin?" other":""}} roles"</i> removes all your recorded information{{dataService.isSystemAdmin?" except for your administrator account":""}}. This does not affect or remove your conformance testing history.
+            <div class="alert-section">
+                <span class="alert-label">Privacy note</span>
+                Deactivating or deleting your roles does not affect or remove your conformance testing history.
+            </div>
         </div>
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-            <button class="btn btn-secondary" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.UNLINK_ACCOUNT" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
         </div>
     </div>
 </form>

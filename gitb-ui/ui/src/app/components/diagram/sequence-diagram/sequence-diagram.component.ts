@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,9 +16,11 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
-import {filter, find, flatten, forEach, indexOf, map, maxBy, minBy, sortBy, uniq} from 'lodash';
+import {ActorRole} from '../../../types/actor-role';
 import {Constants} from 'src/app/common/constants';
 import {DiagramEvents} from '../diagram-events';
+import {TestCaseDefinitionActors} from '../../../types/test-case-definition-actors';
+import {Utils} from '../../../common/utils';
 
 @Component({
     selector: 'app-sequence-diagram',
@@ -30,14 +32,14 @@ export class SequenceDiagramComponent implements OnInit {
 
   @Input() stepsOfTests!: {[key: string]: StepData[]}
   @Input() test!: string
-  @Input() actorInfoOfTests!: {[key: string]: ActorInfo[]}
+  @Input() actorInfoOfTests!: {[key: string]: TestCaseDefinitionActors}
   @Input() events!: DiagramEvents
 
   actorInfo?: ActorInfo[]
   sutActor?: ActorInfo
-  actors: string[] = []
+  actors: ActorInfo[] = []
   messages: StepData[] = []
-  includesNonSpecificationActor = true
+  actorStyleCount!: number
 
   constructor() { }
 
@@ -50,42 +52,83 @@ export class SequenceDiagramComponent implements OnInit {
     this.updateState()
   }
 
-  classValue() {
-    return 'sequence-diagram actor-diagram-' + (this.includesNonSpecificationActor?this.actors.length:(this.actors.length-1))
-  }
-
   updateState() {
-    this.sutActor = this.getSutActor(this.actorInfoOfTests[this.test])
+    this.actorInfo = this.prepareActorInfo()
     let steps = this.stepsOfTests[this.test]
-    this.actorInfo = this.actorInfoOfTests[this.test].concat([
-      {id: Constants.TEST_ENGINE_ACTOR_ID, name: Constants.TEST_ENGINE_ACTOR_NAME},
-      {id: Constants.TESTER_ACTOR_ID, name: this.getTesterActorName()},
-      {id: Constants.ADMINISTRATOR_ACTOR_ID, name: Constants.ADMINISTRATOR_ACTOR_NAME}
-    ])
     if (steps != undefined) {
       this.messages = this.extractSteps(steps, this.actorInfo, 0)
       this.actors = this.extractActors(this.messages, this.actorInfo)
       this.setStepIndexes(this.messages)
+      this.actorStyleCount = this.actors.length
     }
   }
 
-  stepFilter(this: SequenceDiagramComponent, step: StepData): boolean {
+  private prepareActorInfo(): ActorInfo[] {
+    const actorDefinition = this.actorInfoOfTests[this.test]
+    actorDefinition.actor.forEach(actor => {
+      if (actor.role == "SUT") {
+        actor.diagramRole = ActorRole.SystemUnderTest
+        // Extract the SUT actor.
+        this.sutActor = actor
+      } else if (!actor.diagramRole) {
+        actor.diagramRole = ActorRole.Simulated
+      }
+    })
+    if (!this.sutActor) {
+      throw new Error("Test case without SUT actor")
+    }
+    // Add built-in actors.
+    return actorDefinition.actor.concat([
+      {
+        id: Constants.TEST_ENGINE_ACTOR_ID,
+        name: (actorDefinition.engineName == undefined)?Constants.TEST_ENGINE_ACTOR_NAME:actorDefinition.engineName,
+        diagramRole: ActorRole.TestEngine,
+        displayOrder: actorDefinition.engineDisplayOrder
+      },
+      {
+        id: Constants.TESTER_ACTOR_ID,
+        name: (actorDefinition.userName == undefined)?this.getTesterActorName():actorDefinition.userName,
+        diagramRole: ActorRole.User,
+        displayOrder: actorDefinition.userDisplayOrder
+      },
+      {
+        id: Constants.ADMINISTRATOR_ACTOR_ID,
+        name: (actorDefinition.adminName == undefined)?Constants.ADMINISTRATOR_ACTOR_NAME:actorDefinition.adminName,
+        diagramRole: ActorRole.Administrator,
+        displayOrder: actorDefinition.adminDisplayOrder
+      }
+    ])
+  }
+
+  private stepFilter(step: StepData): boolean {
     return step.type == 'msg' ||
       step.type == 'verify' ||
       step.type == 'process' ||
       step.type == 'interact' ||
       step.type == 'exit' ||
-      (step.type == 'group' && (filter(step.steps, this.stepFilter.bind(this))).length > 0) ||
-      (step.type == 'loop' && (filter(step.steps, this.stepFilter.bind(this))).length > 0) ||
-      (step.type == 'decision' && (filter(step.then, this.stepFilter.bind(this))).length + (filter(step.else, this.stepFilter.bind(this))).length > 0) ||
-      (step.type == 'flow' && (filter(step.threads, ((thread) => (filter(thread, this.stepFilter.bind(this))).length > 0))).length > 0)
+      (step.type == 'group' && (step.steps.filter((s) => this.stepFilter(s)).length > 0)) ||
+      (step.type == 'loop' && (step.steps.filter((s) => this.stepFilter(s)).length > 0)) ||
+      (step.type == 'decision' && (((step.then == undefined)?0:step.then.filter((s) => this.stepFilter(s)).length) + ((step.else == undefined)?0:step.else.filter((s) => this.stepFilter(s)).length)) > 0) ||
+      (step.type == 'flow' && (((step.threads == undefined)?0:step.threads.filter(((thread) => thread.filter((s) => this.stepFilter(s)).length > 0)).length) > 0))
   }
 
   processStep(step: StepData, actorInfo: ActorInfo[], currentLevel: number) {
     step.level = currentLevel
     if (step.type == 'verify' || step.type == 'process' || step.type == 'exit') {
-      step.from = Constants.TEST_ENGINE_ACTOR_ID
-      step.to = Constants.TEST_ENGINE_ACTOR_ID
+      if (step.from == undefined) {
+        if (step.to == undefined) {
+          step.from = Constants.TEST_ENGINE_ACTOR_ID
+        } else {
+          step.from = step.to
+        }
+      }
+      if (step.to == undefined) {
+        if (step.from == undefined) {
+          step.to = Constants.TEST_ENGINE_ACTOR_ID
+        } else {
+          step.to = step.from
+        }
+      }
     } else if (step.type == 'group') {
       step.steps = this.extractSteps(step.steps, actorInfo, currentLevel)
     } else if (step.type == 'loop') {
@@ -108,14 +151,24 @@ export class SequenceDiagramComponent implements OnInit {
       const hasRequests = this.hasRequests(step.interactions)
       if (hasRequests && step.admin) {
         step.from = Constants.ADMINISTRATOR_ACTOR_ID
-        step.to = Constants.TEST_ENGINE_ACTOR_ID
+        if (step.to == undefined) {
+          step.to = Constants.TEST_ENGINE_ACTOR_ID
+        }
       } else if (hasRequests && !step.admin) {
         step.from = Constants.TESTER_ACTOR_ID
-        step.to = Constants.TEST_ENGINE_ACTOR_ID
+        if (step.to == undefined) {
+          step.to = Constants.TEST_ENGINE_ACTOR_ID
+        }
       } else if (!hasRequests && step.admin) {
+        if (step.from == undefined) {
+          step.from = Constants.TEST_ENGINE_ACTOR_ID
+        }
         step.from = Constants.TEST_ENGINE_ACTOR_ID
         step.to = Constants.ADMINISTRATOR_ACTOR_ID
       } else {
+        if (step.from == undefined) {
+          step.from = Constants.TEST_ENGINE_ACTOR_ID
+        }
         step.from = Constants.TEST_ENGINE_ACTOR_ID
         step.to = Constants.TESTER_ACTOR_ID
       }
@@ -134,10 +187,10 @@ export class SequenceDiagramComponent implements OnInit {
     return false
   }
 
-  extractSteps(s: StepData[]|undefined, actorInfo: ActorInfo[], currentLevel: number) {
+  extractSteps(stepsToProcess: StepData[]|undefined, actorInfo: ActorInfo[], currentLevel: number) {
     let results: StepData[] = []
-    if (s != undefined) {
-      let steps = filter(s, this.stepFilter.bind(this))
+    if (stepsToProcess != undefined) {
+      let steps = stepsToProcess.filter((step) => this.stepFilter(step))
       for (let step of steps) {
         results = results.concat(this.processStep(step, actorInfo, currentLevel + 1))
       }
@@ -145,50 +198,84 @@ export class SequenceDiagramComponent implements OnInit {
     return results
   }
 
-  getSutActor(actorInfo: ActorInfo[]) {
-    for (let actor of actorInfo) {
-      if (actor.role == 'SUT') {
-        return actor
-      }
-    }
-    throw Error("Test case without SUT actor")
-  }
-
   getTesterActorName() {
     if (this.sutActor?.name != undefined) {
-      return this.sutActor?.name + ' - ' + Constants.TESTER_ACTOR_NAME
+      return this.sutActor?.name
     } else {
-      return this.sutActor?.id + ' - ' + Constants.TESTER_ACTOR_NAME
+      return this.sutActor?.id
     }
   }
 
-  extractActors(messages: StepData[]|undefined, actorInfo: ActorInfo[]) {
-    let actors = this.extractActorsInternal(messages, actorInfo)
-    let hasOrdering = find(actorInfo, (actor) => {
-      return actor.displayOrder != undefined
+  extractActors(messages: StepData[]|undefined, actorInfo: ActorInfo[]): ActorInfo[] {
+    // Get actor identifiers from steps.
+    const actorIdentifiers = this.extractActorsInternal(messages, actorInfo)
+    // Determine sorted list of actors.
+    let userActorToAppend: ActorInfo|undefined
+    let administratorActorToAppend: ActorInfo|undefined
+    let testEngineActorToAppend: ActorInfo|undefined
+    const specificationActors: ActorInfo[] = []
+    let actorsNeedSorting = false
+    // Map actors to actor identifiers.
+    actorIdentifiers.forEach((actorIdentifier: string) => {
+      const matchedActor = actorInfo.find(actor => actor.id == actorIdentifier)
+      if (!matchedActor) {
+        throw new Error(`Unable to retrieve actor definition based on identifier [${actorIdentifier}]`)
+      }
+      if (matchedActor.diagramRole === ActorRole.User) {
+        if (matchedActor.displayOrder == undefined) {
+          userActorToAppend = matchedActor
+        } else {
+          specificationActors.push(matchedActor)
+          actorsNeedSorting = true
+        }
+      } else if (matchedActor.diagramRole === ActorRole.Administrator) {
+        if (matchedActor.displayOrder == undefined) {
+          administratorActorToAppend = matchedActor
+        } else {
+          specificationActors.push(matchedActor)
+          actorsNeedSorting = true
+        }
+      } else if (matchedActor.diagramRole === ActorRole.TestEngine) {
+        if (matchedActor.displayOrder == undefined) {
+          testEngineActorToAppend = matchedActor
+        } else {
+          specificationActors.push(matchedActor)
+          actorsNeedSorting = true
+        }
+      } else {
+        if (matchedActor.displayOrder != undefined) {
+          actorsNeedSorting = true
+        }
+        specificationActors.push(matchedActor)
+      }
     })
-    let actorsToReturn: string[]
-    if (hasOrdering != undefined) {
-      actorsToReturn = this.sortActors(actors, actorInfo)
-    } else {
-      actorsToReturn = actors
+    // Sort (if needed) the test case's declared actors.
+    if (actorsNeedSorting) {
+      specificationActors.sort((actor1, actor2) => {
+        if (actor1.displayOrder != undefined && actor2.displayOrder != undefined) {
+          return actor1.displayOrder - actor2.displayOrder
+        } else if (actor1.displayOrder != undefined) {
+          return -1
+        } else if (actor2.displayOrder != undefined) {
+          return 1
+        } else {
+          return 0
+        }
+      })
     }
-    this.includesNonSpecificationActor = find(actorsToReturn, (actor) => {
-      return actor == Constants.TESTER_ACTOR_ID || actor == Constants.TEST_ENGINE_ACTOR_ID || actor == Constants.ADMINISTRATOR_ACTOR_ID
-    }) != undefined
-    if (this.includesNonSpecificationActor) {
-      actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TESTER_ACTOR_ID)
-      actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.ADMINISTRATOR_ACTOR_ID)
-      actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TEST_ENGINE_ACTOR_ID)
-    }
-    return actorsToReturn
+    // If in use, add the special built-in actors at the end.
+    let allActors = specificationActors
+    if (userActorToAppend) allActors.push(userActorToAppend)
+    if (administratorActorToAppend) allActors.push(administratorActorToAppend)
+    if (testEngineActorToAppend) allActors.push(testEngineActorToAppend)
+    return allActors
   }
 
   extractActorsInternal(messages: StepData[]|undefined, actorInfo: ActorInfo[]): string[] {
     if (messages == undefined) {
       return []
     } else {
-      let collection: string[][] = map(messages, (message): string[] => {
+      let collection: string[][] = messages.map((message): string[] => {
         if (message.from != undefined && message.to != undefined) {
           return [message.from, message.to]
         } else if (message.type == 'group') {
@@ -217,43 +304,17 @@ export class SequenceDiagramComponent implements OnInit {
             instructionActors = [Constants.TEST_ENGINE_ACTOR_ID, Constants.TESTER_ACTOR_ID]
             requestActors = [Constants.TESTER_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
           }
-          return flatten(instructionActors.concat(requestActors))
+          return instructionActors.concat(requestActors).flat()
         } else {
           return []
         }
       })
-      return uniq(flatten(collection))
+      return Utils.uniqueValues(collection.flat())
     }
-  }
-
-  moveActorToTheEnd(actors: string[], actorId: string) {
-    let testEngineIndex = actors.indexOf(actorId)
-    if (testEngineIndex != -1) {
-      actors.splice(testEngineIndex, 1)
-      actors.push(actorId)
-    }
-    return actors
-  }
-
-  sortActors(actors: string[], actorInfo: ActorInfo[]) {
-    let actorsWithOrder = map(actors, (actorId) => {
-      const match = find(actorInfo, (info) => {
-        return info.id == actorId
-      })
-      if (match == undefined || match.displayOrder == undefined) {
-        return { id: actorId }
-      } else {
-        return { id: actorId, order: match.displayOrder }
-      }
-    })
-    const sortedArray = sortBy(actorsWithOrder, ['order'])
-    return map(sortedArray, (item) => {
-      return item.id
-    })
   }
 
   setStepIndexes(this: SequenceDiagramComponent, messages: StepData[]) {
-    forEach(messages, (message, i) => {
+    messages.forEach((message, i) => {
       message.order = i
       if (message.type == 'verify' || message.type == 'process' || message.type == 'msg' || message.type == 'exit' || message.type == 'interact') {
         this.setIndexes(message)
@@ -270,8 +331,8 @@ export class SequenceDiagramComponent implements OnInit {
   }
 
   setIndexes(message: StepData) {
-    message.fromIndex = indexOf(this.actors, message.from)
-    message.toIndex = indexOf(this.actors, message.to)
+    message.fromIndex = this.actors.findIndex(actor => actor.id == message.from)
+    message.toIndex = this.actors.findIndex(actor => actor.id == message.to)
     message.span = Math.abs(message.fromIndex - message.toIndex)
   }
 
@@ -279,7 +340,12 @@ export class SequenceDiagramComponent implements OnInit {
     return step.fromIndex! > step.toIndex!
   }
 
-  private setMessageSpan(message: StepData, firstChild: StepData, lastChild: StepData, extend: boolean) {
+  private stepTypeExpandsRightContainerBound(step: StepData) {
+    // These are the types of steps that can display a report or other information in their own swimlane.
+    return step.type != "interact" && (step.type != "msg" || (step.from == step.to))
+  }
+
+  private setMessageSpan(message: StepData, firstChild: StepData, lastChild: StepData) {
     if (this.isRightToLeft(firstChild)) {
       message.from = firstChild.to
       message.fromIndex = firstChild.toIndex
@@ -295,11 +361,11 @@ export class SequenceDiagramComponent implements OnInit {
       message.toIndex = lastChild.toIndex
     }
     let span = Math.abs(message.fromIndex! - message.toIndex!)
-    if (extend) {
-      if (message.from == Constants.TEST_ENGINE_ACTOR_ID || message.to == Constants.TEST_ENGINE_ACTOR_ID) {
-        // Extend the span because we may have here validation or processing with a message and a report.
-        span += 1
-      }
+    if (this.stepTypeExpandsRightContainerBound(lastChild)) {
+      span += 1
+    }
+    if (lastChild.span != undefined && lastChild.span > span) {
+      span = lastChild.span
     }
     if (span == 0) {
       span = 1
@@ -325,24 +391,40 @@ export class SequenceDiagramComponent implements OnInit {
     }
   }
 
-  setLoopStepChildIndexes(message: StepData) {
-    this.setStepIndexes(message.steps)
-    let firstChild = minBy(message.steps, this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(message.steps, this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
-    if (message.sequences != undefined) {
-      for (let sequence of message.sequences) {
-        this.setLoopStepChildIndexes(sequence)
-      }
+  private leftMostStep(steps: StepData[]) {
+    if (steps.length == 0) {
+      return undefined
+    } else {
+      return steps.reduce((min, item) => (this.leftMostStepActorIndex(item) < this.leftMostStepActorIndex(min))?item:min)
     }
+  }
+
+  private rightMostStep(steps: StepData[]) {
+    return steps.reduce((best: StepData|null, step: StepData): StepData => {
+      if (!best) return step;
+      const bestIndex = this.rightMostStepActorIndex(best)
+      const currentIndex = this.rightMostStepActorIndex(step)
+      if (currentIndex > bestIndex) {
+        return step
+      } else if (currentIndex < bestIndex) {
+        return best
+      } else {
+        // Prefer steps with a report on the actor's lifeline.
+        if (this.stepTypeExpandsRightContainerBound(step)) {
+          return step
+        } else {
+          return best
+        }
+      }
+    }, null);
   }
 
   setGroupStepChildIndexes(message: StepData) {
     let childSteps = message.steps
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
+    let firstChild = this.leftMostStep(childSteps)
+    let lastChild = this.rightMostStep(childSteps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
   }
 
   setDecisionStepChildIndexes(message: StepData) {
@@ -351,16 +433,29 @@ export class SequenceDiagramComponent implements OnInit {
       childSteps = childSteps.concat(message.else)
     }
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
+    let firstChild = this.leftMostStep(childSteps)
+    let lastChild = this.rightMostStep(childSteps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
   }
 
   setFlowStepChildIndexes(message: StepData) {
-    forEach(message.threads, this.setStepIndexes.bind(this))
-    let firstChild = minBy(flatten(message.threads), this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(flatten(message.threads), this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
+    message.threads?.forEach(thread => this.setStepIndexes(thread))
+    const childSteps = (message.threads == undefined)?[]:message.threads.flat()
+    let firstChild = this.leftMostStep(childSteps)
+    let lastChild = this.rightMostStep(childSteps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
+  }
+
+  setLoopStepChildIndexes(message: StepData) {
+    this.setStepIndexes(message.steps)
+    let firstChild = this.leftMostStep(message.steps)
+    let lastChild = this.rightMostStep(message.steps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
+    if (message.sequences != undefined) {
+      for (let sequence of message.sequences) {
+        this.setLoopStepChildIndexes(sequence)
+      }
+    }
   }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -64,6 +64,12 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
+  def getDomainTags(id: Long): Future[Option[String]] = {
+    DB.run {
+      PersistenceSchema.domains.filter(_.id === id).map(_.tags).result.headOption
+    }.map(_.flatten)
+  }
+
   def getDomains(ids: Option[List[Long]] = None, snapshotId: Option[Long] = None): Future[List[Domain]] = {
     val query = if (snapshotId.isDefined) {
       PersistenceSchema.conformanceSnapshotDomains
@@ -73,7 +79,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
         .result
         .map { results =>
           results.map { x =>
-            Domain(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, "")
+            Domain(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, "", None)
           }.toList
         }
     } else {
@@ -205,8 +211,8 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     DB.run(createDomainInternal(domain, checkApiKeyUniqueness)).map(_._2)
   }
 
-  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String]): Future[Unit] = {
-    DB.run(updateDomainInternal(domainId, shortName, fullName, description, reportMetadata, None).transactionally).map(_ => ())
+  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String], tags: Option[String]): Future[Unit] = {
+    DB.run(updateDomainInternal(domainId, shortName, fullName, description, reportMetadata, None, tags).transactionally).map(_ => ())
   }
 
   def updateDomainThroughAutomationApi(updateRequest: UpdateDomainRequest): Future[Unit] = {
@@ -245,7 +251,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     DB.run(action.transactionally)
   }
 
-  def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String], apiKey: Option[String]): DBIO[_] = {
+  def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String], apiKey: Option[String], tags: Option[String]): DBIO[_] = {
     for {
       replaceApiKey <- {
         if (apiKey.isDefined) {
@@ -258,12 +264,12 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
         if (apiKey.isDefined) {
           val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
           PersistenceSchema.domains.filter(_.id === domainId)
-            .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata, x.apiKey))
-            .update((shortName, fullName, description, reportMetadata, apiKeyToUse))
+            .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata, x.apiKey, x.tags))
+            .update((shortName, fullName, description, reportMetadata, apiKeyToUse, tags))
         } else {
           PersistenceSchema.domains.filter(_.id === domainId)
-            .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata))
-            .update((shortName, fullName, description, reportMetadata))
+            .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata, x.tags))
+            .update((shortName, fullName, description, reportMetadata, tags))
         }
       }
       _ <- {

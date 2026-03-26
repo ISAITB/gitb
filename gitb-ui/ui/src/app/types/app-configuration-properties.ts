@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -31,10 +31,13 @@ export interface AppConfigurationProperties {
   userGuideCA: string
   userGuideTA: string
   ssoEnabled: boolean
+  ssoWithNativeLogin: boolean
   ssoInMigration: boolean
   demosEnabled: boolean
   demosAccount: number
   startupWizardEnabled: boolean
+  usageTipsEnabled: boolean
+  usageTipsDisabledForScreens: number[]
   registrationEnabled: boolean
   savedFileMaxSize: number
   mode: string
@@ -44,5 +47,6 @@ export interface AppConfigurationProperties {
   conformanceStatementReportMaxTestCases: number
   headerNameAuthenticationCookiePath: string
   welcomePageTitle: string
+  preparingForShutdown: boolean
 
 }

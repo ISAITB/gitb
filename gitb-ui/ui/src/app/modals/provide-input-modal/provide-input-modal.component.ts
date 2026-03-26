@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,9 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {AnyContent} from 'src/app/components/diagram/any-content';
 import {DataService} from 'src/app/services/data.service';
 import {FileData} from 'src/app/types/file-data.type';
@@ -23,6 +22,8 @@ import {UserInteraction} from 'src/app/types/user-interaction';
 import {UserInteractionInput} from 'src/app/types/user-interaction-input';
 import {ValidationState} from '../../types/validation-state';
 import {ValueLabel} from '../../types/value-label';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-provide-input-modal',
@@ -33,9 +34,8 @@ import {ValueLabel} from '../../types/value-label';
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   @Input() interactions!: UserInteraction[]
-  @Input() inputTitle = 'User interaction'
+  @Input() inputTitle? = 'User interaction'
   @Input() sessionId!: string
-  @Output() result = new EventEmitter<UserInteractionInput[]|undefined>()
   @ViewChildren(CodemirrorComponent) codeMirrors?: QueryList<CodemirrorComponent>
   needsInput = false
   firstCodeIndex:number|undefined
@@ -44,7 +44,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   validation = new ValidationState()
 
   constructor(
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     public readonly dataService: DataService
   ) { }
 
@@ -76,10 +76,38 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
               j += 1
             }
           }
+          // Handle default value(s).
+          if (interaction.default != undefined && interaction.optionData) {
+            if (interaction.inputType == 'SELECT_SINGLE') {
+              const defaultOption = interaction.optionData.find((option) => {
+                return option.value == interaction.default
+              })
+              if (defaultOption != undefined) {
+                interaction.selectedOption = defaultOption
+              }
+            } else {
+              // Multiple select
+              const defaultOptions = interaction.default.split(",")
+              defaultOptions.forEach((defaultOption) => {
+                const matchedOption = interaction.optionData!.find((option) => {
+                  return option.value == defaultOption
+                })
+                if (matchedOption != undefined) {
+                  if (interaction.selectedOptions == undefined) {
+                    interaction.selectedOptions = []
+                  }
+                  interaction.selectedOptions.push(matchedOption)
+                }
+              })
+            }
+          }
         } else if (interaction.inputType == 'CODE') {
           this.editorFocus['input-'+i] = false
           if (this.firstCodeIndex == undefined) {
             this.firstCodeIndex = i
+          }
+          if (interaction.default != undefined) {
+            interaction.data = interaction.default
           }
           if (interaction.data == undefined) {
             interaction.data = ''
@@ -87,8 +115,12 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
         } else if (interaction.inputType == 'UPLOAD') {
           interaction.reset = new EventEmitter<void>()
         } else {
+          // Basic text inputs (secret, text, multiline)
           if (this.firstTextIndex == undefined) {
             this.firstTextIndex = i
+          }
+          if (interaction.default != undefined) {
+            interaction.data = interaction.default
           }
         }
       }
@@ -195,13 +227,11 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   }
 
   minimise() {
-    this.result.emit(undefined)
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   close() {
-    this.result.emit([])
-    this.modalRef.hide()
+    this.modalRef.close([])
   }
 
   submit() {
@@ -246,8 +276,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       index += 1
     }
     if (inputsValid) {
-      this.result.emit(inputs)
-      this.modalRef.hide()
+      this.modalRef.close(inputs)
     }
   }
 
@@ -264,4 +293,17 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     return false
   }
 
+  editorInitialized(editor: CodemirrorComponent, interaction: UserInteraction) {
+    this.dataService.addControlSubmitBehaviourToCodeEditor(editor)
+    if (interaction.size != undefined && interaction.size > 0) {
+      let sizeToSet = interaction.size
+      if (sizeToSet < 30) {
+        sizeToSet = 30
+      }
+      // Minimum height is 50px.
+      editor.codeMirror?.setSize(null, sizeToSet)
+    }
+  }
+
+  protected readonly Constants = Constants;
 }

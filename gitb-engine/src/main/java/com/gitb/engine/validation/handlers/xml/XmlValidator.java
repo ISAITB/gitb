@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,7 +17,6 @@ package com.gitb.engine.validation.handlers.xml;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
-import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
@@ -31,6 +30,8 @@ import com.gitb.tr.TestStepReportType;
 import com.gitb.types.*;
 
 import java.util.*;
+
+import static com.gitb.engine.validation.handlers.xsd.XsdValidator.SCHEMA_VERSION_ARGUMENT_NAME;
 
 @ValidationHandler(name="XmlValidator")
 public class XmlValidator extends AbstractValidator {
@@ -60,6 +61,7 @@ public class XmlValidator extends AbstractValidator {
         var sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var showTests = getAndConvert(inputs, SHOW_SCHEMATRON_TESTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var showPaths = getAndConvert(inputs, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
+        var schemaVersion = getAndConvert(inputs, SCHEMA_VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
         var testCaseId = new StringType(getTestCaseId(inputs));
         TAR xsdReport = null;
         List<TAR> schematronReports = new ArrayList<>();
@@ -71,6 +73,7 @@ public class XmlValidator extends AbstractValidator {
                     TEST_CASE_ID_INPUT, testCaseId
             ));
             putIfNotNull(map, XsdValidator.SHOW_SCHEMA_ARGUMENT_NAME, showArtefacts);
+            putIfNotNull(map, SCHEMA_VERSION_ARGUMENT_NAME, schemaVersion);
             xsdReport = (TAR)new XsdValidator().validate(configurations, map);
             allReports.add(xsdReport);
         }
@@ -100,24 +103,24 @@ public class XmlValidator extends AbstractValidator {
         if (!allReports.isEmpty()) {
             report = TestCaseUtils.mergeReports(allReports);
             var context = new AnyContent();
-            context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XsdReportHandler.XML_ITEM_NAME).get(0));
+            context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XsdReportHandler.XML_ITEM_NAME).getFirst());
             // Add validation artefacts.
             if (showArtefacts == null || showArtefacts.getValue()) {
                 // Add XSD.
                 if (xsdReport != null) {
-                    context.getItem().add(TestCaseUtils.getInputFor(xsdReport.getContext().getItem(), XsdReportHandler.XSD_ITEM_NAME).get(0));
+                    context.getItem().add(TestCaseUtils.getInputFor(xsdReport.getContext().getItem(), XsdReportHandler.XSD_ITEM_NAME).getFirst());
                 }
                 // Add schematrons.
                 if (!schematronReports.isEmpty()) {
                     var schematronsToShow = new AnyContent();
                     if (schematronReports.size() == 1) {
                         // Show as single Schematron file.
-                        schematronsToShow = TestCaseUtils.getInputFor(schematronReports.get(0).getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).get(0);
+                        schematronsToShow = TestCaseUtils.getInputFor(schematronReports.getFirst().getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).getFirst();
                     } else {
                         // Show as list of Schematron files.
                         schematronsToShow.setName(SchematronReportHandler.SCH_ITEM_NAME);
                         for (var schematronReport: schematronReports) {
-                            var item = TestCaseUtils.getInputFor(schematronReport.getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).get(0);
+                            var item = TestCaseUtils.getInputFor(schematronReport.getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).getFirst();
                             item.setName("");
                             schematronsToShow.getItem().add(item);
                         }
@@ -128,11 +131,7 @@ public class XmlValidator extends AbstractValidator {
             report.setName("XML validation");
             report.setContext(context);
             if (report.getReports() != null) {
-                var sortType = ReportItemComparator.SortType.LOCATION_THEN_SEVERITY;
-                if (sortBySeverity != null && sortBySeverity.getValue()) {
-                    sortType = ReportItemComparator.SortType.SEVERITY_THEN_LOCATION;
-                }
-                report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(sortType));
+                sortReport(report, sortBySeverity == null || !sortBySeverity.getValue());
             }
         }
         return report;

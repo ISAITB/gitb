@@ -1,0 +1,1 @@
+ALTER TABLE `communities` ADD COLUMN `allow_xml_reports` TINYINT DEFAULT 1 NOT NULL;

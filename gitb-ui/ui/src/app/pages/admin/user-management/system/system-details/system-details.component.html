@@ -2,8 +2,9 @@
     <div class="card mb-0">
         <div class="card-header">
             <div class="card-title">{{dataService.labelSystem()}} details</div>
+            <div app-community-tag-indicator></div>
         </div>
-        <form>
+        <form (ngSubmit)="update()">
             <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-system-form
                     [system]="system"
@@ -17,14 +18,14 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     @if (!readonly) {
-                        <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="!loaded || deletePending || !saveEnabled()" [pending]="savePending">Update</button>
+                        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="!saveEnabled()" [pending]="savePending">Update</button>
                     }
-                    <button class="btn btn-secondary" type="button" (click)="manageSystemTests()">Manage tests</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancel()">Back</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS"  type="button" (click)="manageSystemTests()">Manage tests</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancel()">Back</button>
                 </div>
                 @if (showDelete) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button class="btn btn-outline-danger" type="button" (click)="delete()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="delete()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>

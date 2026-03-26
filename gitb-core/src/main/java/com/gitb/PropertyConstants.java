@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -43,6 +43,7 @@ public class PropertyConstants {
     public static final String ACTOR_CONFIG_ORGANISATION = "com.gitb.ORGANISATION";
     public static final String ACTOR_CONFIG_SYSTEM = "com.gitb.SYSTEM";
     public static final String ACTOR_CONFIG_TEST_SERVICE = "com.gitb.TEST_SERVICE";
+    public static final String ACTOR_CONFIG_VARIABLES = "com.gitb.VARIABLES";
     public static final char ACTOR_CONFIG_TEST_SERVICE_SEPARATOR = '|';
 
     /**
@@ -54,6 +55,11 @@ public class PropertyConstants {
      * The map containing the status values for all steps.
      */
     public static final String STEP_STATUS_MAP = "STEP_STATUS";
+
+    /**
+     * The map containing the path identifiers for the TAR step reports.
+     */
+    public static final String STEP_REPORT_MAP = "com.gitb.STEP_REPORT";
 
     /**
      * The scope variable holding the overall result of the test session.

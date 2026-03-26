@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -19,9 +19,7 @@ import {UserGuideService} from '../../services/user-guide.service';
 import {HtmlService} from '../../services/html.service';
 import {LegalNoticeService} from '../../services/legal-notice.service';
 import {Observable, Subscription} from 'rxjs';
-import {Constants} from 'src/app/common/constants';
 import {AuthProviderService} from '../../services/auth-provider.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {ContactSupportComponent} from 'src/app/modals/contact-support/contact-support.component';
 import {RoutingService} from 'src/app/services/routing.service';
 import {MenuItem} from 'src/app/types/menu-item.enum';
@@ -29,6 +27,8 @@ import {PopupService} from 'src/app/services/popup.service';
 import {HealthCheckService} from '../../services/health-check.service';
 import {HealthStatus} from '../../types/health-status';
 import {MenuItemStatus} from '../../types/menu-item-status.enum';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-index',
@@ -40,7 +40,6 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   version?: string
   pageTitle = ''
-  menuExpanded = false
   logoutInProgress = false
   MenuItem = MenuItem
   loginSubscription?: Subscription
@@ -48,7 +47,10 @@ export class IndexComponent implements OnInit, OnDestroy {
   logoutSubscription?: Subscription
   logoutCompleteSubscription?: Subscription
   bannerSubscription?: Subscription
+  preparingForShutdownSubscription?: Subscription
+  closedNotificationsSubscription?: Subscription
   userPassedLogin = false
+  prepareForShutdownNotificationId: string|null = null
 
   constructor(
     public readonly dataService: DataService,
@@ -56,7 +58,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     private readonly htmlService: HtmlService,
     private readonly legalNoticeService: LegalNoticeService,
     private readonly authProviderService: AuthProviderService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     public readonly routingService: RoutingService,
     private readonly popupService: PopupService,
     private readonly healthCheckService: HealthCheckService
@@ -82,6 +84,15 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.userLoadSubscription = this.dataService.onUserLoaded$.subscribe(() => {
       this.handlePostUserLoad()
     })
+    this.preparingForShutdownSubscription = this.dataService.onPreparingForShutdown$.subscribe(() => {
+      this.handlePrepareForShutdown()
+    })
+    this.closedNotificationsSubscription = this.popupService.closedNotifications$.subscribe((notificationId) => {
+      if (notificationId != null && this.prepareForShutdownNotificationId != null && notificationId === this.prepareForShutdownNotificationId) {
+        // Needed so that if we trigger an error elsewhere that requires the notification to be displayed, we will not ignore it.
+        this.prepareForShutdownNotificationId = null
+      }
+    })
     if (sessionStorage) {
       window.addEventListener("beforeunload", () => {
         sessionStorage.setItem("menuItemStatusMap", JSON.stringify(Array.from(this.dataService.getMenuItemStatusMap())))
@@ -94,23 +105,8 @@ export class IndexComponent implements OnInit, OnDestroy {
     if (this.userLoadSubscription) this.userLoadSubscription.unsubscribe()
     if (this.logoutSubscription) this.logoutSubscription.unsubscribe()
     if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
-  }
-
-	switchAccount() {
-    this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
-    this.authProviderService.signalLogout({full: false, keepLoginOption: true})
-  }
-
-	logout() {
-    this.authProviderService.signalLogout({full: true})
-  }
-
-	userLoaded(): boolean {
-		return this.dataService.user !== undefined && this.dataService.user.name != undefined
-  }
-
-	userFullyLoaded(): boolean {
-    return this.userLoaded() && this.dataService.vendor != undefined
+    if (this.preparingForShutdownSubscription) this.preparingForShutdownSubscription.unsubscribe()
+    if (this.closedNotificationsSubscription) this.closedNotificationsSubscription.unsubscribe()
   }
 
   handlePostUserLoad(): void {
@@ -147,6 +143,20 @@ export class IndexComponent implements OnInit, OnDestroy {
         })
       }
     }
+    this.handlePrepareForShutdown()
+  }
+
+  handlePrepareForShutdown(): void {
+    if (this.dataService.configuration.preparingForShutdown) {
+      if (this.prepareForShutdownNotificationId == null) {
+        this.prepareForShutdownNotificationId = this.popupService.warning("The Test Bed is preparing to be shut down and will not accept new test sessions.", true)
+      }
+    } else {
+      if (this.prepareForShutdownNotificationId != null) {
+        this.popupService.close(this.prepareForShutdownNotificationId)
+        this.prepareForShutdownNotificationId = null
+      }
+    }
   }
 
   showRestApi(): boolean {
@@ -166,13 +176,11 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   contactUs() {
-    this.modalService.show(ContactSupportComponent, {
-      class: 'modal-lg'
-    })
+    this.modalService.open(ContactSupportComponent, { size: 'lg' })
   }
 
   showProvideFeedback(): boolean {
-		return !this.showContactUs() && (this.dataService.configuration && this.dataService.configuration.surveyEnabled == true)
+		return !this.showContactUs() && (this.dataService.configuration && this.dataService.configuration.surveyEnabled)
   }
 
   provideFeedbackLink(): string {
@@ -234,7 +242,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   toggleMenu() {
-    this.menuExpanded = !this.menuExpanded
+    this.dataService.setMenuVisibility(!this.dataService.menuVisibility)
   }
 
   copyExternalLink() {
@@ -253,4 +261,5 @@ export class IndexComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected readonly Constants = Constants;
 }

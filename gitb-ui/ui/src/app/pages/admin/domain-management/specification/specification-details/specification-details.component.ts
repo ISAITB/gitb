@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,8 +15,6 @@
 
 import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {filter, find} from 'lodash';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {finalize, forkJoin, map, mergeMap, Observable, of, share, Subject, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
@@ -38,6 +36,7 @@ import {FilterUpdate} from '../../../../../components/test-filter/filter-update'
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../../../components/table/table-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-specification-details',
@@ -47,6 +46,7 @@ import {TableApi} from '../../../../../components/table/table-api';
 export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   @ViewChild("testSuiteTable") testSuiteTable?: TableApi
+  @ViewChild("actorTable") actorTable?: TableApi
 
   sharedTestSuiteId?: number
   specification: Partial<Specification> = {}
@@ -58,19 +58,23 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   specificationId!: number
   actorStatus = {status: Constants.STATUS.NONE}
   testSuiteStatus = {status: Constants.STATUS.NONE}
+  actorPage = 1
+  testSuitePage = 1
+  actorTotal = 0
+  testSuiteTotal = 0
   testSuiteTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'version', title: 'Version' },
-    { field: 'shared', title: 'Shared' }
+    { field: 'shared', title: 'Shared', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   actorTableColumns: TableColumnDefinition[] = [
     { field: 'actorId', title: 'ID' },
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' },
-    { field: 'hidden', title: '', atEnd: true, isHiddenFlag: true, headerClass: 'th-min-centered' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' },
+    { field: 'hidden', title: '', atEnd: true, isHiddenFlag: true, headerClass: 'th-min centered' }
   ]
   savePending = false
   deletePending = false
@@ -78,6 +82,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   unlinkPending = false
   loaded = false
   testSuitesRefreshing = false
+  actorsRefreshing = false
   testSuiteFilter?: string
 
   linkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
@@ -92,7 +97,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     route: ActivatedRoute,
     router: Router,
     private readonly popupService: PopupService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { super(router, route) }
 
   loadTab(tabIndex: number): void {
@@ -111,6 +116,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
       textField: 'identifier',
       singleSelection: true,
       filterLabel: 'Link shared test suite',
+      filterLabelIcon: Constants.BUTTON_ICON.NEW,
       noItemsMessage: 'No shared test suites available to link.',
       searchPlaceholder: 'Search test suite...',
       clearItems: new EventEmitter(),
@@ -121,6 +127,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
       textField: 'identifier',
       singleSelection: true,
       filterLabel: 'Unlink shared test suite',
+      filterLabelIcon: Constants.BUTTON_ICON.REMOVE,
       searchPlaceholder: 'Search test suite...',
       clearItems: new EventEmitter(),
       loader: () => this.loadLinkedSharedTestSuites()
@@ -167,7 +174,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   private breadcrumbLabel() {
     let label = ''
     if (this.specification.group != undefined) {
-      label += find(this.specification.groups, (group) => group.id == this.specification.group)?.sname + " - "
+      label += this.specification.groups?.find((group) => group.id == this.specification.group)?.sname + " - "
     }
     label += this.specification.sname!
     return label
@@ -175,21 +182,21 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
   loadActors(forceLoad?: boolean) {
     if (this.actorStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.actorStatus.status = Constants.STATUS.PENDING
-      this.actors = []
-      this.conformanceService.getActorsWithSpecificationId(this.specificationId)
-      .subscribe((data) => {
-        this.actors = data
-      }).add(() => {
-        this.actorStatus.status = Constants.STATUS.FINISHED
-      })
+      this.loadActorsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, forceLoad)
+    } else {
+      this.updateActorPaging(this.actorPage, this.actorTotal)
     }
   }
 
   loadTestSuites(forceLoad?: boolean) {
-    this.linkSharedSelectionConfig.clearItems?.emit()
-    this.unlinkSharedSelectionConfig.clearItems?.emit()
-    this.loadTestSuitesInternal(forceLoad).subscribe(() => {})
+    if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.linkSharedSelectionConfig.clearItems?.emit()
+      this.unlinkSharedSelectionConfig.clearItems?.emit()
+      this.loadTestSuitesInternal(forceLoad).subscribe(() => {
+      })
+    } else {
+      this.updateTestSuitePaging(this.testSuitePage, this.testSuiteTotal)
+    }
   }
 
   loadTestSuitesInternal(forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
@@ -216,23 +223,57 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     }
   }
 
+  private loadActorsInternal(pagingInfo: PagingEvent, forceLoad?: boolean) {
+    if (this.actorStatus.status == Constants.STATUS.FINISHED || forceLoad) {
+      this.actorsRefreshing = true
+    } else {
+      this.actorStatus.status = Constants.STATUS.PENDING
+    }
+    this.conformanceService.searchActorsWithSpecificationId(this.specificationId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.actors = data.data
+        this.updateActorPaging(pagingInfo.targetPage, data.count)
+      }).add(() => {
+        this.actorsRefreshing = false
+        this.actorStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private updateTestSuitePaging(page: number, count: number) {
+    this.testSuiteTable?.getPagingControls()?.updateStatus(page, count)
+    this.testSuitePage = page
+    this.testSuiteTotal = count
+  }
+
+  private updateActorPaging(page: number, count: number) {
+    this.actorTable?.getPagingControls()?.updateStatus(page, count)
+    this.actorPage = page
+    this.actorTotal = count
+  }
+
   applyFilter() {
     this.refreshTestSuites()
   }
 
   refreshTestSuites() {
-    return this.loadSpecificationTestSuites({ targetPage: 1, targetPageSize: this.testSuiteTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    return this.loadSpecificationTestSuites({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doTestSuitePaging(event: PagingEvent) {
     this.loadSpecificationTestSuites(event)
+    if (event.pageSizeChanged) {
+      this.actorStatus.status = Constants.STATUS.NONE
+    }
   }
 
-  private updatePagination(page: number, count: number) {
-    this.testSuiteTable?.getPagingControls()?.updateStatus(page, count)
+  doActorPaging(event: PagingEvent) {
+    this.loadActorsInternal(event)
+    if (event.pageSizeChanged) {
+      this.testSuiteStatus.status = Constants.STATUS.NONE
+    }
   }
 
-  loadSpecificationTestSuites(pagingInfo: PagingEvent) {
+  private loadSpecificationTestSuites(pagingInfo: PagingEvent) {
     if (this.testSuiteStatus.status == Constants.STATUS.FINISHED) {
       this.testSuitesRefreshing = true
     } else {
@@ -242,7 +283,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     this.conformanceService.getTestSuites(this.specificationId, this.testSuiteFilter, pagingInfo.targetPage, pagingInfo.targetPageSize).pipe(
       tap((data) => {
         this.testSuites = data.data
-        this.updatePagination(pagingInfo.targetPage, data.count!)
+        this.updateTestSuitePaging(pagingInfo.targetPage, data.count!)
       }),
       finalize(() => {
         this.testSuitesRefreshing = false
@@ -259,17 +300,12 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	uploadTestSuite() {
-    const modal = this.modalService.show(TestSuiteUploadModalComponent, {
-      class: 'modal-lg',
-      keyboard: false,
-      backdrop: 'static',
-      initialState: {
-				availableSpecifications: [this.specification as Specification],
-				testSuitesVisible: true,
-        domainId: this.domainId
-      }
-    })
-    modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
+    const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
+    const modalInstance = modal.componentInstance as TestSuiteUploadModalComponent
+    modalInstance.availableSpecifications = [this.specification as Specification]
+    modalInstance.testSuitesVisible = true
+    modalInstance.domainId = this.domainId
+    modal.closed.subscribe((testSuitesUpdated?: boolean) => {
       if (testSuitesUpdated) {
         this.loadTestSuites(true)
         this.loadActors(true)
@@ -292,10 +328,8 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
       map((results) => {
         const sharedTestSuitesInDomain = results[0]
         const sharedTestSuitesInSpecification = results[1].shared
-        return filter(sharedTestSuitesInDomain, (testSuite) => {
-          const foundTestSuite = find(sharedTestSuitesInSpecification, (linkedTestSuite) => {
-            return linkedTestSuite.id == testSuite.id
-          })
+        return sharedTestSuitesInDomain.filter((testSuite) => {
+          const foundTestSuite = sharedTestSuitesInSpecification.find((linkedTestSuite) => linkedTestSuite.id == testSuite.id)
           return foundTestSuite == undefined
         })
       })
@@ -309,19 +343,14 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     this.conformanceService.linkSharedTestSuite(testSuite.id, [this.specificationId]).pipe(
       mergeMap((result) => {
         if (result.needsConfirmation) {
-          const modalRef = this.modalService.show(LinkSharedTestSuiteModalComponent, {
-            class: 'modal-lg',
-            keyboard: false,
-            backdrop: 'static',
-            initialState: {
-              testSuiteId: testSuite.id,
-              domainId: this.domainId,
-              step: 'confirm',
-              uploadResult: result,
-              availableSpecifications: [this.specification as Specification]
-            }
-          })
-          return modalRef.content!.completed
+          const modalRef = this.modalService.open(LinkSharedTestSuiteModalComponent, { size: 'lg', keyboard: false, backdrop: 'static' })
+          const modalInstance = modalRef.componentInstance as LinkSharedTestSuiteModalComponent
+          modalInstance.testSuiteId = testSuite.id
+          modalInstance.domainId = this.domainId
+          modalInstance.step = 'confirm'
+          modalInstance.uploadResult = result
+          modalInstance.availableSpecifications = [this.specification as Specification]
+          return modalInstance.completed
         } else if (result.success) {
           this.popupService.success('Test suite linked to '+this.dataService.labelSpecificationLower()+'.')
           this.linkPending = false
@@ -377,7 +406,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	deleteSpecification() {
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
 		.subscribe(() => {
       this.deletePending = true
       this.specificationService.deleteSpecification(this.specificationId)
@@ -391,18 +420,20 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	saveSpecificationChanges() {
-    this.savePending = true
-		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
-		.subscribe(() => {
-			this.popupService.success(this.dataService.labelSpecification()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelSpecification()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
 	saveDisabled() {
-    return !(
+    return !this.loaded || this.deletePending || this.savePending || !(
       this.textProvided(this.specification?.sname) &&
       this.textProvided(this.specification?.fname) &&
       this.dataService.badgesValid(this.specification?.badges)

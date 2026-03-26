@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -20,7 +20,7 @@ import exceptions.ErrorCodes
 import managers.triggers.TriggerHelper
 import managers.{AuthorizationManager, TriggerManager}
 import models.Enums.TriggerServiceType
-import play.api.libs.json.{JsBoolean, JsString, Json}
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
@@ -36,8 +36,10 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
 
   def getTriggersByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageTriggers(request, communityId).flatMap { _ =>
-      triggerManager.getTriggersByCommunity(communityId).map { list =>
-        val json: String = JsonUtil.jsTriggers(list).toString
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      triggerManager.getTriggersByCommunity(communityId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsTriggers).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -53,7 +55,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
           }
         } else {
           Future.successful {
-            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A trigger with this name already exists.", Some("name"))
+            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A webhook with this name already exists.", Some("name"))
           }
         }
       }
@@ -79,7 +81,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
           }
         } else {
           Future.successful {
-            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A trigger with this name already exists.", Some("name"))
+            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A webhook with this name already exists.", Some("name"))
           }
         }
       }

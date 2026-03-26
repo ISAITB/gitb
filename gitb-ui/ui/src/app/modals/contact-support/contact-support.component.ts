@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,15 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AccountService } from 'src/app/services/account.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { FileData } from 'src/app/types/file-data.type';
-import { FeedbackType } from './feedback-type.type';
-import { ValidationState } from 'src/app/types/validation-state';
+import {Component, OnInit} from '@angular/core';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {AccountService} from 'src/app/services/account.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {FileData} from 'src/app/types/file-data.type';
+import {FeedbackType} from './feedback-type.type';
+import {ValidationState} from 'src/app/types/validation-state';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-contact-support',
@@ -29,7 +30,7 @@ import { ValidationState } from 'src/app/types/validation-state';
     styles: [],
     standalone: false
 })
-export class ContactSupportComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class ContactSupportComponent extends BaseComponent implements OnInit {
 
   attachments: FileData[] = []
   feedbackTypes: FeedbackType[] = [
@@ -48,7 +49,7 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
 
   constructor(
     private readonly dataService: DataService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly accountService: AccountService,
     private readonly popupService: PopupService
   ) {
@@ -63,10 +64,6 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
     if (this.dataService.configuration !== undefined && this.dataService.configuration.emailAttachmentsMaxCount != undefined) {
       this.maximumAttachments = this.dataService.configuration.emailAttachmentsMaxCount
     }
-  }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('contact')
   }
 
   sendDisabled() {
@@ -133,7 +130,7 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   attachFile(file: FileData) {
@@ -163,4 +160,5 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
     return this.maximumAttachments > 0
   }
 
+  protected readonly Constants = Constants;
 }

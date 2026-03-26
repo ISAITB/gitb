@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -18,6 +18,11 @@
 .rootContainer {
     position: relative;
     cursor: default;
+    &.shaded {
+        .statusRootContainer, .popup-panel {
+            background: @gray-light-1;
+        }
+    }
 }
 .statusRootContainer {
     display: flex;
@@ -112,20 +117,6 @@
         }
         .statusRootContainer {
             margin-left: auto;
-        }
-    }
-}
-::ng-deep {
-    .status-icon-tooltip .tooltip-inner {
-        min-width: auto !important;
-        max-width: inherit !important;
-        white-space: nowrap;
-    }
-    .tooltip-label {
-        font-weight: bold;
-        margin-bottom: 5px;
-        &.with-margin {
-            margin-top: 10px;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,6 +16,7 @@
 import {Component, HostListener, Input} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-copy-enabled-text',
@@ -48,4 +49,6 @@ export class CopyEnabledTextComponent {
       this.popupService.success('Value copied to clipboard.')
     })
   }
+
+    protected readonly Constants = Constants;
 }

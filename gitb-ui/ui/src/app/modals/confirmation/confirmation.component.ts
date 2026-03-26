@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,8 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Component, Input, OnInit} from '@angular/core';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-confirmation',
@@ -22,28 +23,35 @@ import {BsModalRef} from 'ngx-bootstrap/modal';
     styles: [],
     standalone: false
 })
-export class ConfirmationComponent {
+export class ConfirmationComponent implements OnInit {
 
-  public result = new EventEmitter<boolean>()
+  @Input() headerText = ''
+  @Input() bodyText = ''
+  @Input() actionButtonText = ''
+  @Input() actionButtonIcon?: string
+  @Input() closeButtonText = ''
+  @Input() closeButtonIcon?: string
+  @Input() sameStyles? = true
+  @Input() oneButton = false
+  @Input() actionClass = 'btn btn-secondary'
 
-  headerText = ''
-  bodyText = ''
-  actionButtonText = ''
-  closeButtonText = ''
-  sameStyles = true
-  oneButton = false
-  actionClass = 'btn btn-secondary'
+  constructor(public readonly modalRef: NgbActiveModal) { }
 
-  constructor(public readonly modalRef: BsModalRef) { }
+  ngOnInit(): void {
+    if (this.actionButtonIcon == undefined) {
+      this.actionButtonIcon = Constants.BUTTON_ICON.CONFIRM
+    }
+    if (this.closeButtonIcon == undefined) {
+      this.closeButtonIcon = Constants.BUTTON_ICON.CANCEL
+    }
+  }
 
   ok() {
-    this.result.emit(true)
-    this.modalRef.hide()
+    this.modalRef.close(true)
   }
 
   cancel() {
-    this.result.emit(false)
-    this.modalRef.hide()
+    this.modalRef.close(false)
   }
 
   cancelClass(): string {

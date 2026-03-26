@@ -1,5 +1,5 @@
 @if (_pending) {
-    <div class="spinner"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></div>
+    <div class="spinner"><i [class]="Constants.BUTTON_ICON.PENDING"></i></div>
 }
 <div [class.disable-events]="_pending">
     <ng-content></ng-content>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -20,51 +20,28 @@ textarea {
 	min-height: 34px;
 }
 
-table th.sortable {
-    cursor: pointer;
+.btn span.label-icon i {
+    width: 0.85rem;
 }
 
-.table-directive {
-	padding: 0;
-	margin: 0;
-	tbody {
-		tr {
-			&.selectable {
-				&:hover, &:hover td {
-					cursor: pointer;
-					background-color: @gray-highlight !important;
-				}
-				&.selected td, &:hover td {
-					background-color: @gray-highlight !important;
-				}
-			}
-			td {
-				vertical-align: middle;
-				&.td-no-data {
-					background: white;
-					text-align: center;
-					span {
-						opacity: 0.5;
-					}
-				}
-				&.td-data-loading {
-					background: white;
-				}
-			}
-		}
-	}
-}
-
-button.btn {
-	&.pending {
-		padding: 6px;
-	}
-}
-
-.nav-tabs > li.active > a {
-	background-color: @gray-light-1 !important;
-	color: var(--itb-tab-link-color) !important;
-	border-bottom-color: @gray-light-1 !important;
+.nav-item {
+    .nav-link.tabClass {
+        color: var(--itb-tab-link-color) !important;
+        &.active {
+            background-color: @gray-light-1 !important;
+            color: var(--itb-tab-link-color) !important;
+            border-bottom-color: @gray-light-1 !important;
+        }
+        &:not(.active) {
+            border-radius: @border-radius @border-radius 0 0;
+            border-top: 1px solid @gray-dark-1;
+            border-left: 1px solid @gray-dark-1;
+            border-right: 1px solid @gray-dark-1;
+            &:hover {
+                background-color: @gray-light-1;
+            }
+        }
+    }
 }
 
 .tabPanel {
@@ -79,7 +56,7 @@ button.btn {
 		margin-bottom: 10px;
 	}
 	div.card:last-child {
-		margin-bottom: 0px;
+		margin-bottom: 0;
 	}
 }
 
@@ -112,15 +89,18 @@ button.btn {
 
 tr.test-result-obsolete {
 	td {
-		div, span {
-			opacity: 0.4;
-		}
+        .cell-content {
+            opacity: 0.4;
+        }
+        .cell-content.row-control {
+            opacity: 0.8;
+        }
 	}
 }
 
 .system-container-div {
-	padding-right: 0px;
-	padding-left: 0px;
+	padding-right: 0;
+	padding-left: 0;
 }
 
 .panel-heading-tests {
@@ -209,7 +189,7 @@ tr.test-result-obsolete {
 	&.expandable {
 		cursor: pointer;
 		display: flex;
-		border-radius: @border-radius @border-radius 0px 0px;
+		border-radius: @border-radius @border-radius 0 0;
 		&:hover {
 			background-color: @white-hover;
 		}
@@ -237,7 +217,7 @@ label.inline-checkbox {
 	margin-top: 7px;
 	cursor: pointer;
 	input {
-		margin: 0px;
+		margin: 0;
 	}
 	input[type="checkbox"] {
 		margin-right: 8px;
@@ -334,7 +314,7 @@ div.import-item {
 				}
 			}
 			&.open {
-				border-bottom-right-radius: 0px;
+				border-bottom-right-radius: 0;
 			}
 		}
 	}
@@ -391,11 +371,8 @@ div.import-item-group {
 		border: 1px solid @item-color-border;
 		align-items: center;
 		&.open {
-			border-top-left-radius: @border-radius;
-			border-top-right-radius: @border-radius;
-			border-bottom-left-radius: 0px;
-			border-bottom-right-radius: 0px;
-			border-top: 1px solid @item-color-border;
+            border-radius: @border-radius @border-radius 0 0;
+            border-top: 1px solid @item-color-border;
 			border-left: 1px solid @item-color-border;
 			border-right: 1px solid @item-color-border;
 		}
@@ -405,11 +382,8 @@ div.import-item-group {
 		}
 	}
 	div.import-item-group-items {
-		padding-left: 10px;
-		padding-right: 10px;
-		padding-bottom: 10px;
-		padding-top: 5px;
-		border-bottom-left-radius: 5px;
+        padding: 5px 10px 10px;
+        border-bottom-left-radius: 5px;
 		border-bottom-right-radius: 5px;
 		border-bottom: 1px solid @item-color-border;
 		border-left: 1px solid @item-color-border;
@@ -428,7 +402,7 @@ div.import-item-root {
 			margin-bottom: 10px;
 		}
 		& > div.import-item-group {
-			padding-bottom: 0px;
+			padding-bottom: 0;
 			border-radius: @border-radius;
 		}
 	}
@@ -439,62 +413,13 @@ div.import-item-root {
 	border-radius: @border-radius;
 	margin-bottom: 10px;
 	table.table {
-		margin-bottom: 0px;
+		margin-bottom: 0;
 		tbody tr:last-child td {
 			border-bottom-style: hidden;
 		}
 	}
 }
 
-.min-width {
-	width: 1px !important;
-}
-.centered {
-	text-align: center;
-}
-table.table {
-	&.thick {
-		tbody > tr {
-			td.centered > div {
-				justify-content: center;
-			}
-			td > div {
-				display: flex;
-				min-height: 34px;
-				span {
-					display: inline-flex;
-					align-items: center;
-				}
-			}
-		}
-	}
-}
-
-table.table {
-	&.filter-table {
-		width: 100%;
-		max-width: 100%;
-		margin-bottom: 0px;
-		th {
-			&.time-filter {
-				max-width: 250px;
-			}
-			&.result-filter {
-				min-width: 110px;
-				max-width: 200px;
-			}
-		}
-		input.date-picker {
-			max-width: 200px;
-			cursor: pointer;
-		}
-		td.session-filter {
-			.session-filter-input {
-				max-width: 370px;
-			}
-		}
-	}
-}
 .faded {
 	opacity: 0.5;
 }
@@ -541,6 +466,26 @@ div.table-container {
 	border: 1px solid @gray-dark-1 !important;
 	display: flex;
 	.form-check {
-		margin-bottom: 0px;
+		margin-bottom: 0;
 	}
+}
+.alert {
+    &.alert-info {
+        .alert-label {
+            background-color: @blue-info-border;
+        }
+    }
+    .alert-label {
+        font-weight: bold;
+        border-radius: 0.25rem;
+        padding: 0.15rem 0.5rem;
+        margin-right: 0.25rem;
+        font-size: small;
+    }
+    .alert-section:first-child {
+        margin-top: 0;
+    }
+    .alert-section {
+        margin-top: 0.5rem;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -16,6 +16,9 @@
 import {Domain} from './domain';
 import {TypedLabelConfig} from './typed-label-config.type';
 import {CommunityLimited} from './community-limited';
+import {Organisation} from './organisation.type';
+import {UserPreferences} from './user-preferences';
+import {TagData} from './tag-data';
 
 export interface Community extends CommunityLimited {
 
@@ -31,6 +34,8 @@ export interface Community extends CommunityLimited {
   selfRegAllowOrganisationTokens?: boolean;
   selfRegAllowOrganisationTokenManagement?: boolean;
   selfRegForceOrganisationTokenInput?: boolean;
+  selfRegJoinExisting?: boolean;
+  selfRegJoinAsAdmin?: boolean;
   email?: string;
   domain?: Domain;
   domainId?: number;
@@ -43,10 +48,20 @@ export interface Community extends CommunityLimited {
   allowAutomationApi?: boolean;
   allowCommunityView: boolean;
   allowUserManagement: boolean;
+  allowXmlReports: boolean;
   apiKey?: string;
+  preferences?: UserPreferences
+  tags?: TagData[]
 
   sameDescriptionAsDomain: boolean;
   activeDescription?: string;
   labels?: TypedLabelConfig[];
+  selfRegDefaultOrganisationEnabled?: boolean;
+  selfRegDefaultOrganisation?: Organisation;
+  selfRegEnabled?: boolean;
+  selfRegTokenEnabled?: boolean;
+  selfRegInstructionsEnabled?: boolean;
+  tagForCommunityAdmin?: boolean;
+  tagForTestBedAdmin?: boolean;
 
 }

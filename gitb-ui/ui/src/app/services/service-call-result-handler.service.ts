@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {ServiceCallResult} from '../types/service-call-result';
 import {CodeEditorModalComponent} from '../components/code-editor-modal/code-editor-modal.component';
 import {DataService} from './data.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {ErrorService} from './error.service';
 import {Alert} from '../types/alert.type';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Injectable({
   providedIn: 'root'
@@ -28,7 +28,7 @@ export class ServiceCallResultHandlerService {
 
   constructor(
     private readonly dataService: DataService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly errorService: ErrorService
   ) { }
 
@@ -50,21 +50,18 @@ export class ServiceCallResultHandlerService {
         msg: "The service call succeeded. The editor below includes the service's response.",
         type: 'success'
       }
-      this.modalService.show(CodeEditorModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          documentName: 'Service test result',
-          alert: alert,
-          editorOptions: {
-            value: valueToShow,
-            readOnly: true,
-            lineNumbers: true,
-            smartIndent: false,
-            electricChars: false,
-            mode: result.contentType
-          }
-        }
-      })
+      const modal = this.modalService.open(CodeEditorModalComponent, { size: 'lg' })
+      const modalInstance = modal.componentInstance as CodeEditorModalComponent
+      modalInstance.documentName = 'Service test result'
+      modalInstance.alert = alert
+      modalInstance.editorOptions = {
+        value: valueToShow,
+        readOnly: true,
+        lineNumbers: true,
+        smartIndent: false,
+        electricChars: false,
+        mode: result.contentType
+      }
     } else {
       const alert: Alert = {
         msg: 'The service call failed. The editor below includes the errors collected during the call.',

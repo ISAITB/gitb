@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,9 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { sortBy } from 'lodash';
-import { TestCaseTag } from 'src/app/types/test-case-tag';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {TagData} from 'src/app/types/tag-data';
+import {Constants} from '../../common/constants';
+import {CreateEditTagComponent} from '../../modals/create-edit-tag/create-edit-tag.component';
+import {Utils} from '../../common/utils';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-tags-display',
@@ -25,30 +28,73 @@ import { TestCaseTag } from 'src/app/types/test-case-tag';
 })
 export class TagsDisplayComponent implements OnInit {
 
-  @Input() tags?: TestCaseTag[]
+  @Input() tags?: TagData[] = []
   @Input() editable? = false
+  @Input() tooltip?: string
+  @Input() max?: number
+  @Output() added = new EventEmitter<void>();
 
-  @Output() edit = new EventEmitter<number>()
-  @Output() delete = new EventEmitter<number>()
-  @Output() create = new EventEmitter<void>()
+  private tagCounter = 0
 
-  constructor() { }
+  constructor(
+    private readonly modalService: NgbModal
+  ) { }
 
   ngOnInit(): void {
-    if (this.tags) {
-      this.tags = sortBy(this.tags, ['name'])
+    if (this.tags == undefined) {
+      this.tags = []
+    }
+    this.tags.sort((a, b) => a.name.localeCompare(b.name));
+
+  }
+
+  private addIdsIfNeeded(): void {
+    if (this.tags != undefined && this.tags.length > 0 && this.tags[0].id == undefined) {
+      this.tags.forEach(tag => {
+        if (tag.id == undefined) {
+          tag.id = this.tagCounter++
+        }
+      });
     }
   }
 
-  tagEdited(id: number) {
-    this.edit.emit(id)
-  }
-
-  tagDeleted(id: number) {
-    this.delete.emit(id)
-  }
-
   createTag() {
-    this.create.emit()
+    this.addIdsIfNeeded()
+    this.openTagModal()
   }
+
+  tagEdited(selectedTag: TagData) {
+    this.addIdsIfNeeded()
+    this.openTagModal(selectedTag)
+  }
+
+  tagDeleted(deletedTag: TagData) {
+    this.addIdsIfNeeded();
+    Utils.removeFromArray(this.tags, (tag) => tag.id == deletedTag.id)
+  }
+
+  private openTagModal(tag?: TagData) {
+    const modal = this.modalService.open(CreateEditTagComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as CreateEditTagComponent
+    modalInstance.tag = tag
+    modal.closed.subscribe((processedTag: TagData) => {
+      if (this.tags == undefined) {
+        this.tags = []
+      }
+      if (processedTag.id == undefined) {
+        // Create
+        processedTag.id = this.tagCounter++
+        this.tags.push(processedTag)
+        this.tags.sort((a, b) => a.name.localeCompare(b.name))
+        this.added.emit()
+      } else {
+        // Update
+        Utils.removeFromArray(this.tags, (tag) => tag.id == processedTag.id)
+        this.tags.push(processedTag)
+        this.tags.sort((a, b) => a.name.localeCompare(b.name))
+      }
+    })
+  }
+
+  protected readonly Constants = Constants;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -25,6 +25,7 @@ case class TestSuites(
 	shortname: String,
 	fullname: String,
 	version: String,
+	order: Short,
 	authors: Option[String],
 	originalDate: Option[String],
 	modificationDate: Option[String],
@@ -44,24 +45,15 @@ case class TestSuites(
 ) {
 
 	def withId(id: Long): TestSuites = {
-		TestSuites(id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath,
-			this.specReference, this.specDescription, this.specLink
-		)
+		copy(id = id)
 	}
 
 	def withFileName(filename: String): TestSuites = {
-		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath,
-			this.specReference, this.specDescription, this.specLink
-		)
+		copy(filename = filename)
 	}
 
 	def withDefinitionPath(definitionPath: Option[String]): TestSuites = {
-		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, definitionPath,
-			this.specReference, this.specDescription, this.specLink
-		)
+		copy(definitionPath = definitionPath)
 	}
 }
 
@@ -70,6 +62,7 @@ class TestSuite(
 	               _shortname: String,
 	               _fullname: String,
 	               _version: String,
+							 	 _order: Short,
 	               _authors: Option[List[String]],
 	               _originalDate: Option[String],
 	               _modificationDate: Option[String],
@@ -97,6 +90,7 @@ class TestSuite(
 	var shortname: String = _shortname
 	var fullname: String = _fullname
 	var version: String = _version
+	var order: Short = _order
 	var authors: Option[List[String]] = _authors
 	var originalDate: Option[String] = _originalDate
 	var modificationDate: Option[String] = _modificationDate
@@ -121,7 +115,7 @@ class TestSuite(
 	var testCaseGroups: Option[List[TestCaseGroup]] = _testCaseGroups
 
 	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]], testCaseGroups: Option[List[TestCaseGroup]]) = {
-		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
+		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version, testSuite.order,
 			if(testSuite.authors.isDefined) Some(testSuite.authors.get.split(",").toList) else None,
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
@@ -140,7 +134,7 @@ class TestSuite(
 
 	def toCaseObject: TestSuites = {
 		TestSuites(
-			this.id, this.shortname, this.fullname, this.version,
+			this.id, this.shortname, this.fullname, this.version, this.order,
 			if(this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
 			this.originalDate, this.modificationDate, this.description,
 			if(this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,

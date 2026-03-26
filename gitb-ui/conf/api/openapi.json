@@ -76,6 +76,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -112,6 +122,16 @@
           "200": {
             "description": "Domain updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -141,6 +161,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -194,6 +224,16 @@
           "200": {
             "description": "Domain updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -230,6 +270,16 @@
         "responses": {
           "200": {
             "description": "Domain deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -271,6 +321,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -324,6 +384,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -365,6 +435,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -418,6 +498,16 @@
           "200": {
             "description": "Specification group updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -454,6 +544,16 @@
         "responses": {
           "200": {
             "description": "Specification group deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -495,6 +595,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SpecificationGroup"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -557,6 +667,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -598,6 +718,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -651,6 +781,16 @@
           "200": {
             "description": "Specification updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -687,6 +827,16 @@
         "responses": {
           "200": {
             "description": "Specification deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -728,6 +878,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Specification"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -790,6 +950,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -848,6 +1018,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -889,6 +1069,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -942,6 +1132,16 @@
           "200": {
             "description": "Actor updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -978,6 +1178,16 @@
         "responses": {
           "200": {
             "description": "Actor deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1019,6 +1229,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -1081,6 +1301,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1126,6 +1356,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1161,6 +1401,16 @@
         "responses": {
           "200": {
             "description": "Community updated."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1211,6 +1461,16 @@
           "200": {
             "description": "Community updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1248,6 +1508,16 @@
           "200": {
             "description": "Community deleted."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1282,6 +1552,16 @@
                   "items": {
                     "$ref": "#/components/schemas/Organisation"
                   }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -1329,6 +1609,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1371,6 +1661,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organisation"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -1422,6 +1722,16 @@
           "200": {
             "description": "Organisation updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1458,6 +1768,16 @@
         "responses": {
           "200": {
             "description": "Organisation deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1508,6 +1828,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1549,6 +1879,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -1595,6 +1935,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/System"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -1646,6 +1996,16 @@
           "200": {
             "description": "System updated."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1682,6 +2042,16 @@
         "responses": {
           "200": {
             "description": "System deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1728,6 +2098,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1766,6 +2146,16 @@
           "200": {
             "description": "Domain parameter created."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -1801,6 +2191,16 @@
         "responses": {
           "200": {
             "description": "Domain parameter updated."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1840,6 +2240,16 @@
         "responses": {
           "200": {
             "description": "Parameter deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1888,6 +2298,16 @@
         "responses": {
           "200": {
             "description": "Parameter deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1985,6 +2405,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2021,6 +2451,16 @@
           "200": {
             "description": "Test service created."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2056,6 +2496,16 @@
         "responses": {
           "200": {
             "description": "Test service updated."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2095,6 +2545,16 @@
         "responses": {
           "200": {
             "description": "Test service deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2144,6 +2604,16 @@
           "200": {
             "description": "Test service deleted."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2182,6 +2652,16 @@
           "200": {
             "description": "Property created."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2217,6 +2697,16 @@
         "responses": {
           "200": {
             "description": "Property updated."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2257,6 +2747,16 @@
           "200": {
             "description": "Property deleted."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2295,6 +2795,16 @@
           "200": {
             "description": "Property created."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2330,6 +2840,16 @@
         "responses": {
           "200": {
             "description": "Property updated."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2369,6 +2889,16 @@
         "responses": {
           "200": {
             "description": "Property deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2419,6 +2949,16 @@
           "200": {
             "description": "Property created."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2465,6 +3005,16 @@
         "responses": {
           "200": {
             "description": "Property updated."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2513,6 +3063,16 @@
         "responses": {
           "200": {
             "description": "Property deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2716,6 +3276,16 @@
           "200": {
             "description": "Conformance statement successfully created."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2761,6 +3331,16 @@
         "responses": {
           "200": {
             "description": "Conformance statement successfully deleted."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -2817,6 +3397,16 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -2891,6 +3481,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -2933,6 +3533,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionStartResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -2983,6 +3593,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -3022,6 +3642,16 @@
           "200": {
             "description": "Test session(s) successfully stopped.",
             "content": {}
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -3078,6 +3708,16 @@
           "404": {
             "description": "No test session was not found matching the provided identifier."
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -3130,6 +3770,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TestSuiteDeployResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
                 }
               }
             }
@@ -3190,6 +3840,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -3230,6 +3890,16 @@
             "description": "Test suite successfully undeployed.",
             "content": {}
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -3269,6 +3939,16 @@
           "200": {
             "description": "Test suite successfully undeployed.",
             "content": {}
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -3316,6 +3996,16 @@
               }
             }
           },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
           "default": {
             "description": "The received request was invalid.",
             "content": {
@@ -3355,6 +4045,16 @@
           "200": {
             "description": "Test suite successfully unlinked.",
             "content": {}
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -3396,6 +4096,10 @@
           },
           "maximumWaitTime": {
             "description": "In case the call should wait for the test sessions to complete, this is the maximum time (in milliseconds) to wait before returning.",
+            "type": "number"
+          },
+          "executionDelay": {
+            "description": "An optional delay (in milliseconds) before executing tests. This delay is applied between each test execution regardless of whether execution is sequential or parallel. Providing a negative value or zero is equivalent to no delay being applied.",
             "type": "number"
           },
           "testSuite": {

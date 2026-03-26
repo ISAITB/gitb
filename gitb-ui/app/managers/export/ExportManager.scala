@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -28,6 +28,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
+import java.math.BigInteger
 import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -48,6 +49,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                                errorTemplateManager: ErrorTemplateManager,
                                specificationManager: SpecificationManager,
                                reportManager: ReportManager,
+                               userPreferenceManager: UserPreferenceManager,
                                dbConfigProvider: DatabaseConfigProvider)
                               (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -425,6 +427,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         exportedDomain.setDescription(domain.description.orNull)
         exportedDomain.setReportMetadata(domain.reportMetadata.orNull)
         exportedDomain.setApiKey(domain.apiKey)
+        exportedDomain.setTags(domain.tags.orNull)
         // Shared test suites.
         if (exportSettings.testSuites) {
           val testSuites = data.sharedTestSuites.get
@@ -621,6 +624,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 exportedTestService.setAuthTokenUsername(testService.authTokenUsername.orNull)
                 exportedTestService.setAuthTokenPassword(encryptText(testService.authTokenPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
                 exportedTestService.setAuthTokenPasswordType(testService.authTokenPasswordType.map(x => toExportedTestServiceAuthTokenPasswordType(models.Enums.TestServiceAuthTokenPasswordType.apply(x))).orNull)
+                exportedTestService.setMonitorHealth(testService.monitorHealth)
                 exportedTestService.setParameter(exportedDomainParameterMap(testService.parameter))
                 exportedDomain.getTestServices.getService.add(exportedTestService)
               }
@@ -651,6 +655,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedTestSuite.setShortName(testSuite.shortname)
     exportedTestSuite.setFullName(testSuite.fullname)
     exportedTestSuite.setVersion(testSuite.version)
+    exportedTestSuite.setOrder(testSuite.order)
     exportedTestSuite.setAuthors(testSuite.authors.orNull)
     exportedTestSuite.setKeywords(testSuite.keywords.orNull)
     exportedTestSuite.setDescription(testSuite.description.orNull)
@@ -851,7 +856,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             exportedSettings.setAdministrators(new SystemAdministrators)
             administrators.foreach { user =>
               val exportedAdmin = new SystemAdministrator
-              populateExportedUser(sequence.next(), user, exportedAdmin, exportSettings.encryptionKey)
+              populateExportedUser(sequence.next(), user, exportedAdmin, exportSettings.encryptionKey, None)
               exportedSettings.getAdministrators.getAdministrator.add(exportedAdmin)
             }
           }
@@ -938,18 +943,27 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedSetting
   }
 
-  private def populateExportedUser(idToUse: Int, user: models.Users, exportedUser: com.gitb.xml.export.User, encryptionKey: Option[String]): Unit = {
+  private def populateExportedUser(idToUse: Int, user: models.Users, exportedUser: com.gitb.xml.export.User, encryptionKey: Option[String], exportData: Option[CommunityExportData]): Unit = {
     exportedUser.setId(toId(idToUse))
     exportedUser.setName(user.name)
     exportedUser.setEmail(user.email)
     exportedUser.setPassword(encryptText(Some(user.password), encryptionKey))
     exportedUser.setOnetimePassword(user.onetimePassword)
+    if (exportData.exists(_.userPreferenceMap.exists(_.contains(user.id)))) {
+      val prefs = exportData.get.userPreferenceMap.get(user.id)
+      exportedUser.setPreferences(new com.gitb.xml.export.UserPreferences)
+      exportedUser.getPreferences.setMenuCollapsed(prefs.menuCollapsed)
+      exportedUser.getPreferences.setStatementsCollapsed(prefs.statementsCollapsed)
+      exportedUser.getPreferences.setPageSize(BigInteger.valueOf(prefs.pageSize))
+      exportedUser.getPreferences.setHomePageType(toExportedHomePageType(prefs.homePageType))
+    }
   }
 
   private def loadCommunityExportData(communityId: Long, exportSettings: ExportSettings): Future[(CommunityExportData, ExportSettings)] = {
     require(communityId != Constants.DefaultCommunityId, "The default community cannot be exported")
     for {
       community <- communityManager.getById(communityId)
+      userPreferences <- userPreferenceManager.getDefaultUserPreferences(communityId)
       data <- {
         if (community.isEmpty) {
           logger.error("No community could be found for id ["+communityId+"]. Aborting export.")
@@ -1051,6 +1065,11 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                                                   // System settings
                                                   loadIfApplicable(exportSettings.hasSystemSettings(),
                                                     () => loadSystemSettingsExportData(exportSettings)
+                                                  ).zip(
+                                                    // User preferences
+                                                    loadIfApplicable(exportSettings.communityAdministrators || (exportSettings.organisations && exportSettings.organisationUsers),
+                                                      () => userPreferenceManager.loadUserPreferencesMap(communityId)
+                                                    )
                                                   )
                                                 )
                                               )
@@ -1075,6 +1094,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         ).map { results =>
           (CommunityExportData(
             community = community,
+            userPreferences = userPreferences,
             domainExportData = results._1,
             administrators = results._2._1,
             statementCertificateSettings = results._2._2._1,
@@ -1096,7 +1116,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             systemParameterValueMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
             systemStatementsMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
             systemConfigurationsMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            systemSettings = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2
+            systemSettings = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
+            userPreferenceMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2,
           ), exportSettings)
         }
       }
@@ -1335,6 +1356,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setSupportEmail(community.get.supportEmail.orNull)
         communityData.setDescription(community.get.description.orNull)
         communityData.setApiKey(community.get.apiKey)
+        communityData.setTags(community.get.tags.orNull)
         communityData.setAllowCertificateDownload(community.get.allowCertificateDownload)
         communityData.setAllowStatementManagement(community.get.allowStatementManagement)
         communityData.setAllowSystemManagement(community.get.allowSystemManagement)
@@ -1344,7 +1366,14 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setAllowAutomationApi(community.get.allowAutomationApi)
         communityData.setAllowCommunityView(community.get.allowCommunityView)
         communityData.setAllowUserManagement(community.get.allowUserManagement)
+        communityData.setAllowXmlReports(community.get.allowXmlReports)
         communityData.setInteractionNotification(community.get.interactionNotification)
+        // User preference defaults.
+        communityData.setDefaultUserPreferences(new com.gitb.xml.export.UserPreferences)
+        communityData.getDefaultUserPreferences.setMenuCollapsed(data.userPreferences.menuCollapsed)
+        communityData.getDefaultUserPreferences.setStatementsCollapsed(data.userPreferences.statementsCollapsed)
+        communityData.getDefaultUserPreferences.setPageSize(BigInteger.valueOf(data.userPreferences.pageSize))
+        communityData.getDefaultUserPreferences.setHomePageType(toExportedHomePageType(data.userPreferences.homePageType))
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
         SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -1366,6 +1395,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.getSelfRegistrationSettings.setAllowOrganisationTokens(community.get.selfRegAllowOrganisationTokens)
         communityData.getSelfRegistrationSettings.setAllowOrganisationTokenManagement(community.get.selfRegAllowOrganisationTokenManagement)
         communityData.getSelfRegistrationSettings.setForceOrganisationTokenInput(community.get.selfRegForceOrganisationTokenInput)
+        communityData.getSelfRegistrationSettings.setJoinExisting(community.get.selfRegJoinExisting)
+        communityData.getSelfRegistrationSettings.setJoinAsAdmin(community.get.selfRegJoinAsAdmin)
         // Administrators.
         if (exportSettings.communityAdministrators) {
           val administrators = data.administrators.get
@@ -1373,7 +1404,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             communityData.setAdministrators(new CommunityAdministrators)
             administrators.foreach { user =>
               val exportedAdmin = new CommunityAdministrator
-              populateExportedUser(idSequence.next(), user, exportedAdmin, exportSettings.encryptionKey)
+              populateExportedUser(idSequence.next(), user, exportedAdmin, exportSettings.encryptionKey, Some(data))
               communityData.getAdministrators.getAdministrator.add(exportedAdmin)
               exportedUserMap += (user.id -> exportedAdmin.getId)
             }
@@ -1747,11 +1778,12 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedOrganisation.setTemplateName(organisation.templateName.orNull)
               exportedOrganisation.setApiKey(organisation.apiKey.orNull)
               exportedOrganisation.setSelfRegistrationToken(organisation.selfRegToken.orNull)
+              exportedOrganisation.setSelfRegDefault(organisation.selfRegDefault)
               if (exportSettings.organisationUsers && !organisation.adminOrganization && data.organisationUserMap.get.contains(organisation.id)) {
                 exportedOrganisation.setUsers(new com.gitb.xml.export.Users)
                 data.organisationUserMap.get(organisation.id).foreach { user =>
                   val exportedUser = new OrganisationUser
-                  populateExportedUser(idSequence.next(), user, exportedUser, exportSettings.encryptionKey)
+                  populateExportedUser(idSequence.next(), user, exportedUser, exportSettings.encryptionKey, Some(data))
                   exportedUserMap += (user.id -> exportedUser.getId)
                   UserRole.apply(user.role) match {
                     case UserRole.VendorAdmin => exportedUser.setRole(OrganisationRoleType.ORGANISATION_ADMIN)
@@ -1892,6 +1924,13 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       case models.Enums.ReportType.ConformanceOverviewCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE
       case models.Enums.ReportType.ConformanceStatementCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_CERTIFICATE
       case _ => throw new IllegalArgumentException("Unknown report type %s".formatted(reportType.id))
+    }
+  }
+
+  private def toExportedHomePageType(modelType: Short): com.gitb.xml.export.HomePageType = {
+    models.Enums.HomePageType.apply(modelType) match {
+      case models.Enums.HomePageType.CONFORMANCE_DASHBOARD => com.gitb.xml.export.HomePageType.CONFORMANCE_DASHBOARD
+      case _ => com.gitb.xml.export.HomePageType.LANDING_PAGE
     }
   }
 

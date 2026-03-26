@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -61,7 +61,21 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   }
 
   private confirmActiveChange() {
-    return this.confirmationDialogService.confirm("Active theme change", "You are about the change the currently active theme. Are you sure you want to proceed?", "Change", "Cancel")
+    return this.confirmationDialogService.confirm("Active theme change", "You are about the change the currently active theme. Are you sure you want to proceed?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
+  }
+
+  saveDisabled() {
+    return this.copyPending || this.deletePending || this.savePending || (this.theme.custom && !this.textProvided(this.theme.key))
+  }
+
+  saveOrActivate() {
+    if (!this.saveDisabled()) {
+      if (this.theme.custom) {
+        this.save()
+      } else if (!this.theme.active) {
+        this.activate()
+      }
+    }
   }
 
   save() {
@@ -119,7 +133,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
     } else {
       message = "Are you sure you want to delete this theme?"
     }
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.systemConfigurationService.deleteTheme(this.themeId)

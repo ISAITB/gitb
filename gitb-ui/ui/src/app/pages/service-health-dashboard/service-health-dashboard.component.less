@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,6 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+@import "../../../styles/less/_common.less";
+
 .checks-container {
     margin: 5px;
     display: flex;
@@ -20,8 +22,17 @@
     app-service-health-card {
         margin: 5px;
         flex: 1;
+        max-width: 300px;
     }
 }
 .status-container {
     margin: 10px 10px 0 10px;
+}
+.no-services-container {
+    padding: 10px;
+}
+.domain-filter {
+    margin-right: 30px;
+    padding-right: 30px;
+    border-right: 1px solid @gray-dark-1;
 }

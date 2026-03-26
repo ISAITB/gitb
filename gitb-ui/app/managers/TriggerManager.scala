@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -29,6 +29,7 @@ import models.Enums.{TriggerDataType, TriggerFireExpressionType, TriggerServiceT
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.lang3.StringUtils
+import org.apache.cxf.frontend.ClientProxy
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.Environment
@@ -114,15 +115,22 @@ class TriggerManager @Inject()(env: Environment,
     ).map(!_)
   }
 
-  def getTriggersByCommunity(communityId: Long): Future[List[Triggers]] = {
-    DB.run(PersistenceSchema.triggers
-      .filter(_.community === communityId)
-      .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.serviceType, x.active, x.community, x.latestResultOk))
-      .sortBy(_._2.asc)
-      .result
-    ).map { result =>
-      result.map(x => Triggers(x._1, x._2, x._3, x._4, x._5, x._6, None, x._7, x._9, None, x._8)).toList
+  def getTriggersByCommunity(communityId: Long, page: Long, limit: Long): Future[SearchResult[Triggers]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.triggers
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.serviceType, x.active, x.community, x.latestResultOk))
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_._2.asc)
+      }
+      baseQuery
     }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.toList.map(x => Triggers(x._1, x._2, x._3, x._4, x._5, x._6, None, x._7, x._9, None, x._8)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   def createTrigger(trigger: Trigger): Future[Long] = {
@@ -1051,10 +1059,15 @@ class TriggerManager @Inject()(env: Environment,
   private def callProcessingService(url: String, fnCallOperation: ProcessingService => JAXBElement[_]): Future[ServiceTestResult] = {
     Future {
       val service = new ProcessingServiceService(URI.create(url).toURL)
-      val response = fnCallOperation.apply(service.getProcessingServicePort)
-      val bos = new ByteArrayOutputStream()
-      XMLUtils.marshalToStream(response, bos)
-      ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
+      val client = service.getProcessingServicePort
+      try {
+        val response = fnCallOperation.apply(client)
+        val bos = new ByteArrayOutputStream()
+        XMLUtils.marshalToStream(response, bos)
+        ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
+      } finally {
+        try { ClientProxy.getClient(client).destroy() } catch { case _: Exception => /* Ignore */ }
+      }
     }
   }
 
@@ -1357,8 +1370,12 @@ class TriggerManager @Inject()(env: Environment,
   private def callTriggerService(trigger: Triggers, request: ProcessRequest): Future[ProcessResponse] = {
     if (TriggerServiceType.apply(trigger.serviceType) == TriggerServiceType.GITB) {
       Future {
-        val service = new ProcessingServiceService(URI.create(trigger.url).toURL)
-        service.getProcessingServicePort.process(request)
+        val client = new ProcessingServiceService(URI.create(trigger.url).toURL).getProcessingServicePort
+        try {
+          client.process(request)
+        } finally {
+          try { ClientProxy.getClient(client).destroy() } catch { case _: Exception => /* Ignore */ }
+        }
       }
     } else {
       callHttpService(trigger.url, () => {

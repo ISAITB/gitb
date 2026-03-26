@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,11 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {filter} from 'lodash';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
-import {Counters} from '../test-status-icons/counters';
+import {Counters} from '../test-status-base/counters';
 import {DataService} from 'src/app/services/data.service';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {BaseComponent} from '../../pages/base-component.component';
@@ -29,6 +28,10 @@ import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-stat
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {Constants} from '../../common/constants';
 import {ConformanceIds} from '../../types/conformance-ids';
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -61,8 +64,13 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() selected = new EventEmitter<number>()
+  @Output() testStatusOpened = new EventEmitter<TestStatusBaseApi>()
 
-  @ViewChildren('itemsComponent') itemsComponents?: QueryList<ConformanceStatementItemsDisplayComponentApi>
+  @ViewChild('itemsComponent') itemsComponents?: ConformanceStatementItemsDisplayComponentApi
+  @ViewChild("testStatusDisplay") testStatusDisplay?: TestStatusBaseApi
+  @ViewChild("testStatusDisplayRatio") testStatusDisplayRatio?: TestStatusBaseApi
+  @ViewChild("optionButton") optionButton?: CheckBoxOptionPanelComponentApi
+  @ViewChild("ownOptionsButton") ownOptionsButton?: StatementOptionsButtonApi<ConformanceIds>
 
   protected static EXPORT_XML_OVERVIEW = '0'
   protected static EXPORT_PDF_OVERVIEW = '1'
@@ -77,7 +85,6 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   status?: string
   updateTime?: string
   pending = false
-  refreshCounters = new EventEmitter<Counters>()
   actorId?: number
   specificationId?: number
   conformanceIds?: ConformanceIds
@@ -88,13 +95,28 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     public readonly dataService: DataService
   ) { super() }
 
+  documentEscape(): void {
+    this.itemsComponents?.documentEscape()
+    this.testStatusDisplay?.documentEscape()
+    this.testStatusDisplayRatio?.documentEscape()
+    this.optionButton?.documentEscape()
+    this.ownOptionsButton?.documentEscape()
+  }
+
+  documentClick(event: Event): void {
+    this.itemsComponents?.documentClick(event)
+    this.testStatusDisplay?.documentClick(event)
+    this.testStatusDisplayRatio?.documentClick(event)
+    this.optionButton?.documentClick(event)
+    this.ownOptionsButton?.documentClick(event)
+  }
+
   reset() {
     this.ngOnInit()
-    if (this.itemsComponents) {
-      this.itemsComponents.forEach(item => item.reset())
-    }
+    this.itemsComponents?.reset()
     if (this.counters) {
-      this.refreshCounters.emit(this.counters)
+      this.testStatusDisplay?.refresh(this.counters)
+      this.testStatusDisplayRatio?.refresh(this.counters)
     }
   }
 
@@ -102,7 +124,7 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.hasChildren = this.item.items != undefined && this.item.items.length > 0
     this.allChildrenHidden = false
     if (this.hasChildren) {
-      const hiddenChildren = filter(this.item.items, (item) => {
+      const hiddenChildren = this.item.items!.filter((item) => {
         return item.hidden == true
       })
       this.allChildrenHidden = this.item.items!.length == hiddenChildren.length
@@ -131,10 +153,13 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
       this.specificationId = this.parentItem?.id
     }
     if (this.hasChildren && !this.item.hidden && this.withExport) {
-      this.parentItemOptions = [[
-        {key: ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW, label: 'Download overview report', default: true, iconClass: 'fa-solid fa-file-pdf'},
-        {key: ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW, label: 'Download overview report as XML', default: true, iconClass: 'fa-solid fa-file-lines'}
-      ]]
+      const reportOptions: CheckboxOption[] = [
+        {key: ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW, label: 'Download overview report', default: true, iconClass: Constants.BUTTON_ICON.REPORT_PDF}
+      ]
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+        reportOptions.push({key: ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW, label: 'Download overview report as XML', default: true, iconClass: Constants.BUTTON_ICON.REPORT_XML})
+      }
+      this.parentItemOptions = [reportOptions]
     }
     if (this.withOptions) {
       this.conformanceIds = {
@@ -163,7 +188,8 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
       this.status = this.dataService.conformanceStatusForTests(this.results.completedToConsider, this.results.failedToConsider, this.results.undefinedToConsider)
       if (signalUpdate) {
         setTimeout(() => {
-          this.refreshCounters.emit(this.counters)
+          this.testStatusDisplay?.refresh(this.counters!)
+          this.testStatusDisplayRatio?.refresh(this.counters!)
         })
       }
     }
@@ -244,6 +270,17 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.export.emit(event)
   }
 
+  exportPdfClicked(pop?: NgbTooltip) {
+    if (pop) {
+      pop.disableTooltip = true
+      pop.close()
+      setTimeout(() => {
+        pop.disableTooltip = false
+      }, this.Constants.TOOLTIP_DELAY + 50)
+    }
+    this.onExport({statementReport: false, item: this.item, format: 'pdf'})
+  }
+
   handleOption(event: CheckboxOptionState) {
     if (event[ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW]) {
       this.onExport({statementReport: false, item: this.item, format: 'xml'})
@@ -256,4 +293,14 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.selected.emit(this.item.id)
   }
 
+  manageTestStatusOpened(source: TestStatusBaseApi) {
+    if (source !== this.testStatusDisplay) this.testStatusDisplay?.close()
+    if (source !== this.testStatusDisplayRatio) this.testStatusDisplayRatio?.close()
+    this.itemsComponents?.manageTestStatusOpened(source)
+  }
+
+  manageAndPropagateTestStatusOpened(source: TestStatusBaseApi) {
+    this.manageTestStatusOpened(source)
+    this.testStatusOpened.emit(source)
+  }
 }

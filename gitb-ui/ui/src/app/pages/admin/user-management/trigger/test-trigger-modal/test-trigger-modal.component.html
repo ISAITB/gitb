@@ -1,43 +1,49 @@
 <div class="modal-header">
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
 	<div class="modal-title">Preview and test service call</div>
 </div>
-<div class="modal-body">
-    @if (editStep) {
-        <div class="alert alert-info rounded">
-            <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call returns output data, it will be displayed but not used for actual updates.</span>
-        </div>
-        <div class="editor editor-normal" [class.disable-events]="actionPending">
-            <ngx-codemirror [(ngModel)]="request" [options]="editorOptionsRequest"></ngx-codemirror>
-        </div>
-    } @else {
-        @if (responseSuccess) {
-            <div class="alert alert-success rounded">
-                <span>The service call succeeded and produced the following output. Any output data returned was not used for actual updates.</span>
-            </div>
-            <div class="editor editor-normal">
-                <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponse"></ngx-codemirror>
-            </div>
-        } @else {
-            <div class="alert alert-danger rounded">
-                <span>The service call failed. The errors raised during the call are listed below.</span>
-            </div>
-            <div class="editor editor-short">
-                <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponseError"></ngx-codemirror>
-            </div>
-        }
-    }
-</div>
-<div class="modal-footer">
-    <div class="btn-toolbar">
-        <button type="button" class="btn btn-secondary" (click)="close()">{{actionPending?'Cancel':'Close'}}</button>
-        <button type="button" class="btn btn-secondary" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
+<form (ngSubmit)="callService()">
+    <div class="modal-body">
         @if (editStep) {
-            <button type="button" class="btn btn-secondary" (click)="callService()" [disable]="!textProvided(url)" [pending]="actionPending">Call service</button>
-            @if (request != initialRequest) {
-                <button type="button" class="btn btn-secondary" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
-            }
+            <div class="alert alert-info rounded">
+                <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call returns output data, it will be displayed but not used for actual updates.</span>
+            </div>
+            <div class="editor editor-normal" [class.disable-events]="actionPending">
+                <ngx-codemirror name="requestEditor" [(ngModel)]="request" [options]="editorOptionsRequest" (codeMirrorLoaded)="requestEditorLoaded($event)"></ngx-codemirror>
+            </div>
         } @else {
-            <button type="button" class="btn btn-secondary" (click)="back()">Back</button>
+            @if (responseSuccess) {
+                <div class="alert alert-success rounded">
+                    <span>The service call succeeded and produced the following output. Any output data returned was not used for actual updates.</span>
+                </div>
+                <div class="editor editor-normal">
+                    <ngx-codemirror name="responseEditor" [(ngModel)]="response" [options]="editorOptionsResponse"></ngx-codemirror>
+                </div>
+            } @else {
+                <div class="alert alert-danger rounded">
+                    <span>The service call failed. The errors raised during the call are listed below.</span>
+                </div>
+                <div class="editor editor-short">
+                    <ngx-codemirror name="responseErrorEditor" [(ngModel)]="response" [options]="editorOptionsResponseError"></ngx-codemirror>
+                </div>
+            }
         }
     </div>
-</div>
+    <div class="modal-footer">
+        <div class="btn-toolbar">
+            <button type="button" class="btn btn-secondary" (click)="close()">
+                <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.CANCEL"></i></span>
+                {{actionPending?'Cancel':'Close'}}
+            </button>
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" class="btn btn-secondary" (click)="copyToClipboard()" [disable]="actionPending">Copy to clipboard</button>
+            @if (editStep) {
+                <button type="submit" [labelIcon]="Constants.BUTTON_ICON.TEST_SERVICE" class="btn btn-secondary" [disable]="!textProvided(url)" [pending]="actionPending">Call service</button>
+                @if (request != initialRequest) {
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="reset()" [disable]="actionPending">Reset sample payload</button>
+                }
+            } @else {
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
+            }
+        </div>
+    </div>
+</form>

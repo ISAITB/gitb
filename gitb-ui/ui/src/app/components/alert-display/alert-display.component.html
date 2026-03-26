@@ -3,7 +3,7 @@
         <div [ngClass]="innerClass">
             @for (alert of alerts; track $index) {
                 <div [class.non-padded-alert]="!$last">
-                    <alert [type]="alert.type" [dismissible]="dismissible" (onClosed)="clearAlert($index)">{{alert.msg}}</alert>
+                    <ngb-alert [type]="alert.type" [dismissible]="dismissible" (closed)="clearAlert($index)">{{alert.msg}}</ngb-alert>
                 </div>
             }
         </div>

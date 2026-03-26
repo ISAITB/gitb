@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -30,7 +30,7 @@ import org.apache.commons.lang3.{RandomStringUtils, StringUtils, Strings}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils.{ParsedTestCase, TestCaseGroupWithIndexes, TestCaseInfo}
+import utils.RepositoryUtils.{ParsedTestCase, TdlTestSuiteInfo, TestCaseGroupWithIndexes, TestCaseInfo}
 
 import java.io.{File, StringWriter}
 import java.nio.charset.Charset
@@ -40,17 +40,18 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util
 import java.util.UUID
-import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.StreamConverters._
 import scala.util.Using
 import scala.xml.XML
 
 object RepositoryUtils {
 
+	case class TdlTestSuiteInfo(testSuite: com.gitb.tdl.TestSuite, archivePath: Path)
 	case class TestCaseInfo(testCases: Option[List[TestCases]], testCaseGroups: Option[List[TestCaseGroup]], testCaseUpdateApproach: Option[Map[String, Update]])
 	case class ParsedTestCase(testCase: TestCases, updateApproach: Option[Update], definition: com.gitb.tdl.TestCase)
 	case class TestCaseGroupWithIndexes(group: TestCaseGroup, testCaseEntryIndexes: ListBuffer[Int])
@@ -533,20 +534,6 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		).toFile
 	}
 
-	def getTestSuitesResource(domainId: Long, resourcePath: String, pathToAlsoCheck: Option[String]): File = {
-		var file = new File(getDomainTestSuitesPath(domainId), resourcePath)
-		if (!file.exists()) {
-			if (pathToAlsoCheck.isDefined) {
-				file = new File(getDomainTestSuitesPath(domainId), pathToAlsoCheck.get)
-			}
-			if (!file.exists()) {
-				// Backwards compatibility: Lookup directly under the test-suites folder
-				file = new File(getTestSuitesRootFolder(), resourcePath)
-			}
-		}
-		file
-	}
-
 	/**
 		* Extracts the test suite resources in the <code>file</code> into the <code>targetFolder</code>
 	 *
@@ -558,7 +545,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		if (targetFolder.exists()) {
 			FileUtils.forceDelete(targetFolder)
 		}
-		logger.info("Creating folder [" + targetFolder + "]")
+		logger.info("Creating folder [{}]", targetFolder)
 		targetFolder.mkdirs()
 
 		var testSuitePath: Option[String] = None
@@ -576,50 +563,44 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 			throw new Exception("Zip file does not exists")
 		}
 
-		val zip = new ZipFile(file)
-		try {
-			zip.entries().asScala.foreach {
-				zipEntry =>
-          val zipEntryNameTouse = if (zipEntry.getName.contains('\\')) {
-            zipEntry.getName.replace('\\', '/')
-          } else {
-            zipEntry.getName
-          }
-					val newFile = new File(targetFolder, zipEntryNameTouse)
-
-					if (zipEntry.isDirectory) {
-						logger.debug("Creating folder ["+newFile+"]")
-						newFile.mkdirs()
-					} else {
-						if (!newFile.exists) {
-							newFile.getParentFile.mkdirs()
-							newFile.createNewFile()
-							logger.debug("Creating new file ["+newFile+"]")
-
-							if (isTestCase(zip, zipEntry)) {
-								val testCase: com.gitb.tdl.TestCase = getTestCase(zip, zipEntry)
-								logger.debug("File ["+newFile+"] is a test case file")
-								testCasePaths.update(testCase.getId, targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath)
-							} else if (isTestSuite(zip, zipEntry)) {
-								logger.debug("File ["+newFile+"] is a test suite file")
-								val path = Strings.CS.removeStart(targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath, targetFolder.getName+"/")
-								testSuitePath = Some(path)
+		val targetFolderPath = targetFolder.toPath
+		Using.resource(FileSystems.newFileSystem(file.toPath)) { zip =>
+			val zipRoot = zip.getPath("/")
+			Using.resource(Files.walk(zipRoot)) { paths =>
+				paths.toScala(Iterator).foreach { zipEntry =>
+					val newFile = targetFolderPath.resolve(zipRoot.relativize(zipEntry).toString).normalize() // Convert to String to avoid filesystem provider incompatibility.
+					if (newFile.startsWith(targetFolderPath)) {
+						// The entry is contained within the archive path.
+						if (Files.isDirectory(zipEntry)) {
+							if (zipEntry != zipRoot) {
+								logger.debug("Creating folder [{}]", newFile)
+								Files.createDirectories(newFile)
 							}
-
-							Using.resource(Files.newOutputStream(newFile.toPath)) { fos =>
-								IOUtils.copy(zip.getInputStream(zipEntry), fos)
-								fos.flush()
+						} else if (!Files.isSymbolicLink(zipEntry)) {
+							if (!Files.exists(newFile)) {
+								Files.createDirectories(newFile.getParent)
+								logger.debug("Creating file [{}]", newFile)
+								if (isTestCasePath(zipEntry)) {
+									val testCase: com.gitb.tdl.TestCase = getTestCase(zipEntry)
+									logger.debug("File [{}] is a test case file", newFile)
+									testCasePaths.update(testCase.getId, targetFolderPath.getParent.toUri.relativize(newFile.toUri).getPath)
+								} else if (isTestSuitePath(zipEntry)) {
+									logger.debug("File [{}] is a test suite file", newFile)
+									val path = Strings.CS.removeStart(targetFolderPath.getParent.toUri.relativize(newFile.toUri).getPath, targetFolderPath.getFileName.toString+"/")
+									testSuitePath = Some(path)
+								}
+								Files.copy(zipEntry, newFile)
+								logger.debug("Wrote [{}]", newFile)
+							} else {
+								logger.debug("File [{}] already exists", newFile)
 							}
-							logger.debug("Wrote ["+newFile+"]")
-						} else {
-							logger.debug("File ["+newFile+"] is already exist")
 						}
+					} else {
+						logger.warn("Illegal ZIP entry [{}]", zipEntry)
 					}
+				}
 			}
-		} finally {
-			zip.close()
 		}
-
 		(testSuitePath, testCasePaths.toMap)
 	}
 
@@ -628,7 +609,67 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		fileName
 	}
 
-	private def getDocumentation(testSuiteId: String, documentation: Documentation, testSuiteArchive: ZipFile, specification: Option[Long], domain: Long): Future[Option[String]] = {
+	private def resolveTestSuiteResource(testSuiteRootFolder: Path, testSuiteDefinitionFile: Option[Path], resourcePath: String): Option[Path] = {
+		// First attempt to resolve against the test suite root.
+		var resolvedPath: Option[Path] = Some(testSuiteRootFolder.resolve(resourcePath))
+		if (!Files.exists(resolvedPath.get)) {
+			// If not found, attempt to resolve against the test suite definition file.
+			if (testSuiteDefinitionFile.isDefined) {
+				resolvedPath = Some(testSuiteDefinitionFile.get.resolveSibling(resourcePath))
+				if (!Files.exists(resolvedPath.get)) {
+					resolvedPath = None
+				}
+			} else {
+				resolvedPath = None
+			}
+		}
+		resolvedPath
+	}
+
+	private def resolveTestSuiteResourceWithOptionalIdentifierPrefix(testSuiteIdentifier: String, testSuiteRootFolder: Path, testSuiteDefinitionFile: Option[Path], resourcePath: String): Option[Path] = {
+		// Remove leading path separator (if present).
+		val resourcePathToUse = StringUtils.removeStart(resourcePath, '/')
+		// First resolve the resource relative to the test suite root or test suite definition file.
+		var resolvedPath = resolveTestSuiteResource(testSuiteRootFolder, testSuiteDefinitionFile, resourcePathToUse)
+		if (resolvedPath.isEmpty) {
+			// If not found then also consider the case that the resource path is prefixed with the test suite identifier.
+			val testSuiteIdentifierPath = testSuiteIdentifier+"/";
+			if (resourcePathToUse.startsWith(testSuiteIdentifierPath)) {
+				val pathWithoutTestSuiteIdentifier = resourcePathToUse.substring(testSuiteIdentifierPath.length())
+				resolvedPath = resolveTestSuiteResource(testSuiteRootFolder, testSuiteDefinitionFile, pathWithoutTestSuiteIdentifier)
+			}
+		}
+		// Check to ensure that we remain within the test suite folder.
+		resolvedPath.find(path => path.normalize().startsWith(testSuiteRootFolder.normalize()))
+	}
+
+	def lookupTestCaseDefinition(domainId: Long, testCasePath: String): Option[Path] = {
+		var retrievedResource = getDomainTestSuitesPath(domainId).toPath.resolve(testCasePath) // The path is always prefixed with the test suite root folder.
+		if (Files.notExists(retrievedResource)) {
+			// Backwards compatibility: Lookup directly under the test-suites folder
+			retrievedResource = getTestSuitesRootFolder().toPath.resolve(testCasePath)
+			if (Files.notExists(retrievedResource)) {
+				None
+			} else {
+				Some(retrievedResource)
+			}
+		} else {
+			Some(retrievedResource)
+		}
+	}
+
+	def lookupTestSuiteResource(domainId: Long, testSuite: TestSuites, resourcePath: String): Option[Path] = {
+		val testSuiteRootFolder = getDomainTestSuitesPath(domainId).toPath.resolve(testSuite.filename)
+		val testSuiteDefinitionFile = testSuite.definitionPath.map(path => testSuiteRootFolder.resolve(path))
+		var retrievedResource = resolveTestSuiteResourceWithOptionalIdentifierPrefix(testSuite.identifier, testSuiteRootFolder, testSuiteDefinitionFile, resourcePath)
+		if (retrievedResource.isEmpty) {
+			// Backwards compatibility: Lookup directly under the test-suites folder
+			retrievedResource = resolveTestSuiteResourceWithOptionalIdentifierPrefix(testSuite.identifier, getTestSuitesRootFolder().toPath, None, resourcePath)
+		}
+		retrievedResource
+	}
+
+	private def getDocumentation(testSuiteId: String, documentation: Documentation, archiveRoot: Path, specification: Option[Long], domain: Long, testSuitePath: Path): Future[Option[String]] = {
 		for {
 			documentationText <- {
 				if (documentation != null) {
@@ -641,43 +682,20 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 							documentationBytes <- {
 								if (StringUtils.isBlank(documentation.getFrom) || documentation.getFrom.equals(testSuiteId)) {
 									// Look up from current test suite.
-									var referencedEntry = testSuiteArchive.getEntry(documentation.getImport)
-									if (referencedEntry == null) {
-										// It might be prefixed with the testSuiteId.
-										val testSuiteIdPath = testSuiteId+"/"
-										if (documentation.getImport.startsWith(testSuiteIdPath) && documentation.getImport.length() > testSuiteIdPath.length()) {
-											referencedEntry = testSuiteArchive.getEntry(documentation.getImport.substring(testSuiteIdPath.length()))
+									Future.successful {
+										resolveTestSuiteResourceWithOptionalIdentifierPrefix(testSuiteId, archiveRoot, Some(testSuitePath), documentation.getImport).map { path =>
+											Using.resource(Files.newInputStream(path)) { stream =>
+												IOUtils.toByteArray(stream)
+											}
 										}
-									}
-									if (referencedEntry != null) {
-										Future.successful {
-											Some(IOUtils.toByteArray(testSuiteArchive.getInputStream(referencedEntry)))
-										}
-									} else {
-										Future.successful(None)
 									}
 								} else if (documentation.getFrom != null) {
 									// Look up from another test suite in the domain.
 									findTestSuiteByIdentifier(documentation.getFrom, domain, specification).map { testSuite =>
-										if (testSuite.isDefined) {
-											var filePathToLookup = documentation.getImport
-											var filePathToAlsoCheck: Option[String] = null
-											if (!documentation.getImport.startsWith(testSuite.get.identifier) && !documentation.getImport.startsWith("/"+testSuite.get.identifier)) {
-												filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
-												filePathToAlsoCheck = None
-											} else {
-												filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
-												filePathToLookup = Strings.CS.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+										testSuite.flatMap { ts =>
+											lookupTestSuiteResource(domain, ts, documentation.getImport).map { retrievedFile =>
+												FileUtils.readFileToByteArray(retrievedFile.toFile)
 											}
-											val testSuiteFolder = getTestSuitesResource(domain, testSuite.get.filename, None)
-											val file = getTestSuitesResource(domain, filePathToLookup, filePathToAlsoCheck)
-											if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
-												Some(FileUtils.readFileToByteArray(file))
-											} else {
-												None
-											}
-										} else {
-											None
 										}
 									}
 								} else {
@@ -761,39 +779,45 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
 	def getTestSuiteFromZip(domainId :Long, specificationId: Option[Long], file: File, completeParse: Boolean): Future[Option[TestSuite]] = {
 		if (file.exists()) {
-			val zip = new ZipFile(file)
+			val zip = FileSystems.newFileSystem(file.toPath)
+			val zipRoot = zip.getPath("/")
 			val parseTask = for {
-				tdlTestSuite <- {
-					val testSuiteEntries = zip.entries().asScala.filter(isTestSuite(zip, _))
-					if (testSuiteEntries.hasNext) {
-						val testSuiteEntry = testSuiteEntries.next()
-						Future.successful {
-							Some(getTestSuite(zip, testSuiteEntry))
-						}
-					} else {
-						Future.successful(None)
+				tdlTestSuiteInfo <- {
+					Future.successful {
+							Using.resource(Files.walk(zipRoot)) { paths =>
+								paths
+									.toScala(Iterator)
+									.find(isTestSuitePath)
+									.map(path => TdlTestSuiteInfo(getTestSuite(path), path))
+							}
 					}
 				}
 				testSuiteCase <- {
-					if (tdlTestSuite.isDefined) {
-						parseTestSuite(tdlTestSuite.get, completeParse, zip, specificationId, domainId).map(Some(_))
+					if (tdlTestSuiteInfo.isDefined) {
+						parseTestSuite(tdlTestSuiteInfo.get, completeParse, zipRoot, specificationId, domainId).map(Some(_))
 					} else {
 						Future.successful(None)
 					}
 				}
 				testCaseInfo <- {
-					if (tdlTestSuite.isDefined && testSuiteCase.isDefined && completeParse) {
-						val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
-						val tdlTestCaseEntries = tdlTestSuite.get.getTestcase.asScala.toList
+					if (tdlTestSuiteInfo.isDefined && testSuiteCase.isDefined && completeParse) {
+						val tdlTestCases = Using.resource(Files.walk(zipRoot)) { paths =>
+							paths
+								.toScala(Iterator)
+								.filter(isTestCasePath)
+								.map(getTestCase)
+								.toList
+						}
+						val tdlTestCaseEntries = tdlTestSuiteInfo.get.testSuite.getTestcase.asScala.toList
 						// Map groups to test case indexes
-						val groupMap = parseTestCaseGroupInfo(tdlTestSuite.get, tdlTestCaseEntries)
+						val groupMap = parseTestCaseGroupInfo(tdlTestSuiteInfo.get.testSuite, tdlTestCaseEntries)
 						// Read test cases and order them considering their groups
 						val testCases = parseTestCases(tdlTestCases, tdlTestCaseEntries, groupMap)
             /*
              * Process test cases
              */
 						for {
-							testCasesWithDocumentation <- addDocumentationToTestCases(tdlTestSuite.get, testCases, zip, specificationId, domainId)
+							testCasesWithDocumentation <- addDocumentationToTestCases(tdlTestSuiteInfo.get, testCases, zipRoot, specificationId, domainId)
 							testCaseInfoToReturn <- Future.successful {
 								val testCaseGroups = if (groupMap.nonEmpty) {
 									Some(groupMap.filter(_._2.testCaseEntryIndexes.nonEmpty).map { entry =>
@@ -816,14 +840,14 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 					}
 				}
 				testSuite <- {
-					if (testSuiteCase.isDefined && tdlTestSuite.isDefined) {
+					if (testSuiteCase.isDefined && tdlTestSuiteInfo.isDefined) {
 						val testSuite = new TestSuite(
 							testSuiteCase.get,
-							Some(testSuiteActorInfo(tdlTestSuite.get)),
+							Some(testSuiteActorInfo(tdlTestSuiteInfo.get.testSuite)),
 							testCaseInfo.testCases,
 							testCaseInfo.testCaseGroups
 						)
-						testSuite.updateApproach = Option(tdlTestSuite.get.getMetadata.getUpdate)
+						testSuite.updateApproach = Option(tdlTestSuiteInfo.get.testSuite.getMetadata.getUpdate)
 						testSuite.testCaseUpdateApproach = testCaseInfo.testCaseUpdateApproach
 						Future.successful {
 							Some(testSuite)
@@ -843,8 +867,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		}
 	}
 
-	private def parseTestSuite(tdlTestSuite: com.gitb.tdl.TestSuite, completeParse: Boolean, zipFile: ZipFile, specification: Option[Long], domain: Long): Future[TestSuites] = {
+	private def parseTestSuite(tdlTestSuiteInfo: TdlTestSuiteInfo, completeParse: Boolean, zipRoot: Path, specification: Option[Long], domain: Long): Future[TestSuites] = {
+		val tdlTestSuite = tdlTestSuiteInfo.testSuite
 		val identifier: String = tdlTestSuite.getId
+		val order: Short = Option(tdlTestSuite.getOrder).map(_.toShort).getOrElse(0)
 		val name: String = tdlTestSuite.getMetadata.getName
 		val version: String = tdlTestSuite.getMetadata.getVersion
 		val authors: String = tdlTestSuite.getMetadata.getAuthors
@@ -857,14 +883,14 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		for {
 			testSuiteDocumentation <- {
 				if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
-					getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zipFile, specification, domain)
+					getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zipRoot, specification, domain, tdlTestSuiteInfo.archivePath)
 				}	else {
 					Future.successful(None)
 				}
 			}
 			testSuite <- {
 				Future.successful {
-					TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
+					TestSuites(0L, name, name, Option(version).getOrElse(""), order, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
 						folderName, testSuiteDocumentation.isDefined, testSuiteDocumentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domain, None,
 						specificationInfo.flatMap(x => Option(x.getReference)),
 						specificationInfo.flatMap(x => Option(x.getDescription)),
@@ -875,13 +901,13 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		} yield testSuite
 	}
 
-	private def addDocumentationToTestCases(tdlTestSuite: com.gitb.tdl.TestSuite, testCases: List[ParsedTestCase], zipFile: ZipFile, specification: Option[Long], domain: Long): Future[List[ParsedTestCase]] = {
+	private def addDocumentationToTestCases(tdlTestSuiteInfo: TdlTestSuiteInfo, testCases: List[ParsedTestCase], zipRoot: Path, specification: Option[Long], domain: Long): Future[List[ParsedTestCase]] = {
 		val result = Future.sequence {
 			testCases.map { testCaseInfo =>
 				for {
 					documentation <- {
 						if (testCaseInfo.definition.getMetadata.getDocumentation != null) {
-							getDocumentation(tdlTestSuite.getId, testCaseInfo.definition.getMetadata.getDocumentation, zipFile, specification, domain)
+							getDocumentation(tdlTestSuiteInfo.testSuite.getId, testCaseInfo.definition.getMetadata.getDocumentation, zipRoot, specification, domain, tdlTestSuiteInfo.archivePath)
 						} else {
 							Future.successful(None)
 						}
@@ -1034,11 +1060,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		result
 	}
 
-	private def getTestSuite(zip: ZipFile, entry: ZipEntry): com.gitb.tdl.TestSuite = {
-		val stream = zip.getInputStream(entry)
-
-		val testSuite = XMLUtils.unmarshal(classOf[com.gitb.tdl.TestSuite], new StreamSource(stream))
-		testSuite
+	private def getTestSuite(path: Path): com.gitb.tdl.TestSuite = {
+		Using.resource(Files.newInputStream(path)) { stream =>
+			XMLUtils.unmarshal(classOf[com.gitb.tdl.TestSuite], new StreamSource(stream))
+		}
 	}
 
 	def getTestSuiteDefinitionFile(domainId: Long, testSuiteFolder: String, testSuiteDefinitionPath: String): File = {
@@ -1053,28 +1078,28 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		testSuite
 	}
 
-	private def getTestCase(zip: ZipFile, entry: ZipEntry): com.gitb.tdl.TestCase = {
-		val stream = zip.getInputStream(entry)
-
-		val testCase = XMLUtils.unmarshal(classOf[com.gitb.tdl.TestCase], new StreamSource(stream))
-		testCase
+	private def getTestCase(path: Path): com.gitb.tdl.TestCase = {
+		Using.resource(Files.newInputStream(path)) { stream =>
+			XMLUtils.unmarshal(classOf[com.gitb.tdl.TestCase], new StreamSource(stream))
+		}
 	}
 
-	private def isTestSuite(zip: ZipFile, entry: ZipEntry): Boolean = {
-		testXMLElementTagInZipEntry(zip, entry, TEST_SUITE_ELEMENT_LABEL)
+	private def isTestSuitePath(path: Path): Boolean = {
+		testXMLElementTagInPath(path, TEST_SUITE_ELEMENT_LABEL)
 	}
 
-	private def isTestCase(zip: ZipFile, entry: ZipEntry): Boolean = {
-		testXMLElementTagInZipEntry(zip, entry, TEST_CASE_ELEMENT_LABEL)
+	private def isTestCasePath(path: Path): Boolean = {
+		testXMLElementTagInPath(path, TEST_CASE_ELEMENT_LABEL)
 	}
 
-	private def testXMLElementTagInZipEntry(zip: ZipFile, entry: ZipEntry, tag: String): Boolean = {
-		if(!entry.isDirectory) {
+	private def testXMLElementTagInPath(path: Path, tag: String): Boolean = {
+		val pathName = path.getFileName
+		if (Files.isRegularFile(path) && pathName != null && pathName.toString.toLowerCase.endsWith(".xml")) {
 			try {
-				val stream = zip.getInputStream(entry)
-				val xml = XML.load(stream)
-
-				xml.label == tag
+				Using.resource(Files.newInputStream(path)) { stream =>
+					val xml = XML.load(stream)
+					xml.label == tag
+				}
 			} catch {
 				case _: Exception => false
 			}
@@ -1089,8 +1114,12 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	}
 
 	def undeployTestSuite(domainId: Long, testSuiteName: String): Unit = {
-		val targetFolder = getTestSuitesResource(domainId, testSuiteName, None)
-		FileUtils.deleteDirectory(targetFolder)
+		var testSuiteRootFolder = getDomainTestSuitesPath(domainId).toPath.resolve(testSuiteName)
+		if (Files.notExists(testSuiteRootFolder)) {
+			// Backwards compatibility: Lookup directly under the test-suites folder
+			testSuiteRootFolder = getTestSuitesRootFolder().toPath.resolve(testSuiteName)
+		}
+		FileUtils.deleteDirectory(testSuiteRootFolder.toFile)
 	}
 
 	def findTestSuiteByIdentifier(identifier: String, domain: Long, specificationToPrioritise: Option[Long]): Future[Option[TestSuites]] = {

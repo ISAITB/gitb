@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -56,8 +56,10 @@ object ErrorCodes {
 
   //General Errors
   val GATEWAY_TIMEOUT = 401
+  val PREPARING_FOR_SHUTDOWN = 402
 
   // Automation API errors
+  val API_KEY_MISSING = 500
   val API_ORGANISATION_NOT_FOUND = 501
   val API_SYSTEM_NOT_FOUND = 502
   val API_COMMUNITY_DOES_NOT_ENABLE_API = 503
@@ -82,6 +84,7 @@ object ErrorCodes {
   val API_COMMUNITY_DOMAIN_CHANGE_NOT_ALLOWED = 522
   val API_INVALID_CONFIGURATION_PROPERTY_DEFINITION = 523
   val API_MULTIPLE_DOMAINS_FOUND = 524
+  val API_RATE_LIMIT_ENFORCED = 525
 
   // Test suite errors
   val TEST_SUITE_EXISTS = 601

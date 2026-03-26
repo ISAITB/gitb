@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,16 +15,26 @@
 
 @import "../../../styles/less/_common.less";
 
+.modal-header {
+    display: flex;
+}
 .modal-title {
     display: flex;
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
     align-items: center;
     .title {
-        flex: 1;
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
     .icon {
         margin-top: -12px;
         margin-bottom: -12px;
+        margin-left: 10px;
+        flex: 0 0 auto;
     }
 }
 ::ng-deep markdown pre {

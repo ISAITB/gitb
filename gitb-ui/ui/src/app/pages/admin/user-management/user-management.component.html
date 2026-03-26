@@ -5,7 +5,7 @@
             <div class="card-title">Communities</div>
             <div class="btn-toolbar">
                 <app-text-filter name="communityFilter" [width]="300" [placeholder]="'Search communities...'" [(ngModel)]="communityFilter" (apply)="applyFilter()"></app-text-filter>
-                <button type="button" class="btn btn-secondary" (click)="createCommunity()">Create community</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createCommunity()">Create community</button>
             </div>
         </div>
         <div #communityTable table-directive

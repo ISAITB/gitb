@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -793,12 +793,17 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(getSpecificationsInternal(ids, domainIds, groupIds, withGroups, snapshotId))
   }
 
-  def getSpecificationsWithGroups(domain: Long): Future[Seq[Specifications]] = {
+  def getUnlinkedDomainSpecs(domain: Long, testSuiteId: Long): Future[Seq[Specifications]] = {
     DB.run {
       for {
+        linkedSpecificationsIds <- PersistenceSchema.specificationHasTestSuites
+          .filter(_.testSuiteId === testSuiteId)
+          .map(_.specId)
+          .result
         specData <- PersistenceSchema.specifications
           .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
           .filter(_._1.domain === domain)
+          .filterNot(_._1.id inSet linkedSpecificationsIds)
           .map(x => (x._1, x._2))
           .result
         specsWithGroups <- DBIO.successful(mergeSpecsWithGroups(specData))
@@ -919,11 +924,22 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def getSpecificationsLinkedToTestSuite(testSuiteId: Long): Future[Seq[Specifications]] = {
+  def getSpecificationsLinkedToTestSuite(testSuiteId: Long, page: Long, limit: Long): Future[SearchResult[Specifications]] = {
     DB.run(
       for {
         specificationIds <- PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).map(_.specId).result
-        specifications <- getSpecificationsInternal(Some(specificationIds), None, withGroups = true)
+        specifications <- {
+          val queryBuilder = () => {
+            PersistenceSchema.specifications
+              .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
+              .filter(_._1.id inSet specificationIds)
+              .map(x => (x._1, x._2))
+          }
+          for {
+            results <-  queryBuilder().drop((page - 1) * limit).take(limit).result.map(x => mergeSpecsWithGroups(x))
+            resultCount <- queryBuilder().size.result
+          } yield SearchResult(results, resultCount)
+        }
       } yield specifications
     )
   }

@@ -1,3 +1,10 @@
-<div class="actor">
-    <span class="name">{{actorForDisplay}}</span>
+<div class="actor" [ngClass]="'actor-offset-'+index">
+    <div class="name">
+        {{actorForDisplay}}
+        @if (actor.diagramRole == ActorRole.SystemUnderTest) {
+            <div class="actor-role-pill" ngbTooltip="The System Under Test (SUT)" tooltipClass="shortTooltip" container="body" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">SUT</div>
+        } @else if (actor.diagramRole == ActorRole.User) {
+            <div class="actor-role-pill" ngbTooltip="User for manual test interactions" tooltipClass="shortTooltip" container="body" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">USER</div>
+        }
+    </div>
 </div>

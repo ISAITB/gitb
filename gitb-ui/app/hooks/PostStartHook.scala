@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -22,8 +22,9 @@ import jakarta.xml.ws.Endpoint
 import jaxws.TestbedService
 import managers._
 import managers.export.ImportCompleteManager
-import models.Constants
+import managers.ratelimit.RateLimitManager
 import models.Enums.UserRole
+import models.{Constants, RestApiLimits}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
@@ -54,10 +55,11 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                                repositoryUtils: RepositoryUtils,
                                environment: Environment,
                                userManager: UserManager,
+                               rateLimitManager: RateLimitManager,
                                config: Configuration)
                               (implicit ec: ExecutionContext) {
 
-  private def logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   onStart()
 
@@ -159,19 +161,28 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     // Load persisted configuration parameters.
     systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).flatMap { persistedConfigs =>
       // Check against environment settings.
-      val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled).map(_.config)
       for {
         // REST API.
         _ <- {
+          val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled).map(_.config)
           if (restApiEnabledConfig.nonEmpty && restApiEnabledConfig.get.parameter.nonEmpty) {
             Configurations.AUTOMATION_API_ENABLED = restApiEnabledConfig.get.parameter.get.toBoolean
           }
+          // Master API key.
           val restApiAdminKey = persistedConfigs.find(config => config.config.name == Constants.RestApiAdminKey).map(_.config)
           if (restApiAdminKey.flatMap(_.parameter).isEmpty) {
             val initialApiKeyValue = Configurations.AUTOMATION_API_MASTER_KEY.getOrElse(CryptoUtil.generateApiKey())
             systemConfigurationManager.updateSystemParameter(Constants.RestApiAdminKey, Some(initialApiKeyValue))
           } else {
             Future.successful(())
+          }
+        }
+        // Rate limits.
+        _ <- {
+          val restApiLimitsConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits).map(_.config)
+          val settingsToApply = restApiLimitsConfig.flatMap(_.parameter.map(JsonUtil.parseJsRestApiLimits(_, withDescriptions = false))).getOrElse(RestApiLimits.defaultSettings())
+          Future.successful {
+            rateLimitManager.reset(settingsToApply)
           }
         }
         // Self-registration.
@@ -187,6 +198,14 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           val wizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard).map(_.config)
           if (wizardConfig.nonEmpty && wizardConfig.get.parameter.nonEmpty) {
             Configurations.STARTUP_WIZARD_ENABLED = wizardConfig.get.parameter.get.toBoolean
+          }
+          Future.successful(())
+        }
+        // Usage tips.
+        _ <- {
+          val usageTipsConfig = persistedConfigs.find(config => config.config.name == Constants.UsageTips).map(_.config)
+          if (usageTipsConfig.nonEmpty && usageTipsConfig.get.parameter.nonEmpty) {
+            Configurations.USAGE_TIPS_CONFIGURATION = JsonUtil.parseJsUsageTipsConfiguration(usageTipsConfig.get.parameter.get)
           }
           Future.successful(())
         }
@@ -396,24 +415,11 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
         () => {
           systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime).map { config =>
             if (config.isDefined && config.get.parameter.isDefined) {
-              testResultManager.getRunningTestResults.map { sessions =>
-                val terminationTasks = sessions.map { session =>
-                  val difference = TimeUtil.getTimeDifferenceInSeconds(session.startTime)
-                  if (difference >= config.get.parameter.get.toInt) {
-                    val sessionId = session.sessionId
-                    testExecutionManager.endSession(sessionId).map { _ =>
-                      logger.info("Terminated idle session [" + sessionId + "]")
-                    }
-                  } else {
-                    // Nothing to do
-                    Future.successful(())
-                  }
-                }
-                Future.sequence(terminationTasks).recover {
-                  case e: Exception =>
-                    logger.warn("Failure while terminating idle sessions", e)
-                    throw e
-                }
+              val threshold = config.get.parameter.get.toLong
+              testExecutionManager.endIdleRunningSessions(threshold).map(_ => ()).recover {
+                case e: Exception =>
+                  logger.warn("Failure while terminating idle sessions", e)
+                  throw e
               }
             }
           }

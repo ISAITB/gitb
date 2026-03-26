@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -29,6 +29,8 @@ import {PagingPlacement} from '../../../components/paging-controls/paging-placem
 import {CheckboxOption} from '../../../components/checkbox-option-panel/checkbox-option';
 import {CreateStatementSearchCriteria} from './create-statement-search-criteria';
 import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
+import {UsageTipService} from '../../../services/usage-tip.service';
+import {CheckBoxOptionPanelComponentApi} from '../../../components/checkbox-option-panel/check-box-option-panel-component-api';
 
 @Component({
     selector: 'app-create-conformance-statement',
@@ -70,6 +72,7 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
   @ViewChild("controlContainer") controlContainer?: ElementRef
   @ViewChild("statusContainer") statusContainer?: ElementRef
   @ViewChild("conformanceItemPage") conformanceItemPage?: ElementRef
+  @ViewChild("showStatementFilter") showStatementFilter?: CheckBoxOptionPanelComponentApi
   resizeObserver!: ResizeObserver
 
   constructor(
@@ -79,6 +82,7 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
     private readonly conformanceService: ConformanceService,
     private readonly systemService: SystemService,
     private readonly routingService: RoutingService,
+    private readonly usageTipService: UsageTipService,
     private readonly zone: NgZone
   ) { }
 
@@ -116,6 +120,9 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
     if (this.conformanceItemPage) {
       this.resizeObserver.observe(this.conformanceItemPage.nativeElement)
     }
+    if (this.dataService.isSystemAdmin && this.dataService.vendor?.id === this.organisationId) {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT)
+    }
   }
 
   filterByStatus(choices: CheckboxOptionState) {
@@ -125,7 +132,7 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
   }
 
   loadStatements() {
-    return this.loadStatementsInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+    return this.loadStatementsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doPagingNavigation(pagingInfo: PagingEvent) {
@@ -296,6 +303,16 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
     if (this.controlContainer && this.statusContainer) {
       this.controlsWrapped = this.hasStatementsBeforeFiltering && this.controlContainer.nativeElement.getBoundingClientRect().top != this.statusContainer.nativeElement.getBoundingClientRect().top
     }
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.showStatementFilter?.documentClick(event)
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.showStatementFilter?.documentEscape()
   }
 
 }

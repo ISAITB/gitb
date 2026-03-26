@@ -1,4 +1,4 @@
-<div class="table-container rounded">
+<div #tableContainer class="table-container rounded">
     <table [attr.id]="sessionTableId" class="table table-directive expandable-table">
         @if (tableCaptionVisible) {
             <caption>{{tableCaption}}</caption>
@@ -6,30 +6,36 @@
         <thead>
             <tr>
                 @if (checkboxEnabled) {
-                    <th class="th-min-centered"></th>
+                    <th class="th-min centered"></th>
                 }
-                <th class="th-min-centered"></th>
+                <th class="th-min centered"></th>
                 @for (column of columnsLeft; track column) {
                     <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
-                        {{column.title}}
-                        @if (column.order == 'desc') {
-                            <i class="fa-solid fa-caret-down"></i>
-                        } @else if (column.order == 'asc') {
-                            <i class="fa-solid fa-caret-up"></i>
-                        }
+                        <div class="cell-content">
+                            {{column.title}}
+                            <span class="ms-1">
+                                @if (column.order == 'desc') {
+                                    <i [class]="Constants.BUTTON_ICON.SORT_DESCENDING"></i>
+                                } @else if (column.order == 'asc') {
+                                    <i [class]="Constants.BUTTON_ICON.SORT_ASCENDING"></i>
+                                }
+                            </span>
+                        </div>
                     </th>
                 }
-                @if (actionVisible || exportVisible || operationsVisible) {
-                    <th class="th-min-centered"></th>
+                @if (actionVisible || exportVisible || operationsVisible || optionsVisible) {
+                    <th class="th-min centered"></th>
                 }
                 @for (column of columnsRight; track column) {
                     <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
-                        {{column.title}}
-                        @if (column.order == 'desc') {
-                            <i class="fa-solid fa-caret-down"></i>
-                        } @else if (column.order == 'asc') {
-                            <i class="fa-solid fa-caret-up"></i>
-                        }
+                        <div class="cell-content">
+                            {{column.title}}
+                            @if (column.order == 'desc') {
+                                <i [class]="Constants.BUTTON_ICON.SORT_DESCENDING"></i>
+                            } @else if (column.order == 'asc') {
+                                <i [class]="Constants.BUTTON_ICON.SORT_ASCENDING"></i>
+                            }
+                        </div>
                     </th>
                 }
             </tr>
@@ -37,55 +43,74 @@
         <tbody>
             @if (loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED) {
                 <tr>
-                    <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                    <td [attr.colspan]="columnCount" class="td-data-loading">
+                        <div class="cell-content">
+                            <app-pending-block></app-pending-block>
+                        </div>
+                    </td>
                 </tr>
             } @else if (loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)) {
                 <tr>
-                    <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
+                    <td [attr.colspan]="columnCount" class="td-no-data">
+                        <div class="cell-content">
+                            <span>{{noDataMessage}}</span>
+                        </div>
+                    </td>
                 </tr>
             }
             @for (row of data; let i = $index; track row.session) {
                 <tr table-row-directive #tableRowComponent
-                    class="table-row-directive expandable-table-row-collapsed session-table-row"
+                    class="table-row-directive expandable-table-row-collapsed"
                     [class.disable-events]="contentRefreshing"
                     [ngClass]="rowClass(row)"
                     (click)="onExpand(row)"
                     [data]="row"
                     [columns]="columns"
                     [classes]="classes"
+
+                    [operationsVisible]="operationsVisible"
+                    [deleteIcon]="deleteIcon"
+                    [deleteTooltip]="deleteTooltip"
+                    [deleteVisibleForRow]="deleteVisibleForRow"
+                    [deletePendingProperty]="deletePendingProperty"
+                    (onDelete)="handleDelete($event)"
+
                     [actionVisible]="actionVisible"
                     [actionIcon]="actionIcon"
-                    [exportIcon]="exportIcon"
-                    [deleteIcon]="deleteIcon"
-                    [operationsVisible]="operationsVisible"
-                    [exportVisible]="exportVisible"
-                    [exportVisibleForRow]="exportVisibleForRow"
-                    [checkboxEnabled]="checkboxEnabled"
-                    (onAction)="handleAction($event)"
-                    (onDelete)="handleDelete($event)"
-                    (onExport)="handleExport($event)"
-                    (onCheck)="handleCheck($event)"
-                    [deleteVisibleForRow]="deleteVisibleForRow"
+                    [actionTooltip]="actionTooltip"
                     [actionVisibleForRow]="actionVisibleForRow"
                     [actionPendingProperty]="actionPendingProperty"
-                    [deletePendingProperty]="deletePendingProperty"
-                    [exportPendingProperty]="exportPendingProperty"
-                    [actionTooltip]="actionTooltip"
-                    [deleteTooltip]="'Terminate'"
+                    (onAction)="handleAction($event)"
+
+                    [exportVisible]="exportVisible"
+                    [exportIcon]="exportIcon"
                     [exportTooltip]="exportTooltip"
+                    [exportVisibleForRow]="exportVisibleForRow"
+                    [exportPendingProperty]="exportPendingProperty"
+                    (onExport)="handleExport($event)"
+
+                    [optionsVisible]="optionsVisible"
+                    [optionsVisibleForRow]="optionsVisibleForRow"
+                    [optionPendingProperty]="optionPendingProperty"
+                    [optionProvider]="optionProvider"
+                    (onOption)="handleOption($event)"
+
+                    [checkboxEnabled]="checkboxEnabled"
+                    (onCheck)="handleCheck($event)"
                     [expandableRowProperty]="'expanded'"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                        <div [collapse]="!row.expanded" [isAnimated]="true">
-                            <div class="collapsing-div">
+                        <div [ngbCollapse]="!row.expanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
+                            <div class="p-2">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
                                         @if (supportRefresh) {
-                                            <button type="button" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
                                         }
                                         <!-- View log button - we need the switches because the [pending] directive doesn't allow it to update dynamically. -->
                                         @if (supportRefresh) {
                                             <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session || row.diagramState?.logs == undefined" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)">
+                                                <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.VIEW_LOG"></i></span>
                                                 View log
                                                 <span
                                                     [class.badgeLogErrors]="row.hasUnreadErrorLogs"
@@ -96,69 +121,71 @@
                                                 </span>
                                             </button>
                                         } @else {
-                                            <button type="button" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_LOG" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
                                         }
                                         @if (supportRefresh && row.diagramState?.interactions != undefined && row.diagramState.interactions.length > 0) {
                                             @if (row.diagramState.interactions.length == 1) {
-                                                <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
+                                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [disable]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
                                             } @else {
-                                                <div class="btn-group" dropdown>
-                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
-                                                    <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
+                                                <div class="btn-group" ngbDropdown>
+                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" ngbDropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
+                                                    <div id="dropdown-interactions" ngbDropdownMenu aria-labelledby="button-interactions">
                                                         @for (interaction of row.diagramState.interactions; let index = $index; track interaction) {
-                                                            <li>
-                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
-                                                            </li>
+                                                            <button ngbDropdownItem type="button" (click)="displayPendingInteraction(row, interaction.stepId)">{{labelForPendingInteraction(interaction, index)}}</button>
                                                         }
-                                                    </ul>
+                                                    </div>
                                                 </div>
                                             }
                                         }
                                     @if (showNavigationControls) {
                                             <!-- Copy link -->
                                             @if (copyForOtherRoleOption) {
-                                                <div class="btn-group" dropdown placement="bottom right">
-                                                    <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
-                                                    <button id="button-link" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                    <ul id="dropdown-link" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-link">
-                                                        <li role="menuitem"><a class="dropdown-item" href (click)="copyLink(row, true);$event.preventDefault();">
+                                                <div class="btn-group" ngbDropdown>
+                                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                                    <button id="button-link" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                    <div id="dropdown-link" ngbDropdownMenu aria-labelledby="button-link">
+                                                        <button ngbDropdownItem type="button" (click)="copyLink(row, true)">
                                                             @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
                                                                 Copy link for {{dataService.labelOrganisationLower()}}
                                                             } @else {
                                                                 Copy link for administrator
                                                             }
-                                                        </a></li>
-                                                    </ul>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             } @else {
-                                                <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
                                             }
                                             <!-- View -->
                                             <app-navigation-controls [config]="toNavigationConfig(row)"></app-navigation-controls>
                                     }
                                     </div>
                                 </div>
-                                <div class="card">
-                                    <div class="card-header session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]" [class.collapsed]="diagramCollapsedFinished[row.session]">
-                                        <div class="session-table-title-part">
-                                            <div class="session-table-title-label"><app-collapsing-icon [isCollapsed]="diagramCollapsed[row.session]"></app-collapsing-icon>Test suite</div>
-                                            <div class="session-table-title-value">{{row.testSuite}}</div>
-                                        </div>
-                                        <div class="session-table-title-part">
-                                            <div class="session-table-title-label">Test case</div>
-                                            <div class="session-table-title-value">{{row.testCase}}</div>
-                                        </div>
-                                        <div class="session-table-title-part">
-                                            <div class="session-table-title-label">Session</div>
-                                            <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
+                                <div #sessionContainer class="test-case-session">
+                                    <div class="session-execution-info">
+                                        <div class="session-table-title">
+                                            <div class="session-table-title-part">
+                                                <div class="session-table-title-label">Test suite</div>
+                                                <div class="session-table-title-value">{{row.testSuite}}</div>
+                                            </div>
+                                            <div class="session-table-title-part">
+                                                <div class="session-table-title-label">Test case</div>
+                                                <div class="session-table-title-value">{{row.testCase}}</div>
+                                            </div>
+                                            <div class="session-table-title-part">
+                                                <div class="session-table-title-label">Session</div>
+                                                <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true" (collapsed)="toggleDiagramCollapsedFinished(row.session, true)" (expands)="toggleDiagramCollapsedFinished(row.session, false)">
-                                        <div class="card-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
+                                    <div [ngbCollapse]="diagramCollapsed[row.session]" [animation]="true" (hidden)="toggleDiagramCollapsedFinished(row.session, true)" (shown)="toggleDiagramCollapsedFinished(row.session, false)">
+                                        <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
                                             @if (!row.hideLoadingIcon) {
-                                                <div><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
+                                                <div class="p-3">
+                                                    <app-pending-block></app-pending-block>
+                                                </div>
                                             }
-                                            <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
+                                            <div [ngbCollapse]="!row.diagramExpanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
                                                 @if (row.expanded || row.diagramLoaded) {
                                                     <div>
                                                         <app-test-session-presentation

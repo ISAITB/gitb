@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -81,17 +81,19 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   saveDisabled() {
-    return !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
+    return this.savePending || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
   }
 
   createErrorTemplate() {
-    if (this.template.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (this.template.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
+          .subscribe(() => {
+            this.doCreate()
+          })
+      } else {
         this.doCreate()
-      })
-    } else {
-      this.doCreate()
+      }
     }
   }
 

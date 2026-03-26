@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,11 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { DataService } from 'src/app/services/data.service';
-import { Parameter } from 'src/app/types/parameter';
-import { BaseParameterModalComponent } from '../base-parameter-modal.component';
+import {Component, OnInit} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {Parameter} from 'src/app/types/parameter';
+import {BaseParameterModalComponent} from '../base-parameter-modal.component';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-parameter-modal',
@@ -27,13 +27,11 @@ import { BaseParameterModalComponent } from '../base-parameter-modal.component';
 })
 export class CreateParameterModalComponent extends BaseParameterModalComponent implements OnInit {
 
-  @Output() created = new EventEmitter<Parameter>()
-
   modalTitle: string = 'Create parameter'
 
   constructor(
     dataService: DataService,
-    modalInstance: BsModalRef
+    modalInstance: NgbActiveModal
   ) { super(dataService, modalInstance) }
 
   ngOnInit(): void {
@@ -53,8 +51,7 @@ export class CreateParameterModalComponent extends BaseParameterModalComponent i
 
   createParameter() {
     if (this.validate()) {
-      this.created.emit(this.parameter as Parameter)
-      this.modalInstance.hide()
+      this.modalInstance.close(this.parameter as Parameter)
     }
   }
 

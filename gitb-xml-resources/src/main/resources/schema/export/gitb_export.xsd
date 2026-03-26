@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-  ~ Copyright (C) 2025 European Union
+  ~ Copyright (C) 2026 European Union
   ~
   ~ Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
   ~ versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -55,6 +55,8 @@
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
                     <xsd:element name="reportStylesheets" type="CommunityReportStylesheets" minOccurs="0"/>
                     <xsd:element name="reportSettings" type="CommunityReportSettings" minOccurs="0"/>
+                    <xsd:element name="defaultUserPreferences" type="UserPreferences" minOccurs="0"/>
+                    <xsd:element name="tags" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="domain" type="xsd:IDREF"/>
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
@@ -67,6 +69,7 @@
                 <xsd:attribute name="allowCommunityView" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="allowUserManagement" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="interactionNotification" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="allowXmlReports" type="xsd:boolean" default="true"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -157,6 +160,8 @@
         <xsd:attribute name="allowOrganisationTokens" type="xsd:boolean" default="false"/>
         <xsd:attribute name="allowOrganisationTokenManagement" type="xsd:boolean" default="false"/>
         <xsd:attribute name="forceOrganisationTokenInput" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="joinExisting" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="joinAsAdmin" type="xsd:boolean" default="true"/>
     </xsd:complexType>
     <xsd:simpleType name="ConformanceOverviewCertificateMessageType">
         <xsd:restriction base="xsd:string">
@@ -432,6 +437,7 @@
                 <xsd:attribute name="errorTemplate" type="xsd:IDREF"/>
                 <xsd:attribute name="template" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="admin" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="selfRegDefault" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -515,6 +521,7 @@
                     <xsd:element name="sharedTestSuites" type="TestSuites" minOccurs="0"/>
                     <xsd:element name="specificationGroups" type="SpecificationGroups" minOccurs="0"/>
                     <xsd:element name="testServices" type="TestServices" minOccurs="0"/>
+                    <xsd:element name="tags" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -557,6 +564,7 @@
                 </xsd:sequence>
                 <xsd:attribute name="serviceType" type="TestServiceType" use="required"/>
                 <xsd:attribute name="apiType" type="TestServiceApiType" use="required"/>
+                <xsd:attribute name="monitorHealth" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="parameter" use="required" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>
@@ -747,11 +755,26 @@
                     <xsd:element name="name" type="xsd:string"/>
                     <xsd:element name="email" type="xsd:string"/>
                     <xsd:element name="password" type="xsd:string"/>
+                    <xsd:element name="preferences" type="UserPreferences" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="onetimePassword" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
+    <xsd:complexType name="UserPreferences">
+        <xsd:sequence>
+            <xsd:element name="menuCollapsed" type="xsd:boolean" default="true"/>
+            <xsd:element name="statementsCollapsed" type="xsd:boolean" default="false"/>
+            <xsd:element name="pageSize" type="xsd:integer" default="10"/>
+            <xsd:element name="homePageType" type="HomePageType" default="LANDING_PAGE"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:simpleType name="HomePageType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="LANDING_PAGE"/>
+            <xsd:enumeration value="CONFORMANCE_DASHBOARD"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:simpleType name="OrganisationRoleType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="ORGANISATION_USER"/>
@@ -824,6 +847,7 @@
                     <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="testCaseGroups" type="TestCaseGroups" minOccurs="0"/>
                     <xsd:element name="testCases" type="TestCases" minOccurs="0"/>
+                    <xsd:element name="order" type="xsd:short" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
                 <xsd:attribute name="actors" type="xsd:IDREFS"/>

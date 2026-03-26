@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -34,7 +34,7 @@ import models.automation._
 import models.snapshot.ConformanceSnapshot
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 import play.api.libs.json.{JsObject, Json, _}
 
 import java.util
@@ -52,7 +52,7 @@ import models.health.SoftwareVersionCheckSettings
 
 object JsonUtil {
 
-  def jsThemes(themes: List[Theme]): JsArray = {
+  def jsThemes(themes: Iterable[Theme]): JsArray = {
     var json = Json.arr()
     themes.foreach { theme =>
       json = json.append(jsTheme(theme))
@@ -107,6 +107,10 @@ object JsonUtil {
     json = json + ("success", JsBoolean(result.success))
     json = json + ("contentType", JsString(result.contentType))
     json
+  }
+
+  def jsValue(value: String): JsObject = {
+    Json.obj("value" -> value)
   }
 
   def jsTextArray(texts: Iterable[String]): JsObject = {
@@ -366,6 +370,7 @@ object JsonUtil {
       "sname"             -> suite.shortname,
       "fname"             -> suite.fullname,
       "version"           -> suite.version,
+      "order"             -> suite.order,
       "specifications"    -> toJsArray(specificationIds),
       "authors"           -> (if(suite.authors.isDefined) suite.authors.get else JsNull),
       "description"       -> (if(suite.description.isDefined) suite.description.get else JsNull),
@@ -664,7 +669,7 @@ object JsonUtil {
    * @param list List of Users to be convert
    * @return JsArray
    */
-  def jsUsers(list:List[Users]):JsArray = {
+  def jsUsers(list: Iterable[Users]):JsArray = {
     var json = Json.arr()
     list.foreach{ user =>
       json = json.append(jsUser(user))
@@ -727,8 +732,18 @@ object JsonUtil {
       "community" -> organization.community,
       "adminOrganization" -> organization.adminOrganization,
       "selfRegistrationToken" -> (if(organization.selfRegToken.isDefined) organization.selfRegToken.get else JsNull),
+      "selfRegistrationDefault" -> organization.selfRegDefault
     )
     json
+  }
+
+  def jsUserPreferences(preferences: UserPreferenceBase):JsObject = {
+    Json.obj(
+      "menuCollapsed"       -> preferences.menuCollapsed,
+      "statementsCollapsed" -> preferences.statementsCollapsed,
+      "pageSize"            -> preferences.pageSize,
+      "homePageType"        -> preferences.homePageType
+    )
   }
 
   /**
@@ -770,11 +785,11 @@ object JsonUtil {
    * @param list List of Systems to be converted
    * @return JsArray
    */
-  def jsSystems(list:List[Systems]):JsArray = {
+  def jsSystems(list: Iterable[Systems]):JsArray = {
     jsSystems(list, None)
   }
 
-  def jsSystems(list:List[Systems], systemsWithTests: Option[Set[Long]]):JsArray = {
+  def jsSystems(list: Iterable[Systems], systemsWithTests: Option[Set[Long]]):JsArray = {
     var json = Json.arr()
     list.foreach{ system =>
       var systemJson = jsSystem(system)
@@ -810,15 +825,19 @@ object JsonUtil {
     json
   }
 
-  def jsCommunityLimited(community: CommunityLimited):JsObject = {
-    Json.obj(
+  def jsCommunityLimited(community: CommunityLimited): JsObject = {
+    var json = Json.obj(
       "id"    -> community.id,
       "sname" -> community.shortname,
       "fname" -> community.fullname
     )
+    if (community.tags.isDefined) {
+      json = json.+("tags" -> jsTags(community.tags.get))
+    }
+    json
   }
 
-  def jsCommunity(community:Communities, includeAdminInfo: Boolean):JsObject = {
+  def jsCommunity(community:Communities, includeAdminInfo: Boolean, selfRegDefaultOrganisation: Option[Organizations] = None):JsObject = {
     var json = Json.obj(
       "id"    -> community.id,
       "sname" -> community.shortname,
@@ -832,6 +851,7 @@ object JsonUtil {
       "allowAutomationApi" -> community.allowAutomationApi,
       "allowCommunityView" -> community.allowCommunityView,
       "allowUserManagement" -> community.allowUserManagement,
+      "allowXmlReports" -> community.allowXmlReports,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -844,10 +864,18 @@ object JsonUtil {
       json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
       json = json.+("selfRegForceOrganisationTokenInput" -> JsBoolean(community.selfRegForceOrganisationTokenInput))
+      json = json.+("selfRegJoinExisting" -> JsBoolean(community.selfRegJoinExisting))
+      json = json.+("selfRegJoinAsAdmin" -> JsBoolean(community.selfRegJoinAsAdmin))
+      if (selfRegDefaultOrganisation.isDefined) {
+        json = json.+("selfRegDefaultOrganisation" -> jsOrganization(selfRegDefaultOrganisation.get))
+      }
       json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
       json = json.+("interactionNotification" -> JsBoolean(community.interactionNotification))
       if (Configurations.AUTOMATION_API_ENABLED) {
         json = json.+("apiKey" -> JsString(community.apiKey))
+      }
+      if (community.tags.isDefined) {
+        json = json.+("tags" -> jsTags(community.tags.get))
       }
     }
     json = json.+("selfRegAllowOrganisationTokens" -> JsBoolean(community.selfRegAllowOrganisationTokens))
@@ -856,11 +884,14 @@ object JsonUtil {
   }
 
   def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
-    var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo)
-    if(community.domain.isDefined){
-      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false))
+    var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo, community.defaultSelfRegOrganisation)
+    if (community.domain.isDefined){
+      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false, withTags = false))
     } else{
       jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
+    }
+    if (community.defaultUserPreferences.isDefined && includeAdminInfo) {
+      jCommunity = jCommunity ++ Json.obj("preferences" -> jsUserPreferences(community.defaultUserPreferences.get))
     }
     if (labels.isDefined) {
       jCommunity = jCommunity ++ Json.obj("labels" -> jsCommunityLabels(labels.get))
@@ -873,7 +904,7 @@ object JsonUtil {
    * @param domain Domain object to be converted
    * @return JsObject
    */
-  def jsDomain(domain:Domain, withApiKeys: Boolean):JsObject = {
+  def jsDomain(domain:Domain, withApiKeys: Boolean, withTags: Boolean):JsObject = {
     var json = Json.obj(
       "id" -> domain.id,
       "sname" -> domain.shortname,
@@ -883,6 +914,9 @@ object JsonUtil {
     )
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(domain.apiKey))
+    }
+    if (withTags && domain.tags.isDefined) {
+      json = json.+("tags" -> jsTags(domain.tags.get))
     }
     json
   }
@@ -913,7 +947,26 @@ object JsonUtil {
       // Passwords are never sent to the UI
       "authBasicUsername" -> service.authBasicUsername,
       "authTokenUsername" -> service.authTokenUsername,
-      "authTokenPasswordType" -> service.authTokenPasswordType
+      "authTokenPasswordType" -> service.authTokenPasswordType,
+      "monitor" -> service.monitorHealth
+    )
+  }
+
+  def jsTestServicesBasicInfo(list: Iterable[TestServiceBasicInfo]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ service =>
+      json = json.append(jsTestServiceBasicInfo(service))
+    }
+    json
+  }
+
+  def jsTestServiceBasicInfo(service: TestServiceBasicInfo): JsObject = {
+    Json.obj(
+      "id" -> service.id,
+      "serviceType" -> service.serviceType,
+      "serviceName" -> service.serviceName,
+      "domainName" -> service.domainName,
+      "domainId" -> service.domainId
     )
   }
 
@@ -948,17 +1001,17 @@ object JsonUtil {
    * @param list List of Domains to be converted
    * @return JsArray
    */
-  def jsDomains(list: Iterable[Domain], withApiKeys: Boolean):JsArray = {
+  def jsDomains(list: Iterable[Domain], withApiKeys: Boolean, withTags: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach{ domain =>
-      json = json.append(jsDomain(domain, withApiKeys))
+      json = json.append(jsDomain(domain, withApiKeys, withTags))
     }
     json
   }
 
   def jsCommunityDomains(domains: List[Domain], linkedDomain: Option[Long]): JsObject = {
     var json = Json.obj(
-      "domains" -> jsDomains(domains, withApiKeys = false)
+      "domains" -> jsDomains(domains, withApiKeys = false, withTags = false)
     )
     if (linkedDomain.isDefined) {
       json = json + ("linkedDomain" -> JsNumber(linkedDomain.get))
@@ -1042,6 +1095,10 @@ object JsonUtil {
       json = json.+("apiKey" -> JsString(group.apiKey))
     }
     json
+  }
+
+  def jsSpecificationSearchResults(list: Iterable[Specifications]):JsArray = {
+    jsSpecifications(list)
   }
 
   /**
@@ -1141,7 +1198,7 @@ object JsonUtil {
     json
   }
 
-  def jsActorsNonCase(list:List[Actor]):JsArray = {
+  def jsActorsNonCase(list: Iterable[Actor]):JsArray = {
     var json = Json.arr()
     list.foreach{ actor =>
       json = json.append(jsActor(actor))
@@ -1253,7 +1310,8 @@ object JsonUtil {
     val forceSequential = (jsonConfig \ "forceSequentialExecution").asOpt[Boolean].getOrElse(false)
     val waitForCompletion = (jsonConfig \ "waitForCompletion").asOpt[Boolean].getOrElse(false)
     val maximumWaitTime = (jsonConfig \ "maximumWaitTime").asOpt[Long]
-    TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential, waitForCompletion, maximumWaitTime)
+    val executionDelay = (jsonConfig \ "executionDelay").asOpt[Long].flatMap(x => if (x <= 0) None else Some(x))
+    TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential, waitForCompletion, maximumWaitTime, executionDelay)
   }
 
   def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, String) = {
@@ -2179,13 +2237,21 @@ object JsonUtil {
       "group" -> (if(testCase.group.isDefined) testCase.group.get else JsNull)
     )
     if (withDocumentation && testCase.documentation.isDefined) json = json + ("documentation" -> JsString(testCase.documentation.get))
-    if (withTags && testCase.tags.isDefined) json = json + ("tags" -> JsString(testCase.tags.get))
+    if (withTags && testCase.tags.isDefined) json = json + ("tags" -> jsTags(testCase.tags.get))
     if (withSpecReference) {
       if (testCase.specReference.isDefined) json = json + ("specReference" -> JsString(testCase.specReference.get))
       if (testCase.specDescription.isDefined) json = json + ("specDescription" -> JsString(testCase.specDescription.get))
       if (testCase.specLink.isDefined) json = json + ("specLink" -> JsString(testCase.specLink.get))
     }
     json
+  }
+
+  def jsTags(tagData: String): JsArray = {
+    Json.parse(tagData).as[JsArray]
+  }
+
+  def jsTags(tagData: Option[String]): JsArray = {
+    Json.parse(tagData.getOrElse("[]")).as[JsArray]
   }
 
   /**
@@ -2511,13 +2577,13 @@ object JsonUtil {
    * @return String
    */
   def serializeUser(user:User):String = {
-    //1) Serialize User
     var jUser:JsObject = jsUser(user.toCaseObject)
-    //2) If Organization exists, convert and append it to User
-    if(user.organization.isDefined){
+    if (user.organization.isDefined){
       jUser = jUser ++ Json.obj("organization" -> jsOrganization(user.organization.get))
     }
-    //3) Return JSON String
+    if (user.preferences.isDefined) {
+      jUser = jUser ++ Json.obj("preferences" -> jsUserPreferences(user.preferences.get))
+    }
     jUser.toString
   }
 
@@ -2534,7 +2600,8 @@ object JsonUtil {
         "forceTemplateSelection" -> option.forceTemplateSelection,
         "forceRequiredProperties" -> option.forceRequiredProperties,
         "organisationTokensEnabled" -> option.organisationTokensEnabled,
-        "forceOrganisationTokenInput" -> option.forceOrganisationTokenInput
+        "joinExisting" -> option.joinExisting,
+        "hasDefaultOrganisation" -> option.hasDefaultOrganisation
     )
     json
   }
@@ -2575,39 +2642,69 @@ object JsonUtil {
     json
   }
 
-  def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
+  def serializeConfigurationProperties(hasDefaultLegalNotice: Boolean):JsObject = {
+    val contactFormEnabled: Boolean = Configurations.EMAIL_CONTACT_FORM_ENABLED.getOrElse(false)
     val json = Json.obj(
-      "emailEnabled" -> config.get("email.enabled").toBoolean,
-      "emailContactFormEnabled" -> config.get("email.contactFormEnabled").toBoolean,
-      "emailAttachmentsMaxCount" -> config.get("email.attachments.maxCount").toInt,
-      "emailAttachmentsMaxSize" -> config.get("email.attachments.maxSize").toLong,
-      "emailAttachmentsAllowedTypes" -> config.get("email.attachments.allowedTypes"),
-      "surveyEnabled" -> config.get("survey.enabled").toBoolean,
-      "surveyAddress" -> config.get("survey.address"),
-      "moreInfoEnabled" -> config.get("moreinfo.enabled").toBoolean,
-      "moreInfoAddress" -> config.get("moreinfo.address"),
-      "releaseInfoEnabled" -> config.get("releaseinfo.enabled").toBoolean,
-      "releaseInfoAddress" -> config.get("releaseinfo.address"),
-      "userGuideOU" -> config.get("userguide.ou"),
-      "userGuideOA" -> config.get("userguide.oa"),
-      "userGuideCA" -> config.get("userguide.ca"),
-      "userGuideTA" -> config.get("userguide.ta"),
-      "ssoEnabled" -> config.get("sso.enabled").toBoolean,
-      "ssoInMigration" -> config.get("sso.inMigration").toBoolean,
-      "demosEnabled" -> config.get("demos.enabled").toBoolean,
-      "demosAccount" -> config.get("demos.account").toLong,
-      "registrationEnabled" -> config.get("registration.enabled").toBoolean,
-      "startupWizardEnabled" -> config.get("startupWizardEnabled").toBoolean,
-      "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
-      "mode" -> config.get("mode"),
-      "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,
-      "versionNumber" -> config.get("versionNumber"),
-      "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean,
-      "conformanceStatementReportMaxTestCases" -> config.get("conformanceStatementReportMaxTestCases").toInt,
-      "headerNameAuthenticationCookiePath" -> config.get("headerNameAuthenticationCookiePath"),
-      "welcomePageTitle" -> config.get("welcomePageTitle")
+      "emailEnabled" -> Configurations.EMAIL_ENABLED,
+      "emailContactFormEnabled" -> contactFormEnabled,
+      "emailAttachmentsMaxCount" -> Configurations.EMAIL_ATTACHMENTS_MAX_COUNT,
+      "emailAttachmentsMaxSize" -> Configurations.EMAIL_ATTACHMENTS_MAX_SIZE,
+      "emailAttachmentsAllowedTypes" -> StringUtils.join(Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES,","),
+      "surveyEnabled" -> Configurations.SURVEY_ENABLED,
+      "surveyAddress" -> Configurations.SURVEY_ADDRESS,
+      "moreInfoEnabled" -> Configurations.MORE_INFO_ENABLED,
+      "moreInfoAddress" -> Configurations.MORE_INFO_ADDRESS,
+      "releaseInfoEnabled" -> Configurations.RELEASE_INFO_ENABLED,
+      "releaseInfoAddress" -> Configurations.RELEASE_INFO_ADDRESS,
+      "userGuideOU" -> Configurations.USERGUIDE_OU,
+      "userGuideOA" -> Configurations.USERGUIDE_OA,
+      "userGuideCA" -> Configurations.USERGUIDE_TA,
+      "userGuideTA" -> Configurations.USERGUIDE_CA,
+      "ssoEnabled" -> Configurations.AUTHENTICATION_SSO_ENABLED,
+      "ssoWithNativeLogin" -> (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap),
+      "ssoInMigration" -> Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD,
+      "demosEnabled" -> Configurations.DEMOS_ENABLED,
+      "demosAccount" -> Configurations.DEMOS_ACCOUNT,
+      "registrationEnabled" -> Configurations.REGISTRATION_ENABLED,
+      "startupWizardEnabled" -> Configurations.STARTUP_WIZARD_ENABLED,
+      "usageTipsEnabled" -> Configurations.USAGE_TIPS_CONFIGURATION.enabled,
+      "usageTipsDisabledForScreens" -> Configurations.USAGE_TIPS_CONFIGURATION.disabledForScreens,
+      "savedFileMaxSize" -> Configurations.SAVED_FILE_MAX_SIZE,
+      "mode" -> Configurations.TESTBED_MODE,
+      "automationApiEnabled" -> Configurations.AUTOMATION_API_ENABLED,
+      "versionNumber" -> Configurations.versionInfo(),
+      "hasDefaultLegalNotice" -> hasDefaultLegalNotice,
+      "conformanceStatementReportMaxTestCases" -> Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES,
+      "headerNameAuthenticationCookiePath" -> Configurations.HEADER_NAME_AUTHENTICATION_COOKIE_PATH,
+      "welcomePageTitle" -> Configurations.WELCOME_TITLE,
+      "preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN
     )
     json
+  }
+
+  def serializeUsageTipsConfiguration(config: UsageTipsConfiguration): JsValue = {
+    Json.obj(
+      "enabled" -> config.enabled,
+      "disabledForScreens" -> config.disabledForScreens
+    )
+  }
+
+  def parseJsUsageTipsConfiguration(json: String): UsageTipsConfiguration = {
+    val jsonObject = Json.parse(json)
+    UsageTipsConfiguration(
+      enabled = (jsonObject \ "enabled").as[Boolean],
+      disabledForScreens = (jsonObject \ "disabledForScreens").as[JsArray].value.map(_.as[Short]).toSet
+    )
+  }
+
+  def parseJsSessionTimeoutConfiguration(json: String): SessionTimeoutConfiguration = {
+    val jsonObject = Json.parse(json)
+    SessionTimeoutConfiguration(
+      enabled = (jsonObject \ "enabled").as[Boolean],
+      userPendingTimeout = (jsonObject \ "userPendingTimeout").as[Long],
+      adminPendingTimeout = (jsonObject \ "adminPendingTimeout").as[Long],
+      otherTimeout = (jsonObject \ "otherTimeout").as[Long]
+    )
   }
 
   /**
@@ -2711,7 +2808,7 @@ object JsonUtil {
    * @param list List of LandingPages to be convert
    * @return JsArray
    */
-  def jsLandingPages(list: List[LandingPage]): JsArray = {
+  def jsLandingPages(list: Iterable[LandingPage]): JsArray = {
     var json = Json.arr()
     list.foreach { landingPage =>
       json = json.append(jsLandingPage(landingPage))
@@ -2735,7 +2832,7 @@ object JsonUtil {
     json
   }
 
-  def jsTriggers(list:List[Triggers]):JsArray = {
+  def jsTriggers(list: Iterable[Triggers]):JsArray = {
     var json = Json.arr()
     list.foreach{ trigger =>
       json = json.append(jsTrigger(trigger))
@@ -2792,7 +2889,7 @@ object JsonUtil {
    * @param list List of LegalNotices to be convert
    * @return JsArray
    */
-  def jsLegalNotices(list:List[LegalNotice]):JsArray = {
+  def jsLegalNotices(list: Iterable[LegalNotice]):JsArray = {
     var json = Json.arr()
     list.foreach{ ln =>
       json = json.append(jsLegalNotice(ln))
@@ -2806,7 +2903,7 @@ object JsonUtil {
     * @param list List of ErrorTemplates to be convert
     * @return JsArray
     */
-  def jsErrorTemplates(list:List[ErrorTemplate]):JsArray = {
+  def jsErrorTemplates(list: Iterable[ErrorTemplate]):JsArray = {
     var json = Json.arr()
     list.foreach{ et =>
       json = json.append(jsErrorTemplate(et))
@@ -3138,7 +3235,7 @@ object JsonUtil {
         "optional" -> testCase.optional,
         "disabled" -> testCase.disabled,
         "result" -> testCase.result.value(),
-        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull),
+        "tags" -> (if (testCase.tags.isDefined) jsTags(testCase.tags.get) else JsNull),
         "specReference" -> (if (testCase.specReference.isDefined) testCase.specReference.get else JsNull),
         "specDescription" -> (if (testCase.specDescription.isDefined) testCase.specDescription.get else JsNull),
         "specLink" -> (if (testCase.specLink.isDefined) testCase.specLink.get else JsNull),
@@ -3608,6 +3705,53 @@ object JsonUtil {
     )
   }
 
+  def jsRestApiLimits(settings: RestApiLimits, withDescriptions: Boolean): JsObject = {
+    Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "enableBulkTestExecution" -> JsBoolean(settings.enableBulkTestExecution),
+      "globalLimit" -> JsNumber(settings.globalLimit),
+      "defaultEndpointLimit" -> JsNumber(settings.defaultEndpointLimit),
+      "endpointLimits" -> jsRestApiEndpointLimits(settings.endpointLimits, withDescriptions)
+    )
+  }
+
+  def jsRestApiEndpointLimits(settings: Iterable[RestApiEndpointLimit], withDescriptions: Boolean): JsArray = {
+    JsArray(settings.map(x => jsRestApiEndpointLimit(x, withDescriptions)).toSeq)
+  }
+
+  def jsRestApiEndpointLimit(setting: RestApiEndpointLimit, withDescriptions: Boolean): JsObject = {
+    var json = Json.obj(
+      "path" -> JsString(setting.path),
+      "method" -> JsString(setting.method),
+      "limit" -> JsNumber(setting.limit)
+    )
+    if (withDescriptions && setting.description.isDefined) {
+      json = json + ("description" -> JsString(setting.description.get))
+    }
+    json
+  }
+
+  def parseJsRestApiLimits(jsonString: String, withDescriptions: Boolean): RestApiLimits = {
+    val json = Json.parse(jsonString)
+    val defaults = RestApiLimits.defaultSettings()
+    RestApiLimits(
+      enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+      enableBulkTestExecution = (json \ "enableBulkTestExecution").asOpt[Boolean].getOrElse(true),
+      globalLimit = (json \ "globalLimit").asOpt[Int].getOrElse(defaults.globalLimit),
+      defaultEndpointLimit = (json \ "defaultEndpointLimit").asOpt[Int].getOrElse(defaults.defaultEndpointLimit),
+      endpointLimits = (json \ "endpointLimits").asOpt[JsArray].map(_.value.map(x => parseJsRestApiEndpointLimit(x, withDescriptions))).map(_.toList).getOrElse(List.empty),
+    )
+  }
+
+  def parseJsRestApiEndpointLimit(json: JsValue, withDescriptions: Boolean): RestApiEndpointLimit = {
+    RestApiEndpointLimit(
+      path = (json \ "path").as[String],
+      method = (json \ "method").as[String],
+      limit = (json \ "limit").as[Int],
+      description = if (withDescriptions) (json \ "description").asOpt[String] else None
+    )
+  }
+
   def validatorForAnyContent(): Reads[AnyContent] = {
     (js: JsValue) => {
       val content = new AnyContent()
@@ -3689,9 +3833,13 @@ object JsonUtil {
       case _: String => errorCode.asInstanceOf[String]
       case _ => ""
     }
+    var errorDescToUse = errorDesc
+    if (!StringUtils.isBlank(errorDescToUse)) {
+      errorDescToUse = Strings.CI.appendIfMissing(errorDescToUse, ".")
+    }
     var obj = Json.obj(
       "error_code" -> code,
-      "error_description" -> errorDesc
+      "error_description" -> errorDescToUse
     )
     if (errorIdentifier.isDefined) {
       obj = obj.+("error_id" -> JsString(errorIdentifier.get))
@@ -3905,7 +4053,6 @@ object JsonUtil {
 
   def jsTestSuiteMinimalInformations(values: Iterable[TestSuiteMinimalInformation]): JsArray = {
     JsArray(values.map(jsTestSuiteMinimalInformation(_)).toSeq)
-    
   }
 
   def jsTestSuiteMinimalInformation(value: TestSuiteMinimalInformation): JsObject = {

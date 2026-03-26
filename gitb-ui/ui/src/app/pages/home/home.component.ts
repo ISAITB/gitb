@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,12 +14,13 @@
  */
 
 import {AfterViewInit, Component, OnInit} from '@angular/core';
-import { mergeMap, Observable, of } from 'rxjs';
-import { AccountService } from 'src/app/services/account.service';
-import { DataService } from 'src/app/services/data.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
-import {ServiceHealthModalComponent} from '../../modals/service-health-modal/service-health-modal.component';
+import {mergeMap, Observable, of} from 'rxjs';
+import {AccountService} from 'src/app/services/account.service';
+import {DataService} from 'src/app/services/data.service';
 import {StartupWizardModalComponent} from '../../modals/startup-wizard-modal/startup-wizard-modal.component';
+import {UsageTipService} from '../../services/usage-tip.service';
+import {Constants} from '../../common/constants';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-home',
@@ -29,11 +30,14 @@ import {StartupWizardModalComponent} from '../../modals/startup-wizard-modal/sta
 export class HomeComponent implements OnInit, AfterViewInit {
 
   pageContent?: string
+  startupWizardActive = false
+  viewInitialized = false
 
   constructor(
     private readonly accountService: AccountService,
     public readonly dataService: DataService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal,
+    private readonly usageTipService: UsageTipService
   ) { }
 
   ngOnInit(): void {
@@ -55,17 +59,23 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
     page$.subscribe((data) => {
       this.pageContent = data
+      this.showMessageForMissingLandingPage()
     })
     this.dataService.breadcrumbUpdate({breadcrumbs: []})
   }
 
   ngAfterViewInit() {
     if (this.dataService.isSystemAdmin && this.dataService.configuration.startupWizardEnabled) {
-      const modal = this.modalService.show(StartupWizardModalComponent, {
-        class: 'modal-lg',
-        keyboard: false,
-        backdrop: 'static'
-      })
+      this.startupWizardActive = true
+      this.modalService.open(StartupWizardModalComponent, { size: 'lg', keyboard: false, backdrop: 'static' })
+    }
+    this.viewInitialized = true
+    this.showMessageForMissingLandingPage()
+  }
+
+  showMessageForMissingLandingPage() {
+    if (this.dataService.isSystemAdmin && this.viewInitialized && !this.startupWizardActive && this.pageContent != undefined  && this.pageContent == '') {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_LANDING_PAGE)
     }
   }
 

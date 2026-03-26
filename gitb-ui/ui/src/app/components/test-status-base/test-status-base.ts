@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,17 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
-import {Counters} from '../test-status-icons/counters';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Counters} from './counters';
+import {TestStatusBaseApi} from './test-status-base-api';
 
 @Component({
     template: '',
     standalone: false
 })
-export abstract class TestStatusBase implements OnInit {
+export abstract class TestStatusBase implements OnInit, TestStatusBaseApi {
 
   @Input() counters!: Counters
-  @Input() refresh?: EventEmitter<Counters>
+  @Output() opened = new EventEmitter<TestStatusBase>()
 
   hasRequired = false
   hasIgnored = false
@@ -34,14 +35,31 @@ export abstract class TestStatusBase implements OnInit {
   failedIgnored = 0
   otherIgnored = 0
   tooltipRequiredTestDescription = 'test cases'
+  expanded = false
+
+  protected constructor(private readonly eRef: ElementRef) {
+  }
 
   ngOnInit(): void {
     this.updateCounters()
-    if (this.refresh) {
-      this.refresh.subscribe((counters) => {
-        this.counters = counters
-        this.updateCounters()
-      })
+  }
+
+  refresh(counters: Counters) {
+    this.counters = counters
+    this.updateCounters()
+  }
+
+  documentEscape(): void {
+    this.expanded = false
+  }
+
+  close() {
+    this.expanded = false
+  }
+
+  documentClick(event: Event): void {
+    if (!this.eRef.nativeElement.contains(event.target) && this.expanded) {
+      this.expanded = false
     }
   }
 
@@ -58,6 +76,11 @@ export abstract class TestStatusBase implements OnInit {
     if ((this.completedIgnored + this.failedIgnored + this.otherIgnored) != (this.counters.completedOptional + this.counters.failedOptional + this.counters.otherOptional)) {
       this.tooltipRequiredTestDescription = 'test cases or groups'
     }
+  }
+
+  expand() {
+    this.expanded = true
+    this.opened.emit(this)
   }
 
 }

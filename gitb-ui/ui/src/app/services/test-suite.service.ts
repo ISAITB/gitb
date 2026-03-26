@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -93,10 +93,14 @@ export class TestSuiteService {
     })
   }
 
-	getLinkedSpecifications(testSuiteId: number) {
-		return this.restService.get<Specification[]>({
+	getLinkedSpecifications(testSuiteId: number, page: number|undefined, limit: number|undefined) {
+		return this.restService.get<SearchResult<Specification>>({
 			path: ROUTES.controllers.TestSuiteService.getLinkedSpecifications(testSuiteId).url,
-			authenticate: true
+			authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
 	}
 
@@ -133,7 +137,7 @@ export class TestSuiteService {
 		})
 	}
 
-	updateTestSuiteMetadata(testSuiteId: number, name: string, description: string|undefined, documentation:string|undefined, version: string, specReference?: string, specDescription?: string, specLink?:string) {
+	updateTestSuiteMetadata(testSuiteId: number, name: string, description: string|undefined, documentation:string|undefined, version: string, order: number, specReference?: string, specDescription?: string, specLink?:string) {
 		return this.restService.post<void>({
 			path: ROUTES.controllers.TestSuiteService.updateTestSuiteMetadata(testSuiteId).url,
 			data: {
@@ -141,6 +145,7 @@ export class TestSuiteService {
 				description: description,
 				documentation: documentation,
 				version: version,
+        order: order,
 				specReference: specReference,
 				specDescription: specDescription,
 				specLink: specLink

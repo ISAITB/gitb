@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -34,19 +34,27 @@ export class TagComponent implements OnInit {
   @Input() editable? = false
   @Input() icon? = false
   @Input() pill? = false
+  @Input() toggleEnabled?: boolean = false
+  @Input() toggledByDefault?: boolean = false
+  @Input() inTable? = false
 
   @Output() edit = new EventEmitter<number>()
   @Output() delete = new EventEmitter<number>()
+  @Output() toggle = new EventEmitter<boolean>()
 
   Constants = Constants
-  setDefaultBorder!: boolean
+  toggled = false
 
   constructor() { }
 
   ngOnInit(): void {
-    this.setDefaultBorder = this.background == undefined
-      || this.background!.toLowerCase() == '#fff'
-      || this.background!.toLowerCase() == '#ffffff'
+    if (this.toggleEnabled) {
+      this.toggled = this.toggledByDefault === true
+    }
+  }
+
+  isDefaultBorder(): boolean {
+    return this.background == undefined || this.background!.toLowerCase() == '#fff' || this.background!.toLowerCase() == '#ffffff'
   }
 
   editTag() {
@@ -56,4 +64,13 @@ export class TagComponent implements OnInit {
   deleteTag() {
     this.delete.emit(this.id)
   }
+
+  tagClicked(event: Event) {
+    if (this.toggleEnabled) {
+      event.stopPropagation()
+      this.toggled = !this.toggled
+      this.toggle.emit(this.toggled)
+    }
+  }
+
 }

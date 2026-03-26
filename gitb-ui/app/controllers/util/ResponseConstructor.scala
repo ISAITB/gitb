@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -36,6 +36,12 @@ object ResponseConstructor extends Results{
 
   def constructBadRequestResponse(errorCode: Int, errorDesc: String): Result = {
     BadRequest(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
+  }
+
+  def constructTooManyRequestsResponse(errorCode: Int, errorDesc: String, retryAfter: Long): Result = {
+    TooManyRequests(constructErrorMessage(errorCode, errorDesc, None))
+      .withHeaders(RETRY_AFTER -> retryAfter.toString)
+      .as(JSON)
   }
 
   def constructNotFoundResponse(errorCode: Int, errorDesc: String):Result = {

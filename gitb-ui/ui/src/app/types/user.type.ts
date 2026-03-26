@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,18 +14,20 @@
  */
 
 import { Organisation } from "./organisation.type";
+import {UserPreferences} from './user-preferences';
 
 export interface User {
 
-    id?: number,
-    name?: string,
-    email?: string,
-    role?: number,
-    roleText?: string,
-    onetime?: boolean,
-    ssoStatus?: number,
-    ssoStatusText?: string,
-    organization?: Organisation,
-    password?: string,
+  id?: number,
+  name?: string,
+  email?: string,
+  role?: number,
+  roleText?: string,
+  onetime?: boolean,
+  ssoStatus?: number,
+  ssoStatusText?: string,
+  password?: string,
+  organization?: Organisation,
+  preferences?: UserPreferences
 
 }

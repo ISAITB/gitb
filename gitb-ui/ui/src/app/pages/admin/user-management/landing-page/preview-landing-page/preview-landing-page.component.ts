@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,28 +13,26 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
+import {Component, Input} from '@angular/core';
+import {Constants} from '../../../../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-preview-landing-page',
     templateUrl: './preview-landing-page.component.html',
     standalone: false
 })
-export class PreviewLandingPageComponent implements OnInit {
+export class PreviewLandingPageComponent {
 
   @Input() previewContent!: string
 
   constructor(
-    private readonly modalRef: BsModalRef
+    private readonly modalRef: NgbActiveModal
   ) { }
 
-  ngOnInit(): void {
-    this.modalRef.setClass('landingPagePreview')
-  }
-
   closePreview() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
+  protected readonly Constants = Constants;
 }

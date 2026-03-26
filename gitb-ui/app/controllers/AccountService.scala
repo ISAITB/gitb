@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -40,6 +40,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
                                 accountManager: AccountManager,
                                 legalNoticeManager: LegalNoticeManager,
                                 organisationManager: OrganizationManager,
+                                userPreferenceManager: UserPreferenceManager,
                                 authorizationManager: AuthorizationManager)
                                (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
@@ -114,9 +115,11 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
    */
   def getVendorUsers(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnOrganisationUsers(request).flatMap { _ =>
-    val userId = ParameterExtractor.extractUserId(request)
-      accountManager.getVendorUsers(userId).map { list =>
-        val json:String = JsonUtil.jsUsers(list).toString
+      val userId = ParameterExtractor.extractUserId(request)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      accountManager.getVendorUsers(userId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsUsers).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -146,7 +149,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
   def getUserProfile: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnProfile(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
-      accountManager.getUserProfile(userId).map { user =>
+      accountManager.getUserProfileWithPreferences(userId).map { user =>
         val json:String = JsonUtil.serializeUser(user)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -159,16 +162,16 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
   def updateUserProfile(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
-      val name:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.USER_NAME)
-      val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
-      val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OLD_PASSWORD)
-
+      val name = ParameterExtractor.optionalBodyParameter(request, ParameterNames.USER_NAME)
+      val passwd = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
+      val oldPasswd  = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OLD_PASSWORD)
+      val preferences = ParameterExtractor.extractUserPreferences(request)
       if (passwd.isDefined && !CryptoUtil.isAcceptedPassword(passwd.get)) {
         Future.successful {
           ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.", Some("new"))
         }
       } else {
-        accountManager.updateUserProfile(userId, name, passwd, oldPasswd).map { _ =>
+        accountManager.updateUserProfile(userId, name, passwd, oldPasswd, Some(preferences)).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }.recover {
           case _: InvalidRequestException => ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
@@ -177,40 +180,41 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def updatePreferenceForMenuCollapsed(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toBoolean
+      userPreferenceManager.updatePreferenceForMenuCollapsed(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  def updatePreferenceForStatementsCollapsed(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toBoolean
+      userPreferenceManager.updatePreferenceForStatementsCollapsed(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  def updatePreferenceForPageSize(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toShort
+      userPreferenceManager.updatePreferenceForPageSize(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
   def getConfiguration: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewConfiguration(request).flatMap { _ =>
       legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map { legalNotice =>
-        val configProperties = new java.util.HashMap[String, String]()
-        configProperties.put("email.enabled", String.valueOf(Configurations.EMAIL_ENABLED))
-        configProperties.put("email.contactFormEnabled", String.valueOf(Configurations.EMAIL_CONTACT_FORM_ENABLED.getOrElse(false)))
-        configProperties.put("email.attachments.maxCount", String.valueOf(Configurations.EMAIL_ATTACHMENTS_MAX_COUNT))
-        configProperties.put("email.attachments.maxSize", String.valueOf(Configurations.EMAIL_ATTACHMENTS_MAX_SIZE))
-        configProperties.put("email.attachments.allowedTypes", String.valueOf(StringUtils.join(Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES,",")))
-        configProperties.put("survey.enabled", String.valueOf(Configurations.SURVEY_ENABLED))
-        configProperties.put("survey.address", String.valueOf(Configurations.SURVEY_ADDRESS))
-        configProperties.put("moreinfo.enabled", String.valueOf(Configurations.MORE_INFO_ENABLED))
-        configProperties.put("moreinfo.address", String.valueOf(Configurations.MORE_INFO_ADDRESS))
-        configProperties.put("releaseinfo.enabled", String.valueOf(Configurations.RELEASE_INFO_ENABLED))
-        configProperties.put("releaseinfo.address", String.valueOf(Configurations.RELEASE_INFO_ADDRESS))
-        configProperties.put("userguide.ou", String.valueOf(Configurations.USERGUIDE_OU))
-        configProperties.put("userguide.oa", String.valueOf(Configurations.USERGUIDE_OA))
-        configProperties.put("userguide.ta", String.valueOf(Configurations.USERGUIDE_TA))
-        configProperties.put("userguide.ca", String.valueOf(Configurations.USERGUIDE_CA))
-        configProperties.put("sso.enabled", String.valueOf(Configurations.AUTHENTICATION_SSO_ENABLED))
-        configProperties.put("sso.inMigration", String.valueOf(Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD))
-        configProperties.put("demos.enabled", String.valueOf(Configurations.DEMOS_ENABLED))
-        configProperties.put("demos.account", String.valueOf(Configurations.DEMOS_ACCOUNT))
-        configProperties.put("registration.enabled", String.valueOf(Configurations.REGISTRATION_ENABLED))
-        configProperties.put("startupWizardEnabled", String.valueOf(Configurations.STARTUP_WIZARD_ENABLED))
-        configProperties.put("savedFile.maxSize", String.valueOf(Configurations.SAVED_FILE_MAX_SIZE))
-        configProperties.put("mode", String.valueOf(Configurations.TESTBED_MODE))
-        configProperties.put("automationApi.enabled", String.valueOf(Configurations.AUTOMATION_API_ENABLED))
-        configProperties.put("versionNumber", Configurations.versionInfo())
-        configProperties.put("hasDefaultLegalNotice", legalNotice.exists(notice => StringUtils.isNotBlank(notice.content)).toString)
-        configProperties.put("conformanceStatementReportMaxTestCases", String.valueOf(Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES))
-        configProperties.put("headerNameAuthenticationCookiePath", String.valueOf(Configurations.HEADER_NAME_AUTHENTICATION_COOKIE_PATH))
-        configProperties.put("welcomePageTitle", String.valueOf(Configurations.WELCOME_TITLE))
-        val json = JsonUtil.serializeConfigurationProperties(configProperties)
+        val hasDefaultLegalNotice = legalNotice.exists(notice => StringUtils.isNotBlank(notice.content))
+        val json = JsonUtil.serializeConfigurationProperties(hasDefaultLegalNotice)
         ResponseConstructor.constructJsonResponse(json.toString())
       }
     }

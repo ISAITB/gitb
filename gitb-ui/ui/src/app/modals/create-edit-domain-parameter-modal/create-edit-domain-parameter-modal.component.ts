@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,13 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Component, Input, OnInit} from '@angular/core';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {DomainParameter} from 'src/app/types/domain-parameter';
-import {cloneDeep} from 'lodash';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {FileData} from 'src/app/types/file-data.type';
 import {ParameterFormData} from './parameter-form-data';
@@ -27,6 +25,7 @@ import {saveAs} from 'file-saver';
 import {Constants} from 'src/app/common/constants';
 import {ValidationState} from 'src/app/types/validation-state';
 import {DomainParameterService} from '../../services/domain-parameter.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-edit-domain-parameter-modal',
@@ -34,11 +33,10 @@ import {DomainParameterService} from '../../services/domain-parameter.service';
     styles: [],
     standalone: false
 })
-export class CreateEditDomainParameterModalComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CreateEditDomainParameterModalComponent extends BaseComponent implements OnInit {
 
   @Input() domainParameter!: Partial<DomainParameter>
   @Input() domainId!: number
-  public parametersUpdated = new EventEmitter<boolean>()
 
   pending = false
   savePending = false
@@ -55,17 +53,13 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   constructor(
     private readonly dataService: DataService,
     private readonly popupService: PopupService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly domainParameterService: DomainParameterService,
     private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
 
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
-  }
-
   ngOnInit(): void {
-		this.domainParameter = cloneDeep(this.domainParameter)
+		this.domainParameter = structuredClone(this.domainParameter)
 		if (this.domainParameter.id == undefined) {
 			this.domainParameter.inTests = true
     }
@@ -87,7 +81,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   saveAllowed() {
-    return this.textProvided(this.domainParameter.name) && this.domainParameter.kind != undefined && (
+    return !this.pending && this.textProvided(this.domainParameter.name) && this.domainParameter.kind != undefined && (
       (this.domainParameter.kind == 'SIMPLE' && this.textProvided(this.domainParameter.value)) ||
       (this.domainParameter.kind == 'BINARY' && (this.formData.file != undefined || (this.domainParameter.id != undefined && this.initialFileName != undefined))) ||
       (this.domainParameter.kind == 'HIDDEN' && (!this.formData.updateValue || this.textProvided(this.formData.hiddenValue)))
@@ -95,8 +89,8 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   save() {
-    this.validation.clearErrors()
     if (this.saveAllowed()) {
+      this.validation.clearErrors()
       if (!Constants.VARIABLE_NAME_REGEX.test(this.domainParameter.name!)) {
         this.validation.invalid('name', 'A parameter name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
       } else {
@@ -117,8 +111,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
             if (this.isErrorDescription(data)) {
               this.validation.applyError(data)
             } else {
-              this.parametersUpdated.emit(true)
-              this.modalInstance.hide()
+              this.modalInstance.close()
               this.popupService.success('Parameter updated.')
             }
           }).add(() => {
@@ -140,8 +133,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
             if (this.isErrorDescription(data)) {
               this.validation.applyError(data)
             } else {
-              this.parametersUpdated.emit(true)
-              this.modalInstance.hide()
+              this.modalInstance.close()
               this.popupService.success('Parameter created.')
             }
           }).add(() => {
@@ -154,14 +146,13 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   delete() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this parameter?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this parameter?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.pending = true
       this.deletePending = true
       this.domainParameterService.deleteDomainParameter(this.domainParameter.id!, this.domainId)
       .subscribe(() => {
-        this.parametersUpdated.emit(true)
-        this.modalInstance.hide()
+        this.modalInstance.close()
         this.popupService.success('Parameter deleted.')
       }).add(() => {
         this.pending = false
@@ -171,8 +162,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   cancel() {
-    this.parametersUpdated.emit(false)
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   onFileSelect(file: FileData) {

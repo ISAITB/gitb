@@ -2,35 +2,32 @@
     <div class="card mb-0">
         <div class="card-header">
             <div class="card-title">Create landing page</div>
+            <div app-community-tag-indicator></div>
         </div>
-        <form>
+        <form (ngSubmit)="createLandingPage()">
             <div class="card-body">
                 <!-- landing page form -->
-                <div class="row">
-                    <div class="col-10 offset-1">
-                        <div class="row mb-3">
-                            <label class="col-3 col-form-label text-end" for="name">* Name:</label>
-                            <div class="col-7"><input id="name" name="name" [(ngModel)]="page.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
-                            <div app-tooltip class="col-auto" tbTooltip="The name of the landing page that will identify it and be displayed in selection lists."></div>
-                        </div>
-                        <div class="row mb-3">
-                            <label class="col-3 col-form-label text-end" for="description">Description:</label>
-                            <div class="col-7"><textarea id="description" name="description" [(ngModel)]="page.description" class="form-control"></textarea></div>
-                            <div app-tooltip class="col-auto" tbTooltip="A description that will be visible only to administrators to help distinguish this landing page and summarise its purpose."></div>
-                        </div>
-                        <div class="row mb-3 pt-1">
-                            <label class="col-3 col-form-label text-end pt-0" for="default">Default:</label>
-                            <div class="col-7">
-                                <div class="form-check">
-                                    <input class="form-check-input" id="default" name="default" [(ngModel)]="page.default" type="checkbox">
-                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></div>
-                                </div>
-                            </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="name">* Name:</label>
+                    <div class="col-8 col-md-6"><input id="name" name="name" [(ngModel)]="page.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
+                    <div app-tooltip class="col-auto" tbTooltip="The name of the landing page that will identify it and be displayed in selection lists."></div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="description">Description:</label>
+                    <div class="col-8 col-md-6"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="page.description" class="form-control"></textarea></div>
+                    <div app-tooltip class="col-auto" tbTooltip="A description that will be visible only to administrators to help distinguish this landing page and summarise its purpose."></div>
+                </div>
+                <div class="row mb-3 pt-1">
+                    <label class="col-3 col-form-label text-end pt-0" for="default">Default:</label>
+                    <div class="col-8 col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" id="default" name="default" [(ngModel)]="page.default" type="checkbox">
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></div>
                         </div>
                     </div>
                 </div>
                 <app-form-section sectionTitle="Content">
-					<div class="row mt-3">
+					<div class="row pt-3">
 						<div class="col-12">
                             <div class="mb-3">
                                 <app-placeholder-selector [resources]="communityId != Constants.DEFAULT_COMMUNITY_ID" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
@@ -42,9 +39,9 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="createLandingPage()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-secondary" type="button" (click)="preview()" [disabled]="!textProvided(page.content)">Preview</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancelCreateLandingPage()">Cancel</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" (click)="preview()" [disable]="!textProvided(page.content)">Preview</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancelCreateLandingPage()">Cancel</button>
                 </div>
             </div>
         </form>

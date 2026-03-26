@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,7 +17,16 @@ package com.gitb.engine.expr;
 
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.tdl.CallStep;
+import com.gitb.tdl.Scriptlet;
 import com.gitb.types.DataType;
+import com.gitb.types.DataTypeFactory;
+import com.gitb.types.StringType;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * An expression handler that is expected to be static in nature. A static expression handler is one that will only
@@ -27,10 +36,6 @@ public class StaticExpressionHandler extends ExpressionHandler {
 
     public StaticExpressionHandler(TestCaseScope scope) {
         super(scope, new VariableResolver(scope, true), null);
-    }
-
-    public StaticExpressionHandler(TestCaseScope scope, VariableResolver resolver) {
-        super(scope, resolver, null);
     }
 
     @Override
@@ -43,4 +48,46 @@ public class StaticExpressionHandler extends ExpressionHandler {
         throw new IllegalStateException("Template processing is not allowed when resolving expressions that are expected to be static");
     }
 
+    public StaticExpressionHandler newForScriptlet(Scriptlet scriptlet, CallStep callStep) {
+        TestCaseScope newScope = scope.createChildScope();
+        if (scriptlet.getParams() != null && !scriptlet.getParams().getVar().isEmpty()) {
+            var parameters = new HashMap<String, Supplier<DataType>>();
+            // Record the parameters and their default values.
+            scriptlet.getParams().getVar().forEach(parameter -> {
+                Supplier<DataType> defaultValueFn = null;
+                if (!parameter.getValue().isEmpty()) {
+                    defaultValueFn = () -> DataTypeFactory.getInstance().create(parameter);
+                }
+                parameters.put(parameter.getName(), defaultValueFn);
+            });
+            // For parameters with corresponding inputs, replace the values based on the input values.
+            callStep.getInput().forEach((input) -> {
+                /*
+                 * Only process the inputs that are named, don't involve template processing and don't have source definitions.
+                 */
+                if (input.getName() != null && parameters.containsKey(input.getName())) {
+                    DataType value = null;
+                    if (input.getValue() != null && !input.isAsTemplate() && input.getSource() == null) {
+                        value = processExpression(input);
+                    }
+                    DataType valueToUse = value;
+                    parameters.put(input.getName(), () -> Objects.requireNonNullElseGet(valueToUse, () -> new StringType(StringUtils.defaultString(input.getValue()))));
+                }
+            });
+            // Add the parameters with resolved values to the scope.
+            parameters.entrySet().stream()
+                    .filter(entry -> entry.getValue() != null)
+                    .forEach(entry -> {
+                        var scopedVariable = newScope.createVariable(entry.getKey());
+                        scopedVariable.setValue(entry.getValue().get());
+                    });
+        }
+        return new StaticExpressionHandler(newScope);
+    }
+
+    public void close() {
+        if (scope != null && scope.getParent() != null) {
+            scope.getParent().removeChildScope(scope);
+        }
+    }
 }

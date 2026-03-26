@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,11 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Component, Input, OnInit} from '@angular/core';
 import {PopupService} from 'src/app/services/popup.service';
 import {FileData} from 'src/app/types/file-data.type';
 import {ResourceActions} from '../../components/resource-management-tab/resource-actions';
+import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-community-resource-bulk-upload-modal',
@@ -28,7 +29,6 @@ import {ResourceActions} from '../../components/resource-management-tab/resource
 export class CommunityResourceBulkUploadModalComponent implements OnInit {
 
   @Input() actions!: ResourceActions
-  @Output() resourcesUpdated = new EventEmitter<boolean>()
 
   title!: string
   uploadPending = false
@@ -36,7 +36,7 @@ export class CommunityResourceBulkUploadModalComponent implements OnInit {
   file?: FileData
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly popupService: PopupService
   ) { }
 
@@ -59,11 +59,11 @@ export class CommunityResourceBulkUploadModalComponent implements OnInit {
       .subscribe((result) => {
         if (result.created == 0 && result.updated == 0) {
           this.popupService.warning("No resources were added or updated as part of this upload.")
+          this.modalInstance.close(false)
         } else {
           this.popupService.success("Resources uploaded ("+result.created+" new, "+result.updated+" updated).")
-          this.resourcesUpdated.emit(true)
+          this.modalInstance.close(true)
         }
-        this.modalInstance.hide()
       }).add(() => {
         this.uploadPending = false
       })
@@ -71,7 +71,8 @@ export class CommunityResourceBulkUploadModalComponent implements OnInit {
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
+  protected readonly Constants = Constants;
 }

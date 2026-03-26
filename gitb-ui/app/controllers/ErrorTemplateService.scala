@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -39,6 +39,17 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageErrorTemplates(request, communityId).flatMap { _=>
       errorTemplateManager.getErrorTemplatesByCommunityWithoutContent(communityId).map { list =>
         val json: String = JsonUtil.jsErrorTemplates(list).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchErrorTemplatesByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageErrorTemplates(request, communityId).flatMap { _=>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      errorTemplateManager.searchErrorTemplatesByCommunityWithoutContent(communityId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsErrorTemplates).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }

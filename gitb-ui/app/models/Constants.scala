@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -28,6 +28,7 @@ object Constants {
   val SessionAliveTime = "session_alive_time"
   val RestApiEnabled = "rest_api_enabled"
   val RestApiAdminKey = "rest_api_admin_key"
+  val RestApiRateLimits = "rest_api_rate_limits"
   val SelfRegistrationEnabled = "self_registration_enabled"
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
@@ -37,6 +38,7 @@ object Constants {
   val EmailSettings = "email_settings"
   val SoftwareVersionCheck = "software_version_check"
   val StartupWizard = "startup_wizard"
+  val UsageTips = "usage_tips"
 
   // env variables
   val EnvironmentTheme = "THEME"
@@ -66,13 +68,14 @@ object Constants {
   val DevelopmentMode = "development"
 
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
-  val AutomationHeader = "ITB_API_KEY"
   val AcceptHeader = "Accept"
+  val AccessTokenKey = "tat"
 
   val defaultPage = 1L
   val defaultLimit = 10L
 
   val MimeTypeAny = "*/*"
+  val MimeTypeZIP = "application/zip"
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
   val MimeTypeJSON = "application/json"
@@ -84,11 +87,17 @@ object Constants {
   val UserAttributeLastName = "lastName"
   val UserAttributeAuthenticationLevel = "authLevel"
 
+  val SsoTypeNone = "none"
   val SsoTypeEcas = "ecas"
   val SsoTypeOidc = "oidc"
+  val SsoTypeLdap = "ldap"
+
+  val DemoUserProfileIdentifier = "eu.europa.ec.itb.DemoUser"
+
+  val HttpMethods: Set[String] = Set("get", "post", "put", "patch", "delete", "head", "options", "trace")
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.28.5"
+  val VersionNumber = "1.29.0"
   val VersionNumberPostfixForResources = ""
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,15 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
-import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { EditorOptions } from '../code-editor-modal/code-editor-options';
-import { Indicator } from '../code-editor-modal/indicator';
-import { saveAs } from 'file-saver'
+import {AfterViewInit, Component, ViewChild} from '@angular/core';
+import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {EditorOptions} from '../code-editor-modal/code-editor-options';
+import {Indicator} from '../code-editor-modal/indicator';
+import {saveAs} from 'file-saver';
 import {BaseComponent} from '../../pages/base-component.component';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
@@ -36,7 +36,7 @@ export class BaseCodeEditorModalComponent extends BaseComponent implements After
   @ViewChild('codeEditor', {static: false}) codeEditor?: CodemirrorComponent
 
   constructor(
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     protected readonly dataService: DataService,
     private readonly popupService: PopupService
   ) { super() }
@@ -56,7 +56,7 @@ export class BaseCodeEditorModalComponent extends BaseComponent implements After
   }
 
   close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   copyToClipboard() {

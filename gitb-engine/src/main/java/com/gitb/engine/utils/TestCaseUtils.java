@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,6 +15,7 @@
 
 package com.gitb.engine.utils;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
@@ -22,6 +23,7 @@ import com.gitb.core.StepStatus;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.testcase.StepStatusMapType;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
@@ -32,7 +34,7 @@ import com.gitb.tr.ObjectFactory;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
-import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -40,7 +42,12 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.namespace.QName;
+import javax.xml.transform.stream.StreamSource;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -50,7 +57,16 @@ import java.util.function.Supplier;
 public class TestCaseUtils {
 
     private static final ObjectFactory OBJECT_FACTORY_TR = new ObjectFactory();
+    private static final JAXBContext REPORT_CONTEXT;
     private static final Logger LOG = LoggerFactory.getLogger(TestCaseUtils.class);
+
+    static {
+        try {
+            REPORT_CONTEXT = JAXBContext.newInstance(TAR.class);
+        } catch (JAXBException e) {
+            throw new IllegalStateException("Unable to create JAXB context for TAR class", e);
+        }
+    }
 
 	private static final Class<?>[] TEST_CONSTRUCTS_TO_REPORT = {
         com.gitb.tdl.MessagingStep.class, Verify.class, IfStep.class, RepeatUntilStep.class,
@@ -219,52 +235,108 @@ public class TestCaseUtils {
         return id;
     }
 
-    public static void updateStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step, TestCaseScope scope, StepStatus status) {
+    public static TAR retrieveStoredStepReport(String stepId, TestCaseScope scope) {
+        StepStatusMapType reportMap = ((StepStatusMapType)(scope.getVariable(PropertyConstants.STEP_REPORT_MAP, true).getValue()));
+        if (reportMap != null) {
+            StringType reportIdentifier = (StringType) reportMap.getScopedItem(stepId, scope);
+            if (reportIdentifier != null) {
+                Path reportFile = scope.getContext().getDataFolder().resolve("reports").resolve(reportIdentifier.getValue());
+                if (Files.exists(reportFile)) {
+                    try (var in = Files.newInputStream(reportFile)) {
+                        Unmarshaller unmarshaller = REPORT_CONTEXT.createUnmarshaller();
+                        return unmarshaller.unmarshal(new StreamSource(in), TAR.class).getValue();
+                    } catch (JAXBException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String writeStepReport(TestCaseScope scope, StepStatus status, TestStepReportType report) {
+        String reportIdentifier = null;
+        if (scope.getContext().isRequiresPersistentReports()) {
+            /*
+             * We only record reports if doing so is required, to avoid unnecessary IO. This is determined
+             * by whether the test case includes test steps that refer to other steps' reports.
+             */
+            if ((status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) && report instanceof TAR tarReport) {
+                reportIdentifier = UUID.randomUUID().toString();
+                try {
+                    Path sessionReportFolder = scope.getContext().getDataFolder().resolve("reports");
+                    Files.createDirectories(sessionReportFolder);
+                    Path reportFile = sessionReportFolder.resolve(reportIdentifier);
+                    Marshaller marshaller = REPORT_CONTEXT.createMarshaller();
+                    try (var out = Files.newOutputStream(reportFile)) {
+                        marshaller.marshal(new JAXBElement<>(new QName("", "tar"), TAR.class, tarReport), out);
+                        out.flush();
+                    }
+                } catch (IOException | JAXBException e) {
+                    throw new IllegalStateException("Unable to store report for step", e);
+                }
+            }
+        }
+        return reportIdentifier;
+    }
+
+    public static void updateStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, MapType stepReportMap, TestConstruct step, TestCaseScope scope, StepStatus status, TestStepReportType report) {
         if (step != null && StringUtils.isNotBlank(step.getId())) {
             // We only record status for a step with an identifier.
             var stepId = step.getId();
             var qualifiedStepId = qualifiedStepIdForStatusMaps(stepId, scope);
             var successValue = new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING);
             var statusValue = new StringType((status == null)?"":status.toString());
+            String reportIdentifier = writeStepReport(scope, status, report);
             if (StringUtils.isNotBlank(qualifiedStepId)) {
                 // Record the status using the qualified step ID.
                 stepSuccessMap.addItem(qualifiedStepId, successValue);
                 stepStatusMap.addItem(qualifiedStepId, statusValue);
+                if (reportIdentifier != null) {
+                    stepReportMap.addItem(qualifiedStepId, new StringType(reportIdentifier));
+                }
             }
             if (!Objects.equals(step.getId(), qualifiedStepId)) {
                 // Also record using the basic ID (if already existing one value - the latest - is maintained).
                 stepSuccessMap.addItem(stepId, successValue);
                 stepStatusMap.addItem(stepId, statusValue);
+                if (reportIdentifier != null) {
+                    stepReportMap.addItem(stepId, new StringType(reportIdentifier));
+                }
             }
         }
     }
 
-    public static void initialiseStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step, TestCaseScope scope) {
+    public static void updateStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, MapType stepReportMap, TestConstruct step, TestCaseScope scope, StepStatus status) {
+        updateStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, step, scope, status, null);
+    }
+
+    public static void initialiseStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, MapType stepReportMap, TestConstruct step, TestCaseScope scope) {
         if (step != null) {
             // Initialise for the step itself.
-            updateStepStatusMaps(stepSuccessMap, stepStatusMap, step, scope, null);
+            updateStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, step, scope, null);
             if (step instanceof Sequence) {
                 // Initialise for children.
                 for (Object childStep: ((Sequence)step).getSteps()) {
                     if (childStep instanceof TestConstruct) {
-                        initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, (TestConstruct)childStep, scope);
+                        initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, (TestConstruct)childStep, scope);
                     }
                 }
             } else {
                 // Initialise for other steps with internal sequences.
                 if (step instanceof IfStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getThen(), scope);
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getElse(), scope);
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, ((IfStep) step).getThen(), scope);
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, ((IfStep) step).getElse(), scope);
                 } else if (step instanceof WhileStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((WhileStep) step).getDo(), scope);
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, ((WhileStep) step).getDo(), scope);
                 } else if (step instanceof ForEachStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((ForEachStep) step).getDo(), scope);
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, ((ForEachStep) step).getDo(), scope);
                 } else if (step instanceof RepeatUntilStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((RepeatUntilStep) step).getDo(), scope);
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, ((RepeatUntilStep) step).getDo(), scope);
                 } else if (step instanceof FlowStep) {
                     if (((FlowStep) step).getThread() != null) {
                         for (Sequence thread: ((FlowStep) step).getThread()) {
-                            initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, thread, scope);
+                            initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, stepReportMap, thread, scope);
                         }
                     }
                 }
@@ -314,66 +386,15 @@ public class TestCaseUtils {
             }
             if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
                 // The description may be set dynamically from the call inputs.
-                return TestCaseUtils.getConstantCallInput(
-                        VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(),
-                        variableClass,
-                        dataType, scriptletStepStack, expressionHandler
-                ).orElseGet(nonVariableValueFn);
+                DataType value = expressionHandler.getVariableResolver().resolveVariable(originalValue);
+                if (value != null) {
+                    return variableClass.cast(value.convertTo(dataType).getValue());
+                }
             }
             return nonVariableValueFn.get();
         } else {
             return null;
         }
-    }
-
-    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack, StaticExpressionHandler expressionHandler) {
-        var originalInputName = inputName;
-        DataType dataToUse = null;
-        var iterator = scriptletStepStack.descendingIterator();
-        String lastVariableExpression = null;
-        while (iterator.hasNext()) {
-            var callData = iterator.next();
-            var inputToLookFor = inputName;
-            var matchedInput = callData.getLeft().getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
-            if (matchedInput.isPresent()) {
-                // We found a matching input.
-                lastVariableExpression = null;
-                var inputValueExpression = matchedInput.get().getValue();
-                if (VariableResolver.isVariableReference(inputValueExpression)) {
-                    // The input's value is itself a variable reference.
-                    lastVariableExpression = inputValueExpression;
-                    inputName = VariableResolver.extractVariableNameFromExpression(inputValueExpression).getLeft();
-                    continue;
-                } else {
-                    dataToUse = expressionHandler.processExpression(matchedInput.get(), constantDataType);
-                }
-            }
-            break;
-        }
-        if (dataToUse == null && !scriptletStepStack.isEmpty()) {
-            // No input found. Look also at variable default values.
-            var scriptlet = scriptletStepStack.getLast().getRight();
-            if (scriptlet.getParams() != null) {
-                var matchedVariableValue = scriptlet.getParams().getVar().stream().filter(variable -> originalInputName.equals(variable.getName()) && !variable.getValue().isEmpty()).findFirst();
-                if (matchedVariableValue.isPresent()) {
-                    // The parameter defines a default value.
-                    dataToUse = DataTypeFactory.getInstance().create(matchedVariableValue.get());
-                }
-            }
-        }
-        if (dataToUse == null && lastVariableExpression != null) {
-            // Still no value found. We stopped processing previously with a variable expression.
-            var variableValue = expressionHandler.getVariableResolver().resolveVariable(lastVariableExpression, true);
-            // If not resolved return the expression itself.
-            dataToUse = variableValue.orElse(new StringType(lastVariableExpression));
-        }
-        if (dataToUse != null) {
-            var valueToUse = dataToUse.convertTo(constantDataType).getValue();
-            if (valueToUse != null && constantClass.equals(valueToUse.getClass())) {
-                return Optional.of(constantClass.cast(valueToUse));
-            }
-        }
-        return Optional.empty();
     }
 
     public static TAR mergeReports(List<TAR> reports) {
@@ -613,6 +634,32 @@ public class TestCaseUtils {
         } else {
             return defaultIfEmpty;
         }
+    }
+
+    public static TAR createReportForException(Throwable error) {
+        TAR report = null;
+        String message = null;
+        Throwable currentError = error;
+        // Get the most precise, non-empty error message from the stack trace.
+        while (currentError != null) {
+            if (currentError.getMessage() != null && !currentError.getMessage().isEmpty()) {
+                message = currentError.getMessage();
+            }
+            currentError = currentError.getCause();
+        }
+        if (message != null) {
+            report = createEmptyReport();
+            report.setResult(TestResultType.FAILURE);
+            report.setReports(new TestAssertionGroupReportsType());
+            BAR item = new BAR();
+            item.setDescription(message);
+            report.getReports().getInfoOrWarningOrError().add(OBJECT_FACTORY_TR.createTestAssertionGroupReportsTypeError(item));
+            report.setCounters(new ValidationCounters());
+            report.getCounters().setNrOfErrors(BigInteger.ONE);
+            report.getCounters().setNrOfWarnings(BigInteger.ZERO);
+            report.getCounters().setNrOfAssertions(BigInteger.ZERO);
+        }
+        return report;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 
 /**
  * A Jackson wrapper for converting JAVA objects into JSON and vice versa
@@ -145,8 +146,10 @@ public class JacksonUtil {
             } else {
                 json.writeStringField("type", "SR");
             }
-            if(testStepReport.getDate() != null) {
-                json.writeObjectField("date", testStepReport.getDate());
+            if (testStepReport.getDate() != null) {
+                String dateString = testStepReport.getDate().toGregorianCalendar().toZonedDateTime()
+                        .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
+                json.writeObjectField("date", dateString);
             }
             if (testStepReport.getResult() != null) {
                 json.writeStringField("result", testStepReport.getResult().value());
@@ -244,6 +247,15 @@ public class JacksonUtil {
                     if (inputRequest.isRequired()) {
                         json.writeBooleanField("required", inputRequest.isRequired());
                     }
+                    if (inputRequest.getSize() != null) {
+                        json.writeNumberField("size", inputRequest.getSize());
+                    }
+                    if (inputRequest.getDefault() != null && !inputRequest.getDefault().isEmpty()) {
+                        json.writeStringField("default", inputRequest.getDefault());
+                    }
+                    if (inputRequest.getAccept() != null && !inputRequest.getAccept().isEmpty()) {
+                        json.writeStringField("accept", inputRequest.getAccept());
+                    }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();
@@ -277,6 +289,13 @@ public class JacksonUtil {
                     }
                     if (instruction.isForceDisplay()) {
                         json.writeBooleanField("forceDisplay", instruction.isForceDisplay());
+                    }
+                    if (!instruction.isShowControls()) {
+                        // true is the default
+                        json.writeBooleanField("showControls", instruction.isShowControls());
+                    }
+                    if (instruction.getLevel() != null) {
+                        json.writeStringField("level", instruction.getLevel().value());
                     }
                     json.writeEndObject();
                 }
@@ -350,8 +369,13 @@ public class JacksonUtil {
                     }
                     jsonGenerator.writeEndArray();
                 });
-                case ExitStep ignored -> writeStep(jsonGenerator, step, () ->
-                    jsonGenerator.writeStringField("type", "exit"));
+                case ExitStep exitStep -> writeStep(jsonGenerator, step, () -> {
+                    if (exitStep.getActor() != null && !exitStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", exitStep.getActor());
+                        jsonGenerator.writeStringField("to", exitStep.getActor());
+                    }
+                    jsonGenerator.writeStringField("type", "exit");
+                });
                 case UserInteractionStep userInteractionStep -> writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "interact");
                     jsonGenerator.writeStringField("title", userInteractionStep.getTitle());
@@ -375,12 +399,26 @@ public class JacksonUtil {
                         jsonGenerator.writeEndObject();
                     }
                     jsonGenerator.writeEndArray();
-                    jsonGenerator.writeStringField("with", ((UserInteractionStep) step).getWith());
+                    jsonGenerator.writeStringField("with", userInteractionStep.getWith());
+                    if (userInteractionStep.getActor() != null && !userInteractionStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", userInteractionStep.getActor());
+                        jsonGenerator.writeStringField("to", userInteractionStep.getActor());
+                    }
                 });
-                case VerifyStep ignored -> writeStep(jsonGenerator, step, () ->
-                    jsonGenerator.writeStringField("type", "verify"));
-                case ProcessStep ignored -> writeStep(jsonGenerator, step, () ->
-                    jsonGenerator.writeStringField("type", "process"));
+                case VerifyStep verifyStep -> writeStep(jsonGenerator, step, () -> {
+                    if (verifyStep.getActor() != null && !verifyStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", verifyStep.getActor());
+                        jsonGenerator.writeStringField("to", verifyStep.getActor());
+                    }
+                    jsonGenerator.writeStringField("type", "verify");
+                });
+                case ProcessStep processStep -> writeStep(jsonGenerator, step, () -> {
+                    if (processStep.getActor() != null && !processStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", processStep.getActor());
+                        jsonGenerator.writeStringField("to", processStep.getActor());
+                    }
+                    jsonGenerator.writeStringField("type", "process");
+                });
                 case Sequence sequence -> {
                     jsonGenerator.writeStartArray();
                     for (TestStep testStep : sequence.getSteps()) {

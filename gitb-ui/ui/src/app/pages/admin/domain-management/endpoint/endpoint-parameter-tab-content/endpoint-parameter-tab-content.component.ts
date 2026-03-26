@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,22 +13,21 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { ParameterData } from '../endpoint-details/parameter-data';
-import { ParameterReference } from 'src/app/types/parameter-reference';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { Parameter } from 'src/app/types/parameter';
-import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
-import { find } from 'lodash';
-import { EndpointParameter } from 'src/app/types/endpoint-parameter';
-import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ParameterService } from 'src/app/services/parameter.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { Constants } from 'src/app/common/constants';
-import { CreateParameterModalComponent } from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ParameterData} from '../endpoint-details/parameter-data';
+import {ParameterReference} from 'src/app/types/parameter-reference';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {Parameter} from 'src/app/types/parameter';
+import {ParameterPresetValue} from 'src/app/types/parameter-preset-value';
+import {EndpointParameter} from 'src/app/types/endpoint-parameter';
+import {ParameterDetailsModalComponent} from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
+import {ParameterService} from 'src/app/services/parameter.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {Constants} from 'src/app/common/constants';
+import {CreateParameterModalComponent} from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-endpoint-parameter-tab-content',
@@ -53,7 +52,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly parameterService: ParameterService,
     private readonly popupService: PopupService,
     private readonly conformanceService: ConformanceService,
@@ -103,18 +102,15 @@ export class EndpointParameterTabContentComponent implements OnInit {
   }
 
 	addParameter() {
-    const modal = this.modalService.show(CreateParameterModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        options: {
-          hideInExport: true,
-          hideInRegistration: true,
-          hasKey: true,
-          existingValues: this.parameterValues
-        }
-      }
-    })
-    modal.content!.created.subscribe((parameter: Parameter) => {
+    const modal = this.modalService.open(CreateParameterModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as CreateParameterModalComponent
+    modalInstance.options = {
+      hideInExport: true,
+      hideInRegistration: true,
+      hasKey: true,
+      existingValues: this.parameterValues
+    }
+    modal.closed.subscribe((parameter: Parameter) => {
       this.preparePresetValues(parameter)
       this.conformanceService.createParameter(parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, this.endpointId, this.actorId)
       .subscribe((result) => {
@@ -128,34 +124,35 @@ export class EndpointParameterTabContentComponent implements OnInit {
   }
 
 	onParameterSelect(parameter: EndpointParameter) {
-    const modal = this.modalService.show(ParameterDetailsModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        parameter: parameter,
-        options: {
-					hideInExport: true,
-					hideInRegistration: true,
-          hasKey: true,
-					existingValues: this.parameterValues
-        }
-      }
-    })
-    if (this.endpointId) {
-      modal.content!.updated.subscribe((parameter: Parameter) => {
-        this.preparePresetValues(parameter)
-        this.parameterService.updateParameter(parameter.id, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, this.endpointId!)
-        .subscribe(() => {
-          this.loadEndpointData()
-          this.popupService.success('Parameter updated.')
-        })
-      })
+    const parameterId = parameter.id
+    const modal = this.modalService.open(ParameterDetailsModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as ParameterDetailsModalComponent
+    modalInstance.parameter = parameter
+    modalInstance.options = {
+      hideInExport: true,
+      hideInRegistration: true,
+      hasKey: true,
+      existingValues: this.parameterValues
     }
-    modal.content!.deleted.subscribe((parameter: Parameter) => {
-      this.parameterService.deleteParameter(parameter.id)
-      .subscribe(() => {
-        this.loadEndpointData()
-        this.popupService.success('Parameter deleted.')
-      })
+    modal.closed.subscribe((parameter?: Parameter) => {
+      if (parameter) {
+        // Update
+        if (this.endpointId) {
+          this.preparePresetValues(parameter)
+          this.parameterService.updateParameter(parameter.id, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, this.endpointId)
+            .subscribe(() => {
+              this.loadEndpointData()
+              this.popupService.success('Parameter updated.')
+            })
+        }
+      } else {
+        // Delete
+        this.parameterService.deleteParameter(parameterId)
+          .subscribe(() => {
+            this.loadEndpointData()
+            this.popupService.success('Parameter deleted.')
+          })
+      }
     })
   }
 
@@ -188,9 +185,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
 		if (parameter.kind == 'SIMPLE' && parameter.hasPresetValues) {
 			const checkedValues: ParameterPresetValue[] = []
 			for (let value of parameter.presetValues!) {
-				const existingValue = find(checkedValues, (v) => {
-          return v.value == value.value
-        })
+				const existingValue = checkedValues.find((v) => v.value == value.value)
 				if (existingValue == undefined) {
 					checkedValues.push({value: value.value, label: value.label})
         }
@@ -215,4 +210,14 @@ export class EndpointParameterTabContentComponent implements OnInit {
     }
   }
 
+  protected mouseDownOnDragButton(pop: NgbTooltip) {
+    pop.close()
+    pop.disableTooltip = true
+  }
+
+  protected mouseOutOnDragButton(pop: NgbTooltip) {
+    setTimeout(() => {
+      pop.disableTooltip = false
+    }, 50)
+  }
 }

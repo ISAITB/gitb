@@ -1,10 +1,114 @@
 <div #conformanceDetailPage id="conformanceDetailPage" class="page conformance">
 	<div class="card">
-		<div class="card-header clickable" (click)="collapsedDetails = !collapsedDetails" [class.collapsed]="collapsedDetailsFinished">
-			<div class="card-title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</div>
+		<div class="card-header clickable" (click)="headerClicked()" [class.collapsed]="collapsedDetailsFinished">
+            <div class="statement-header-container">
+                <div class="card-title">
+                    <app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>
+                    <div class="card-title-parts">
+                        <div class="card-title-expanded container-part" [class.container-hidden]="collapsedDetailsFinished" [class.container-visible]="!collapsedDetailsFinished">Conformance statement details</div>
+                        <div class="card-title-collapsed container-part" [class.container-hidden]="!collapsedDetailsFinished" [class.container-visible]="collapsedDetailsFinished">
+                            @if (statement) {
+                                {{ statementLabel }}
+                            } @else {
+                                <app-pending-block [pending]="true"></app-pending-block>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-title-controls">
+                    <div class="btn-toolbar action-container" [class.action-container-visible]="collapsedDetails && collapsedDetailsFinished">
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
+                        <div class="btn-group" ngbDropdown placement="bottom-end" (click)="$event.stopPropagation()">
+                            <button id="button-executionType" ngbDropdownToggle type="button" [labelIcon]="Constants.BUTTON_ICON.ACTIONS" [pending]="exportPending || copyBadgePending || refreshPending" [disable]="statement == undefined || deletePending || exportPending || copyBadgePending || refreshPending" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType">Actions... </button>
+                            <div id="dropdown-executionType" ngbDropdownMenu aria-labelledby="button-executionType">
+                                <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceStatement('pdf')">
+                                    <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.REPORT_PDF"></i></span></div>
+                                    <div class="option-label">Download report</div>
+                                </button>
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true) {
+                                    <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceStatement('xml')">
+                                        <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.REPORT_XML"></i></span></div>
+                                        <div class="option-label">Download report as XML</div>
+                                    </button>
+                                }
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
+                                    <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceCertificate()">
+                                        <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.CONFORMANCE_CERTIFICATE"></i></span></div>
+                                        <div class="option-label">Download conformance certificate</div>
+                                    </button>
+                                }
+                                @if (hasBadge) {
+                                    <div class="divider dropdown-divider"></div>
+                                    <button ngbDropdownItem class="option-button" type="button" (click)="copyBadgeURL()">
+                                        <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.COPY_LINK"></i></span></div>
+                                        <div class="option-label">Copy badge URL</div>
+                                    </button>
+                                    <button ngbDropdownItem class="option-button" type="button" (click)="previewBadge()">
+                                        <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></span></div>
+                                        <div class="option-label">Preview badge</div>
+                                    </button>
+                                }
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || isNavigable(systemId) || isNavigable(organisationId)) {
+                                    <div class="divider dropdown-divider"></div>
+                                    @if (isNavigable(systemId)) {
+                                        <button ngbDropdownItem class="option-button" type="button" (click)="viewSystem()">
+                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
+                                            <div class="option-label">View {{dataService.labelSystemLower()}}</div>
+                                        </button>
+                                    }
+                                    @if (isNavigable(organisationId)) {
+                                        <button ngbDropdownItem class="option-button" type="button" (click)="viewOrganisation()">
+                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
+                                            <div class="option-label">View {{dataService.labelOrganisationLower()}}</div>
+                                        </button>
+                                    }
+                                    @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
+                                        <button ngbDropdownItem class="option-button" type="button" (click)="viewCommunity()">
+                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
+                                            <div class="option-label">View community</div>
+                                        </button>
+                                        @if (isNavigable(actorId)) {
+                                            <button ngbDropdownItem class="option-button" type="button" (click)="viewActor()">
+                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
+                                                <div class="option-label">View {{dataService.labelActorLower()}}</div>
+                                            </button>
+                                        }
+                                        @if (isNavigable(specId)) {
+                                            <button ngbDropdownItem class="option-button" type="button" (click)="viewSpecification()">
+                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
+                                                <div class="option-label">View {{dataService.labelSpecificationLower()}}</div>
+                                            </button>
+                                        }
+                                        @if (isNavigable(domainId)) {
+                                            <button ngbDropdownItem class="option-button" type="button" (click)="viewDomain()">
+                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
+                                                <div class="option-label">View {{dataService.labelDomainLower()}}</div>
+                                            </button>
+                                        }
+                                    }
+                                }
+                                @if (snapshotId == undefined) {
+                                    <div class="divider dropdown-divider"></div>
+                                    <button ngbDropdownItem class="option-button" type="button" (click)="refresh()">
+                                        <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.RESET"></i></span></div>
+                                        <div class="option-label">Refresh</div>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        @if (statement) {
+                            <app-result-label [status]="conformanceStatus"></app-result-label>
+                        } @else {
+                            <app-pending-block [pending]="true"></app-pending-block>
+                        }
+                    </div>
+                </div>
+            </div>
 		</div>
-		<div [collapse]="collapsedDetails" [isAnimated]="true" (collapsed)="toggleOverviewCollapse(true)" (expands)="toggleOverviewCollapse(false)">
-			<div class="card-body detailsPanel">
+		<div [ngbCollapse]="collapsedDetails" [animation]="animatedDetails" (hidden)="toggleOverviewCollapse(true)">
+			<div class="card-body">
 				@if (snapshotId != undefined) {
 					<div class="alert alert-info rounded mb-0">
 						<span>This conformance statement cannot be updated as it does not represent the latest conformance testing status.</span>
@@ -35,19 +139,13 @@
 						@if (statusCounters && conformanceStatus) {
 							<div class="statementStatus" [class.wrapped]="resultsWrapped">
                                 <div #statusInfoContainer class="statusInfoContainer">
-                                    <div class="statusLabel">
-                                        Status
-                                    </div>
-                                    <div class="statementResult">
-                                        <app-result-label [status]="conformanceStatus"></app-result-label>
-                                    </div>
                                     @if (lastUpdate) {
                                         <div class="lastUpdateContainer">
                                             <div class="lastUpdateLabel">
                                                 Last update
                                             </div>
                                             <div>
-                                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="The last time a test session was executed for the statement." [value]="lastUpdate"></app-tag>
+                                                <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="The last time a test session was executed for the statement." [value]="lastUpdate"></app-tag>
                                             </div>
                                         </div>
                                     }
@@ -57,10 +155,10 @@
 										Test results
 									</div>
 									<div class="status-counts">
-										<app-test-status-icons [counters]="statusCounters" [refresh]="refreshCounters" [centerAligned]="false"></app-test-status-icons>
+										<app-test-status-icons #testStatusDisplay (opened)="testStatusOpened($event)" [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons>
 									</div>
 									<div class="status-ratios">
-										<app-test-result-ratio [counters]="statusCounters" [refresh]="refreshCounters" [asLine]="true"></app-test-result-ratio>
+										<app-test-result-ratio #testStatusDisplay (opened)="testStatusOpened($event)" [counters]="statusCounters" [asLine]="true"></app-test-result-ratio>
 									</div>
 								</div>
 							</div>
@@ -73,157 +171,184 @@
 					</div>
 				}
 			</div>
-			<div class="card-footer button-container">
-				<div class="btn-toolbar">
-					<div class="btn-group export-group" dropdown [isDisabled]="exportPending">
-						<button type="button" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
-						<button id="button-export" type="button" [disabled]="exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-							<span class="caret"></span>
-							<span class="sr-only visually-hidden">Download report</span>
-						</button>
-						<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-							<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceStatement('xml');$event.preventDefault();">Download report as XML</a></li>
-							@if (allTestsSuccessful && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community!.allowCertificateDownload)) {
-								<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceCertificate();$event.preventDefault();">Download conformance certificate</a></li>
-							}
-						</ul>
-					</div>
-					@if (hasBadge) {
-						<app-view-badge-button [systemId]="systemId" [actorId]="actorId" [snapshotId]="snapshotId"></app-view-badge-button>
-					}
+            <div class="card-footer button-container">
+                <div class="btn-toolbar">
+                    @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
+                        <div class="btn-group" ngbDropdown>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
+                            <button id="button-export" type="button" [disabled]="exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                <span class="caret"></span>
+                                <span class="sr-only visually-hidden">Download report</span>
+                            </button>
+                            <div ngbDropdownMenu aria-labelledby="button-export">
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true) {
+                                    <button ngbDropdownItem type="button" (click)="onExportConformanceStatement('xml')">Download report as XML</button>
+                                }
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
+                                    <button ngbDropdownItem type="button" (click)="onExportConformanceCertificate()">Download conformance certificate</button>
+                                }
+                            </div>
+                        </div>
+                    } @else {
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
+                    }
+                    @if (hasBadge) {
+                        <div class="btn-group" ngbDropdown>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" [pending]="copyBadgePending" class="btn btn-secondary" (click)="copyBadgeURL()">Copy badge URL</button>
+                            <button id="button-badge" type="button" [disabled]="copyBadgePending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                <span class="caret"></span>
+                                <span class="sr-only visually-hidden">Copy badge URL</span>
+                            </button>
+                            <div id="dropdown-badge" ngbDropdownMenu aria-labelledby="button-badge">
+                                <button ngbDropdownItem type="button" (click)="previewBadge()">Preview badge</button>
+                            </div>
+                        </div>
+                    }
                     <!-- View -->
                     @if (navigationConfig) {
                         <app-navigation-controls [config]="navigationConfig"></app-navigation-controls>
                     }
                     @if (snapshotId == undefined) {
-                        <button type="button" class="btn btn-secondary" (click)="refresh()" [pending]="refreshPending">Refresh</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="refresh()" [pending]="refreshPending">Refresh</button>
                     }
-					<button type="button" class="btn btn-secondary" (click)="back()">Back</button>
-				</div>
-				@if (canDelete()) {
-					<div class="btn-toolbar btn-toolbar-delete">
-						<button type="button" class="btn btn-outline-danger" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
-					</div>
-				}
-			</div>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
+                </div>
+                @if (canDelete()) {
+                    <div class="btn-toolbar btn-toolbar-delete">
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-outline-danger" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
+                    </div>
+                }
+            </div>
 		</div>
 	</div>
-	<tabset #tabs>
-		<tab (selectTab)="showTab(Constants.TAB.CONFORMANCE_STATEMENT.TESTS)" customClass="tabClass">
-			<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-ul" text="Conformance tests"></app-tab-title></ng-template>
-			<div class="tabPanel" [class.disable-events]="updatingTests">
-				<div class="tabControls">
-                    <div class="testFilters">
-                        <div class="btn-toolbar">
-                            @if (unfilteredTestSuiteCount > 1) {
-                                <app-multi-select-filter [(ngModel)]="testCaseSearchCriteria.selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="selectedTestSuiteChanged($event)"></app-multi-select-filter>
-                            }
-                            <app-test-case-filter #testCaseResultFilter [options]="testCaseSearchCriteria.testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
-                            <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search tests...'" [(ngModel)]="testCaseSearchCriteria.testCaseFilterText" (apply)="applySearchFilters()"></app-text-filter>
-                        </div>
-                    </div>
-                    @if (!isReadonly) {
-                        <div class="testSettings">
-                            <div class="btn-toolbar align-items-start">
-                                <div class="btn-group" dropdown placement="bottom right">
-                                    <button id="button-executionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType"><span class="me-2">{{executionModeButton}}</span></button>
-                                    <ul id="dropdown-executionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-executionType">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeInteractive; executionModeButton = executionModeLabelInteractive; $event.preventDefault()">{{executionModeLabelInteractive}}</a></li>
-                                        <li class="divider dropdown-divider"></li>
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeParallel; executionModeButton = executionModeLabelParallel; $event.preventDefault()">{{executionModeLabelParallel}}</a></li>
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeSequential; executionModeButton = executionModeLabelSequential; $event.preventDefault()">{{executionModeLabelSequential}}</a></li>
-                                    </ul>
-                                </div>
-                                @if (displayedTestSuites.length > 1) {
-                                    <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+    <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+        <li [ngbNavItem]="Constants.TAB.CONFORMANCE_STATEMENT.TESTS">
+            <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TEST_CASE" text="Conformance tests"></app-tab-title></button>
+            <ng-template ngbNavContent>
+                <div class="tabPanel" [class.disable-events]="updatingTests">
+                    <div class="tabControls">
+                        <div class="testFilters">
+                            <div class="btn-toolbar">
+                                @if (unfilteredTestSuiteCount > 1) {
+                                    <app-multi-select-filter [(ngModel)]="testCaseSearchCriteria.selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="selectedTestSuiteChanged($event)"></app-multi-select-filter>
                                 }
+                                <app-test-case-filter #testCaseResultFilter [options]="testCaseSearchCriteria.testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
+                                <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search tests...'" [(ngModel)]="testCaseSearchCriteria.testCaseFilterText" (apply)="applySearchFilters()"></app-text-filter>
                             </div>
                         </div>
-                    }
-				</div>
-				@if (loadingTests.status == Constants.STATUS.PENDING) {
-					<app-pending-block></app-pending-block>
-				} @else if (displayedTestSuites.length == 0) {
-					<div class="card card-body noTestCasesDiv">
-						@if (unfilteredTestCaseCount == 0) {
-							<span>No test cases are defined in this conformance statement.</span>
-						} @else {
-							<span>No test cases were found matching your search criteria.</span>
-						}
-					</div>
-				} @else {
-					<app-test-suite-display #testSuiteDisplayComponent
-						[testSuites]="displayedTestSuites"
-						[showExecute]="!isReadonly"
-                        [showExport]="true"
-                        [communityId]="communityIdOfStatement"
-						(viewTestSession)="toTestSession($event)"
-						(executeTestCase)="onTestSelect($event)"
-						(executeTestSuite)="onMultipleTestSelect($event)"
-                        (optionsOpened)="onTestCaseOptionsOpened($event)"
-					></app-test-suite-display>
-				}
-                <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testSuitePageNavigation($event)"></app-paging-controls>
-			</div>
-		</tab>
-		@if (!isReadonly) {
-			<tab (selectTab)="showTab(Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION)" customClass="tabClass">
-				<ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Configuration properties"></app-tab-title></ng-template>
-				<div class="tabPanel">
-					@if (loadingConfiguration.status != Constants.STATUS.FINISHED) {
-						<app-pending-block></app-pending-block>
-					} @else if (organisationPropertyVisibility && systemPropertyVisibility && statementPropertyVisibility) {
-						@if (!organisationPropertyVisibility.hasVisibleProperties && !systemPropertyVisibility.hasVisibleProperties && !statementPropertyVisibility.hasVisibleProperties) {
-							<div class="card card-body noConfigurationDiv">
-								<span>No configuration properties are foreseen for this conformance statement.</span>
-							</div>
-						} @else {
-                            <form>
-                                @if (canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration) {
-                                    <div class="tabControls">
-                                        <div class="btn-toolbar">
-                                            <button type="submit" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+                        @if (!isReadonly) {
+                            <div class="testSettings">
+                                <div class="btn-toolbar align-items-start">
+                                    <div class="btn-group" ngbDropdown placement="bottom-end">
+                                        <button id="button-executionType" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType">
+                                            <span class="mini-tab">
+                                                <i [class]="Constants.BUTTON_ICON.EXECUTION_OPTIONS"></i>
+                                            </span>
+                                            <span class="me-2">{{executionModeButton}}</span>
+                                        </button>
+                                        <div id="dropdown-executionType" ngbDropdownMenu aria-labelledby="button-executionType">
+                                            <button ngbDropdownItem type="button" (click)="executionMode = executionModeInteractive; executionModeButton = executionModeLabelInteractive">{{executionModeLabelInteractive}}</button>
+                                            <div class="divider dropdown-divider"></div>
+                                            <button ngbDropdownItem type="button" (click)="executionMode = executionModeParallel; executionModeButton = executionModeLabelParallel">{{executionModeLabelParallel}}</button>
+                                            <button ngbDropdownItem type="button" (click)="executionMode = executionModeSequential; executionModeButton = executionModeLabelSequential">{{executionModeLabelSequential}}</button>
                                         </div>
                                     </div>
-                                }
-                                @if (organisationPropertyVisibility.hasVisibleProperties) {
-                                    <app-custom-property-panel
-                                        [properties]="organisationProperties"
-                                        [propertyType]="'organisation'"
-                                        [owner]="organisationId"
-                                        [header]="dataService.labelOrganisation()+' properties'"
-                                        [collapsed]="organisationPropertiesCollapsed"
-                                        [validation]="propertyValidation"
-                                        [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration"
-                                        [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditOrganisationConfiguration"></app-custom-property-panel>
-                                }
-                                @if (systemPropertyVisibility.hasVisibleProperties) {
-                                    <app-custom-property-panel
-                                        [properties]="systemProperties"
-                                        [propertyType]="'system'"
-                                        [owner]="systemId"
-                                        [header]="dataService.labelSystem()+' properties'"
-                                        [collapsed]="systemPropertiesCollapsed"
-                                        [validation]="propertyValidation"
-                                        [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || (organisationPropertyVisibility.hasVisibleProperties)"
-                                        [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditSystemConfiguration"></app-custom-property-panel>
-                                }
-                                @if (statementPropertyVisibility.hasVisibleProperties) {
-                                    <app-custom-property-panel
-                                        [properties]="statementProperties"
-                                        [propertyType]="'statement'"
-                                        [owner]="systemId"
-                                        [header]="'Conformance statement properties'"
-                                        [collapsed]="statementPropertiesCollapsed"
-                                        [validation]="propertyValidation"
-                                        [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || organisationPropertyVisibility.hasVisibleProperties || systemPropertyVisibility.hasVisibleProperties"
-                                        [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditStatementConfiguration"></app-custom-property-panel>
-                                }
-                            </form>
-						}
-					}
-				</div>
-			</tab>
-		}
-	</tabset>
+                                    @if (displayedTestSuites.length > 1 && !dataService.configuration.preparingForShutdown) {
+                                        <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                                            <span><i [class]="Constants.BUTTON_ICON.EXECUTE"></i></span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (loadingTests.status == Constants.STATUS.PENDING) {
+                        <app-pending-block></app-pending-block>
+                    } @else if (displayedTestSuites.length == 0) {
+                        <div class="card card-body noTestCasesDiv">
+                            @if (unfilteredTestCaseCount == 0) {
+                                <span>No test cases are defined in this conformance statement.</span>
+                            } @else {
+                                <span>No test cases were found matching your search criteria.</span>
+                            }
+                        </div>
+                    } @else {
+                        <app-test-suite-display #testSuiteDisplayComponent
+                                                [testSuites]="displayedTestSuites"
+                                                [showExecute]="!isReadonly && !dataService.configuration.preparingForShutdown"
+                                                [showExport]="true"
+                                                [communityId]="communityIdOfStatement"
+                                                (viewTestSessions)="toTestCaseHistory($event)"
+                                                (executeTestCase)="onTestSelect($event)"
+                                                (executeTestSuite)="onMultipleTestSelect($event)"
+                                                (optionsOpened)="onTestCaseOptionsOpened($event)"
+                        ></app-test-suite-display>
+                    }
+                    <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testSuitePageNavigation($event)"></app-paging-controls>
+                </div>
+            </ng-template>
+        </li>
+        @if (!isReadonly) {
+            <li [ngbNavItem]="Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES" text="Configuration properties"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        @if (loadingConfiguration.status != Constants.STATUS.FINISHED) {
+                            <app-pending-block></app-pending-block>
+                        } @else if (organisationPropertyVisibility && systemPropertyVisibility && statementPropertyVisibility) {
+                            @if (!organisationPropertyVisibility.hasVisibleProperties && !systemPropertyVisibility.hasVisibleProperties && !statementPropertyVisibility.hasVisibleProperties) {
+                                <div class="card card-body noConfigurationDiv">
+                                    <span>No configuration properties are foreseen for this conformance statement.</span>
+                                </div>
+                            } @else {
+                                <form>
+                                    @if (canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration) {
+                                        <div class="tabControls">
+                                            <div class="btn-toolbar">
+                                                <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (organisationPropertyVisibility.hasVisibleProperties) {
+                                        <app-custom-property-panel
+                                            [properties]="organisationProperties"
+                                            [propertyType]="'organisation'"
+                                            [owner]="organisationId"
+                                            [header]="dataService.labelOrganisation()+' properties'"
+                                            [collapsed]="organisationPropertiesCollapsed"
+                                            [validation]="propertyValidation"
+                                            [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration"
+                                            [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditOrganisationConfiguration"></app-custom-property-panel>
+                                    }
+                                    @if (systemPropertyVisibility.hasVisibleProperties) {
+                                        <app-custom-property-panel
+                                            [properties]="systemProperties"
+                                            [propertyType]="'system'"
+                                            [owner]="systemId"
+                                            [header]="dataService.labelSystem()+' properties'"
+                                            [collapsed]="systemPropertiesCollapsed"
+                                            [validation]="propertyValidation"
+                                            [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || (organisationPropertyVisibility.hasVisibleProperties)"
+                                            [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditSystemConfiguration"></app-custom-property-panel>
+                                    }
+                                    @if (statementPropertyVisibility.hasVisibleProperties) {
+                                        <app-custom-property-panel
+                                            [properties]="statementProperties"
+                                            [propertyType]="'statement'"
+                                            [owner]="systemId"
+                                            [header]="'Conformance statement properties'"
+                                            [collapsed]="statementPropertiesCollapsed"
+                                            [validation]="propertyValidation"
+                                            [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || organisationPropertyVisibility.hasVisibleProperties || systemPropertyVisibility.hasVisibleProperties"
+                                            [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditStatementConfiguration"></app-custom-property-panel>
+                                    }
+                                </form>
+                            }
+                        }
+                    </div>
+                </ng-template>
+            </li>
+        }
+    </ul>
+    <div [ngbNavOutlet]="tabs"></div>
 </div>

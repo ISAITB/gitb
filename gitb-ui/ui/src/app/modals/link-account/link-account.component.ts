@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,8 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {AuthService} from 'src/app/services/auth.service';
 import {CommunityService} from 'src/app/services/community.service';
@@ -26,6 +25,7 @@ import {SelfRegistrationOption} from 'src/app/types/self-registration-option.typ
 import {UserAccount} from 'src/app/types/user-account';
 import {ValidationState} from 'src/app/types/validation-state';
 import {BaseSelfRegistrationPageComponent} from '../../components/self-registration/base-self-registration-page.component';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-link-account',
@@ -35,9 +35,10 @@ import {BaseSelfRegistrationPageComponent} from '../../components/self-registrat
 })
 export class LinkAccountComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit {
 
-  createOption!: string
-  selfRegOptions!: SelfRegistrationOption[]
-  linkedAccounts!: UserAccount[]
+  @Input() createOption!: string
+  @Input() selfRegOptions!: SelfRegistrationOption[]
+  @Input() linkedAccounts!: UserAccount[]
+
   choice = -1
   selectedAccountId = -1
   createPending = false
@@ -50,16 +51,16 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
     dataService: DataService,
     private readonly authService: AuthService,
     private readonly communityService: CommunityService,
-    public readonly modalRef: BsModalRef,
+    public readonly modalRef: NgbActiveModal,
     private readonly popupService: PopupService
   ) { super(dataService) }
 
   ngOnInit(): void {
-    if (this.createOption == Constants.LOGIN_OPTION.REGISTER) {
+    if (this.createOption == Constants.LOGIN_OPTION.REGISTER || this.createOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
     } else if (this.createOption == Constants.LOGIN_OPTION.MIGRATE) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.MIGRATE
-    } else if (this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
+    } else if (this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT || this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.LINK
     }
   }
@@ -111,7 +112,7 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
     if (this.choice == Constants.CREATE_ACCOUNT_OPTION.LINK) {
       this.authService.linkFunctionalAccount(this.selectedAccountId).subscribe((data) => {
         this.dataService.setActualUser(data as ActualUserInfo)
-        this.modalRef.hide()
+        this.modalRef.dismiss()
         this.popupService.success('Role successfully linked.')
       }).add(() => {
         this.createPending = false
@@ -122,7 +123,7 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
           this.validation.applyError(data)
         } else {
           this.dataService.setActualUser(data as ActualUserInfo)
-          this.modalRef.hide()
+          this.modalRef.dismiss()
           this.popupService.success('Account successfully migrated.')
         }
       }).add(() => {
@@ -137,13 +138,13 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
       if (this.selfRegData.template) {
         templateId = this.selfRegData.template.id
       }
-      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.newOrganisation === true, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
+      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.organisationChoice!, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)
         } else {
           this.dataService.setActualUser(data as ActualUserInfo)
-          this.modalRef.hide()
+          this.modalRef.dismiss()
           this.popupService.success('Registration successful.')
         }
       }).add(() => {
@@ -153,7 +154,7 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
   }
 
   cancel() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
 }

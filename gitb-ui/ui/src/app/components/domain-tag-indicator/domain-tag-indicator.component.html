@@ -1,0 +1,3 @@
+@if (tags && (tags.length == 1 && (dataService.isCommunityAdmin && tags[0].flag1 || dataService.isSystemAdmin && tags[0].flag2))) {
+    <app-tags-display #tagsDisplay [tags]="tags"></app-tags-display>
+}

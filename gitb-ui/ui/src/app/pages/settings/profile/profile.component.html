@@ -3,42 +3,84 @@
 		<div class="card-header">
 			<div class="card-title">Profile</div>
         </div>
-        <form #profileForm="ngForm">
+        <form #profileForm="ngForm" (ngSubmit)="updateProfile()">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-10 offset-1">
-                        <div class="row">
-                            <label class="col-2 col-form-label text-end" for="name">@if (!dataService.configuration.ssoEnabled) {<span>* </span>}Name:</label>
-                            <div class="col-7">
-                                @if (dataService.configuration.ssoEnabled) {
-                                    <p class="form-control-plaintext">{{data.name}}</p>
-                                } @else {
-                                    <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
-                                }
-                            </div>
-                            @if (!dataService.configuration.ssoEnabled) {
-                                <div app-tooltip class="col-auto" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
-                            }
+                    <label class="col-3 col-form-label text-end" for="name">@if (!dataService.configuration.ssoEnabled) {<span>* </span>}Name:</label>
+                    <div class="col-8 col-md-6">
+                        @if (dataService.configuration.ssoEnabled) {
+                            <p class="form-control-plaintext">{{data.name}}</p>
+                        } @else {
+                            <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
+                        }
+                    </div>
+                    @if (!dataService.configuration.ssoEnabled) {
+                        <div app-tooltip class="col-auto" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
+                    }
+                </div>
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</legend>
+                    <div class="col-8 col-md-6">
+                        <p class="form-control-plaintext">{{data.email}}</p>
+                    </div>
+                </div>
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end">Role:</legend>
+                    <div class="col-8 col-md-6">
+                        <p class="form-control-plaintext">{{data.role}}</p>
+                    </div>
+                </div>
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end pt-0">Display preferences:</legend>
+                    <div class="col-9">
+                        <div class="form-check pb-2">
+                            <input class="form-check-input" type="checkbox" id="menuCollapsed" name="menuCollapsed" [(ngModel)]="data.preferences.menuCollapsed">
+                            <label class="form-check-label" for="menuCollapsed">Collapsed menu
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, the left-side menu will be presented by default as collapsed. Note that this setting is also automatically updated when you collapse or expand the menu."></div>
+                            </label>
                         </div>
-                        <div class="row mt-3">
-                            <legend class="col-2 col-form-label text-end">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</legend>
-                            <div class="col-7">
-                                <p class="form-control-plaintext">{{data.email}}</p>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <legend class="col-2 col-form-label text-end">Role:</legend>
-                            <div class="col-7">
-                                <p class="form-control-plaintext">{{data.role}}</p>
-                            </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="statementsCollapsed" name="statementsCollapsed" [(ngModel)]="data.preferences.statementsCollapsed">
+                            <label class="form-check-label" for="statementsCollapsed">Collapsed conformance statement details
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statements are displayed by default with their details collapsed. Note that this setting is also automatically updated when you collapse or expand a statement's details."></div>
+                            </label>
                         </div>
                     </div>
                 </div>
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end pt-0">Post-login page:</legend>
+                    <div class="col-9">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" [(ngModel)]="data.preferences.homePageType" name="homePageType" id="homePageTypeLanding" [value]="Constants.HOME_PAGE_TYPE.LANDING_PAGE">
+                            <label class="form-check-label" for="homePageTypeLanding">{{dataService.isSystemAdmin?'Test Bed landing page':'Community landing page'}}
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="(dataService.isSystemAdmin)?'After logging in show the default landing page for the Test Bed.':'After logging in show the default landing page for my community.'"></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" [(ngModel)]="data.preferences.homePageType" name="homePageType" id="homePageTypeConformance" [value]="Constants.HOME_PAGE_TYPE.CONFORMANCE_DASHBOARD">
+                            <label class="form-check-label" for="homePageTypeConformance">{{(dataService.isSystemAdmin || dataService.isCommunityAdmin)?'Conformance dashboard':'My conformance statements'}}
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="(dataService.isSystemAdmin || dataService.isCommunityAdmin)?`After logging in show the conformance dashboard ${dataService.isSystemAdmin?'for all communities':'for my community'}.`:`After logging in show the conformance statements for my ${dataService.labelOrganisationLower()}.`"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row pt-3">
+                    <label class="col-3 col-form-label text-end" for="pageSize">Items per page:</label>
+                    <div class="col-auto">
+                        <select name="pageSize" class="form-select" id="pageSize" [(ngModel)]="data.preferences.pageSize">
+                            @for (supportedSize of Constants.SUPPORTED_PAGE_SIZES; track $index) {
+                                <option [ngValue]="supportedSize">{{ supportedSize }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="The number of items to display by default in each page, when items are presented in lists or tables. Note that this setting is also automatically updated whenever you change the displayed items in a list or table."></div>
+                </div>
                 @if (!dataService.configuration.ssoEnabled) {
-                    <div class="row mt-3">
+                    <div class="row pt-3">
                         <div class="col-10 offset-1">
                             <div class="alert alert-info rounded mb-0">
-                                <span><b>Privacy note:</b> By clicking 'Save changes' you grant consent to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                <span class="alert-label">Privacy note</span>
+                                By completing this form you grant your consent to record the provided information.
                             </div>
                         </div>
                     </div>
@@ -46,14 +88,13 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    @if (!dataService.configuration.ssoEnabled) {
-                        <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" (click)="updateProfile()" [pending]="spinner">Save changes</button>
-                    } @else {
-                        <button type="button" class="btn btn-secondary" (click)="disconnect()">Remove role from your account</button>
-                        <button type="button" class="btn btn-secondary" (click)="linkOtherRole()">Link another role to your account</button>
+                    <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="spinner">Save changes</button>
+                    @if (dataService.configuration.ssoEnabled) {
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.UNLINK_ACCOUNT" class="btn btn-secondary" (click)="disconnect()">Remove role from your account</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.LINK_ACCOUNT" class="btn btn-secondary" (click)="linkOtherRole()">Link another role to your account</button>
                     }
                     @if (dataService.configuration.registrationEnabled) {
-                        <button type="button" class="btn btn-secondary" (click)="register()">Register another {{dataService.labelOrganisationLower()}}</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="register()">Register another {{dataService.labelOrganisationLower()}}</button>
                     }
                 </div>
             </div>

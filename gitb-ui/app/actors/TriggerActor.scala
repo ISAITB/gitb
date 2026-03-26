@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,6 +15,7 @@
 
 package actors
 
+import actors.TriggerActor.logger
 import actors.events.TriggerEvent
 import managers.TriggerManager
 import org.apache.pekko.actor._
@@ -24,11 +25,10 @@ import javax.inject.Inject
 
 object TriggerActor {
   val actorName = "trigger-actor"
+  private val logger = LoggerFactory.getLogger(classOf[TriggerActor])
 }
 
 class TriggerActor @Inject() (triggerManager: TriggerManager) extends Actor {
-
-  private def logger = LoggerFactory.getLogger(classOf[TriggerActor])
 
   override def preStart():Unit = {
     logger.info(s"Starting trigger actor [${self.path.name}]")

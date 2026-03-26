@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -17,15 +17,22 @@
 
 .health-card-container {
     min-width: 200px;
-    height: 150px;
+    height: 114px;
     display: flex;
     flex-direction: column;
     border-radius: @border-radius;
     border: 1px solid @gray-dark-1;
     background-color: @gray-light-1;
-    padding: 10px;
     position: relative;
     transition: background-color 0.2s;
+    &.has-subtitle {
+        span {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            display: block;
+        }
+    }
     &.actionable:hover {
         cursor: pointer;
         background-color: @gray-highlight;
@@ -35,11 +42,24 @@
         justify-content: center;
     }
     .health-card-title {
-        font-size: large;
+        font-size: medium;
         font-weight: bold;
         align-items: center;
         text-align: center;
         flex: 1;
+        padding: 10px 10px 4px;
+    }
+    .health-card-subtitle {
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: small;
+        font-weight: bold;
+        align-items: center;
+        align-content: center;
+        text-align: center;
+        flex: 0 0 auto;
+        height: 25px;
+        background-color: @gray-dark-1;
     }
     &.hovering {
         .health-card-action {
@@ -49,6 +69,14 @@
                 transform: scale(1.2);
             }
         }
+    }
+    .health-card-icon {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        padding: 6px 10px;
+        font-size: 1.25rem;
+        opacity: 0.2;
     }
     .health-card-action {
         position: absolute;

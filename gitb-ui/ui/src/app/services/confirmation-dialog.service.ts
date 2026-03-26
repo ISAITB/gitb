@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,10 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EventEmitter, Injectable } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal'
-import { Observable, ReplaySubject } from 'rxjs';
-import { ConfirmationComponent } from '../modals/confirmation/confirmation.component'
+import {EventEmitter, Injectable} from '@angular/core';
+import {Observable, ReplaySubject} from 'rxjs';
+import {ConfirmationComponent} from '../modals/confirmation/confirmation.component';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 
 @Injectable({
   providedIn: 'root'
@@ -24,57 +25,64 @@ import { ConfirmationComponent } from '../modals/confirmation/confirmation.compo
 export class ConfirmationDialogService {
 
 
-  constructor(private readonly modalService: BsModalService) { }
+  constructor(private readonly modalService: NgbModal) { }
 
-  notify(headerText: string, bodyText: string, buttonText: string) {
-    const modal = this.modalService.show(ConfirmationComponent, {
-      initialState: {
-        headerText: headerText,
-        bodyText: bodyText,
-        actionButtonText: buttonText,
-        oneButton: true
-      },
-      backdrop: 'static',
-      keyboard: false
-    })
-    return modal.content!.result
+  notify(headerText: string, bodyText: string, buttonText: string, buttonIcon?: string): Observable<void> {
+    const modal = this.modalService.open(ConfirmationComponent, {backdrop: 'static', keyboard: false});
+    const modalInstance = modal.componentInstance as ConfirmationComponent
+    modalInstance.headerText = headerText
+    modalInstance.bodyText = bodyText
+    modalInstance.actionButtonText = buttonText
+    modalInstance.actionButtonIcon = buttonIcon
+    modalInstance.oneButton = true
+    return fromPromise(modal.result)
   }
 
-  notified(headerText: string, bodyText: string, buttonText: string): Observable<void> {
+  notified(headerText: string, bodyText: string, buttonText: string, buttonIcon?: string): Observable<void> {
     const result = new ReplaySubject<void>(1)
-    this.notify(headerText, bodyText, buttonText).subscribe(() => {
+    this.notify(headerText, bodyText, buttonText, buttonIcon).subscribe(() => {
       result.next()
       result.complete()
     })
     return result
   }
 
-  confirmDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string): EventEmitter<boolean> {
-    return this.confirm(headerText, bodyText, actionButtonText, closeButtonText, false, true)
+  confirmDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, actionButtonIcon?: string, closeButtonIcon?: string): EventEmitter<boolean> {
+    return this.confirm(headerText, bodyText, actionButtonText, closeButtonText, actionButtonIcon, closeButtonIcon, false, true)
   }
 
-  confirm(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean, dangerous?: boolean): EventEmitter<boolean> {
-    const modal = this.modalService.show(ConfirmationComponent, {
-      initialState: {
-        headerText: headerText,
-        bodyText: bodyText,
-        actionButtonText: actionButtonText,
-        closeButtonText: closeButtonText,
-        sameStyles: sameStyles,
-        oneButton: false,
-        actionClass: dangerous?'btn btn-danger':'btn btn-secondary'
-      }
-    })
-    return modal.content!.result
+  confirm(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, actionButtonIcon?: string, closeButtonIcon?: string, sameStyles?: boolean, dangerous?: boolean): EventEmitter<boolean> {
+    const emitter = new EventEmitter<boolean>()
+    const modal = this.modalService.open(ConfirmationComponent)
+    const modalInstance = modal.componentInstance as ConfirmationComponent
+    modalInstance.headerText = headerText
+    modalInstance.bodyText = bodyText
+    modalInstance.actionButtonText = actionButtonText
+    modalInstance.closeButtonText = closeButtonText
+    modalInstance.actionButtonIcon = actionButtonIcon
+    modalInstance.closeButtonIcon = closeButtonIcon
+    modalInstance.sameStyles = sameStyles
+    modalInstance.oneButton = false
+    modalInstance.actionClass = dangerous?'btn btn-danger':'btn btn-secondary'
+    modal.result.then((result: boolean) => {
+        emitter.emit(result)
+        emitter.complete?.()
+      })
+      .catch(() => {
+        // dismiss → either ignore or emit a cancel
+        emitter.emit(false);
+        emitter.complete?.();
+      });
+    return emitter
   }
 
-  confirmedDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string): Observable<void> {
-    return this.confirmed(headerText, bodyText, actionButtonText, closeButtonText, false, true)
+  confirmedDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, actionButtonIcon?: string, closeButtonIcon?: string): Observable<void> {
+    return this.confirmed(headerText, bodyText, actionButtonText, closeButtonText, actionButtonIcon, closeButtonIcon, false, true)
   }
 
-  confirmed(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean, dangerous?: boolean): Observable<void> {
+  confirmed(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, actionButtonIcon?: string, closeButtonIcon?: string, sameStyles?: boolean, dangerous?: boolean): Observable<void> {
     const result = new ReplaySubject<void>(1)
-    this.confirm(headerText, bodyText, actionButtonText, closeButtonText, sameStyles, dangerous).subscribe((choice: boolean) => {
+    this.confirm(headerText, bodyText, actionButtonText, closeButtonText, actionButtonIcon, closeButtonIcon, sameStyles, dangerous).subscribe((choice: boolean) => {
       if (choice) {
         result.next()
         result.complete()
@@ -83,9 +91,9 @@ export class ConfirmationDialogService {
     return result
   }
 
-  rejected(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean): Observable<void> {
+  rejected(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean, actionButtonIcon?: string, closeButtonIcon?: string): Observable<void> {
     const result = new ReplaySubject<void>(1)
-    this.confirm(headerText, bodyText, actionButtonText, closeButtonText, sameStyles).subscribe((choice: boolean) => {
+    this.confirm(headerText, bodyText, actionButtonText, closeButtonText, actionButtonIcon, closeButtonIcon, sameStyles, false).subscribe((choice: boolean) => {
       if (!choice) {
         result.next()
         result.complete()

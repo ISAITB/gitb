@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -35,6 +35,15 @@ class SessionLaunchState {
   private val idToSessionMap = mutable.Map[Long, String]()
   private val sessionToIdMap = mutable.Map[String, Long]()
   private val testCaseDefinitionCache = mutable.Map[Long, TestCase]()
+  private var delayToApply: Long = 0L
+
+  def getNextDelayToApply(): Long = {
+    val nextDelayToApply = delayToApply
+    if (delayToApply == 0) {
+      delayToApply = data.flatMap(_.executionDelay).getOrElse(0L)
+    }
+    nextDelayToApply
+  }
 
   def setLaunchData(data: TestSessionLaunchData): SessionLaunchState = {
     this.data = Some(data)
@@ -136,7 +145,7 @@ class SessionLaunchState {
     pendingTestCases.head
   }
 
-  def getSessionConfigurationData(onlySimple: Boolean): SessionConfigurationData = {
+  def getSessionConfigurationData(onlySimple: Boolean, testCaseId: Long, includeInputs: Boolean): SessionConfigurationData = {
     if (onlySimple) {
       // Include only the configuration values that are simple texts
       SessionConfigurationData(
@@ -148,7 +157,8 @@ class SessionLaunchState {
         },
         organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
         systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == "SIMPLE"))),
-        testServiceParameters = data.get.testServiceParameters
+        testServiceParameters = data.get.testServiceParameters,
+        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None
       )
     } else {
       // Include all configuration values
@@ -157,7 +167,8 @@ class SessionLaunchState {
         domainParameters = data.get.domainParameters,
         organisationParameters = Some(data.get.organisationParameters),
         systemParameters = Some(data.get.systemParameters),
-        testServiceParameters = data.get.testServiceParameters
+        testServiceParameters = data.get.testServiceParameters,
+        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None
       )
     }
   }

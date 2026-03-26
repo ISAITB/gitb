@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -315,6 +315,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       // Result
       overview.setReportResult(source.getResult.value())
       overview.setOutputMessages(source.getMessage)
+      overview.setSessionId(UUID.randomUUID().toString)
       // Start time
       overview.setStartTime(sdf.format(source.getStartTime.toGregorianCalendar.getTime))
       // End time
@@ -347,6 +348,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     val report = new TestCaseOverviewReportType
     report.setResult(TestResultType.FAILURE)
     report.getMessage.add("Test session resulted in a failure.")
+    report.setSessionId(UUID.randomUUID().toString)
     report.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
     report.setEndTime(report.getStartTime)
     // Test case metadata
@@ -599,6 +601,13 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
+  def generateTestSessionDataArchive(archivePath: Path, sessionId: String): Future[Option[Path]] = {
+    for {
+      reportInfo <- testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(Constants.MimeTypeZIP), None, None)
+      report <- finaliseTestSessionReport(archivePath, reportInfo, Constants.MimeTypeZIP, None, None, ReportType.TestCaseReport)
+    } yield report
+  }
+
   def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[Path]] = {
     for {
       communityId <- {
@@ -673,6 +682,22 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             }
           }
         } yield pdfReport
+      } else if (contentType == Constants.MimeTypeZIP) {
+        // ZIP archive with all test data.
+        // Copy the XML report.
+        val tempFolder = reportPath.getParent.resolve("temp")
+        Files.createDirectories(tempFolder)
+        Files.copy(reportInfo.report.get, tempFolder.resolve("test_case.xml"))
+        val sourceData = repositoryUtils.getPathForTestSessionData(reportInfo.sessionFolderInfo.path, tempData = false)
+        val destinationData = tempFolder.resolve("data")
+        Using (Files.walk(sourceData)) { stream =>
+          stream.forEach { sourcePath =>
+            val destinationPath = destinationData.resolve(sourceData.relativize(sourcePath))
+            Files.copy(sourcePath, destinationPath)
+          }
+        }
+        new ZipArchiver(tempFolder, reportPath).zip()
+        Future.successful(Some(reportPath))
       } else {
         // XML reports are cached (i.e. keep the original).
         Files.copy(reportInfo.report.get, reportPath)
@@ -708,7 +733,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       specificationId, specificationName, specificationName, Some(specificationName+" description"), Some(specificationName+" metadata"), 0,
       Some(groupId), Some(groupName), Some(groupName+" description"), Some(groupName+" metadata"),
       Some(groupName), Option(0), specificationName, specificationName,
-      Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None, "1.0",
+      Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None, "1.0", Some(0),
       Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None, "1.0",
       None, None, None, None,
       "SUCCESS", Some("An output message for the test session"),
@@ -2316,7 +2341,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         var completedTestsIgnored = 0
         var undefinedTestsIgnored = 0
         var index = 0
-        val testMap = new mutable.TreeMap[Long, (com.gitb.tr.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
+        val testMap = new mutable.LinkedHashMap[Long, (com.gitb.tr.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
         if (addTestCases) {
           report.getStatement.setTestDetails(new TestCaseDetails)
         }
@@ -2367,6 +2392,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             }
             // Times and steps
             if (isDemo) {
+              testCaseReport.setSessionId(UUID.randomUUID().toString)
               testCaseReport.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime())
               testCaseReport.setEndTime(testCaseReport.getStartTime)
               testCaseReport.setSteps(new TestCaseStepsType)
@@ -2376,6 +2402,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             } else {
               if (info.sessionId.exists(session => testResultMap.exists(_.contains(session)))) {
                 val testResult = testResultMap.get(info.sessionId.get)
+                testCaseReport.setSessionId(testResult._1.sessionId)
                 testCaseReport.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult._1.startTime))
                 testCaseReport.setEndTime(testResult._1.endTime.map(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(_)).orNull)
                 // Add test steps
@@ -2733,7 +2760,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         var completedTestsIgnored = 0
         var undefinedTestsIgnored = 0
         var index = 1
-        val testMap = new mutable.TreeMap[Long, (com.gitb.reports.dto.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
+        val testMap = new mutable.LinkedHashMap[Long, (com.gitb.reports.dto.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
         conformanceInfo.foreach { info =>
           val result = TestResultStatus.withName(info.result)
           if (addTestCaseResults) {
@@ -2770,6 +2797,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
               testCaseOverview.setTestActor(info.actorFull)
               if (info.sessionId.exists(session => testResultMap.exists(_.contains(session)))) {
                 val testResult = testResultMap.get(info.sessionId.get)
+                testCaseOverview.setSessionId(info.sessionId.get)
                 testCaseOverview.setStartTime(sdf.format(new Date(testResult._1.startTime.getTime)))
                 if (testResult._1.endTime.isDefined) {
                   testCaseOverview.setEndTime(sdf.format(new Date(testResult._1.endTime.get.getTime)))
@@ -2790,6 +2818,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
                   }
                 }
               } else {
+                testCaseOverview.setSessionId("-")
                 testCaseOverview.setStartTime("-")
                 testCaseOverview.setEndTime("-")
                 testCaseOverview.setSteps(null)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,7 +14,7 @@
  */
 
 import {SpecificationReferenceInfo} from 'src/app/types/specification-reference-info';
-import {TestCaseTag} from 'src/app/types/test-case-tag';
+import {TagData} from 'src/app/types/tag-data';
 import {UserInteraction} from 'src/app/types/user-interaction';
 
 export interface ConformanceTestCase extends SpecificationReferenceInfo {
@@ -30,13 +30,13 @@ export interface ConformanceTestCase extends SpecificationReferenceInfo {
   updateTime?: string;
   optional?: boolean;
   disabled?: boolean;
-  tags?: string;
+  tags?: TagData[];
   group?: number;
 
-  parsedTags?: TestCaseTag[];
+  parsedTags?: TagData[];
   executionPending?: boolean;
   resultToShow?: string;
-  groupTag?: TestCaseTag;
+  groupTag?: TagData;
   groupFirst?: boolean;
   groupLast?: boolean;
 

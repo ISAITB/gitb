@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,18 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ConformanceCertificateModalComponent } from '../modals/conformance-certificate-modal/conformance-certificate-modal.component';
-import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
-import { ConformanceService } from './conformance.service';
-import { Observable, forkJoin, mergeMap, of } from 'rxjs';
-import { ConformanceOverviewCertificateModalComponent } from '../modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
-import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
-import { ReportService } from './report.service';
-import { saveAs } from 'file-saver'
-import { DataService } from './data.service';
-import { Constants } from '../common/constants';
+import {Injectable} from '@angular/core';
+import {ConformanceCertificateModalComponent} from '../modals/conformance-certificate-modal/conformance-certificate-modal.component';
+import {ConformanceCertificateSettings} from '../types/conformance-certificate-settings';
+import {ConformanceService} from './conformance.service';
+import {forkJoin, mergeMap, Observable, of} from 'rxjs';
+import {
+  ConformanceOverviewCertificateModalComponent
+} from '../modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
+import {ConformanceOverviewCertificateSettings} from '../types/conformance-overview-certificate-settings';
+import {ReportService} from './report.service';
+import {saveAs} from 'file-saver';
+import {DataService} from './data.service';
+import {Constants} from '../common/constants';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Injectable({
   providedIn: 'root'
@@ -33,39 +35,41 @@ export class ReportSupportService {
 
   constructor(
     private readonly conformanceService: ConformanceService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly reportService: ReportService,
     private readonly dataService: DataService
   ) {}
 
   private showConformanceOverviewModal(communityId: number, systemId: number, identifier: number|undefined, reportLevel: 'all'|'domain'|'specification'|'group', snapshotId: number|undefined, settings: ConformanceOverviewCertificateSettings|undefined) {
-    this.modalService.show(ConformanceOverviewCertificateModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        settings: settings,
-        communityId: communityId,
-        systemId: systemId,
-        identifier: identifier,
-        snapshotId: snapshotId,
-        reportLevel: reportLevel
-      }
+    this.dataService.setImplicitCommunity(communityId)
+    const modal = this.modalService.open(ConformanceOverviewCertificateModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as ConformanceOverviewCertificateModalComponent
+    modal.hidden.subscribe(() => {
+      this.dataService.clearImplicitCommunity()
     })
+    modalInstance.settings = settings
+    modalInstance.communityId = communityId
+    modalInstance.systemId = systemId
+    modalInstance.identifier = identifier
+    modalInstance.snapshotId = snapshotId
+    modalInstance.reportLevel = reportLevel
   }
 
   private showConformanceStatementModal(communityId: number, actorId: number, systemId: number, snapshotId: number|undefined, format: 'xml'|'pdf', settings: ConformanceCertificateSettings|undefined, certificateEnabled: boolean, testCaseCount: number|undefined) {
-    this.modalService.show(ConformanceCertificateModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        settings: settings,
-        communityId: communityId,
-        actorId: actorId,
-        systemId: systemId,
-        snapshotId: snapshotId,
-        format: format,
-        certificateEnabled: certificateEnabled,
-        testCaseCount: testCaseCount
-      }
+    this.dataService.setImplicitCommunity(communityId)
+    const modal = this.modalService.open(ConformanceCertificateModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as ConformanceCertificateModalComponent
+    modal.hidden.subscribe(() => {
+      this.dataService.clearImplicitCommunity()
     })
+    modalInstance.settings = settings
+    modalInstance.communityId = communityId
+    modalInstance.actorId = actorId
+    modalInstance.systemId = systemId
+    modalInstance.snapshotId = snapshotId
+    modalInstance.format = format
+    modalInstance.certificateEnabled = certificateEnabled
+    modalInstance.testCaseCount = testCaseCount
   }
 
   handleConformanceStatementReport(communityId: number, actorId: number, systemId: number, snapshotId: number|undefined, format: 'xml'|'pdf', certificateEnabled: boolean, testCaseCount: number|undefined): Observable<any> {

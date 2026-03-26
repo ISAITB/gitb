@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -24,11 +24,13 @@ import config.Configurations
 import config.Configurations._
 import models.{ActualUserInfo, Constants}
 import org.apache.commons.lang3.Strings
+import org.ldaptive.auth.{Authenticator, SearchDnResolver, SimpleBindAuthenticationHandler}
+import org.ldaptive.{BindConnectionInitializer, ConnectionConfig, DefaultConnectionFactory}
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
 import org.pac4j.core.authorization.authorizer.{Authorizer, IsAuthenticatedAuthorizer}
-import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
+import org.pac4j.core.client.{Client, Clients}
 import org.pac4j.core.config.Config
 import org.pac4j.core.context.FrameworkParameters
 import org.pac4j.core.context.session.SessionStore
@@ -37,6 +39,9 @@ import org.pac4j.core.http.callback.{CallbackUrlResolver, NoParameterCallbackUrl
 import org.pac4j.core.matching.matcher.PathMatcher
 import org.pac4j.core.profile.UserProfile
 import org.pac4j.core.util.Pac4jConstants
+import org.pac4j.http.client.direct.DirectFormClient
+import org.pac4j.ldap.profile.LdapProfile
+import org.pac4j.ldap.profile.service.LdapProfileService
 import org.pac4j.oidc.client.OidcClient
 import org.pac4j.oidc.config.OidcConfiguration
 import org.pac4j.oidc.profile.OidcProfile
@@ -56,18 +61,7 @@ class SecurityModule extends AbstractModule {
     Configurations.loadConfigurations()
 
     // Session store and idle/max session timeouts
-    val playCacheSessionStore = new CustomPlayEhCacheSessionStore(getProvider(classOf[SyncCacheApi]))
-    if (Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME < 0) {
-      playCacheSessionStore.setTimeout(0) // Infinite.
-    } else {
-      playCacheSessionStore.setTimeout(Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME)
-    }
-    if (Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME < 0) {
-      playCacheSessionStore.setMaxTimeout(0) // Infinite.
-    } else {
-      playCacheSessionStore.setMaxTimeout(Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME)
-    }
-    bind(classOf[SessionStore]).toInstance(playCacheSessionStore)
+    bind(classOf[SessionStore]).to(classOf[CustomPlayEhCacheSessionStore]).asEagerSingleton()
 
     // callback
     val callbackController = new CallbackController()
@@ -111,7 +105,7 @@ class SecurityModule extends AbstractModule {
     oidcConfiguration.setClientAuthenticationMethod(ClientAuthenticationMethod.parse(Configurations.AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD))
     oidcConfiguration.setScope(Configurations.AUTHENTICATION_SSO_SCOPE)
     /*
-     * Up to v6.1.2 Pac4j has a bug in the token renewal process (see https://groups.google.com/g/pac4j-dev/c/NJpqBQHoiM4).
+     * Pac4j has a bug in the token renewal process (see https://groups.google.com/g/pac4j-dev/c/NJpqBQHoiM4).
      * If nonces are set as required they should normally be included and checked only in the initial login. However,
      * Pac4j erroneously forces the nonce check also in renewal requests which the server may not include (actually the
      * OIDC spec suggests to not include them). To avoid the renewal failing, nonce checking is forcibly set to false
@@ -131,6 +125,28 @@ class SecurityModule extends AbstractModule {
     oidcClient.setName(CLIENT_NAME)
     oidcClient.setAjaxRequestResolver(new DefaultAjaxRequestResolver)
     oidcClient
+  }
+
+  private def createLdapClient(): Client = {
+    val connectionConfig = ConnectionConfig.builder
+      .url(Configurations.AUTHENTICATION_SSO_SERVER_URL)
+      .connectionInitializers(BindConnectionInitializer.builder()
+        .dn(Configurations.AUTHENTICATION_SSO_CONNECTION_DN)
+        .credential(Configurations.AUTHENTICATION_SSO_CONNECTION_PASSWORD)
+        .build())
+      .build
+    val dnResolver = SearchDnResolver.builder()
+      .factory(new DefaultConnectionFactory(connectionConfig))
+      .dn(Configurations.AUTHENTICATION_SSO_USER_DN)
+      .filter("%s={user}".formatted(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_USER_ID))
+      .build()
+    val authenticator = new Authenticator(dnResolver, new SimpleBindAuthenticationHandler(new DefaultConnectionFactory(connectionConfig)))
+    val ldapProfileService = new LdapProfileService(new DefaultConnectionFactory(connectionConfig), authenticator, "%s,%s,%s,%s".formatted(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_FIRST_NAME, Configurations.AUTHENTICATION_SSO_ATTRIBUTE_LAST_NAME, Configurations.AUTHENTICATION_SSO_ATTRIBUTE_EMAIL, Configurations.AUTHENTICATION_SSO_ATTRIBUTE_USER_ID), Configurations.AUTHENTICATION_SSO_USER_DN)
+    val ldapClient = new DirectFormClient(ldapProfileService)
+    ldapClient.setName(CLIENT_NAME)
+    ldapClient.setMultiProfile(true)
+    ldapClient.setSaveProfileInSession(true)
+    ldapClient
   }
 
   private def buildLoginUrl(): String = {
@@ -153,6 +169,8 @@ class SecurityModule extends AbstractModule {
         new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, createCasClient(), new CasProxyReceptor())
       } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeOidc) {
         new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, createOidcClient())
+      } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
+        new Clients(createLdapClient())
       } else {
         throw new IllegalStateException("Unsupported value for AUTHENTICATION_SSO_TYPE: " + Configurations.AUTHENTICATION_SSO_TYPE)
       }
@@ -176,7 +194,7 @@ class SecurityModule extends AbstractModule {
   }
 
   private def createAuthorizer(): Authorizer = {
-    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+    if (Configurations.AUTHENTICATION_SSO_ENABLED && Configurations.AUTHENTICATION_SSO_TYPE != Constants.SsoTypeLdap) {
       new IsAuthenticatedAuthorizer
     } else {
       new BasicAuthorizer
@@ -189,30 +207,50 @@ class SecurityModule extends AbstractModule {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeEcas) {
         new BaseProfileResolver(playSessionStore) {
-          override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
-            Option(profile.getAttributes).map { userAttributes =>
-              ActualUserInfo.fromAttributes(
-                uid = profile.getId,
-                email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String],
-                name = None,
-                firstName = Option(userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]),
-                lastName = Option(userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String])
-              )
-            }
+          override def extractUserInfo(userProfile: UserProfile): Option[ActualUserInfo] = {
+            extractDemoOrActualUser(userProfile, profile => {
+              Option(profile.getAttributes).map { userAttributes =>
+                ActualUserInfo.fromAttributes(
+                  uid = profile.getId,
+                  email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String],
+                  name = None,
+                  firstName = Option(userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]),
+                  lastName = Option(userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String])
+                )
+              }
+            })
           }
         }
       } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeOidc) {
         new BaseProfileResolver(playSessionStore) {
-          override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
-            Option(profile.asInstanceOf[OidcProfile]).map { oidcProfile =>
-              ActualUserInfo.fromAttributes(
-                uid = oidcProfile.getId,
-                email = oidcProfile.getEmail,
-                name = Option(oidcProfile.getDisplayName),
-                firstName = Option(oidcProfile.getFirstName),
-                lastName = Option(oidcProfile.getFamilyName)
-              )
-            }
+          override def extractUserInfo(userProfile: UserProfile): Option[ActualUserInfo] = {
+            extractDemoOrActualUser(userProfile, profile => {
+              Option(profile.asInstanceOf[OidcProfile]).map { oidcProfile =>
+                ActualUserInfo.fromAttributes(
+                  uid = oidcProfile.getId,
+                  email = oidcProfile.getEmail,
+                  name = Option(oidcProfile.getDisplayName),
+                  firstName = Option(oidcProfile.getFirstName),
+                  lastName = Option(oidcProfile.getFamilyName)
+                )
+              }
+            })
+          }
+        }
+      } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
+        new BaseProfileResolver(playSessionStore) {
+          override def extractUserInfo(userProfile: UserProfile): Option[ActualUserInfo] = {
+            extractDemoOrActualUser(userProfile, profile => {
+              Option(profile.asInstanceOf[LdapProfile]).map { ldapProfile =>
+                ActualUserInfo.fromAttributes(
+                  uid = ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_USER_ID, classOf[String]),
+                  email = ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_EMAIL, classOf[String]),
+                  name = None,
+                  firstName = Option(ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_FIRST_NAME, classOf[String])),
+                  lastName = Option(ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_LAST_NAME, classOf[String]))
+                )
+              }
+            })
           }
         }
       } else {
@@ -228,14 +266,28 @@ class SecurityModule extends AbstractModule {
     }
   }
 
+  private def extractDemoOrActualUser(profile: UserProfile, fn: UserProfile => Option[ActualUserInfo]): Option[ActualUserInfo]  = {
+    if (Configurations.DEMOS_ENABLED && profile.getId == Constants.DemoUserProfileIdentifier) {
+      /*
+       * When demos are enabled, and we are making a demo account logic, the Pac4J SecurityFilter is skipped.
+       * Nonetheless, the profile generation logic is called because we have initialised a profile resolver.
+       * Here, we skip the normal logic of extracting the actual user information to use from OIDC, CAS etc.
+       * but rather return a fixed demo user.
+       */
+      Some(ActualUserInfo.forDemoUser())
+    } else {
+      fn(profile)
+    }
+  }
+
   @Provides
   def provideConfig(sessionStore: SessionStore): Config = {
     val config = new Config(createClients())
     config.addAuthorizer("_authenticated_", createAuthorizer())
     config.setCallbackLogic(new CustomCallbackLogic)
-    config.setSessionStoreFactory((_: FrameworkParameters) => sessionStore);
+    config.setSessionStoreFactory((_: FrameworkParameters) => sessionStore)
     config.setHttpActionAdapter(new PlayHttpActionAdapter())
-    config.addMatcher("excludedPath", new PathMatcher()
+    val excludedPathMatcher = new PathMatcher()
       .excludePath("%s".formatted(WEB_CONTEXT_ROOT))
       .excludePath("%s".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       .excludePath("%s/notices/tbdefault".formatted(API_ROOT))
@@ -250,9 +302,25 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("%s/repository/resource".formatted(API_ROOT))
       .excludeBranch("%s/rest".formatted(API_ROOT))
       .excludePath("%s/healthcheck".formatted(API_ROOT))
+      .excludePath("%s/oauth/logout".formatted(API_ROOT))
+      .excludePath("%s/oauth/retrieveAccessToken".formatted(API_ROOT))
       .excludeBranch("%sbadge".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       .excludeBranch("%ssystemResources".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
-    )
+    if (Configurations.AUTHENTICATION_SSO_ENABLED && Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
+      excludedPathMatcher.excludeBranch("%sapp".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      excludedPathMatcher.excludePath("%s/app/configuration".formatted(API_ROOT))
+      excludedPathMatcher.excludePath("%s/sso/login".formatted(API_ROOT))
+    }
+    config.addMatcher("excludedPath", excludedPathMatcher)
+    config.addMatcher("noDemo", ctx => {
+      !ctx.webContext().getRequestCookies.stream().anyMatch(c => c.getName == "LOGIN_OPTION" && c.getValue == "demo")
+    })
+    // The "securedRequests" matcher is a composite and is configured in application.conf.
+    config.addMatcher("securedRequests", ctx => {
+      val pathAllowed = config.getMatchers.get("excludedPath").matches(ctx)
+      val demoAllowed = config.getMatchers.get("noDemo").matches(ctx)
+      pathAllowed && demoAllowed
+    })
     config
   }
 

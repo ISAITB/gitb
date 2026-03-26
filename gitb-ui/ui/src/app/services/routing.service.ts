@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,7 +14,7 @@
  */
 
 import {Injectable} from '@angular/core';
-import {NavigationEnd, NavigationExtras, NavigationStart, Router} from '@angular/router';
+import {NavigationEnd, NavigationExtras, NavigationStart, Router, UrlTree} from '@angular/router';
 import {Constants} from '../common/constants';
 import {DataService} from './data.service';
 import {MenuItem} from '../types/menu-item.enum';
@@ -95,11 +95,11 @@ export class RoutingService {
     }
   }
 
-  toURL(url: string) {
+  toURL(url: string): Promise<boolean> {
     this.changePageForURL(url)
     return this.router.navigateByUrl(url).catch((error) => {
       console.error("Unable to restore view at: "+url, error.stack)
-      return this.toHome()
+      return this.toStartPage()
     })
   }
 
@@ -107,13 +107,26 @@ export class RoutingService {
     return this.navigate(MenuItem.home, ['home'])
   }
 
-  toStartPage(userId: number) {
-    const previousLocation = this.dataService.retrieveLocationData(userId)
-    if (previousLocation) {
-      return this.toURL(previousLocation)
-    } else {
-      return this.toHome()
+  toStartPage(userId?: number): Promise<boolean> {
+    if (userId != undefined) {
+      const previousLocation = this.dataService.retrieveLocationData(userId)
+      if (previousLocation) {
+        return this.toURL(previousLocation)
+      }
     }
+    return this.router.navigate(['start'])
+  }
+
+  resolveStartPage(): UrlTree {
+    if (this.dataService.homePageType === Constants.HOME_PAGE_TYPE.CONFORMANCE_DASHBOARD) {
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+        return this.router.createUrlTree(['admin', 'conformance'])
+      } else {
+        return this.router.createUrlTree(['organisation', 'conformance', this.dataService.vendor?.id!])
+      }
+    } else {
+      return this.router.createUrlTree(['home'])
+    }    
   }
 
   toLogin() {
@@ -128,9 +141,15 @@ export class RoutingService {
     return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'admin', adminId])
   }
 
-  toTestHistory(organisationId: number, sessionIdToShow?: string) {
-    if (sessionIdToShow != undefined) {
-      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
+  toTestHistory(organisationId: number, sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number) {
+    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined) {
+      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId], {
+        queryParams: this.createMultipleQueryParams([
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, value: sessionIdToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow }
+        ])
+      })
     } else {
       return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId])
     }
@@ -483,9 +502,15 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', userId])
   }
 
-  toSessionDashboard(sessionIdToShow?: string) {
-    if (sessionIdToShow != undefined) {
-      return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
+  toSessionDashboard(sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number) {
+    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined) {
+      return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'], {
+        queryParams: this.createMultipleQueryParams([
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, value: sessionIdToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow }
+        ])
+      })
     } else {
       return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'])
     }

@@ -1,0 +1,1084 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://org.ecodex.backend/1_1/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns2="http://schemas.xmlsoap.org/soap/http" xmlns:ns1="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" name="BackendService_1_1" targetNamespace="http://org.ecodex.backend/1_1/">
+  <wsdl:types>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
+
+    
+  <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+
+    
+  <xsd:annotation>
+        
+    <xsd:appinfo>Schema for Domibus messages' headers submission</xsd:appinfo>
+        
+    <xsd:documentation xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+            This schema defines an XML subset of ebMS-3 headers which is used to validate messages submitted to Domibus
+            through WS plugin.
+        </xsd:documentation>
+    
+  </xsd:annotation>
+
+    
+  <xsd:element name="Messaging" type="Messaging"/>
+
+    
+  <xsd:complexType name="Messaging">
+        
+    <xsd:sequence>
+            
+      <xsd:element minOccurs="0" name="UserMessage" type="UserMessage"/>
+        
+    </xsd:sequence>
+        
+    <xsd:attribute name="mustUnderstand" type="xsd:boolean" use="optional"/>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="UserMessage">
+        
+    <xsd:all>
+            
+      <xsd:element minOccurs="0" name="MessageInfo" type="MessageInfo"/>
+            
+      <xsd:element name="PartyInfo" type="PartyInfo"/>
+            
+      <xsd:element name="CollaborationInfo" type="CollaborationInfo"/>
+            
+      <xsd:element minOccurs="0" name="MessageProperties" type="tns:MessageProperties"/>
+            
+      <xsd:element minOccurs="0" name="PayloadInfo" type="tns:PayloadInfo"/>
+        
+    </xsd:all>
+        
+    <xsd:attribute name="mpc" type="xsd:anyURI" use="optional"/>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="MessageInfo">
+        
+    <xsd:all>
+            
+      <xsd:element minOccurs="0" name="Timestamp" type="xsd:dateTime"/>
+            
+      <xsd:element minOccurs="0" name="MessageId" type="tns:max255-non-empty-string"/>
+            
+      <xsd:element minOccurs="0" name="RefToMessageId" type="tns:max255-non-empty-string"/>
+        
+    </xsd:all>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="PartyInfo">
+        
+    <xsd:all>
+            
+      <xsd:element name="From" type="tns:From"/>
+            
+      <xsd:element minOccurs="0" name="To" type="tns:To"/>
+        
+    </xsd:all>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="PartyId">
+        
+    <xsd:simpleContent>
+            
+      <xsd:extension base="tns:max255-non-empty-string">
+                
+        <xsd:attribute name="type" type="tns:max255-non-empty-string"/>
+            
+      </xsd:extension>
+        
+    </xsd:simpleContent>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="From">
+        
+    <xsd:all>
+            
+      <xsd:element name="PartyId" type="tns:PartyId"/>
+            
+      <xsd:element name="Role" type="tns:max255-non-empty-string"/>
+        
+    </xsd:all>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="To">
+        
+    <xsd:all>
+            
+      <xsd:element name="PartyId" type="tns:PartyId"/>
+            
+      <xsd:element name="Role" type="tns:max255-non-empty-string"/>
+        
+    </xsd:all>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="CollaborationInfo">
+        
+    <xsd:all>
+            
+      <xsd:element minOccurs="0" name="AgreementRef" type="tns:AgreementRef"/>
+            
+      <xsd:element name="Service" type="tns:Service"/>
+            
+      <xsd:element name="Action" type="xsd:token"/>
+            
+      <xsd:element minOccurs="0" name="ConversationId" type="xsd:token"/>
+        
+    </xsd:all>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="Service">
+        
+    <xsd:simpleContent>
+            
+      <xsd:extension base="tns:max255-non-empty-string">
+                
+        <xsd:attribute name="type" type="tns:max255-non-empty-string" use="optional"/>
+            
+      </xsd:extension>
+        
+    </xsd:simpleContent>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="AgreementRef">
+        
+    <xsd:simpleContent>
+            
+      <xsd:extension base="tns:max255-non-empty-string">
+                
+        <xsd:attribute name="type" type="tns:max255-non-empty-string" use="optional"/>
+                
+        <xsd:attribute name="pmode" type="tns:max255-non-empty-string" use="optional"/>
+            
+      </xsd:extension>
+        
+    </xsd:simpleContent>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="PayloadInfo">
+        
+    <xsd:sequence>
+            
+      <xsd:element maxOccurs="unbounded" name="PartInfo" type="tns:PartInfo"/>
+        
+    </xsd:sequence>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="PartInfo">
+        
+    <xsd:all>
+            
+      <xsd:element minOccurs="0" name="PartProperties" type="tns:PartProperties"/>
+        
+    </xsd:all>
+        
+    <xsd:attribute name="href" type="xsd:token"/>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="Property">
+        
+    <xsd:simpleContent>
+            
+      <xsd:extension base="tns:max1024-non-empty-string">
+                
+        <xsd:attribute name="name" type="tns:max255-non-empty-string" use="required"/>
+                
+        <xsd:attribute name="type" type="tns:max255-non-empty-string" use="optional"/>
+            
+      </xsd:extension>
+        
+    </xsd:simpleContent>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="PartProperties">
+        
+    <xsd:sequence>
+            
+      <xsd:element maxOccurs="unbounded" name="Property" type="tns:Property"/>
+        
+    </xsd:sequence>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="MessageProperties">
+        
+    <xsd:sequence>
+            
+      <xsd:element maxOccurs="unbounded" name="Property" type="Property"/>
+        
+    </xsd:sequence>
+    
+  </xsd:complexType>
+
+    
+  <xsd:simpleType name="max255-non-empty-string">
+        
+    <xsd:restriction base="xsd:string">
+            
+      <xsd:minLength value="1"/>
+            
+      <xsd:maxLength value="255"/>
+        
+    </xsd:restriction>
+    
+  </xsd:simpleType>
+    
+  <xsd:simpleType name="max1024-non-empty-string">
+        
+    <xsd:restriction base="xsd:string">
+            
+      <xsd:minLength value="1"/>
+            
+      <xsd:maxLength value="1024"/>
+        
+    </xsd:restriction>
+    
+  </xsd:simpleType>
+
+
+</xsd:schema>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://org.ecodex.backend/1_1/" xmlns:ns1="http://www.w3.org/2005/05/xmlmime" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://org.ecodex.backend/1_1/">
+
+    
+  <xsd:import namespace="http://www.w3.org/2005/05/xmlmime"/>
+
+    
+  <xsd:simpleType name="max255-non-empty-string">
+        
+    <xsd:restriction base="xsd:string">
+            
+      <xsd:minLength value="1"/>
+            
+      <xsd:maxLength value="255"/>
+        
+    </xsd:restriction>
+    
+  </xsd:simpleType>
+
+    
+  <xsd:element name="FaultDetail">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element name="code" type="xsd:string"/>
+                
+        <xsd:element name="message" nillable="true" type="xsd:string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+
+    
+  <xsd:element name="retrieveMessageRequest">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element name="messageID" nillable="true" type="tns:max255-non-empty-string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+    
+  <xsd:element name="retrieveMessageResponse">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element minOccurs="0" name="bodyload" type="tns:LargePayloadType"/>
+                
+        <xsd:element maxOccurs="unbounded" minOccurs="0" name="payload" type="tns:LargePayloadType"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+
+    
+  <xsd:element name="listPendingMessagesRequest" nillable="false" type="xsd:anyType"/>
+
+    
+  <xsd:element name="listPendingMessagesResponse">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element maxOccurs="unbounded" minOccurs="0" name="messageID" nillable="true" type="xsd:string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+    
+  <xsd:element name="messageErrorsRequest">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element name="messageID" type="tns:max255-non-empty-string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+    
+  <xsd:element name="messageStatusRequest">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element name="messageID" type="tns:max255-non-empty-string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+
+    
+  <xsd:element name="submitRequest">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element minOccurs="0" name="bodyload" type="tns:LargePayloadType"/>
+                
+        <xsd:element maxOccurs="unbounded" minOccurs="0" name="payload" nillable="true" type="tns:LargePayloadType"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+    
+  <xsd:element name="submitResponse">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element maxOccurs="unbounded" minOccurs="0" name="messageID" nillable="true" type="xsd:string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+
+    
+  <xsd:complexType name="PayloadType">
+            
+    <xsd:simpleContent>
+                
+      <xsd:extension base="ns1:base64Binary">
+                    
+        <xsd:attribute name="payloadId" type="xsd:token" use="required"/>
+                
+      </xsd:extension>
+            
+    </xsd:simpleContent>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="LargePayloadType">
+        
+    <xsd:sequence>
+            
+      <xsd:element name="value" ns1:expectedContentTypes="application/octet-stream" type="xsd:base64Binary"/>
+        
+    </xsd:sequence>
+        
+    <xsd:attribute name="payloadId" type="xsd:token"/>
+        
+    <xsd:attribute name="contentType" type="xsd:string"/>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="errorResultImpl">
+        
+    <xsd:sequence>
+            
+      <xsd:element minOccurs="0" name="errorCode" type="tns:errorCode"/>
+            
+      <xsd:element minOccurs="0" name="errorDetail" type="xsd:string"/>
+            
+      <xsd:element minOccurs="0" name="messageInErrorId" type="xsd:string"/>
+            
+      <xsd:element minOccurs="0" name="mshRole" type="tns:mshRole"/>
+            
+      <xsd:element minOccurs="0" name="notified" type="xsd:dateTime"/>
+            
+      <xsd:element minOccurs="0" name="timestamp" type="xsd:dateTime"/>
+        
+    </xsd:sequence>
+    
+  </xsd:complexType>
+
+    
+  <xsd:complexType name="PayloadURLType">
+        
+    <xsd:simpleContent>
+            
+      <xsd:extension base="xsd:string">
+                
+        <xsd:attribute name="payloadId" type="xsd:token" use="required"/>
+            
+      </xsd:extension>
+        
+    </xsd:simpleContent>
+    
+  </xsd:complexType>
+
+    
+  <xsd:simpleType name="messageStatus">
+        
+    <xsd:restriction base="xsd:string">
+            
+      <xsd:enumeration value="READY_TO_SEND"/>
+            
+      <xsd:enumeration value="READY_TO_PULL"/>
+            
+      <xsd:enumeration value="BEING_PULLED"/>
+            
+      <xsd:enumeration value="SEND_ENQUEUED"/>
+            
+      <xsd:enumeration value="SEND_IN_PROGRESS"/>
+            
+      <xsd:enumeration value="WAITING_FOR_RECEIPT"/>
+            
+      <xsd:enumeration value="ACKNOWLEDGED"/>
+            
+      <xsd:enumeration value="ACKNOWLEDGED_WITH_WARNING"/>
+            
+      <xsd:enumeration value="SEND_ATTEMPT_FAILED"/>
+            
+      <xsd:enumeration value="SEND_FAILURE"/>
+            
+      <xsd:enumeration value="NOT_FOUND"/>
+            
+      <xsd:enumeration value="WAITING_FOR_RETRY"/>
+            
+      <xsd:enumeration value="RECEIVED"/>
+            
+      <xsd:enumeration value="RECEIVED_WITH_WARNINGS"/>
+            
+      <xsd:enumeration value="DELETED"/>
+            
+      <xsd:enumeration value="DOWNLOADED"/>
+        
+    </xsd:restriction>
+    
+  </xsd:simpleType>
+
+    
+  <xsd:simpleType name="errorCode">
+        
+    <xsd:restriction base="xsd:string">
+            
+      <xsd:enumeration value="EBMS_0001"/>
+            
+      <xsd:enumeration value="EBMS_0002"/>
+            
+      <xsd:enumeration value="EBMS_0003"/>
+            
+      <xsd:enumeration value="EBMS_0004"/>
+            
+      <xsd:enumeration value="EBMS_0005"/>
+            
+      <xsd:enumeration value="EBMS_0006"/>
+            
+      <xsd:enumeration value="EBMS_0007"/>
+            
+      <xsd:enumeration value="EBMS_0008"/>
+            
+      <xsd:enumeration value="EBMS_0009"/>
+            
+      <xsd:enumeration value="EBMS_0010"/>
+            
+      <xsd:enumeration value="EBMS_0011"/>
+            
+      <xsd:enumeration value="EBMS_0101"/>
+            
+      <xsd:enumeration value="EBMS_0102"/>
+            
+      <xsd:enumeration value="EBMS_0103"/>
+            
+      <xsd:enumeration value="EBMS_0201"/>
+            
+      <xsd:enumeration value="EBMS_0202"/>
+            
+      <xsd:enumeration value="EBMS_0301"/>
+            
+      <xsd:enumeration value="EBMS_0302"/>
+            
+      <xsd:enumeration value="EBMS_0303"/>
+            
+      <xsd:enumeration value="EBMS_0020"/>
+            
+      <xsd:enumeration value="EBMS_0021"/>
+            
+      <xsd:enumeration value="EBMS_0022"/>
+            
+      <xsd:enumeration value="EBMS_0023"/>
+            
+      <xsd:enumeration value="EBMS_0030"/>
+            
+      <xsd:enumeration value="EBMS_0031"/>
+            
+      <xsd:enumeration value="EBMS_0040"/>
+            
+      <xsd:enumeration value="EBMS_0041"/>
+            
+      <xsd:enumeration value="EBMS_0042"/>
+            
+      <xsd:enumeration value="EBMS_0043"/>
+            
+      <xsd:enumeration value="EBMS_0044"/>
+            
+      <xsd:enumeration value="EBMS_0045"/>
+            
+      <xsd:enumeration value="EBMS_0046"/>
+            
+      <xsd:enumeration value="EBMS_0047"/>
+            
+      <xsd:enumeration value="EBMS_0048"/>
+            
+      <xsd:enumeration value="EBMS_0049"/>
+            
+      <xsd:enumeration value="EBMS_0050"/>
+            
+      <xsd:enumeration value="EBMS_0051"/>
+            
+      <xsd:enumeration value="EBMS_0052"/>
+            
+      <xsd:enumeration value="EBMS_0053"/>
+            
+      <xsd:enumeration value="EBMS_0054"/>
+            
+      <xsd:enumeration value="EBMS_0055"/>
+            
+      <xsd:enumeration value="EBMS_0060"/>
+            
+      <xsd:enumeration value="EBMS_0065"/>
+        
+    </xsd:restriction>
+    
+  </xsd:simpleType>
+    
+  <xsd:simpleType name="mshRole">
+        
+    <xsd:restriction base="xsd:string">
+            
+      <xsd:enumeration value="SENDING"/>
+            
+      <xsd:enumeration value="RECEIVING"/>
+        
+    </xsd:restriction>
+    
+  </xsd:simpleType>
+    
+  <xsd:complexType final="#all" name="errorResultImplArray">
+        
+    <xsd:sequence>
+            
+      <xsd:element maxOccurs="unbounded" minOccurs="0" name="item" nillable="true" type="tns:errorResultImpl"/>
+        
+    </xsd:sequence>
+    
+  </xsd:complexType>
+    
+  <xsd:element name="getStatusRequest" nillable="true">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element name="messageID" type="tns:max255-non-empty-string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+    
+  <xsd:element name="statusRequest" nillable="true">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element name="messageID" type="tns:max255-non-empty-string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+    
+  <xsd:element name="getStatusResponse" nillable="true" type="tns:messageStatus"/>
+    
+  <xsd:element name="getErrorsRequest" nillable="true">
+        
+    <xsd:complexType>
+            
+      <xsd:sequence>
+                
+        <xsd:element name="messageID" type="tns:max255-non-empty-string"/>
+            
+      </xsd:sequence>
+        
+    </xsd:complexType>
+    
+  </xsd:element>
+    
+  <xsd:element name="getMessageErrorsResponse" nillable="true" type="tns:errorResultImplArray"/>
+
+</xsd:schema>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+
+ 
+  <xs:annotation>
+  
+    <xs:documentation>
+   See http://www.w3.org/XML/1998/namespace.html and
+   http://www.w3.org/TR/REC-xml for information about this namespace.
+
+    This schema document describes the XML namespace, in a form
+    suitable for import by other schema documents.  
+
+    Note that local names in this namespace are intended to be defined
+    only by the World Wide Web Consortium or its subgroups.  The
+    following names are currently defined in this namespace and should
+    not be used with conflicting semantics by any Working Group,
+    specification, or document instance:
+
+    base (as an attribute name): denotes an attribute whose value
+         provides a URI to be used as the base for interpreting any
+         relative URIs in the scope of the element on which it
+         appears; its value is inherited.  This name is reserved
+         by virtue of its definition in the XML Base specification.
+
+    id   (as an attribute name): denotes an attribute whose value
+         should be interpreted as if declared to be of type ID.
+         The xml:id specification is not yet a W3C Recommendation,
+         but this attribute is included here to facilitate experimentation
+         with the mechanisms it proposes.  Note that it is _not_ included
+         in the specialAttrs attribute group.
+
+    lang (as an attribute name): denotes an attribute whose value
+         is a language code for the natural language of the content of
+         any element; its value is inherited.  This name is reserved
+         by virtue of its definition in the XML specification.
+  
+    space (as an attribute name): denotes an attribute whose
+         value is a keyword indicating what whitespace processing
+         discipline is intended for the content of the element; its
+         value is inherited.  This name is reserved by virtue of its
+         definition in the XML specification.
+
+    Father (in any context at all): denotes Jon Bosak, the chair of 
+         the original XML Working Group.  This name is reserved by 
+         the following decision of the W3C XML Plenary and 
+         XML Coordination groups:
+
+             In appreciation for his vision, leadership and dedication
+             the W3C XML Plenary on this 10th day of February, 2000
+             reserves for Jon Bosak in perpetuity the XML name
+             xml:Father
+  </xs:documentation>
+ 
+  </xs:annotation>
+
+ 
+  <xs:annotation>
+  
+    <xs:documentation>This schema defines attributes and an attribute group
+        suitable for use by
+        schemas wishing to allow xml:base, xml:lang, xml:space or xml:id
+        attributes on elements they define.
+
+        To enable this, such a schema must import this schema
+        for the XML namespace, e.g. as follows:
+        &lt;schema . . .>
+         . . .
+         &lt;import namespace="http://www.w3.org/XML/1998/namespace"
+                    schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+        Subsequently, qualified reference to any of the attributes
+        or the group defined below will have the desired effect, e.g.
+
+        &lt;type . . .>
+         . . .
+         &lt;attributeGroup ref="xml:specialAttrs"/>
+ 
+         will define a type which will schema-validate an instance
+         element with any of those attributes</xs:documentation>
+ 
+  </xs:annotation>
+
+ 
+  <xs:annotation>
+  
+    <xs:documentation>In keeping with the XML Schema WG's standard versioning
+   policy, this schema document will persist at
+   http://www.w3.org/2005/08/xml.xsd.
+   At the date of issue it can also be found at
+   http://www.w3.org/2001/xml.xsd.
+   The schema document at that URI may however change in the future,
+   in order to remain compatible with the latest version of XML Schema
+   itself, or with the XML namespace itself.  In other words, if the XML
+   Schema or XML namespaces change, the version of this document at
+   http://www.w3.org/2001/xml.xsd will change
+   accordingly; the version at
+   http://www.w3.org/2005/08/xml.xsd will not change.
+  </xs:documentation>
+ 
+  </xs:annotation>
+
+ 
+  <xs:attribute name="lang">
+  
+    <xs:annotation>
+   
+      <xs:documentation>Attempting to install the relevant ISO 2- and 3-letter
+         codes as the enumerated possible values is probably never
+         going to be a realistic possibility.  See
+         RFC 3066 at http://www.ietf.org/rfc/rfc3066.txt and the IANA registry
+         at http://www.iana.org/assignments/lang-tag-apps.htm for
+         further information.
+
+         The union allows for the 'un-declaration' of xml:lang with
+         the empty string.</xs:documentation>
+  
+    </xs:annotation>
+  
+    <xs:simpleType>
+   
+      <xs:union memberTypes="xs:language">
+    
+        <xs:simpleType>    
+     
+          <xs:restriction base="xs:string">
+      
+            <xs:enumeration value=""/>
+     
+          </xs:restriction>
+    
+        </xs:simpleType>
+   
+      </xs:union>
+  
+    </xs:simpleType>
+ 
+  </xs:attribute>
+
+ 
+  <xs:attribute name="space">
+  
+    <xs:simpleType>
+   
+      <xs:restriction base="xs:NCName">
+    
+        <xs:enumeration value="default"/>
+    
+        <xs:enumeration value="preserve"/>
+   
+      </xs:restriction>
+  
+    </xs:simpleType>
+ 
+  </xs:attribute>
+
+ 
+  <xs:attribute name="base" type="xs:anyURI">
+  
+    <xs:annotation>
+   
+      <xs:documentation>See http://www.w3.org/TR/xmlbase/ for
+                     information about this attribute.</xs:documentation>
+  
+    </xs:annotation>
+ 
+  </xs:attribute>
+ 
+ 
+  <xs:attribute name="id" type="xs:ID">
+  
+    <xs:annotation>
+   
+      <xs:documentation>See http://www.w3.org/TR/xml-id/ for
+                     information about this attribute.</xs:documentation>
+  
+    </xs:annotation>
+ 
+  </xs:attribute>
+
+ 
+  <xs:attributeGroup name="specialAttrs">
+  
+    <xs:attribute ref="xml:base"/>
+  
+    <xs:attribute ref="xml:lang"/>
+  
+    <xs:attribute ref="xml:space"/>
+ 
+  </xs:attributeGroup>
+
+
+</xs:schema>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xmime="http://www.w3.org/2005/05/xmlmime" targetNamespace="http://www.w3.org/2005/05/xmlmime">
+
+    
+  <xs:attribute name="contentType">
+        
+    <xs:simpleType>
+            
+      <xs:restriction base="xs:string">
+                
+        <xs:minLength value="3"/>
+            
+      </xs:restriction>
+        
+    </xs:simpleType>
+    
+  </xs:attribute>
+
+    
+  <xs:attribute name="expectedContentTypes" type="xs:string"/>
+
+    
+  <xs:complexType name="base64Binary">
+        
+    <xs:simpleContent>
+            
+      <xs:extension base="xs:base64Binary">
+                
+        <xs:attribute ref="xmime:contentType"/>
+            
+      </xs:extension>
+        
+    </xs:simpleContent>
+    
+  </xs:complexType>
+
+    
+  <xs:complexType name="hexBinary">
+        
+    <xs:simpleContent>
+            
+      <xs:extension base="xs:hexBinary">
+                
+        <xs:attribute ref="xmime:contentType"/>
+            
+      </xs:extension>
+        
+    </xs:simpleContent>
+    
+  </xs:complexType>
+
+
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="getStatusResponse">
+    <wsdl:part element="tns:getStatusResponse" name="getStatusResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="listPendingMessagesResponse">
+    <wsdl:part element="tns:listPendingMessagesResponse" name="listPendingMessagesResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getMessageErrorsResponse">
+    <wsdl:part element="tns:getMessageErrorsResponse" name="getMessageErrorsResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="submitMessageResponse">
+    <wsdl:part element="tns:submitResponse" name="submitResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="RetrieveMessageFault">
+    <wsdl:part element="tns:FaultDetail" name="RetrieveMessageFault">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getMessageErrors">
+    <wsdl:part element="tns:getErrorsRequest" name="getErrorsRequest">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getStatus">
+    <wsdl:part element="tns:statusRequest" name="statusRequest">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="listPendingMessages">
+    <wsdl:part element="tns:listPendingMessagesRequest" name="listPendingMessagesRequest">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="SubmitMessageFault">
+    <wsdl:part element="tns:FaultDetail" name="SubmitMessageFault">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="StatusFault">
+    <wsdl:part element="tns:FaultDetail" name="StatusFault">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="submitMessage">
+    <wsdl:part element="tns:submitRequest" name="submitRequest">
+    </wsdl:part>
+    <wsdl:part element="ns1:Messaging" name="ebMSHeaderInfo">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="retrieveMessage">
+    <wsdl:part element="tns:retrieveMessageRequest" name="retrieveMessageRequest">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="retrieveMessageResponse">
+    <wsdl:part element="tns:retrieveMessageResponse" name="retrieveMessageResponse">
+    </wsdl:part>
+    <wsdl:part element="ns1:Messaging" name="ebMSHeaderInfo">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="BackendInterface">
+    <wsdl:operation name="listPendingMessages">
+      <wsdl:input message="tns:listPendingMessages" name="listPendingMessages">
+    </wsdl:input>
+      <wsdl:output message="tns:listPendingMessagesResponse" name="listPendingMessagesResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getMessageErrors">
+      <wsdl:input message="tns:getMessageErrors" name="getMessageErrors">
+    </wsdl:input>
+      <wsdl:output message="tns:getMessageErrorsResponse" name="getMessageErrorsResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getStatus">
+      <wsdl:input message="tns:getStatus" name="getStatus">
+    </wsdl:input>
+      <wsdl:output message="tns:getStatusResponse" name="getStatusResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:StatusFault" name="StatusFault">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="submitMessage">
+      <wsdl:input message="tns:submitMessage" name="submitMessage">
+    </wsdl:input>
+      <wsdl:output message="tns:submitMessageResponse" name="submitMessageResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:SubmitMessageFault" name="SubmitMessageFault">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="retrieveMessage" parameterOrder="retrieveMessageRequest retrieveMessageResponse ebMSHeaderInfo">
+      <wsdl:input message="tns:retrieveMessage" name="retrieveMessage">
+    </wsdl:input>
+      <wsdl:output message="tns:retrieveMessageResponse" name="retrieveMessageResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:RetrieveMessageFault" name="RetrieveMessageFault">
+    </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BackendService_1_1SoapBinding" type="tns:BackendInterface">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="listPendingMessages">
+      <soap12:operation soapAction="" style="document"/>
+      <wsdl:input name="listPendingMessages">
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="listPendingMessagesResponse">
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getMessageErrors">
+      <soap12:operation soapAction="" style="document"/>
+      <wsdl:input name="getMessageErrors">
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getMessageErrorsResponse">
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getStatus">
+      <soap12:operation soapAction="" style="document"/>
+      <wsdl:input name="getStatus">
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getStatusResponse">
+        <soap12:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="StatusFault">
+        <soap12:fault name="StatusFault" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="submitMessage">
+      <soap12:operation soapAction="" style="document"/>
+      <wsdl:input name="submitMessage">
+        <soap12:header message="tns:submitMessage" part="ebMSHeaderInfo" use="literal">
+        </soap12:header>
+        <soap12:body parts="submitRequest" use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="submitMessageResponse">
+        <soap12:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="SubmitMessageFault">
+        <soap12:fault name="SubmitMessageFault" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="retrieveMessage">
+      <soap12:operation soapAction="" style="document"/>
+      <wsdl:input name="retrieveMessage">
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="retrieveMessageResponse">
+        <soap12:header message="tns:retrieveMessageResponse" part="ebMSHeaderInfo" use="literal">
+        </soap12:header>
+        <soap12:body parts="retrieveMessageResponse" use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="RetrieveMessageFault">
+        <soap12:fault name="RetrieveMessageFault" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="BackendService_1_1">
+    <wsdl:port binding="tns:BackendService_1_1SoapBinding" name="BACKEND_PORT">
+      <soap12:address location="http://localhost:8080/domibus/services/backend"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

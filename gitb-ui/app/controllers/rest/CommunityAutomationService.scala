@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -15,7 +15,9 @@
 
 package controllers.rest
 
+import controllers.rest.BaseAutomationService.{DeleteEndpoint, GetEndpoint, PostEndpoint, PutEndpoint}
 import controllers.util.{AuthorizedAction, ParameterExtractor, ResponseConstructor}
+import managers.ratelimit.RateLimitManager
 import managers.{AuthorizationManager, CommunityManager, OrganizationManager, SystemManager}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
@@ -29,11 +31,12 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                             communityManager: CommunityManager,
                                             organisationManager: OrganizationManager,
                                             systemManager: SystemManager,
+                                            rateLimitManager: RateLimitManager,
                                             authorizationManager: AuthorizationManager)
-                                           (implicit ec: ExecutionContext) extends BaseAutomationService(cc) {
+                                           (implicit ec: ExecutionContext) extends BaseAutomationService(cc, rateLimitManager) {
 
   def createCommunity(): Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canCreateCommunityThroughAutomationApi(request), { body =>
+    processAsJson(request, PutEndpoint("/community"), () => authorizationManager.canCreateCommunityThroughAutomationApi(request), { body =>
       val input = JsonUtil.parseJsCreateCommunityRequest(body)
       communityManager.createCommunityThroughAutomationApi(input).map { savedApiKey =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
@@ -42,7 +45,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteCommunity(community: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canDeleteCommunityThroughAutomationApi(request), { _ =>
+    process(request, DeleteEndpoint("/community/{community}"), () => authorizationManager.canDeleteCommunityThroughAutomationApi(request), { _ =>
       communityManager.deleteCommunityThroughAutomationApi(community).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -50,7 +53,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def updateCommunity(community: String): Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageAnyCommunityThroughAutomationApi(request), { body =>
+    processAsJson(request, PostEndpoint("/community/{community}"), () => authorizationManager.canManageAnyCommunityThroughAutomationApi(request), { body =>
       val input = JsonUtil.parseJsUpdateCommunityRequest(body, community)
       communityManager.updateCommunityThroughAutomationApi(input, allowDomainChange = true).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -59,7 +62,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def updateOwnCommunity(): Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageCommunityThroughAutomationApi(request), { body =>
+    processAsJson(request, PostEndpoint("/community"), () => authorizationManager.canManageCommunityThroughAutomationApi(request), { body =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateCommunityRequest(body, communityKey)
       communityManager.updateCommunityThroughAutomationApi(input, allowDomainChange = false).map { _ =>
@@ -69,7 +72,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getOrganisations(): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/organisation"), () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       organisationManager.getOrganisationsThroughAutomationApi(communityKey).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationsForAutomationApi(result).toString())
@@ -78,7 +81,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getOrganisation(organisationKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/organisation/{organisation}"), () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       organisationManager.getOrganisationThroughAutomationApi(communityKey, organisationKey).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationForAutomationApi(result).toString())
@@ -87,7 +90,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def createOrganisation(): Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { body =>
+    processAsJson(request, PutEndpoint("/organisation"), () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { body =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCreateOrganisationRequest(body, communityKey)
       organisationManager.createOrganisationThroughAutomationApi(input).map { savedApiKey =>
@@ -97,7 +100,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteOrganisation(organisation: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
+    process(request, DeleteEndpoint("/organisation/{organisation}"), () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       organisationManager.deleteOrganisationThroughAutomationApi(organisation, communityKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -106,7 +109,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def updateOrganisation(organisation: String): Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { body =>
+    processAsJson(request, PostEndpoint("/organisation/{organisation}"), () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { body =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateOrganisationRequest(body, organisation, communityKey)
       organisationManager.updateOrganisationThroughAutomationApi(input).map { _ =>
@@ -116,7 +119,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getSystems(organisationKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/organisation/{organisation}/systems"), () => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.getSystemsThroughAutomationApi(communityKey, organisationKey).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemsForAutomationApi(result).toString())
@@ -125,7 +128,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getSystem(systemKey: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
+    process(request, GetEndpoint("/system/{system}"), () => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.getSystemThroughAutomationApi(communityKey, systemKey).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemForAutomationApi(result).toString())
@@ -134,7 +137,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def createSystem(): Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageSystemThroughAutomationApi(request), { body =>
+    processAsJson(request, PutEndpoint("/system"), () => authorizationManager.canManageSystemThroughAutomationApi(request), { body =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCreateSystemRequest(body, communityKey)
       systemManager.createSystemThroughAutomationApi(input).map { savedApiKey =>
@@ -144,7 +147,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteSystem(system: String): Action[AnyContent] = authorizedAction.async { request =>
-    process(() => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
+    process(request, DeleteEndpoint("/system/{system}"), () => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.deleteSystemThroughAutomationApi(system, communityKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -153,7 +156,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def updateSystem(system: String): Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageSystemThroughAutomationApi(request), { body =>
+    processAsJson(request, PostEndpoint("/system/{system}"), () => authorizationManager.canManageSystemThroughAutomationApi(request), { body =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateSystemRequest(body, system, communityKey)
       systemManager.updateSystemThroughAutomationApi(input).map { _ =>

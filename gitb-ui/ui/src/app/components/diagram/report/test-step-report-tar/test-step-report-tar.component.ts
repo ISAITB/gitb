@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { ReportService } from 'src/app/services/report.service';
-import { AnyContent } from '../../any-content';
-import { AssertionReport } from '../../assertion-report';
-import { ReportSupport } from '../report-support';
-import { StepReport } from '../step-report';
-import { HtmlService } from 'src/app/services/html.service';
-import { DataService } from 'src/app/services/data.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ReportService} from 'src/app/services/report.service';
+import {AnyContent} from '../../any-content';
+import {AssertionReport} from '../../assertion-report';
+import {ReportSupport} from '../report-support';
+import {StepReport} from '../step-report';
+import {HtmlService} from 'src/app/services/html.service';
+import {DataService} from 'src/app/services/data.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: '[app-test-step-report-tar]',
@@ -35,9 +35,10 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
   @Input() report!: StepReport
   @Input() sessionId!: string
   hasContextItems = false
+  hasReportItems = false
 
   constructor(
-    modalService: BsModalService,
+    modalService: NgbModal,
     reportService: ReportService,
     htmlService: HtmlService,
     dataService: DataService
@@ -51,13 +52,18 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
         this.hasContextItems = true
       }
     }
+    if (this.report.reports != null && this.report.reports.assertionReports != null && this.report.reports.assertionReports.length > 0) {
+      if (this.report.counters != null && (this.report.counters.nrOfErrors > 0 || this.report.counters.nrOfWarnings > 0 || this.report.counters.nrOfAssertions > 0)) {
+        this.hasReportItems = true
+      }
+    }
   }
 
   private setContextValues(context: AnyContent) {
     if (context.value != undefined) {
       context.valueToUse = context.value
       if (!this.isFileReference(context) && context.embeddingMethod == Constants.EMBEDDING_METHOD.BASE64) {
-        context.valueToUse = this.base64ToString(context.valueToUse)
+        context.valueToUse = this.dataService.base64ToString(context.valueToUse)
         context.embeddingMethod = 'STRING'
       }
     }
@@ -66,10 +72,6 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
         this.setContextValues(childContext)
       }
     }
-  }
-
-  private base64ToString(base64: string) {
-    return atob(base64)
   }
 
   private findContextEntryByName(context: AnyContent, nameToFind: string): AnyContent|undefined {

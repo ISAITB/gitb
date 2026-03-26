@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -444,6 +444,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       case Constants.EmailSettings => "Email settings"
       case Constants.SoftwareVersionCheck => "Software version check settings"
       case Constants.StartupWizard => "Startup configuration wizard"
+      case Constants.UsageTips => "Usage tips"
       case _ => setting
     }
   }

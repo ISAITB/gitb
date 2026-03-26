@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -19,11 +19,21 @@ import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
 import {HealthCardService} from '../../types/health-card-service';
 import {HealthCheckService} from '../../services/health-check.service';
-import {forkJoin} from 'rxjs';
+import {finalize, forkJoin, Observable} from 'rxjs';
 import {ServiceHealthCardComponentApi} from '../../components/service-health-card/service-health-card-component-api';
 import {DataService} from '../../services/data.service';
 import {MenuItem} from '../../types/menu-item.enum';
 import {MenuItemStatus} from '../../types/menu-item-status.enum';
+import {Constants} from '../../common/constants';
+import {TestServiceBasicInfo} from '../../types/test-service-basic-info';
+import {HealthInfo} from '../../types/health-info';
+import {map} from 'rxjs/operators';
+import {HealthOverview} from '../../components/service-health-card/health-overview';
+import {ConformanceService} from '../../services/conformance.service';
+import {MultiSelectConfig} from '../../components/multi-select-filter/multi-select-config';
+import {Domain} from '../../types/domain';
+import {FilterUpdate} from '../../components/test-filter/filter-update';
+import {UsageTipService} from '../../services/usage-tip.service';
 
 @Component({
   selector: 'app-service-health-dashboard',
@@ -34,92 +44,192 @@ import {MenuItemStatus} from '../../types/menu-item-status.enum';
 export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
 
   @ViewChildren("serviceCard") serviceCards?: QueryList<ServiceHealthCardComponentApi>;
+  @ViewChildren("testServiceCard") testServiceCards?: QueryList<ServiceHealthCardComponentApi>;
 
-  cards!: HealthCardInfo[]
+  cards: HealthCardInfo[] = []
   checkAllPending = false
-  overviewMessage?: string
-  overviewHealth?: HealthStatus
+  checkTestServicesPending = false
+  coreServiceOverview: HealthOverview = { status: HealthStatus.UNKNOWN }
+  testServiceOverview: HealthOverview = { status: HealthStatus.UNKNOWN }
+  selectedDomainId?: number
+  communityId?: number
+  testServicesStatus = {status: Constants.STATUS.NONE}
+  testServiceCardData: HealthCardInfo[] = []
   protected readonly HealthStatus = HealthStatus;
+  protected readonly Constants = Constants;
+  domainSelectConfig?: MultiSelectConfig<Domain>
 
   constructor(
     private readonly routingService: RoutingService,
     private readonly healthCheckService: HealthCheckService,
-    private readonly dataService: DataService
+    private readonly conformanceService: ConformanceService,
+    protected readonly dataService: DataService,
+    private readonly usageTipService: UsageTipService
   ) {
   }
 
   ngOnInit(): void {
-    this.cards = []
-    this.cards.push({
-      type: HealthCardService.SOFTWARE_VERSION,
-      title: "Software version updates",
-      checkFunction: () => this.healthCheckService.checkSoftwareVersion()
-    })
-    this.cards.push({
-      type: HealthCardService.USER_INTERFACE,
-      title: "User interface communications",
-      checkFunction: () => this.healthCheckService.checkUserInterfaceCommunication()
-    })
-    this.cards.push({
-      type: HealthCardService.UI_SERVICE_COMMUNICATION,
-      title: "Test engine communications",
-      checkFunction: () => this.healthCheckService.checkTestEngineCommunication()
-    })
-    this.cards.push({
-      type: HealthCardService.HANDLER_CALLBACKS,
-      title: "Test engine callbacks",
-      checkFunction: () => this.healthCheckService.checkTestEngineCallbacks()
-    })
-    this.cards.push({
-      type: HealthCardService.ANTIVIRUS,
-      title: "Antivirus scanning service",
-      checkFunction: () => this.healthCheckService.checkAntivirusService()
-    })
-    this.cards.push({
-      type: HealthCardService.SMTP_SERVICE,
-      title: "Email (SMTP) service",
-      checkFunction: () => this.healthCheckService.checkEmailService()
-    })
-    this.cards.push({
-      type: HealthCardService.TSA_SERVICE,
-      title: "Trusted timestamp service",
-      checkFunction: () => this.healthCheckService.checkTrustedTimestampService()
-    })
-    this.checkAllServices()
+    this.domainSelectConfig = {
+      name: 'domains',
+      textField: 'fname',
+      filterLabel: `All ${this.dataService.labelDomainsLower()}`,
+      filterLabelIcon: Constants.BUTTON_ICON.DOMAIN,
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      singleSelectionClearable: true,
+      searchPlaceholder: `Search ${this.dataService.labelDomainsLower()}...`,
+      loader: () => this.conformanceService.getDomains()
+    }
+    /*
+     * Core services
+     */
+    if (this.dataService.isSystemAdmin) {
+      this.cards.push({
+        type: HealthCardService.SOFTWARE_VERSION,
+        title: "Software version updates",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkSoftwareVersion()
+      })
+      this.cards.push({
+        type: HealthCardService.USER_INTERFACE,
+        title: "User interface communications",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkUserInterfaceCommunication()
+      })
+      this.cards.push({
+        type: HealthCardService.UI_SERVICE_COMMUNICATION,
+        title: "Test engine communications",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkTestEngineCommunication()
+      })
+      this.cards.push({
+        type: HealthCardService.HANDLER_CALLBACKS,
+        title: "Test engine callbacks",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkTestEngineCallbacks()
+      })
+      this.cards.push({
+        type: HealthCardService.ANTIVIRUS,
+        title: "Antivirus scanning service",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkAntivirusService()
+      })
+      this.cards.push({
+        type: HealthCardService.SMTP_SERVICE,
+        title: "Email (SMTP) service",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkEmailService()
+      })
+      this.cards.push({
+        type: HealthCardService.TSA_SERVICE,
+        title: "Trusted timestamp service",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkTrustedTimestampService()
+      })
+      this.checkAllCoreServices()
+    }
+    /*
+     * Community services
+     */
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.community?.id
+    }
+    this.getTestServicesForHealthCheck()
     this.routingService.serviceHealthDashboardBreadcrumbs()
   }
 
   ngAfterViewInit(): void {
-    this.checkAllServices()
+    if (this.dataService.isSystemAdmin) {
+      this.checkAllCoreServices()
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.HEALTH_DASHBOARD)
+    }
   }
 
-  checkAllServices() {
+  checkAllCoreServices() {
     setTimeout(() => {
       if (this.serviceCards) {
         const tasks = this.serviceCards.map(serviceCard => {
           return serviceCard.checkStatus()
         })
         this.checkAllPending = true
-        forkJoin(tasks).subscribe(() => {
+        forkJoin(tasks).subscribe(() => {}).add(() => {
           this.updateStatus()
-        }).add(() => {
           this.checkAllPending = false
         })
       }
     })
   }
 
+  checkAllTestServices() {
+    setTimeout(() => {
+      if (this.testServiceCards) {
+        const tasks = this.testServiceCards.map(serviceCard => {
+          return serviceCard.checkStatus()
+        })
+        this.checkTestServicesPending = true
+        forkJoin(tasks).subscribe(() => {}).add(() => {
+          this.updateTestServiceStatus()
+          this.checkTestServicesPending = false
+        })
+      }
+    })
+  }
+
+  private serviceTypeCardIcon(serviceType: number): string {
+    switch (serviceType) {
+      case Constants.TEST_SERVICE_TYPE.MESSAGING: return Constants.BUTTON_ICON.MESSAGING_SERVICE;
+      case Constants.TEST_SERVICE_TYPE.VALIDATION: return Constants.BUTTON_ICON.VALIDATION_SERVICE;
+      default: return Constants.BUTTON_ICON.PROCESSING_SERVICE;
+    }
+  }
+
+  private getTestServicesForHealthCheck() {
+    let services$: Observable<TestServiceBasicInfo[]>
+    if (this.communityId != undefined) {
+      services$ = this.healthCheckService.getCommunityTestServicesForHealthCheck(this.communityId, this.selectedDomainId)
+    } else {
+      services$ = this.healthCheckService.getTestServicesForHealthCheck(this.selectedDomainId)
+    }
+    this.testServicesStatus.status = Constants.STATUS.PENDING
+    services$.pipe(
+      map(data => {
+        this.testServiceCardData = data.map(service => {
+          return {
+            id: service.id,
+            type: HealthCardService.CUSTOM_TEST_SERVICE,
+            icon: this.serviceTypeCardIcon(service.serviceType),
+            info: this.emptyHealthInfo(),
+            title: service.serviceName,
+            subtitle: service.domainName,
+            checkFunction: () => this.checkTestService(service.id, service.domainId)
+          }
+        })
+      }),
+      finalize(() => {
+        this.testServicesStatus.status = Constants.STATUS.FINISHED
+      })
+    ).subscribe(() => {})
+  }
+
+  checkTestService(serviceId: number, domainId: number): Observable<HealthInfo> {
+    return this.healthCheckService.testTestServiceById(serviceId, domainId)
+  }
+
   cardUpdated() {
     this.updateStatus()
   }
 
-  updateStatus() {
+  testServiceCardUpdated() {
+    this.updateTestServiceStatus()
+  }
+
+  private updateOverview(cards: HealthCardInfo[], overview: HealthOverview, serviceLabel: string): HealthStatus {
     let errorCount = 0
     let warningCount = 0
     let infoCount = 0
     let okCount = 0
     let unknownCount = 0
-    this.cards.forEach(card => {
+    cards.forEach((card) => {
       if (card.info) {
         switch (card.info.status) {
           case HealthStatus.ERROR: errorCount += 1; break;
@@ -131,27 +241,65 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
       }
     })
     if (errorCount > 0) {
-      this.overviewMessage = "One or more service checks reported failures. Click the relevant cards for more details."
-      this.overviewHealth = HealthStatus.ERROR
-      this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Error)
+      overview.message = `One or more ${serviceLabel} service checks reported failures. Click the relevant cards for more details.`
+      overview.status = HealthStatus.ERROR
     } else if (warningCount > 0) {
-      this.overviewMessage = "One or more service checks reported warnings. Click the relevant cards for more details."
-      this.overviewHealth = HealthStatus.WARNING
+      overview.message = `One or more ${serviceLabel} service checks reported warnings. Click the relevant cards for more details.`
+      overview.status = HealthStatus.WARNING
+    } else if (infoCount > 0) {
+      overview.message = `All ${serviceLabel} services are working correctly with additional information available. Click the relevant cards for more details.`
+      overview.status = HealthStatus.INFO
+    } else if (okCount == cards.length) {
+      overview.message = `All ${serviceLabel} services are working correctly. Click the relevant cards for more details.`
+      overview.status = HealthStatus.OK
+    } else {
+      overview.message = `It was not possible to determine the ${serviceLabel} service health status.`
+      overview.status = HealthStatus.INFO
+    }
+    return overview.status
+  }
+
+  private updateMenuIndicator() {
+    if (this.coreServiceOverview.status == HealthStatus.ERROR) {
+      this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Error)
+    } else if (this.coreServiceOverview.status == HealthStatus.WARNING) {
       this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Warning)
     } else {
-      if (infoCount > 0) {
-        this.overviewMessage = "All services are working correctly with additional information available. Click the relevant cards for more details."
-        this.overviewHealth = HealthStatus.INFO
-      } else if (okCount == this.cards.length) {
-        this.overviewMessage = "All services are working correctly. Click the relevant cards for more details."
-        this.overviewHealth = HealthStatus.OK
-      } else {
-        this.overviewMessage = "It was not possible to determine the status of internal services."
-        this.overviewHealth = HealthStatus.INFO
-      }
       this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.None)
     }
+  }
 
+  private updateStatus() {
+    this.updateOverview(this.cards, this.coreServiceOverview, "core")
+    this.updateMenuIndicator()
+  }
+
+  private updateTestServiceStatus() {
+    this.updateOverview(this.testServiceCardData, this.testServiceOverview, "custom test")
+    this.updateMenuIndicator()
+  }
+
+  domainChanged(event?: FilterUpdate<Domain>) {
+    if (event?.values.active.length == 1) {
+      this.selectedDomainId = event.values.active[0].id
+    } else {
+      this.selectedDomainId = undefined
+    }
+    this.emptyHealthOverview(this.testServiceOverview)
+    this.getTestServicesForHealthCheck()
+  }
+
+  private emptyHealthOverview(overview: HealthOverview): void {
+    overview.status = HealthStatus.UNKNOWN
+    overview.message = undefined
+  }
+
+  private emptyHealthInfo(): HealthInfo {
+    return {
+      status: HealthStatus.UNKNOWN,
+      summary: 'The custom test service has not been tested.',
+      details: ''
+    }
   }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -32,7 +32,11 @@ case class TestServiceInfo(parameterInfo: KeyValue, description: Option[Option[S
   }
 
   def getAsNewTestService(serviceId: Option[Long], parameterId: Long): TestService = {
-    TestService(serviceId.getOrElse(0L), serviceType.get.id.toShort, apiType.getOrElse(TestServiceApiType.SoapApi).id.toShort, identifier.flatten, version.flatten, authBasicUsername.flatten, authBasicPassword.flatten, authTokenUsername.flatten, authTokenPassword.flatten, authTokenPasswordType.flatten.map(_.id.toShort), parameterId)
+    TestService(
+      serviceId.getOrElse(0L), serviceType.get.id.toShort, apiType.getOrElse(TestServiceApiType.SoapApi).id.toShort, identifier.flatten, version.flatten,
+      authBasicUsername.flatten, authBasicPassword.flatten, authTokenUsername.flatten, authTokenPassword.flatten, authTokenPasswordType.flatten.map(_.id.toShort),
+      monitorHealth = true, parameterId
+    )
   }
 
 }

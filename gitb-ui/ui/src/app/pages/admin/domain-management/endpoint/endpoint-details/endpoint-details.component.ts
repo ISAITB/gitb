@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -14,9 +14,8 @@
  */
 
 import {Component, EventEmitter, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
-import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -26,6 +25,7 @@ import {EndpointData} from './endpoint-data';
 import {EndpointParameter} from 'src/app/types/endpoint-parameter';
 import {RoutingService} from 'src/app/services/routing.service';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 
 @Component({
     selector: 'app-endpoint-details',
@@ -33,7 +33,7 @@ import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
     styles: [],
     standalone: false
 })
-export class EndpointDetailsComponent extends BaseComponent implements OnInit {
+export class EndpointDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   endpointId!: number
   actorId!: number
@@ -52,8 +52,9 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
     private readonly routingService: RoutingService,
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
-    private route: ActivatedRoute
-  ) { super() }
+    router: Router,
+    route: ActivatedRoute
+  ) { super(router, route) }
 
   ngOnInit(): void {
 		this.endpointId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID))
@@ -61,6 +62,10 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
 		this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
 		this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.loadEndpointData()
+  }
+
+  loadTab(tabIndex: number): void {
+    // Not needed - loaded by default.
   }
 
   private loadEndpointData() {
@@ -75,7 +80,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
   }
 
 	delete() {
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelEndpointLower()+"?", "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelEndpointLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.endpointService.deleteEndPoint(this.endpointId)
@@ -89,18 +94,20 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
   }
 
 	saveChanges() {
-    this.savePending = true
-		this.endpointService.updateEndPoint(this.endpointId, this.endpoint.name!, this.endpoint.description, this.actorId)
-    .subscribe(() => {
-      this.popupService.success(this.dataService.labelEndpoint()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.endpointId, type: BreadcrumbType.endpoint, label: this.endpoint.name!})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.endpointService.updateEndPoint(this.endpointId, this.endpoint.name!, this.endpoint.description, this.actorId)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelEndpoint()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.endpointId, type: BreadcrumbType.endpoint, label: this.endpoint.name!})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
 	saveDisabled() {
-		return !this.textProvided(this.endpoint?.name)
+		return !this.loaded || this.deletePending || this.savePending || !this.textProvided(this.endpoint?.name)
   }
 
 	back() {

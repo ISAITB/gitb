@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,15 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component } from '@angular/core';
-import { ReportService } from 'src/app/services/report.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { CommunityXmlReportFormComponent } from '../community-xml-report-form/community-xml-report-form.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { PreviewConfig } from '../community-xml-report-form/preview-config';
-import { ErrorService } from 'src/app/services/error.service';
+import {Component} from '@angular/core';
+import {ReportService} from 'src/app/services/report.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {CommunityXmlReportFormComponent} from '../community-xml-report-form/community-xml-report-form.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {PreviewConfig} from '../community-xml-report-form/preview-config';
+import {ErrorService} from 'src/app/services/error.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-statement-report-form',
@@ -34,7 +34,7 @@ export class ConformanceStatementReportFormComponent extends CommunityXmlReportF
     conformanceService: ConformanceService,
     reportService: ReportService,
     popupService: PopupService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     confirmationDialogService: ConfirmationDialogService,
     errorService: ErrorService
   ) { super(conformanceService, reportService, popupService, modalService, confirmationDialogService, errorService) }

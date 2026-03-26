@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class ReportGeneratorTest {
 
@@ -127,6 +128,7 @@ public class ReportGeneratorTest {
 
     private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled, List<TestCaseOverview.Tag> tags, String groupId, String result) throws DatatypeConfigurationException {
         TestCaseOverview data = new TestCaseOverview();
+        data.setSessionId(UUID.randomUUID().toString());
         // Labels
         data.setTitle(title);
         data.setTags(tags);
@@ -403,7 +405,7 @@ public class ReportGeneratorTest {
         data.setIncludeDetails(true);
         data.setIncludeMessage(true);
         data.setIncludeTestStatus(true);
-        data.setIncludeTestCases(false);
+        data.setIncludeTestCases(true);
         data.setIncludePageNumbers(false);
 
 //        data.setMessage("<strong>This is the result.</strong><img src=\"%s\"/>".formatted(Path.of("C:\\work\\gitb-repository\\files\\badges\\latest\\1\\SUCCESS.png").toUri()));
@@ -493,6 +495,10 @@ public class ReportGeneratorTest {
                     \t</steps>
                     </data>""");
             tar.getContext().getItem().get(2).getItem().get(1).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            tar.getContext().getItem().add(new AnyContent());
+            tar.getContext().getItem().get(3).setName("This is an item without a value");
+            tar.getContext().getItem().add(new AnyContent());
+            tar.getContext().getItem().get(4).setName("This is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value");
         }
         return tar;
     }

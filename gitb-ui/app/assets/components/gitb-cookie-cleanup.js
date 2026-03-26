@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -22,12 +22,10 @@ function setupLoginOptionElement(elementId, parameter) {
     }
 }
 function option(value) {
-    if (sessionStorage) {
-        if (value) {
-            sessionStorage.setItem('com.itb.loginOption', value);
-        } else {
-            sessionStorage.setItem('com.itb.loginOption', 'none');
-        }
+    if (value) {
+        document.cookie = 'LOGIN_OPTION='+value+";Path=/;SameSite=Strict";
+    } else {
+        document.cookie = 'LOGIN_OPTION=none;Path=/;SameSite=Strict';
     }
     let contextPath = document.getElementById('ctx-div').textContent;
     window.location.href = contextPath+'app';
@@ -37,9 +35,8 @@ function eraseCookies() {
         sessionStorage.clear();
     }
     let cookiePath = document.getElementById('cp-div').textContent;
+    document.cookie = 'LOGIN_OPTION=;Path=/;SameSite=Strict;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'ITB_REQUESTED_URL=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    document.cookie = 'tat=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    document.cookie = 'tat=;path='+cookiePath+';expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 }
 $(document).ready(function() {
     eraseCookies();

@@ -99,13 +99,21 @@
                                                                 <td class="cell-value">${testCase.endTime}</td>
                                                             </#if>
                                                         </tr>
+                                                        <#if testCase.sessionId??>
+                                                            <tr>
+                                                                <td class="cell-label">Session ID:</td>
+                                                                <td class="cell-value"<#if testCase.endTime??> colspan="3"</#if>>${testCase.sessionId}</td>
+                                                            </tr>
+                                                        </#if>
                                                     </table>
                                                 </div>
                                             </div>
-                                            <#if testCase.outputMessage??>
-                                                <div class="row output-message ${testCase.reportResult}">
-                                                    ${escape(testCase.outputMessage)}
-                                                </div>
+                                            <#if testCase.outputMessages??>
+                                                <div class="row output-message ${testCase.reportResult}"><#t>
+                                                    <#list testCase.outputMessages as message><#t>
+                                                        <div>${escape(message)}</div><#t>
+                                                    </#list><#t>
+                                                </div><#t>
                                             </#if>
                                         </div>
                                     </div>

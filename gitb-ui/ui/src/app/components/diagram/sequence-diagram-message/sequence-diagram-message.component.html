@@ -1,110 +1,135 @@
 <div [ngClass]="classForWrapper">
-  <div [ngClass]="classForMessage()" [class.hovering]="hoveringTitle" [class.notHovering]="!hoveringTitle">
-    <div class="message-type" [class.hovering]="hoveringTitle">
-      <div class="message-title" (click)="titleClick()" (mouseover)="hoveringTitle = true" (mouseout)="hoveringTitle = false"><app-collapsing-icon [isCollapsed]="!expanded"></app-collapsing-icon>{{message.title}}</div>
-      @if (message.type == 'loop' && message.sequences != null && message.sequences.length > 0) {
-        <div class="btn-group iterations" dropdown>
-          <button id="button-iterations" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-iterations">Iteration {{currentIterationIndex+1}} of {{message.sequences.length}}</button>
-          <ul id="dropdown-iterations" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-iterations">
-            @for (iteration of message.sequences; track iteration.id; let i = $index) {
-              @if (iteration != null) {
-                <li role="menuitem">
-                  <a class="dropdown-item" [ngClass]="{
-                    'processing': iteration.status == TEST_STATUS.PROCESSING,
-                    'skipped': iteration.status == TEST_STATUS.SKIPPED,
-                    'waiting': iteration.status == TEST_STATUS.WAITING,
-                    'error': iteration.status == TEST_STATUS.ERROR,
-                    'warning': iteration.status == TEST_STATUS.WARNING,
-                    'completed': iteration.status == TEST_STATUS.COMPLETED}" (click)="showLoopIteration(i); $event.preventDefault()" href>Iteration {{i+1}}</a>
-                </li>
-              }
+    <div [ngClass]="classForMessage()" [class.hovering]="hoveringTitle" [class.notHovering]="!hoveringTitle" [class.with-report]="message.report != null && !containerMessage" (click)="showReport()">
+        <div class="message-type" [class.hovering]="hoveringTitle">
+            <div class="message-title" (click)="titleClick()" (mouseover)="hoveringTitle = true"
+                 (mouseout)="hoveringTitle = false">
+                <app-collapsing-icon [isCollapsed]="!expanded"></app-collapsing-icon>
+                {{ message.title }}
+            </div>
+            @if (message.type == 'loop' && message.sequences != null && message.sequences.length > 0) {
+                <div class="btn-group iterations" ngbDropdown>
+                    <button id="button-iterations" ngbDropdownToggle type="button"
+                            class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-iterations">
+                        Iteration {{ currentIterationIndex + 1 }} of {{ message.sequences.length }}
+                    </button>
+                    <div id="dropdown-iterations" ngbDropdownMenu aria-labelledby="button-iterations">
+                        @for (iteration of message.sequences; track iteration.id; let i = $index) {
+                            <button ngbDropdownItem type="button" [ngClass]="{
+                                'processing': iteration.status == TEST_STATUS.PROCESSING,
+                                'skipped': iteration.status == TEST_STATUS.SKIPPED,
+                                'waiting': iteration.status == TEST_STATUS.WAITING,
+                                'error': iteration.status == TEST_STATUS.ERROR,
+                                'warning': iteration.status == TEST_STATUS.WARNING,
+                                'completed': iteration.status == TEST_STATUS.COMPLETED}"
+                               (click)="showLoopIteration(i)">Iteration {{ i + 1 }}</button>
+                        }
+                    </div>
+                </div>
             }
-          </ul>
         </div>
-      }
-    </div>
-    <div class="message-info">
-      @if (message.type == 'verify') {
-        <div class="step-icon">
-          <i class="fa-solid fa-gear" [ngClass]="{'fa-spin-override': message.status == TEST_STATUS.PROCESSING}"></i>
-        </div>
-      } @else if (message.type == 'process') {
-        <div class="step-icon">
-          <i class="fa-solid fa-gear" [ngClass]="{'fa-spin-override': message.status == TEST_STATUS.PROCESSING}"></i>
-        </div>
-      } @else if (message.type == 'exit') {
-        <div class="step-icon">
-          <i class="fa-regular fa-circle-dot"></i>
-        </div>
-      }
-      <div class="title-container">
-        @if (message.desc || message.documentation || message.type == 'verify' || message.type == 'process' || message.type == 'exit') {
-          <div class="title" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}
-            @if (message.documentation) {
-              <span (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa-solid fa-question-circle icon-documentation"></i></span>
+        <div class="message-info">
+            @if (reportableMessage) {
+                @if (message.report == null) {
+                    <span class="step-icon">
+                        @if (message.type == 'exit') {
+                            <i class="fa-regular fa-circle-dot icon-visible non-stacked"></i>
+                        } @else {
+                            <i class="fa-solid fa-gear icon-visible non-stacked" [ngClass]="{'fa-spin-override': message.status == TEST_STATUS.PROCESSING}"></i>
+                        }
+                    </span>
+                } @else {
+                    <span class="step-icon fa-stack">
+                        <i class="fa-solid fa-circle background-icon fa-stack-2x"></i>
+                        <i class="fa-solid fa-check foreground-icon completed-icon fa-stack-1x"></i>
+                        <i class="fa-solid fa-xmark foreground-icon error-icon fa-stack-1x"></i>
+                        <i class="fa-solid fa-exclamation foreground-icon warning-icon fa-stack-1x"></i>
+                    </span>
+                }
             }
-          </div>
+            @if (message.desc || message.documentation || !containerMessage) {
+                <div class="title-container">
+                    <div class="title">
+                        @if (message.type == "msg" && message.report != null) {
+                            <span class="step-icon fa-stack">
+                            <i class="fa-solid fa-circle background-icon fa-stack-2x"></i>
+                            <i class="fa-solid fa-check foreground-icon completed-icon fa-stack-1x"></i>
+                            <i class="fa-solid fa-xmark foreground-icon error-icon fa-stack-1x"></i>
+                            <i class="fa-solid fa-exclamation foreground-icon warning-icon fa-stack-1x"></i>
+                        </span>
+                        }
+                        @if (message.desc) {
+                            <span class="title-text">{{ message.desc }}</span>
+                        }
+                        @if (message.documentation) {
+                            <span class="documentation-icon fa-stack" (click)="showStepDocumentation(message.documentation); $event.stopPropagation()">
+                            <i class="fa-solid fa-circle background-icon fa-stack-2x"></i>
+                            <i class="fa-solid fa-question foreground-icon fa-stack-1x"></i>
+                        </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        @if (message.report != null && !containerMessage) {
+            <div class="message-report">
+                <span class="fa-stack">
+                    <i class="fa-solid fa-circle status-background-icon fa-stack-2x"></i>
+                    <i class="fa-solid fa-magnifying-glass status-foreground-icon fa-stack-1x" ></i>
+                </span>
+            </div>
         }
-      </div>
+        <div class="message-body" [ngbCollapse]="!expanded" [animation]="false">
+            @if (message.type == 'group') {
+                <div class="child-steps group" [ngClass]="classForReverseOffset">
+                    @for (subMessage of message.steps; track subMessage.id) {
+                        <app-sequence-diagram-message [message]="subMessage"
+                                                      [events]="events"></app-sequence-diagram-message>
+                    }
+                </div>
+            } @else if (message.type == 'loop') {
+                <div class="child-steps loop" [ngClass]="classForReverseOffset">
+                    @if (currentIterationIndex == -1) {
+                        @for (subMessage of message.steps; track subMessage.id) {
+                            <app-sequence-diagram-message [message]="subMessage"
+                                                          [events]="events"></app-sequence-diagram-message>
+                        }
+                    } @else {
+                        @for (subMessage of message.sequences![currentIterationIndex].steps!; track subMessage.id) {
+                            <app-sequence-diagram-message [message]="subMessage"
+                                                          [events]="events"></app-sequence-diagram-message>
+                        }
+                    }
+                </div>
+            } @else if (message.type == 'decision') {
+                <div class="child-steps then" [ngClass]="classForReverseOffset">
+                    @for (subMessage of message.then; track subMessage.id) {
+                        <app-sequence-diagram-message [message]="subMessage"
+                                                      [events]="events"></app-sequence-diagram-message>
+                    }
+                </div>
+                @if (message.else != undefined && message.else.length > 0) {
+                    <div class="child-steps else" [ngClass]="classForReverseOffset">
+                        @for (subMessage of message.else; track subMessage.id) {
+                            <app-sequence-diagram-message [message]="subMessage"
+                                                          [events]="events"></app-sequence-diagram-message>
+                        }
+                    </div>
+                }
+            } @else if (message.type == 'flow') {
+                @for (thread of message.threads; track i; let i = $index) {
+                    <div [ngClass]="classForThread(i)">
+                        @for (subMessage of thread; track subMessage.id) {
+                            <app-sequence-diagram-message [message]="subMessage"
+                                                          [events]="events"></app-sequence-diagram-message>
+                        }
+                    </div>
+                }
+            } @else if (message.type == 'msg' || message.type == 'interact') {
+                <div class="arrow"
+                     [ngClass]="{'reply': message.reply, 'normal': message.reply == undefined || !message.reply}"></div>
+            }
+        </div>
+        <app-sequence-diagram-message-status [message]="message"
+                                             [events]="events"></app-sequence-diagram-message-status>
     </div>
-    <div class="message-body" [collapse]="!expanded" [isAnimated]="false">
-      @if (message.report != null) {
-        <div class="message-report" (mouseenter)="hoveringReport = true" (mouseleave)="hoveringReport = false">
-          <a href class="report-link" (click)="showReport();$event.preventDefault()">
-            <span class="fa-stack">
-              <i class="fa-regular fa-file-lines report-icon" [class.hovering]="hoveringReport"></i>
-              <i class="fa-solid fa-circle status-background-icon"></i>
-              <i class="fa-solid fa-gear processing-icon"></i>
-              <i class="fa-solid fa-check completed-icon"></i>
-              <i class="fa-solid fa-times error-icon"></i>
-              <i class="fa-solid fa-exclamation warning-icon"></i>
-            </span>
-          </a>
-        </div>
-      }
-      @if (message.type == 'group') {
-        <div class="child-steps group" [ngClass]="classForReverseOffset">
-          @for (subMessage of message.steps; track subMessage.id) {
-            <app-sequence-diagram-message [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-          }
-        </div>
-      } @else if (message.type == 'loop') {
-        <div class="child-steps loop" [ngClass]="classForReverseOffset">
-          @if (currentIterationIndex == -1) {
-            @for (subMessage of message.steps; track subMessage.id) {
-              <app-sequence-diagram-message [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-            }
-          } @else {
-            @for (subMessage of message.sequences![currentIterationIndex].steps!; track subMessage.id) {
-              <app-sequence-diagram-message [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-            }
-          }
-        </div>
-      } @else if (message.type == 'decision') {
-        <div class="child-steps then" [ngClass]="classForReverseOffset">
-          @for (subMessage of message.then; track subMessage.id) {
-            <app-sequence-diagram-message [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-          }
-        </div>
-        @if (message.else != undefined && message.else.length > 0) {
-          <div class="child-steps else" [ngClass]="classForReverseOffset">
-            @for (subMessage of message.else; track subMessage.id) {
-              <app-sequence-diagram-message [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-            }
-          </div>
-        }
-      } @else if (message.type == 'flow') {
-        @for (thread of message.threads; track i; let i = $index) {
-          <div [ngClass]="classForThread(i)">
-            @for (subMessage of thread; track subMessage.id) {
-              <app-sequence-diagram-message [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-            }
-          </div>
-        }
-      } @else if (message.type == 'msg' || message.type == 'interact') {
-        <div class="arrow" [ngClass]="{'reply': message.reply, 'normal': message.reply == undefined || !message.reply}"></div>
-      }
-    </div>
-    <app-sequence-diagram-message-status [message]="message" [events]="events"></app-sequence-diagram-message-status>
-  </div>
 </div>

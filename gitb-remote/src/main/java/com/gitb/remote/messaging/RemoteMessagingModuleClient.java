@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -31,7 +31,7 @@ import com.gitb.tdl.MessagingStep;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
 import jakarta.xml.ws.soap.AddressingFeature;
-import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
 
 import java.net.URL;
 import java.util.List;
@@ -82,14 +82,17 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
     private MessagingService getServiceClient(boolean configureTimeouts) {
         prepareRemoteServiceLookup(getCallProperties());
         var client = new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(this.useAddressing));
-        prepareClient((Client)client, configureTimeouts);
-        return client;
+        prepareClient(ClientProxy.getClient(client), configureTimeouts);
+		return client;
     }
 
 	@Override
 	public MessagingModule getModuleDefinition() {
 		if (serviceModule == null) {
-			serviceModule = call(() -> Optional.ofNullable(getServiceClient(false).getModuleDefinition(new Void()).getModule()).orElseGet(MessagingModule::new));
+			serviceModule = call(
+					() -> getServiceClient(false),
+					client -> Optional.ofNullable((client).getModuleDefinition(new Void()).getModule()).orElseGet(MessagingModule::new)
+			);
 		}
 		return serviceModule;
 	}
@@ -98,14 +101,17 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 	public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
         InitiateRequest request = new InitiateRequest();
         request.getActorConfiguration().addAll(actorConfigurations);
-		InitiateResponse wsResponse = call(() -> {
-			try {
-                // Skip step-specific client timeouts when initiating.
-				return getServiceClient(false).initiate(request);
-			} catch (Exception e) {
-				throw new IllegalStateException("Error raised by remote messaging service while processing the initiate call.", e);
-			}
-		});
+		InitiateResponse wsResponse = call(
+				() -> getServiceClient(false),
+				client -> {
+					try {
+						// Skip step-specific client timeouts when initiating.
+						return client.initiate(request);
+					} catch (Exception e) {
+						throw new IllegalStateException("Error raised by remote messaging service while processing the initiate call.", e);
+					}
+				}
+		);
 		if (wsResponse.getSessionId() == null) {
 			// Set the test session ID as the default.
 			wsResponse.setSessionId(testSessionId);
@@ -120,7 +126,10 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
         request.setFrom(from);
         request.setTo(to);
         request.getConfig().addAll(configurations);
-        call(() -> getServiceClient().beginTransaction(request), stepIdMap(stepId));
+        call(
+                this::getServiceClient,
+				client -> client.beginTransaction(request), stepIdMap(stepId)
+		);
 	}
 
 	@Override
@@ -131,7 +140,10 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 			AnyContent attachment = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(attachment);
 		}
-		SendResponse response = call(() -> getServiceClient().send(request), stepIdMap(stepId));
+		SendResponse response = call(
+				this::getServiceClient,
+				client -> client.send(request), stepIdMap(stepId)
+		);
 		if (response == null || response.getReport() == null) {
 			return generateErrorReport("No response received");
 		} else {
@@ -149,7 +161,10 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 			AnyContent input = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(input);
 		}
-		call(() -> getServiceClient().receive(request), stepIdMap(step.getId()));
+		call(
+				this::getServiceClient,
+				client -> client.receive(request), stepIdMap(step.getId())
+		);
 		return new DeferredMessagingReport();
 	}
 
@@ -163,7 +178,10 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 	public void endTransaction(String sessionId, String transactionId, String stepId) {
         BasicRequest request = new BasicRequest();
         request.setSessionId(sessionId);
-        call(() -> getServiceClient().endTransaction(request), stepIdMap(stepId));
+        call(
+				this::getServiceClient,
+				client -> client.endTransaction(request), stepIdMap(stepId)
+		);
 	}
 
 	@Override
@@ -171,7 +189,10 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 		try {
 			FinalizeRequest request = new FinalizeRequest();
 			request.setSessionId(sessionId);
-			call(() -> getServiceClient(false).finalize(request));
+			call(
+					() -> getServiceClient(false),
+					client -> client.finalize(request)
+			);
 		} finally {
             if (sessionEndListener != null) {
                 sessionEndListener.accept(sessionId);

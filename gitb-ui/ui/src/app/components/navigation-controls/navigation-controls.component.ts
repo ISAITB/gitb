@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -104,7 +104,7 @@ export class NavigationControlsComponent implements OnInit {
   }
 
   private processConfig() {
-    this.domainNavigable = this.isNavigable(this.config.domainId) && (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community?.domain == undefined))
+    this.domainNavigable = this.isNavigable(this.config.domainId) && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
     this.specificationNavigable = this.isNavigable(this.config.domainId) && this.isNavigable(this.config.specificationId) && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
     this.actorNavigable = this.specificationNavigable && this.isNavigable(this.config.actorId)
     this.testSuiteNavigable = this.specificationNavigable && this.isNavigable(this.config.testSuiteId)
@@ -192,4 +192,5 @@ export class NavigationControlsComponent implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

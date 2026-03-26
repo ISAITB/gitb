@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -32,7 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                landingPageManager: LandingPageManager,
                                legalNoticeManager: LegalNoticeManager,
-                               errorTemplateManager: ErrorTemplateManager)
+                               errorTemplateManager: ErrorTemplateManager,
+                               userPreferenceManager: UserPreferenceManager)
                               (implicit ec: ExecutionContext)extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
@@ -79,12 +80,13 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ).map { results =>
       results.map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
-        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, x._9),
+        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, selfRegDefault = false, x._9),
         Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort,
-          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false,
+          selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
           allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-          allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, "", None,
+          allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, "", None, None,
           None)
       )).sorted
     }
@@ -116,12 +118,13 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       results
         .map(x => new UserAccount(
           Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
-          Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, x._9),
+          Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, selfRegDefault = false, x._9),
           Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort,
-            selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
+            selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false,
+            selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
             allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
             allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-            allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true,"", None,
+            allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, "", None, None,
             None))
         ).sorted
     }
@@ -172,12 +175,32 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def registerUser(adminId: Long, user: Users): Future[Unit] = {
     DB.run(
       (for {
-        //1) Get organization id of the admin
-        orgId <- PersistenceSchema.users.filter(_.id === adminId).result.headOption
+        //1) Get organization ids of the admin
+        orgIds <- PersistenceSchema.users
+          .join(PersistenceSchema.organizations).on(_.organization === _.id)
+          .filter(_._1.id === adminId)
+          .map(x => (x._2.id, x._2.community))
+          .result
+          .head
         //2) Insert new user to Users table
-        _ <- PersistenceSchema.insertUser += user.withOrganizationId(orgId.get.organization)
+        userId <- PersistenceSchema.insertUser += user.withOrganizationId(orgIds._1)
+        //3) Initialise the user preferences.
+        _ <- userPreferenceManager.initialiseUserPreferences(orgIds._2, userId)
       } yield ()).transactionally
     )
+  }
+
+  def getUserProfileWithPreferences(userId: Long): Future[User] = {
+    DB.run {
+      PersistenceSchema.users
+        .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .join(PersistenceSchema.userPreferences).on(_._1.id === _.user)
+        .filter(_._1._1.id === userId)
+        .result
+        .head
+    }.map { result =>
+      new User(result._1._1, result._1._2, result._2)
+    }
   }
 
   def getUserProfile(userId: Long): Future[User] = {
@@ -192,12 +215,20 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldPassword: Option[String]): Future[Unit] = {
+  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldPassword: Option[String], preferences: Option[UserPreferences]): Future[Unit] = {
     val dbAction = for {
       // Update name.
       _ <- {
         if (name.isDefined) {
           PersistenceSchema.users.filter(_.id === userId).map(_.name).update(name.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Preferences
+      _ <- {
+        if (preferences.isDefined) {
+          userPreferenceManager.updatePreferencesInternal(userId, preferences.get)
         } else {
           DBIO.successful(())
         }
@@ -231,16 +262,26 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     DB.run(dbAction.transactionally)
   }
 
-  def getVendorUsers(userId: Long): Future[List[Users]] = {
-    DB.run(for {
-      //1) Get organization id of the user first
-      orgId <- PersistenceSchema.users.filter(_.id === userId).map(_.organization).result.headOption
-      //2) Get all users of the organization
-      users <- PersistenceSchema.users.filter(_.organization === orgId)
-        .sortBy(x => (x.role.asc, x.name.asc))
-        .result
-        .map(_.toList)
-    } yield users)
+  def getVendorUsers(userId: Long, page: Long, limit: Long): Future[SearchResult[Users]] = {
+    DB.run {
+      for {
+        //1) Get organisation ID of the user first
+        orgId <- PersistenceSchema.users.filter(_.id === userId).map(_.organization).result.headOption
+        result <- {
+          val queryBuilder = (forCount: Boolean) => {
+            var baseQuery = PersistenceSchema.users.filter(_.organization === orgId)
+            if (!forCount) {
+              baseQuery = baseQuery.sortBy(x => (x.role.asc, x.name.asc))
+            }
+            baseQuery
+          }
+          for {
+            results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+            resultCount <- queryBuilder(true).size.result
+          } yield SearchResult(results, resultCount)
+        }
+      } yield result
+    }
   }
 
   def isAdmin(userId: Long): Future[Boolean] = {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -31,13 +31,14 @@ import models.Enums.{OverviewLevelType, ReportType}
 import models._
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.{StringUtils, Strings}
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
 
 import java.io._
 import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
 import javax.inject.Inject
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
@@ -97,27 +98,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         if (testSuite.isEmpty) {
           NotFound("Resource not found")
         } else {
-          var filePathToLookup = codec.decode(filePath)
-          if (filePathToLookup.startsWith("/")) {
-            filePathToLookup = filePathToLookup.substring(1)
-          }
-          var filePathToAlsoCheck: Option[String] = null
-          if (!filePathToLookup.startsWith(testSuite.get.identifier)) {
-            filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
-            filePathToAlsoCheck = None
-          } else {
-            filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
-            filePathToLookup = Strings.CS.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
-          }
-          // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
-          val testSuiteFolder = repositoryUtils.getTestSuitesResource(testSuite.get.domain, testSuite.get.filename, None)
-          val file = repositoryUtils.getTestSuitesResource(testSuite.get.domain, filePathToLookup, filePathToAlsoCheck)
-          logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
-          if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
-            Ok.sendFile(file, inline = true)
-          } else {
-            NotFound("Resource not found")
-          }
+          repositoryUtils.lookupTestSuiteResource(testSuite.get.domain, testSuite.get, codec.decode(filePath)).map { path =>
+            if (logger.isDebugEnabled) {
+              logger.debug("Reading test resource [{}] definition from the file [{}]", codec.decode(filePath), path)
+            }
+            Ok.sendFile(path.toFile, inline = true)
+          }.getOrElse(NotFound("Resource not found"))
         }
       }
     }
@@ -1073,13 +1059,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         if (tc.isDefined) {
           val testCaseId = testId.toLong
           testCaseManager.getDomainOfTestCase(testCaseId).map { domainId =>
-            val file = repositoryUtils.getTestSuitesResource(domainId, tc.get.path, None)
-            logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
-            if (file.exists()) {
-              Ok.sendFile(file, inline = true)
-            } else {
-              NotFound
-            }
+            repositoryUtils.lookupTestCaseDefinition(domainId, tc.get.path).map { path =>
+              if (logger.isDebugEnabled) {
+                logger.debug("Reading test case [{}] definition from the file [{}]", testId, path)
+              }
+              Ok.sendFile(path.toFile, inline = true)
+            }.getOrElse(NotFound)
           }
         } else {
           Future.successful(NotFound)
@@ -1453,6 +1438,36 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
             ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")
           }
       }
+    }
+  }
+
+  def exportTestSessionData(): Action[AnyContent] = authorizedAction.async { request =>
+    val session = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SESSION_ID)
+    val archiveFolder = Path.of(repositoryUtils.getTempReportFolder().getAbsolutePath, UUID.randomUUID().toString)
+    authorizationManager.canExportTestSessionData(request, session).flatMap { _ =>
+      Files.createDirectories(archiveFolder)
+      val archiveFile = archiveFolder.resolve("test_data.zip")
+      reportManager.generateTestSessionDataArchive(archiveFile, session).map { resultingFile =>
+        if (resultingFile.isDefined) {
+          Ok.sendFile(
+            content = resultingFile.get.toFile,
+            fileName = _ => Some("test_data.zip"),
+            onClose = () => {
+              if (Files.exists(archiveFolder)) {
+                FileUtils.deleteQuietly(archiveFolder.toFile)
+              }
+            }
+          )
+        } else {
+          NotFound
+        }
+      }
+    }.recover {
+      case e: Exception =>
+        if (Files.exists(archiveFolder)) {
+          FileUtils.deleteQuietly(archiveFolder.toFile)
+        }
+        throw e
     }
   }
 

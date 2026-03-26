@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,18 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { filter } from 'lodash';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Observable } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Observable} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-snapshots-modal',
@@ -42,8 +41,8 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   visibleSnapshots?: ConformanceSnapshot[]
   snapshotColumns: TableColumnDefinition[] = [
     { field: 'labelToDisplay', title: 'Label' },
-    { field: 'snapshotTime', title: 'Snapshot time', headerClass: 'th-min padding-right-large', order:'desc' },
-    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min-centered' }
+    { field: 'snapshotTime', title: 'Snapshot time', headerClass: 'th-min centered', cellClass: 'td-min centered', order:'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME },
+    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   snapshotsStatus = {status: Constants.STATUS.NONE}
   snapshotToEdit?: Partial<ConformanceSnapshot>
@@ -54,7 +53,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   refreshSnapshots = new EventEmitter<void>()
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly conformanceService: ConformanceService,
     private readonly popupService: PopupService,
     private readonly confirmationDialogService: ConfirmationDialogService,
@@ -78,7 +77,6 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
         label: Constants.LATEST_CONFORMANCE_STATUS_LABEL,
         publicLabel: data.latest,
         hidden: false,
-        snapshotTime: '-',
         latest: true
       })
       this.togglePublicView()
@@ -123,7 +121,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   }
 
   deleteSnapshot(snapshot: ConformanceSnapshot) {
-    this.confirmationDialogService.confirmedDangerous("Delete snapshot", "Are you sure you want to delete this conformance snapshot?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Delete snapshot", "Are you sure you want to delete this conformance snapshot?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       snapshot.deletePending = true
       this.conformanceService.deleteConformanceSnapshot(snapshot.id)
@@ -191,7 +189,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   }
 
   close() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   applySnapshotFilter() {
@@ -199,9 +197,13 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
       this.visibleSnapshots = this.snapshots
     } else {
       const filterToApply = this.snapshotFilter.toLowerCase()
-      this.visibleSnapshots = filter(this.snapshots, (snapshot) => {
-        return snapshot.label.toLowerCase().includes(filterToApply) || (!snapshot.hidden && snapshot.publicLabel != undefined && snapshot.publicLabel.toLowerCase().includes(filterToApply))
-      })
+      if (this.snapshots) {
+        this.visibleSnapshots = this.snapshots.filter((snapshot) => {
+          return snapshot.label.toLowerCase().includes(filterToApply) || (!snapshot.hidden && snapshot.publicLabel != undefined && snapshot.publicLabel.toLowerCase().includes(filterToApply))
+        })
+      } else {
+        this.visibleSnapshots = undefined
+      }
     }
   }
 

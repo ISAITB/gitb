@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,62 +13,76 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { NotificationsService, NotificationType } from 'angular2-notifications';
+import {Injectable} from '@angular/core';
+import {BehaviorSubject, Subject} from 'rxjs';
+import {PopupNotification} from '../types/popup-notification';
+import {CloseNotificationEvent} from '../types/close-notification-event';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PopupService {
 
-  constructor(
-    private readonly notificationService: NotificationsService
-  ) { }
+  private notificationsSubject = new BehaviorSubject<PopupNotification[]>([]);
+  private closeNotificationsSubject = new Subject<CloseNotificationEvent>();
+  notifications$ = this.notificationsSubject.asObservable();
+  closeNotifications$ = this.closeNotificationsSubject.asObservable();
+  private closedNotificationsSubject = new Subject<string>();
+  closedNotifications$ = this.closedNotificationsSubject.asObservable();
 
-  success(message: string, persistent?: boolean) {
+  constructor() { }
+
+  success(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'success', persistent)
+  }
+
+  warning(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'warning', persistent)
+  }
+
+  error(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'error', persistent)
+  }
+
+  info(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'info', persistent)
+  }
+
+  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean): string|null {
     if (message !== undefined) {
       if (!message.endsWith(".")) {
         message = message + "."
       }
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Success, { timeOut: 0, clickToClose: true }, 'success')
-      } else {
-        this.notificationService.html(message, NotificationType.Success, undefined, 'success')
+      const notification: PopupNotification = {
+        id: crypto.randomUUID(),
+        type: type,
+        message: message,
+        persistent: persistent === true
       }
+      const list = this.notificationsSubject.value;
+      this.notificationsSubject.next([...list, notification]);
+      return notification.id
+    } else {
+      return null
     }
   }
 
-  warning(message: string, persistent?: boolean) {
-    if (message !== undefined) {
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Warn, { timeOut: 0, clickToClose: true }, 'warn')
-      } else {
-        this.notificationService.html(message, NotificationType.Warn, undefined, 'warn')
-      }
-    }
+  remove(id: string) {
+    this.notificationsSubject.next(
+      this.notificationsSubject.value.filter(n => n.id !== id)
+    );
+    this.closedNotificationsSubject.next(id)
   }
 
-  error(message: string, persistent?: boolean) {
-    if (message !== undefined) {
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Error, { timeOut: 0, clickToClose: true }, 'error')
-      } else {
-        this.notificationService.html(message, NotificationType.Error, undefined, 'error')
-      }
-    }
+  close(notificationId: string): void {
+    this.closeNotificationsSubject.next({
+      id: notificationId
+    })
   }
 
-  info(message: string, persistent?: boolean) {
-    if (message !== undefined) {
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Info, { timeOut: 0, clickToClose: true }, 'info')
-      } else {
-        this.notificationService.html(message, NotificationType.Info, undefined, 'info')
-      }
-    }
-  }
-
-  closeAll() {
-    this.notificationService.remove()
+  closeAll(skipIfPersistent?: boolean) {
+    this.closeNotificationsSubject.next({
+      skipIfPersistent: skipIfPersistent
+    })
   }
 }

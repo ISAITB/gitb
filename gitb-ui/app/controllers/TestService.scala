@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -101,9 +101,16 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    * Initiates the test case
    */
   def initiate(testId:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestCase(request, testId).flatMap { _ =>
-      testbedClient.initiate(testId.toLong, None).map { response =>
-        ResponseConstructor.constructStringResponse(response)
+    if (Configurations.PREPARE_FOR_SHUTDOWN) {
+      Future.successful {
+        authorizationManager.markRequestAsAuthorized(request)
+        ResponseConstructor.constructErrorResponse(ErrorCodes.PREPARING_FOR_SHUTDOWN, "Test Bed is preparing for shutdown.")
+      }
+    } else {
+      authorizationManager.canExecuteTestCase(request, testId).flatMap { _ =>
+        testbedClient.initiate(testId.toLong, None).map { response =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsValue(response).toString())
+        }
       }
     }
   }
@@ -115,7 +122,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         domainParameters = domainParameters,
         organisationParameters = None,
         systemParameters = None,
-        testServiceParameters = None
+        testServiceParameters = None,
+        predefinedVariables = None
       )
     }
   }
@@ -135,7 +143,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         domainParameters = x._2._1,
         organisationParameters = Some(x._2._2._1._2),
         systemParameters = Some(x._2._2._2._1),
-        testServiceParameters = x._2._2._2._2
+        testServiceParameters = x._2._2._2._2,
+        predefinedVariables = None
       )
     }
   }
@@ -231,10 +240,17 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    * Starts the test case
    */
   def start(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
-      callSessionStartTrigger(sessionId).flatMap { _ =>
-        testbedClient.start(sessionId).map { _ =>
-          ResponseConstructor.constructEmptyResponse
+    if (Configurations.PREPARE_FOR_SHUTDOWN) {
+      Future.successful {
+        authorizationManager.markRequestAsAuthorized(request)
+        ResponseConstructor.constructErrorResponse(ErrorCodes.PREPARING_FOR_SHUTDOWN, "Test Bed is preparing for shutdown.")
+      }
+    } else {
+      authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
+        callSessionStartTrigger(sessionId).flatMap { _ =>
+          testbedClient.start(sessionId).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
         }
       }
     }
@@ -254,14 +270,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   def stopAll(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageAnyTestSession(request).flatMap { _ =>
       actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, None, None))
-      testResultManager.getAllRunningSessions().flatMap { sessions =>
-        val stopTasks = sessions.map {sessionId =>
-          testExecutionManager.endSession(sessionId)
-        }
-        // Wait for all stop Futures to complete
-        Future.sequence(stopTasks).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      testExecutionManager.endAllRunningSessions().map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
@@ -269,13 +279,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   def stopAllCommunitySessions(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
       actorSystem.eventStream.publish(TerminateAllSessionsEvent(Some(communityId), None, None))
-      testResultManager.getRunningSessionsForCommunity(communityId).flatMap { sessions =>
-        val stopTasks = sessions.map { sessionId =>
-          testExecutionManager.endSession(sessionId)
-        }
-        Future.sequence(stopTasks).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      testExecutionManager.endRunningSessionsForCommunity(communityId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
@@ -283,13 +288,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   def stopAllOrganisationSessions(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOrganisation(request, organisationId).flatMap { _ =>
       actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, Some(organisationId), None))
-      testResultManager.getRunningSessionsForOrganisation(organisationId).flatMap { sessions =>
-        val stopTasks = sessions.map { sessionId =>
-          testExecutionManager.endSession(sessionId)
-        }
-        Future.sequence(stopTasks).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      testExecutionManager.endRunningSessionsForOrganisation(organisationId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
@@ -298,30 +298,45 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    * Restarts the test case with same preliminary data
    */
   def restart(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
-      callSessionStartTrigger(sessionId).flatMap { _ =>
-        testbedClient.restart(sessionId).map { _ =>
-          ResponseConstructor.constructEmptyResponse
+    if (Configurations.PREPARE_FOR_SHUTDOWN) {
+      Future.successful {
+        authorizationManager.markRequestAsAuthorized(request)
+        ResponseConstructor.constructErrorResponse(ErrorCodes.PREPARING_FOR_SHUTDOWN, "Test Bed is preparing for shutdown.")
+      }
+    } else {
+      authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
+        callSessionStartTrigger(sessionId).flatMap { _ =>
+          testbedClient.restart(sessionId).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
         }
       }
     }
   }
 
   def startHeadlessTestSessions(): Action[AnyContent] = authorizedAction.async { request =>
-    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.TEST_CASE_IDS)
-    val specId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SPECIFICATION_ID).toLong
-    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
-    val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
-    val forceSequentialExecution = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SEQUENTIAL).getOrElse("false").toBoolean
-    if (testCaseIds.isDefined && testCaseIds.get.nonEmpty) {
-      authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId).flatMap { _ =>
-        testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+    if (Configurations.PREPARE_FOR_SHUTDOWN) {
+      Future.successful {
+        authorizationManager.markRequestAsAuthorized(request)
+        ResponseConstructor.constructErrorResponse(ErrorCodes.PREPARING_FOR_SHUTDOWN, "Test Bed is preparing for shutdown.")
       }
     } else {
-      Future.successful {
-        ResponseConstructor.constructEmptyResponse
+      val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.TEST_CASE_IDS)
+      val specId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SPECIFICATION_ID).toLong
+      val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+      val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
+      val forceSequentialExecution = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SEQUENTIAL).getOrElse("false").toBoolean
+      if (testCaseIds.isDefined && testCaseIds.get.nonEmpty) {
+        authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId).flatMap { _ =>
+          testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution, None).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
+        }
+      } else {
+        Future.successful {
+          authorizationManager.markRequestAsAuthorized(request)
+          ResponseConstructor.constructEmptyResponse
+        }
       }
     }
   }

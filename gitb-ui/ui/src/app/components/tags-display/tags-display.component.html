@@ -1,8 +1,8 @@
-@if (tags || editable) {
+@if ((tags != undefined && tags.length > 0) || editable) {
     <div class="rootContainer">
         @for (tag of tags; track $index; let last = $last) {
             <div class="tagContainer" [class.withMargin]="!last || (last && editable)">
-                <app-tag 
+                <app-tag
                     [id]="tag.id"
                     [label]="tag.name"
                     [tooltipText]="tag.description"
@@ -10,16 +10,22 @@
                     [background]="tag.background"
                     [editable]="editable"
                     [pill]="true"
-                    (edit)="tagEdited($event)"
-                    (delete)="tagDeleted($event)"
+                    (edit)="tagEdited(tag)"
+                    (delete)="tagDeleted(tag)"
                 ></app-tag>
             </div>
         }
         @if (editable) {
-            <div class="create-tag-container">
-                <button (click)="createTag()" type="button" class="btn btn-secondary">Add</button>
-                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" tbTooltip="Tags used to visually distinguish and highlight test cases."></div>
-            </div>
+            @if (tags == undefined || (max == undefined || tags.length < max)) {
+                <div class="create-tag-container">
+                    <button (click)="createTag()" [labelIcon]="Constants.BUTTON_ICON.NEW" type="button" class="btn btn-secondary">Add</button>
+                    @if (tooltip) {
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" [tbTooltip]="tooltip"></div>
+                    }
+                </div>
+            } @else if (tooltip) {
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" [tbTooltip]="tooltip"></div>
+            }
         }
     </div>
 }

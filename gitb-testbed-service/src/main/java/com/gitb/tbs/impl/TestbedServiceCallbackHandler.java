@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -19,6 +19,7 @@ import com.gitb.engine.ITestbedServiceCallbackHandler;
 import com.gitb.tbs.TestbedClient;
 import com.gitb.tbs.TestbedClient_Service;
 import jakarta.xml.ws.WebServiceContext;
+import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.headers.Header;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.jaxws.context.WrappedMessageContext;
@@ -36,60 +37,69 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by tuncay on 9/24/14.
  */
 public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHandler {
+
     private static final String SOAP_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope";
     private static final String TESTBED_CLIENT_NODE = "TestbedClient";
-
     private static final Logger LOG = LoggerFactory.getLogger(TestbedServiceCallbackHandler.class);
-
     private static TestbedServiceCallbackHandler instance = null;
-    private final Map<String, WSAddressingProperties> sessionCallbackMap;
+
+    private final Map<String, TestbedClient> frontEndToClientMap;
+    private final Map<String, TestbedClient> sessionToClientMap;
 
     public synchronized static TestbedServiceCallbackHandler getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             instance = new TestbedServiceCallbackHandler();
         }
         return instance;
     }
 
-    private TestbedServiceCallbackHandler(){
-        sessionCallbackMap = new ConcurrentHashMap<>();
+    private TestbedServiceCallbackHandler() {
+        frontEndToClientMap = new ConcurrentHashMap<>();
+        sessionToClientMap = new ConcurrentHashMap<>();
     }
 
-    /**
-     * Store the WS Addressing properties (replyTo and messageId) so that we can call callbacks later with the given session id
-     * @param sessionId The session ID.
-     * @param wsc The web service context.
-     */
-    void saveWSAddressingProperties(String sessionId, WebServiceContext wsc){
-        //Process SOAP Header to find WS Addressing properties
-        String testbedClientURL = getTestbedClientURL(wsc);
-        //Put into the map
-        sessionCallbackMap.put(sessionId, new WSAddressingProperties(testbedClientURL));
+    public TestbedClient createClient(WebServiceContext clientContext) {
+        return createClient(null, clientContext);
+    }
+
+    public TestbedClient createClient(String sessionId, WebServiceContext clientContext) {
+        // The callback address is the GITB-UI component.
+        // There is no need to cleanup this cache because there will normally be only one client.
+        String callbackAddress = getTestbedClientURL(clientContext);
+        var frontEndClient = frontEndToClientMap.computeIfAbsent(callbackAddress, key -> createTestBedClient(callbackAddress));
+        if (sessionId != null) {
+            sessionToClientMap.put(sessionId, frontEndClient);
+        }
+        return frontEndClient;
+    }
+
+    public void destroy() {
+        sessionToClientMap.clear();
+        frontEndToClientMap.values().forEach(client -> {
+            try {
+                ClientProxy.getClient(client).destroy();
+            } catch (Exception e) {
+                // Ignore client cleanup issues.
+            }
+        });
+        frontEndToClientMap.clear();
     }
 
     @Override
-    public TestbedClient getTestbedClient(String sessionId){
-        WSAddressingProperties wsAddressingProperties = sessionCallbackMap.get(sessionId);
-        if (wsAddressingProperties != null) {
-            return wsAddressingProperties.getTestbedClient();
-        }
-        return null;
+    public TestbedClient getTestbedClient(String sessionId) {
+        return sessionToClientMap.get(sessionId);
     }
 
     @Override
     public void releaseTestbedClient(String sessionId) {
-        sessionCallbackMap.remove(sessionId);
+        sessionToClientMap.remove(sessionId);
     }
 
-    public static String getTestbedClientURL(WebServiceContext wsc) {
+    private String getTestbedClientURL(WebServiceContext wsc) {
         return getTestbedClientURL(getHeaders(wsc));
     }
 
-    public static TestbedClient createTestBedClient(WebServiceContext wsc) {
-        return createTestBedClient(getTestbedClientURL(wsc));
-    }
-
-    public static TestbedClient createTestBedClient(String testbedClientURL) {
+    private TestbedClient createTestBedClient(String testbedClientURL) {
         TestbedClient_Service testbedClientService;
         try {
             testbedClientService = new TestbedClient_Service(URI.create(testbedClientURL).toURL());
@@ -99,7 +109,7 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
         return testbedClientService.getTestbedClientPort();
     }
 
-    private static String getTestbedClientURL(List<Header> headers) {
+    private String getTestbedClientURL(List<Header> headers) {
         if (headers != null) {
             for (Header header: headers) {
                 Element headerElement = ((Element)header.getObject());
@@ -116,23 +126,11 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
      * Retrieves the headers
      * @return The list of headers
      */
-    private static List<Header> getHeaders(WebServiceContext wsc) {
+    private List<Header> getHeaders(WebServiceContext wsc) {
         if (wsc != null && wsc.getMessageContext() instanceof WrappedMessageContext) {
             return CastUtils.cast((List<?>)((WrappedMessageContext)wsc.getMessageContext()).getWrappedMessage().get(Header.HEADER_LIST));
         }
         throw new IllegalStateException("Headers could not be retrieved from web service call");
-    }
-
-    private static class WSAddressingProperties {
-        private final TestbedClient testbedClient;
-
-        private WSAddressingProperties(String testbedClientURL) {
-            this.testbedClient = createTestBedClient(testbedClientURL);
-        }
-
-        TestbedClient getTestbedClient() {
-            return testbedClient;
-        }
     }
 
 }

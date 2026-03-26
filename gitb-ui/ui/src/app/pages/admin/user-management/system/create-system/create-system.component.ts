@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -24,6 +24,7 @@ import {SystemService} from 'src/app/services/system.service';
 import {System} from 'src/app/types/system';
 import {Constants} from 'src/app/common/constants';
 import {CommunityService} from 'src/app/services/community.service';
+import {UsageTipService} from '../../../../../services/usage-tip.service';
 
 @Component({
     selector: 'app-create-system',
@@ -31,7 +32,7 @@ import {CommunityService} from 'src/app/services/community.service';
     styles: [],
     standalone: false
 })
-export class CreateSystemComponent extends BaseComponent implements OnInit {
+export class CreateSystemComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   organisationId!: number
   communityId!: number
@@ -51,7 +52,8 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly popupService: PopupService,
     private readonly routingService: RoutingService,
-    private readonly communityService: CommunityService
+    private readonly communityService: CommunityService,
+    private readonly usageTipService: UsageTipService
   ) { super() }
 
   ngOnInit(): void {
@@ -71,8 +73,14 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
     })
   }
 
+  ngAfterViewInit() {
+    if (this.dataService.isSystemAdmin && this.dataService.vendor?.id === this.organisationId) {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_SYSTEM)
+    }
+  }
+
   saveEnabled() {
-    return this.textProvided(this.system.sname) && this.textProvided(this.system.fname)
+    return !this.savePending && this.loaded && this.textProvided(this.system.sname) && this.textProvided(this.system.fname)
   }
 
   create() {

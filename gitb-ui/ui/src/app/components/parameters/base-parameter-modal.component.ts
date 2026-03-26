@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 European Union
+ * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
  * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
@@ -13,16 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { DataService } from 'src/app/services/data.service';
-import { ParameterReference } from 'src/app/types/parameter-reference';
-import { ParameterModalOptions } from './parameter-modal-options';
-import { find } from 'lodash'
-import { Parameter } from 'src/app/types/parameter';
-import { Constants } from 'src/app/common/constants';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Component, Input } from '@angular/core';
-import { ValidationState } from 'src/app/types/validation-state';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {DataService} from 'src/app/services/data.service';
+import {ParameterReference} from 'src/app/types/parameter-reference';
+import {ParameterModalOptions} from './parameter-modal-options';
+import {Parameter} from 'src/app/types/parameter';
+import {Constants} from 'src/app/common/constants';
+import {Component, Input} from '@angular/core';
+import {ValidationState} from 'src/app/types/validation-state';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
@@ -44,7 +43,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
 
   constructor(
     private readonly dataService: DataService,
-    protected readonly modalInstance: BsModalRef
+    protected readonly modalInstance: NgbActiveModal
   ) { super() }
 
   protected onInit(options: ParameterModalOptions) {
@@ -87,7 +86,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
 
 	validName(nameValue: string) {
 		const finder = (value: string) => {
-			return find(this.existingValues, (v) => {
+			return this.existingValues.find((v) => {
 				return (this.parameter.id == undefined || this.parameter.id != v.id) && v.name == value
       })
     }
@@ -101,20 +100,10 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
 
 	validKey(keyValue: string) {
 		let result = false
-		const finder = (value: string) => {
-			return find(this.existingValues, (v) => {
-        return (this.parameter.id == undefined || this.parameter.id != v.id) && v.key == value
-      })
-    }
-		const finderReserved = (value: string) => {
-			return find(this.reservedKeys, (v) => {
-				return v == value
-      })
-    }
 		if (this.hasKey) {
-			if (this.existingValues != undefined && finder.bind(this)(keyValue)) {
+			if (this.existingValues != undefined && this.existingValues.find((param) => (this.parameter.id == undefined || this.parameter.id != param.id) && param.key == keyValue)) {
         this.validation.invalid('key', 'The provided key is already defined.')
-      } else if (this.reservedKeys != undefined && finderReserved.bind(this)(keyValue)) {
+      } else if (this.reservedKeys != undefined && this.reservedKeys.find((key) => key == keyValue)) {
         this.validation.invalid('key', 'The provided key is reserved.')
       } else if (!Constants.VARIABLE_NAME_REGEX.test(keyValue)) {
         this.validation.invalid('key', 'The provided key is invalid. A key must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
@@ -128,7 +117,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   validate() {

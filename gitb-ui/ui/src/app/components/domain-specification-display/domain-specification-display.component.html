@@ -22,32 +22,32 @@
             @if (!dragEnabled && groups.length > 0) {
                 <div class="btn-toolbar">
                     @if (spec.group) {
-                        <button id="button-edit" class="btn btn-secondary drag-hide" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-pencil"></i></span></button>
-                        <button id="button-add-option" class="btn btn-secondary drag-hide" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-plus"></i></span></button>
+                        <button id="button-edit" class="btn btn-secondary drag-hide" (click)="editGroup();$event.stopPropagation();" tooltipClass="shortTooltip" container="body" [ngbTooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.EDIT"></i></span></button>
+                        <button id="button-add-option" class="btn btn-secondary drag-hide" (click)="createOption();$event.stopPropagation();" tooltipClass="shortTooltip" container="body" [ngbTooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.NEW"></i></span></button>
                     } @else {
                         @if (spec.groupId != undefined) {
-                            <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
+                            <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" tooltipClass="shortTooltip" container="body" ngbTooltip="Ungroup" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.UNGROUP"></i></span></button>
                         }
                         @if ((spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)) {
-                            <div class="btn-group drag-hide" #copyDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="copyExpanded()">
-                                <button id="button-copy" #copyPop="bs-tooltip" (click)="copyPop.hide();$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone me-2"></i></span></button>
-                                <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
+                            <div class="btn-group drag-hide" #copyDropdown="ngbDropdown" ngbDropdown (openChange)="copyExpanded()">
+                                <button id="button-copy" #copyPop="ngbTooltip" (click)="copyPop.close(); $event.stopPropagation()" [disable]="isPending()" [pending]="spec.copyPending" [icon]="true" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" tooltipClass="shortTooltip" ngbTooltip="Copy" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span class="me-2"><i [class]="Constants.BUTTON_ICON.COPY"></i></span></button>
+                                <div id="dropdown-copy" ngbDropdownMenu aria-labelledby="button-copy">
                                     @for (group of groups; track group.id) {
                                         @if (group.id != spec.groupId) {
-                                            <li role="menuitem"><a class="dropdown-item" href (click)="copyToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Copy to {{group.sname}}</a></li>
+                                            <button ngbDropdownItem type="button" (click)="copyToGroup(group.id); $event.stopPropagation()">Copy to {{group.sname}}</button>
                                         }
                                     }
-                                </ul>
+                                </div>
                             </div>
-                            <div class="btn-group drag-hide" #moveDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="moveExpanded()">
-                                <button id="button-move" #movePop="bs-tooltip" (click)="movePop.hide();$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right me-2"></i></span></button>
-                                <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
+                            <div class="btn-group drag-hide" #moveDropdown="ngbDropdown" ngbDropdown (openChange)="moveExpanded()">
+                                <button id="button-move" #movePop="ngbTooltip" (click)="movePop.close(); $event.stopPropagation()" [disable]="isPending()" [pending]="spec.movePending" [icon]="true" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" tooltipClass="shortTooltip" ngbTooltip="Move" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span class="me-2"><i [class]="Constants.BUTTON_ICON.MOVE"></i></span></button>
+                                <div id="dropdown-move" ngbDropdownMenu aria-labelledby="button-move">
                                     @for (group of groups; track group.id) {
                                         @if (group.id != spec.groupId) {
-                                            <li role="menuitem"><a class="dropdown-item" href (click)="moveToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Move to {{group.sname}}</a></li>
+                                            <button ngbDropdownItem type="button" (click)="moveToGroup(group.id); $event.stopPropagation()">Move to {{group.sname}}</button>
                                         }
                                     }
-                                </ul>
+                                </div>
                             </div>
                         }
                     }
@@ -56,30 +56,32 @@
         </div>
     </div>
     @if (spec.group) {
-        <div class="option-container-collapsible" [collapse]="spec.collapsed == true" [isAnimated]="true">
-            <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)">
-                @if (spec.options == undefined || spec.options.length == 0) {
-                    <div class="no-options">
-                        No {{dataService.labelSpecificationInGroupsLower()}} found.
-                    </div>
-                } @else {
-                    @for (option of spec.options; track option.id; ) {
-                        <app-domain-specification-display #childComponent
-                            [spec]="option"
-                            [first]="$first"
-                            [last]="$last"
-                            [groups]="groups"
-                            [dragOngoing]="dragOngoing"
-                            [dragEnabled]="dragEnabled"
-                            (removeSpec)="propagateRemove($event)"
-                            (moveSpec)="propagateMove($event)"
-                            (copySpec)="propagateCopy($event)"
-                            (dragging)="propagateDrag($event)"
-                            (click)="propagateSelect(option)"
-                            (controlSelected)="propagateControlSelected($event)"
-                        ></app-domain-specification-display>
+        <div class="w-100" [ngbCollapse]="spec.collapsed == true" [animation]="true">
+            <div class="option-container-collapsible">
+                <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)">
+                    @if (spec.options == undefined || spec.options.length == 0) {
+                        <div class="no-options">
+                            No {{dataService.labelSpecificationInGroupsLower()}} found.
+                        </div>
+                    } @else {
+                        @for (option of spec.options; track option.id; ) {
+                            <app-domain-specification-display #childComponent
+                                                              [spec]="option"
+                                                              [first]="$first"
+                                                              [last]="$last"
+                                                              [groups]="groups"
+                                                              [dragOngoing]="dragOngoing"
+                                                              [dragEnabled]="dragEnabled"
+                                                              (removeSpec)="propagateRemove($event)"
+                                                              (moveSpec)="propagateMove($event)"
+                                                              (copySpec)="propagateCopy($event)"
+                                                              (dragging)="propagateDrag($event)"
+                                                              (click)="propagateSelect(option)"
+                                                              (controlSelected)="propagateControlSelected($event)"
+                            ></app-domain-specification-display>
+                        }
                     }
-                }
+                </div>
             </div>
         </div>
     }
