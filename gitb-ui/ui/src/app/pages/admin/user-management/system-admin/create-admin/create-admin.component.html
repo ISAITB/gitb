@@ -6,9 +6,7 @@
         <form>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-11">
-                        <app-user-form [new]="true" [admin]="true" [user]="user" [sso]="dataService.configuration.ssoEnabled" [validation]="validation"></app-user-form>
-                    </div>
+                    <app-user-form [new]="true" [admin]="true" [user]="user" [sso]="dataService.configuration.ssoEnabled" [validation]="validation"></app-user-form>
                 </div>
                 <div class="row">
                     <div class="col-10 col-centered">

@@ -8,9 +8,7 @@
                 <!-- Error messages -->
                 <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
-                    <div class="col-11">
-                        <app-user-form [new]="false" [admin]="true" [user]="user" [sso]="dataService.configuration.ssoEnabled" (passwordChanged)="changePassword = $event"></app-user-form>
-                    </div>
+                    <app-user-form [new]="false" [admin]="true" [user]="user" [sso]="dataService.configuration.ssoEnabled" (passwordChanged)="changePassword = $event"></app-user-form>
                 </div>
                 @if (!dataService.configuration.ssoEnabled) {
                     <div class="row">
