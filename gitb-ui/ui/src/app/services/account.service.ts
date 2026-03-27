@@ -38,13 +38,19 @@ export class AccountService {
     private readonly dataService: DataService
   ) {
     this.dataService.onMenuVisibilityChange$.subscribe((menuVisible) => {
-      this.updatePreferenceForMenuCollapsed(!menuVisible).subscribe(() => {})
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForMenuCollapsed(!menuVisible).subscribe(() => {})
+      }
     })
     this.dataService.onConformanceStatementDetailVisibilityChange$.subscribe((statementDetailsVisible) => {
-      this.updatePreferenceForStatementsCollapsed(!statementDetailsVisible).subscribe(() => {})
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForStatementsCollapsed(!statementDetailsVisible).subscribe(() => {})
+      }
     })
     this.dataService.onPageSizeChange$.subscribe((pageSize) => {
-      this.updatePreferenceForPageSize(pageSize).subscribe(() => {})
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForPageSize(pageSize).subscribe(() => {})
+      }
     })
   }
 
