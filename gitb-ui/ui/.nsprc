@@ -1,2 +1,14 @@
 {
+    "1113981": {
+        "active": true,
+        "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
+    },
+    "1114017": {
+        "active": true,
+        "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
+    },
+    "1112453": {
+        "active": true,
+        "notes": "Lodash is only used in development tooling."
+    }
 }
