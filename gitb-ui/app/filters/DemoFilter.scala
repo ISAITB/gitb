@@ -39,6 +39,7 @@ class DemoFilter @Inject() (implicit val mat: Materializer,
       if (profileManager.isAuthenticated) {
         if (profileManager.getProfile.isEmpty || profileManager.getProfile.get().getId != Constants.DemoUserProfileIdentifier) {
           profileManager.removeProfiles()
+          playSessionStore.destroySession(webContext)
           createDemoProfile = true
         }
       } else {
