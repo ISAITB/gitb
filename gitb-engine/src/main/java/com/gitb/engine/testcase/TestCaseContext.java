@@ -602,7 +602,7 @@ public class TestCaseContext {
                     }
                     Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, callStep.getPath(), true).scriptlet();
 					state.scriptletStart(scriptlet, callStep);
-                    traverseSteps(scriptlet.getSteps(), state, visitors);
+                    traverseSteps(scriptlet.getSteps(), state.newForScriptlet(testSuiteContextToUse), visitors);
 					state.scriptletEnd();
                 }
             });

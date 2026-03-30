@@ -41,4 +41,8 @@ public record StepTraversalState(String testSuiteContext, TestCaseContext contex
         scriptletCallStack.removeLast();
     }
 
+    public StepTraversalState newForScriptlet(String testSuiteContext) {
+        return new StepTraversalState(testSuiteContext, context, scriptletCallStack, expressionHandlerStack, testCase);
+    }
+
 }
