@@ -11,7 +11,7 @@
         "active": true,
         "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
     },
-    "1115568": {
+    "1115668": {
         "active": true,
         "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
     },
