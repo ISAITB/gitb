@@ -16,6 +16,7 @@
 package com.gitb.engine.expr.resolvers;
 
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.expr.GITBEngineIgnoredError;
 import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.testcase.StepStatusMapType;
 import com.gitb.engine.testcase.TestCaseContext;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -128,32 +130,27 @@ public class VariableResolver implements XPathVariableResolver{
             }
             NodeList result;
             if (list.getContainedType() != null) {
-                switch (list.getContainedType()) {
-                    case DataType.NUMBER_DATA_TYPE:
-                    case DataType.STRING_DATA_TYPE:
-                    case DataType.BOOLEAN_DATA_TYPE:
-                        result = convertPrimitiveListToNodeList(itemValues);
-                        break;
-                    case DataType.OBJECT_DATA_TYPE:
-                        result = convertListOfNodesToNodeList(itemValues);
-                        break;
-                    default:
-                        result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes((List<DataType>)list.getValue()));
-                }
+                result = switch (list.getContainedType()) {
+                    case DataType.NUMBER_DATA_TYPE, DataType.STRING_DATA_TYPE, DataType.BOOLEAN_DATA_TYPE ->
+                            convertPrimitiveListToNodeList(itemValues);
+                    case DataType.OBJECT_DATA_TYPE -> convertListOfNodesToNodeList(itemValues);
+                    default ->
+                            convertListOfNodesToNodeList(convertListOfOthersToListOfNodes((List<DataType>) list.getValue()));
+                };
             } else {
                 result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes((List<DataType>)list.getValue()));
             }
             return result;
-        } else if(value instanceof  MapType){
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "MapType cannot be used in expressions!"));
+        } else if (value instanceof  MapType) {
+            throw raiseError(() -> "MapType cannot be used in expressions!");
         }
-        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Variable ["+variableExpression +"] is not resolved!"));
+        throw raiseError(() -> "Variable ["+variableExpression +"] is not resolved!");
     }
 
-    public static Pair<String, String> extractVariableNameFromExpression(String variableExpression) {
+    private Pair<String, String> extractVariableNameFromExpression(String variableExpression) {
         Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
-        if(!matcher.matches()){
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference ["+variableExpression+"]"));
+        if (!matcher.matches()){
+            throw raiseError(() -> "Invalid variable reference ["+variableExpression+"]");
         }
         return Pair.of(matcher.group(1), variableExpression.substring(matcher.end(1)));
     }
@@ -192,6 +189,8 @@ public class VariableResolver implements XPathVariableResolver{
                 DataType containerVariable = scopeVariable.getValue();
                 result = resolveVariable(containerVariable, indexOrKeyExpression, tolerateMissing);
             }
+        } catch (GITBEngineIgnoredError e) {
+            // Ignore errors
         } catch (Exception e) {
             if (StringUtils.isBlank(scope.getContext().getSessionId())) {
                 logger.warn("An exception occurred when resolving variable [{}]", variableExpression, e);
@@ -291,7 +290,7 @@ public class VariableResolver implements XPathVariableResolver{
 		    if (tempValue instanceof NumberType || tempValue instanceof StringType) {
 			    return tempValue.getValue().toString();
 		    } else {
-			    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Index of a container variable should be either String or Number, not [" + tempValue.getType() + "]!"));
+			    throw raiseError(() -> "Index of a container variable should be either String or Number, not [" + tempValue.getType() + "]!");
 		    }
 	    } else {
 		    return indexOrKeyExpression;
@@ -319,13 +318,25 @@ public class VariableResolver implements XPathVariableResolver{
 		        String indexOrKey = resolveIndexOrKeyExpression(indexOrKeyExpression);
 
 		        tempValue = resolveItemInContainer(tempValue, indexOrKey);
-		        expression = matcher.group(3);
                 if (tempValue == null && tolerateMissing) {
                     return Optional.empty();
                 }
+                expression = matcher.group(3);
 	        } while (!expression.isEmpty());
         }
         return Optional.ofNullable(tempValue);
+    }
+
+    protected GITBEngineInternalError raiseError(Supplier<String> messageSupplier) {
+        return raiseError(messageSupplier, null);
+    }
+
+    protected GITBEngineInternalError raiseError(Supplier<String> messageSupplier, Throwable cause) {
+        if (cause == null) {
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, messageSupplier.get()));
+        } else {
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, messageSupplier.get()), cause);
+        }
     }
 
     /**
@@ -333,16 +344,16 @@ public class VariableResolver implements XPathVariableResolver{
      * @param container List or Map type object
      * @param keyOrIndex Numeric index for list type or string keys for map type
      */
-    private DataType resolveItemInContainer(DataType container, String keyOrIndex){
-        if(!(container instanceof ContainerType)){
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference. You can use index or key only on container types but encountered type was [%s]".formatted((container == null)?"null":container.getType())));
+    private DataType resolveItemInContainer(DataType container, String keyOrIndex) {
+        if (!(container instanceof ContainerType)) {
+            throw raiseError(() -> "Invalid variable reference. You can use index or key only on container types but encountered type was [%s]".formatted((container == null)?"null":container.getType()));
         }
         if (container instanceof ListType) {
             try {
                 int index = Double.valueOf(keyOrIndex).intValue();
                 return ((ListType) container).getItem(index);
             } catch (NumberFormatException e) {
-                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Value [" + StringUtils.defaultString(keyOrIndex) + "] must be numeric for it to be used as an index of its containing list."), e);
+                throw raiseError(() -> "Value [" + StringUtils.defaultString(keyOrIndex) + "] must be numeric for it to be used as an index of its containing list.", e);
             }
         } else { //MapType
             DataType returnValue;

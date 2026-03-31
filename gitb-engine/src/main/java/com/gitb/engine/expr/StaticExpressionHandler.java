@@ -17,6 +17,7 @@ package com.gitb.engine.expr;
 
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.CallStep;
 import com.gitb.tdl.Scriptlet;
 import com.gitb.types.DataType;
@@ -35,7 +36,7 @@ import java.util.function.Supplier;
 public class StaticExpressionHandler extends ExpressionHandler {
 
     public StaticExpressionHandler(TestCaseScope scope) {
-        super(scope, new VariableResolver(scope, true), null);
+        super(scope, new TolerantVariableResolver(scope), null);
     }
 
     @Override
@@ -90,4 +91,20 @@ public class StaticExpressionHandler extends ExpressionHandler {
             scope.getParent().removeChildScope(scope);
         }
     }
+
+    /**
+     * A variable resolver that will never throw errors or log warnings when resolving expressions.
+     */
+    private static class TolerantVariableResolver extends VariableResolver {
+
+        private TolerantVariableResolver(TestCaseScope scope) {
+            super(scope, true);
+        }
+
+        @Override
+        protected GITBEngineInternalError raiseError(Supplier<String> messageSupplier, Throwable cause) {
+            return new GITBEngineIgnoredError();
+        }
+    }
+
 }
