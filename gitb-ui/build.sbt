@@ -11,7 +11,7 @@ val bouncyCastleVersion = "1.83"
 val commonsTextVersion = "1.15.0"
 val mySqlConnectorVersion = "9.6.0"
 val pac4jVersion = "6.3.3"
-val nettyVersion = "4.1.130.Final"
+val nettyVersion = "4.1.132.Final"
 val pdfBoxVersion = "3.0.7"
 
 name := """GITB"""
