@@ -17,6 +17,14 @@
     },
     "1112453": {
         "active": true,
-        "notes": "Lodash is only used in development tooling."
+        "notes": "Lodash is only used in development tooling and as a transitive dependency of mermaid which is not vulnerable in this context."
+    },
+    "1115805": {
+        "active": true,
+        "notes": "Lodash is only used in development tooling and as a transitive dependency of mermaid which is not vulnerable in this context."
+    },
+    "1115809": {
+        "active": true,
+        "notes": "Lodash is only used in development tooling and as a transitive dependency of mermaid which is not vulnerable in this context."
     }
 }
