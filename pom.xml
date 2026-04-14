@@ -36,7 +36,7 @@
         <!-- Dependency versions -->
         <version.gitbTypes>1.30.0-SNAPSHOT</version.gitbTypes>
         <version.springBoot>3.5.13</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
-        <tomcat.version>10.1.53</tomcat.version>
+        <tomcat.version>10.1.54</tomcat.version>
         <version.bouncycastle>1.83</version.bouncycastle>
         <version.helgerSchematron>9.0.1</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
