@@ -236,5 +236,36 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\..*/.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-34483</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not applicable. -->
+        <notes><![CDATA[
+        file name: swagger-ui-5.32.0.jar: swagger-ui-es-bundle.js
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>## Summary
+        DOMPurify allows `ADD_ATTR` to be provided as a predicate function via `EXTRA_ELEMENT_HANDLING.attributeCheck`. When the predicate returns `true`, `_isValidAttribute` short-circuits the attribute check before URI-safe validation runs. An attacker who supplies a predicate that accepts specific attribute/tag combinations can then sanitize input such as `<a href="javascript:alert(document.domain)">` and have the `javascript:` URL survive, because URI validation is skipped for that attribute while other checks still pass. The provided PoC accepts `href` for anchors and then triggers a click inside an iframe, showing that the sanitized payload executes despite the protocol bypass.
+
+        ## Impact
+        Predicate-based allowlisting bypasses DOMPurify's URI validation, allowing unsafe protocols such as `javascript:` to reach the DOM and execute whenever the link is activated, resulting in DOM-based XSS.
+
+        ## Credits
+        Identified by Cantina’s Apex (https://www.cantina.security).</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not applicable. -->
+        <notes><![CDATA[
+        file name: swagger-ui-5.32.0.jar: swagger-ui-es-bundle.js
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>## Summary
+        When `USE_PROFILES` is enabled, DOMPurify rebuilds `ALLOWED_ATTR` as a plain array before populating it with the requested allowlists. Because the sanitizer still looks up attributes via `ALLOWED_ATTR[lcName]`, any `Array.prototype` property that is polluted also counts as an allowlisted attribute. An attacker who can set `Array.prototype.onclick = true` (or a runtime already subject to prototype pollution) can thus force DOMPurify to keep event handlers such as `onclick` even when they are normally forbidden. The provided PoC sanitizes `<img onclick=...>` with `USE_PROFILES` and adds the sanitized output to the DOM; the polluted prototype allows the event handler to survive and execute, turning what should be a blocklist into a silent XSS vector.
+
+        ## Impact
+        Prototype pollution makes DOMPurify accept dangerous event handler attributes, which bypasses the sanitizer and results in DOM-based XSS once the sanitized markup is rendered.
+
+        ## Credits
+        Identified by Cantina’s Apex (https://www.cantina.security).</vulnerabilityName>
     </suppress>    
+
 </suppressions>
