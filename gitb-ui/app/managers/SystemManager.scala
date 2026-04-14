@@ -17,7 +17,7 @@ package managers
 
 import actors.events.{ConformanceStatementCreatedEvent, SystemUpdatedEvent}
 import exceptions.{AutomationApiException, ErrorCodes}
-import managers.SystemManager.{ExistingResult, logger}
+import managers.SystemManager._
 import managers.triggers.TriggerHelper
 import models.Enums.{TestResultStatus, UserRole}
 import models._
@@ -38,6 +38,9 @@ object SystemManager {
 
   private val logger: Logger = LoggerFactory.getLogger(classOf[SystemManager])
   private case class ExistingResult(sessionId: String, result: String, outputMessage: Option[String], endTime: Option[Timestamp])
+  private case class ActorInfo(specId: Long, actorId: Long)
+  private case class TestCaseInfo(testCaseId: Long, testSuiteId: Long)
+  private case class StatementPropertyInfo(parameterId: Long, endpointId: Long, defaultValue: String, actorId: Long)
 
 }
 
@@ -570,6 +573,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
   def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]): Future[Unit] = {
     DB.run(
       (for {
+        // ---- ALL READS FIRST ----
         communityId <- getCommunityIdOfSystemInternal(systemId)
         domainId <- {
           if (communityId == Constants.DefaultCommunityId) {
@@ -579,43 +583,128 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
             PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.head
           }
         }
-        actorIdsToProcess <- PersistenceSchema.systemImplementsActors
+        existingStatementActorIds <- PersistenceSchema.systemImplementsActors
           .filter(_.systemId === systemId)
           .map(_.actorId)
           .result
-          .map { existingStatementActorIds =>
-            actorIds.toSet.removedAll(existingStatementActorIds)
-          }
+        actorIdsToProcess = actorIds.toSet.removedAll(existingStatementActorIds)
         actorsToProcess <- {
           if (actorIdsToProcess.isEmpty) {
-            DBIO.successful(Seq.empty[(Long, Long)])
+            DBIO.successful(Seq.empty[ActorInfo])
           } else {
             PersistenceSchema.specificationHasActors
               .join(PersistenceSchema.actors).on(_.actorId === _.id)
-              .filterOpt(domainId)((q, id) => q._2.domain === id) // Ensure these are valid actors within the domain.
+              .filterOpt(domainId)((q, id) => q._2.domain === id)
               .filter(_._1.actorId inSet actorIdsToProcess)
               .map(_._1)
               .result
+              .map(_.map(x => ActorInfo(x._1, x._2)))
           }
         }
+        conformanceInfoPerActor <- DBIO.sequence(
+          actorsToProcess.map { actor =>
+            PersistenceSchema.testCaseHasActors
+              .join(PersistenceSchema.testSuiteHasTestCases).on(_.testcase === _.testcase)
+              .filter(_._1.actor === actor.actorId)
+              .filter(_._1.sut === true)
+              .map(r => (r._1.testcase, r._2.testsuite))
+              .result
+              .map(info => (actor, info.map(x => TestCaseInfo(x._1, x._2))))
+          }
+        )
+        allTestCaseIds = conformanceInfoPerActor.flatMap(_._2.map(_.testCaseId)).toSet
+        existingResults <- {
+          if (allTestCaseIds.isEmpty) {
+            DBIO.successful(Seq.empty)
+          } else {
+            PersistenceSchema.testResults
+              .filter(_.sutId === systemId)
+              .filter(_.testCaseId inSet allTestCaseIds)
+              .sortBy(_.endTime.desc)
+              .result
+          }
+        }
+        allActorIds = actorsToProcess.map(_.actorId).toSet
+        propertiesWithDefaults <- {
+          if (allActorIds.isEmpty) {
+            DBIO.successful(Seq.empty)
+          } else {
+            PersistenceSchema.parameters
+              .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+              .filter(_._2.actor inSet allActorIds)
+              .filter(_._1.defaultValue.isDefined)
+              .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get, x._2.actor))
+              .result
+              .map(_.map(x => StatementPropertyInfo(x._1, x._2, x._3, x._4)))
+          }
+        }
+        propertiesWithDefaultsThatAreSet <- {
+          if (propertiesWithDefaults.isEmpty) {
+            DBIO.successful(Seq.empty)
+          } else {
+            PersistenceSchema.configs
+              .filter(_.system === systemId)
+              .filter(_.parameter inSet propertiesWithDefaults.map(_.parameterId))
+              .map(_.parameter)
+              .result
+          }
+        }
+        // ---- ALL WRITES AFTER ----
         _ <- {
           if (actorsToProcess.isEmpty) {
             logger.info("Skipping creation of conformance statement(s). No actors were found from IDs [{}] that were not already associated to system [{}].", actorIds.mkString(","), systemId)
             DBIO.successful(())
           } else {
-            val actions = new ListBuffer[DBIO[_]]
-            actorsToProcess.foreach { actor =>
-              actions += defineConformanceStatement(systemId, actor._1, actor._2, setDefaultParameterValues = true)
+            val existingResultsMap = createExistingResultMap(existingResults)
+            val alreadySetPropertyIds = propertiesWithDefaultsThatAreSet.toSet
+            val actions = new ListBuffer[DBIO[_]]()
+            conformanceInfoPerActor.foreach { case (actorInfo, conformanceInfo) =>
+              actions += (PersistenceSchema.systemImplementsActors += (systemId, actorInfo.specId, actorInfo.actorId))
+              conformanceInfo.foreach { testCaseInfo =>
+                actions += createEmptyConformanceResult(existingResultsMap, testCaseInfo.testCaseId, testCaseInfo.testSuiteId, systemId, actorInfo.specId, actorInfo.actorId)
+              }
+              propertiesWithDefaults
+                .filter(_.actorId == actorInfo.actorId)
+                .foreach { defaultPropertyInfo =>
+                  if (!alreadySetPropertyIds.contains(defaultPropertyInfo.parameterId)) {
+                    actions += (PersistenceSchema.configs += Configs(systemId, defaultPropertyInfo.parameterId, defaultPropertyInfo.endpointId, defaultPropertyInfo.defaultValue, None))
+                  }
+                }
             }
             toDBIO(actions)
           }
         }
-      } yield (communityId, actorsToProcess.map(_._2))).transactionally
+      } yield (communityId, actorsToProcess.map(_.actorId))).transactionally
     ).map { result =>
       result._2.foreach { actorId =>
         triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(result._1, systemId, actorId))
       }
     }
+  }
+
+  private def createExistingResultMap(existingResults: Seq[TestResult]): Map[Long, ExistingResult] = {
+    val existingResultsMap = new mutable.HashMap[Long, ExistingResult]
+    existingResults.foreach { existingResult =>
+      if (!existingResultsMap.contains(existingResult.testCaseId.get)) {
+        existingResultsMap += (existingResult.testCaseId.get -> ExistingResult(existingResult.sessionId, existingResult.result, existingResult.outputMessage, existingResult.endTime))
+      }
+    }
+    existingResultsMap.toMap
+  }
+
+  private def createEmptyConformanceResult(existingResultsMap: Map[Long, ExistingResult], testCaseId: Long, testSuiteId: Long, systemId: Long, specId: Long, actorId: Long) = {
+    var result = TestResultStatus.UNDEFINED
+    var outputMessage: Option[String] = None
+    var sessionId: Option[String] = None
+    var updateTime: Option[Timestamp] = None
+    if (existingResultsMap.contains(testCaseId)) {
+      val existingData = existingResultsMap(testCaseId)
+      sessionId = Some(existingData.sessionId)
+      result = TestResultStatus.withName(existingData.result)
+      outputMessage = existingData.outputMessage
+      updateTime = existingData.endTime
+    }
+    PersistenceSchema.conformanceResults += ConformanceResult(0L, systemId, specId, actorId, testSuiteId, testCaseId, result.toString, outputMessage, sessionId, updateTime)
   }
 
   def defineConformanceStatementViaApi(organisationKey: String, systemKey: String, actorKey: String): Future[Unit] = {
@@ -677,88 +766,59 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         .filter(_._1.sut === true)
         .map(r => (r._1.testcase, r._2.testsuite))
         .result
+        .map(_.map(x => TestCaseInfo(x._1, x._2)))
       existingResultsMap <- {
         if (conformanceInfo.isEmpty) {
           DBIO.successful(Map.empty[Long, ExistingResult])
         } else {
           PersistenceSchema.testResults
             .filter(_.sutId === system)
-            .filter(_.testCaseId inSet conformanceInfo.map(_._1)) // In expected set of test case IDs
+            .filter(_.testCaseId inSet conformanceInfo.map(_.testCaseId))
             .sortBy(_.endTime.desc)
             .result
-            .map { existingResults =>
-              val existingResultsMap = new mutable.HashMap[Long, ExistingResult]
-              existingResults.foreach { existingResult =>
-                if (!existingResultsMap.contains(existingResult.testCaseId.get)) {
-                  existingResultsMap += (existingResult.testCaseId.get -> ExistingResult(existingResult.sessionId, existingResult.result, existingResult.outputMessage, existingResult.endTime))
-                }
-              }
-              existingResultsMap.toMap
-            }
+            .map(createExistingResultMap)
         }
       }
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
-        conformanceInfo.foreach { conformanceInfoEntry =>
-          val testCase = conformanceInfoEntry._1
-          val testSuite = conformanceInfoEntry._2
-          var result = TestResultStatus.UNDEFINED
-          var outputMessage: Option[String] = None
-          var sessionId: Option[String] = None
-          var updateTime: Option[Timestamp] = None
-          if (existingResultsMap.contains(testCase)) {
-            val existingData = existingResultsMap(testCase)
-            sessionId = Some(existingData.sessionId)
-            result = TestResultStatus.withName(existingData.result)
-            outputMessage = existingData.outputMessage
-            updateTime = existingData.endTime
-          }
-          actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, outputMessage, sessionId, updateTime))
+        conformanceInfo.foreach { testCaseInfo =>
+          actions += createEmptyConformanceResult(existingResultsMap, testCaseInfo.testCaseId, testCaseInfo.testSuiteId, system, spec, actor)
         }
         toDBIO(actions)
       }
-      // Set properties with default values.
       _ <- {
         if (setDefaultParameterValues) {
-          setDefaultParameterValuesForSystem(actor, system)
+          for {
+            propertiesWithDefaults <- PersistenceSchema.parameters
+              .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+              .filter(_._2.actor === actor)
+              .filter(_._1.defaultValue.isDefined)
+              .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get))
+              .result
+            propertiesWithDefaultsThatAreSet <- {
+              if (propertiesWithDefaults.isEmpty) {
+                DBIO.successful(Seq.empty)
+              } else {
+                PersistenceSchema.configs
+                  .filter(_.system === system)
+                  .filter(_.parameter inSet propertiesWithDefaults.map(_._1))
+                  .map(_.parameter)
+                  .result
+              }
+            }
+            _ <- {
+              val actions = new ListBuffer[DBIO[_]]()
+              propertiesWithDefaults.foreach { defaultPropertyInfo =>
+                if (!propertiesWithDefaultsThatAreSet.contains(defaultPropertyInfo._1)) {
+                  actions += (PersistenceSchema.configs += Configs(system, defaultPropertyInfo._1, defaultPropertyInfo._2, defaultPropertyInfo._3, None))
+                }
+              }
+              toDBIO(actions)
+            }
+          } yield ()
         } else {
           DBIO.successful(())
         }
-      }
-    } yield ()
-  }
-
-  private def setDefaultParameterValuesForSystem(actor: Long, system: Long): DBIO[Unit] = {
-    for {
-      // 1. Determine the properties that have default values.
-      propertiesWithDefaults <- PersistenceSchema.parameters
-          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-          .filter(_._2.actor === actor)
-          .filter(_._1.defaultValue.isDefined)
-          .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get))
-          .result
-      // 2. See which of these properties have values.
-      propertiesWithDefaultsThatAreSet <-
-        if (propertiesWithDefaults.isEmpty) {
-          DBIO.successful(List.empty)
-        } else {
-          PersistenceSchema.configs
-            .filter(_.system === system)
-            .filter(_.parameter inSet propertiesWithDefaults.map(x => x._1))
-            .map(x => x.parameter)
-            .result
-        }
-      // 3. Apply the default values for any properties that are not set.
-      _ <- {
-        val actions = new ListBuffer[DBIO[_]]()
-        if (propertiesWithDefaults.nonEmpty) {
-          propertiesWithDefaults.foreach { defaultPropertyInfo =>
-            if (!propertiesWithDefaultsThatAreSet.contains(defaultPropertyInfo._1)) {
-              actions += (PersistenceSchema.configs += Configs(system, defaultPropertyInfo._1, defaultPropertyInfo._2, defaultPropertyInfo._3, None))
-            }
-          }
-        }
-        toDBIO(actions)
       }
     } yield ()
   }
@@ -966,7 +1026,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(getCommunityIdOfSystemInternal(systemId))
   }
 
-  def getCommunityIdOfSystemInternal(systemId: Long): DBIO[Long] = {
+  private def getCommunityIdOfSystemInternal(systemId: Long): DBIO[Long] = {
     PersistenceSchema.systems
       .join(PersistenceSchema.organizations).on(_.owner === _.id)
       .filter(_._1.id === systemId)
