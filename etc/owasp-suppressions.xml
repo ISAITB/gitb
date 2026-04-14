@@ -229,4 +229,12 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/xmpbox.*@.*$</packageUrl>
         <cve>CVE-2026-23907</cve>
     </suppress>
+    <suppress>
+        <!-- Not an exploitable vulnerability. -->
+        <notes><![CDATA[
+        file name: tomcat-embed-core-10.1.53.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\..*/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-34483</vulnerabilityName>
+    </suppress>    
 </suppressions>
