@@ -17,12 +17,8 @@
         <pattern>%d{dd/MM/yyyy HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
       </encoder>      
     </appender>
-    <root level="INFO">
-        <appender-ref ref="FILE" />
-        <appender-ref ref="STDOUT" />
-    </root>
+
     <logger name="play.api.http.HttpErrorHandlerExceptions" level="WARN"/>
-    <logger name="com.zaxxer.hikari" level="WARN" />
     <logger name="scala.slick" level="WARN" />
     <logger name="com.sun.xml" level="WARN" />
     <logger name="org.apache" level="WARN" />
@@ -41,9 +37,12 @@
     <logger name="org.apache.pdfbox.pdmodel.font.PDType1Font" level="ERROR"/>
     <logger name="org.ldaptive" level="WARN"/>
 
-    <!-- DB debug logging used only in development
-    <logger name="slick" level="INFO"/>
-    <logger name="slick.jdbc" level="DEBUG"/>
-    -->
+    <logger name="com.zaxxer.hikari" level="${LOG_LEVEL_DB_CONNECTION_POOL:-WARN}"/>
+    <logger name="slick.jdbc" level="${LOG_LEVEL_DB_QUERIES:-WARN}"/> <!-- For DB debug logging set to DEBUG -->
+    <root level="${LOG_LEVEL_ROOT:-INFO}">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDOUT" />
+    </root>
+
 </configuration>
 
