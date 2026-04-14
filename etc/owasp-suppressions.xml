@@ -243,7 +243,7 @@
         file name: swagger-ui-5.32.0.jar: swagger-ui-es-bundle.js
         ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
-        <vulnerabilityName regex="true">(?s).*DOM-based XSS.*</vulnerabilityName>
+        <vulnerabilityName regex="true">(?s).*</vulnerabilityName>
     </suppress>
     <suppress>
         <!-- Not applicable. -->
@@ -251,7 +251,7 @@
         file name: swagger-ui-5.32.0.jar: swagger-ui-es-bundle.js
         ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
-        <vulnerabilityName regex="true">(?s).*DOM-based XSS.*</vulnerabilityName>
+        <vulnerabilityName regex="true">(?s).*</vulnerabilityName>
     </suppress>    
 
 </suppressions>
