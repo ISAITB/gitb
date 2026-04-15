@@ -19,6 +19,7 @@ import actors.SessionLaunchActor._
 import actors.events.TestSessionStartedEvent
 import actors.events.sessions._
 import com.gitb.tpl.TestCase
+import config.Configurations
 import managers.triggers.TriggerHelper
 import managers.{ReportManager, TestbedBackendClient}
 import org.apache.pekko.actor.Status.Failure
@@ -148,7 +149,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
         }
       }
     case _: ProcessNextTestSessionEvent =>
-      if (!stopping) {
+      if (!stopping && !Configurations.PREPARE_FOR_SHUTDOWN) {
         processNextTestSession()
       }
     case _: ProcessNextTestSessionAfterDelayEvent =>
