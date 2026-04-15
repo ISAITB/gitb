@@ -10,7 +10,7 @@
                 <div class="btn-group iterations" ngbDropdown>
                     <button id="button-iterations" ngbDropdownToggle type="button"
                             class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-iterations">
-                        Iteration {{ currentIterationIndex + 1 }} of {{ message.sequences.length }}
+                        Iteration {{ (currentIterationIndex === -1)?1:(currentIterationIndex + 1) }} of {{ message.sequences.length }}
                     </button>
                     <div id="dropdown-iterations" ngbDropdownMenu aria-labelledby="button-iterations">
                         @for (iteration of message.sequences; track iteration.id; let i = $index) {

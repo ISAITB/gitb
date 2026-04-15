@@ -101,8 +101,9 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 				NumberType val = (NumberType) counter.getValue();
 				val.setValue(startIndex + iteration);
 			}
+			String actorId = stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG;
 			iteration += 1;
-			ActorRef child = SequenceProcessorActor.create(getContext(), step.getDo(), childScope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG, stepContext);
+			ActorRef child = SequenceProcessorActor.create(getContext(), step.getDo(), childScope, actorId, stepContext);
 			child.tell(new StartCommand(scope.getContext().getSessionId()), self());
 			return true;
 		} else {
