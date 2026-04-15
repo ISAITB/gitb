@@ -413,16 +413,12 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     Future.successful {
       actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, 30.minutes) {
         () => {
-          systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime).map { config =>
-            if (config.isDefined && config.get.parameter.isDefined) {
-              val threshold = config.get.parameter.get.toLong
-              testExecutionManager.endIdleRunningSessions(threshold).map(_ => ()).recover {
-                case e: Exception =>
-                  logger.warn("Failure while terminating idle sessions", e)
-                  throw e
-              }
-            }
-          }
+          Await.result(
+            systemConfigurationManager.terminateIdleSessions().recover {
+              case e: Exception =>
+                logger.warn("Failure while terminating idle sessions", e)
+            }, Duration.Inf
+          )
         }
       }
     }
@@ -435,13 +431,15 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     Future.successful {
       actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, 1.day) {
         () => {
-          systemConfigurationManager.deleteInactiveUserAccounts().map { deletedAccounts =>
-            if (deletedAccounts.isDefined) {
-              logger.info("Deleted {} inactive user account(s)", deletedAccounts.get)
-            } else {
-              logger.debug("Skipped the deletion of inactive user accounts")
-            }
-          }
+          Await.result(
+            systemConfigurationManager.deleteInactiveUserAccounts().map { deletedAccounts =>
+              if (deletedAccounts.isDefined) {
+                logger.info("Deleted {} inactive user account(s)", deletedAccounts.get)
+              } else {
+                logger.debug("Skipped the deletion of inactive user accounts")
+              }
+            }, Duration.Inf
+          )
         }
       }
     }
