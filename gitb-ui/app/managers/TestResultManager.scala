@@ -39,8 +39,8 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object TestResultManager {
@@ -606,9 +606,11 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
             // Set the start time to 30 minutes before the current time.
             val cal = Calendar.getInstance()
             cal.add(Calendar.MINUTE, windowMinutes * -1)
-            notifyForPendingTestInteractions(cal).recover {
-              case e: Exception => logger.warn("Unexpected error while notifying for pending test interactions", e)
-            }
+            Await.result(
+              notifyForPendingTestInteractions(cal).recover {
+                case e: Exception => logger.warn("Unexpected error while notifying for pending test interactions", e)
+              }, 2.minutes
+            )
           }
         }
       })
