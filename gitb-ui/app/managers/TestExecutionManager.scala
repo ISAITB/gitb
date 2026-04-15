@@ -105,10 +105,10 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  private def signalStopSessions(sessions: Iterable[String]): Future[Unit] = {
+  private def signalStopSessions(sessions: Iterable[String], logResult: Boolean): Future[Unit] = {
     testbedClient.stop(sessions.mkString("|"))
       .map { _ =>
-        if (LOGGER.isInfoEnabled()) {
+        if (LOGGER.isInfoEnabled() && logResult) {
           sessions.foreach { session =>
             LOGGER.info("Terminated session {}", session)
           }
@@ -683,27 +683,27 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def endSession(session: String): Future[Unit] = {
-    endRunningSessions(() => getRunningSession(session))
+  def endSession(session: String, logResult: Boolean = true): Future[Unit] = {
+    endRunningSessions(() => getRunningSession(session), logResult)
   }
 
   def endIdleRunningSessions(maximumDifference: Long): Future[Unit] = {
-    endRunningSessions(() => getIdleRunningSessions(maximumDifference))
+    endRunningSessions(() => getIdleRunningSessions(maximumDifference), logResult = true)
   }
 
   def endAllRunningSessions(): Future[Unit] = {
-    endRunningSessions(() => getAllRunningSessions())
+    endRunningSessions(() => getAllRunningSessions(), logResult = true)
   }
 
   def endRunningSessionsForCommunity(community: Long): Future[Unit] = {
-    endRunningSessions(() => getRunningSessionsForCommunity(community))
+    endRunningSessions(() => getRunningSessionsForCommunity(community), logResult = true)
   }
 
   def endRunningSessionsForOrganisation(organisation: Long): Future[Unit] = {
-    endRunningSessions(() => getRunningSessionsForOrganisation(organisation))
+    endRunningSessions(() => getRunningSessionsForOrganisation(organisation), logResult = true)
   }
 
-  private def endRunningSessions(sessionProvider: () => DBIO[Seq[SessionCompletionData]]): Future[Unit] = {
+  private def endRunningSessions(sessionProvider: () => DBIO[Seq[SessionCompletionData]], logResult: Boolean): Future[Unit] = {
     val now = TimeUtil.getCurrentTimestamp()
     DB.run {
       {
@@ -713,7 +713,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         } yield sessionData.map(_.sessionId)
       }.transactionally
     }.flatMap { sessionIds =>
-      signalStopSessions(sessionIds).map(_ => ())
+      signalStopSessions(sessionIds, logResult).map(_ => ())
     }
   }
 

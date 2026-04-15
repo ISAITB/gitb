@@ -953,7 +953,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         if (sessionsToTerminate.isDefined) {
           Future.sequence {
             sessionsToTerminate.get.map { sessionId =>
-              testExecutionManager.endSession(sessionId).map { _ =>
+              testExecutionManager.endSession(sessionId, logResult = false).map { _ =>
                 logger.info("Terminated idle session [{}]", sessionId)
               }.recover {
                 case e: Exception =>
