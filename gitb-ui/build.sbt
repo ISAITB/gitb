@@ -73,7 +73,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.2.3",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.32.0",
+  "org.webjars" % "swagger-ui" % "5.32.2",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
   "org.eclipse.angus" % "angus-activation" % "2.0.3",
