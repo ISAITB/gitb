@@ -45,21 +45,24 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem,
     testbedClient.stop("CONNECTION_CLOSED|"+sessionId)
   }
 
-  private def broadcastAttempt(sessionId:String, msg:String, attempt: Int): Unit = {
+  private def broadcastAttempt(sessionId:String, msg:String, attempt: Int): Future[Unit] = {
     if (attempt <= 10) {
       if (!broadcastMessage(sessionId, msg)) {
         org.apache.pekko.pattern.after(duration = 1.seconds, using = actorSystem.scheduler) {
-          Future.successful(true)
-        } andThen {
-          case _ => broadcastAttempt(sessionId, msg, attempt+1)
+          Future.successful(())
+        } flatMap { _ =>
+          broadcastAttempt(sessionId, msg, attempt + 1)
         }
+      } else {
+        Future.unit
       }
     } else {
       logger.warn("Unable to send message for session ["+sessionId+"] after 10 attempts")
+      Future.unit
     }
   }
 
-  def broadcast(sessionId:String, msg:String, retry: Boolean):Unit = {
+  def broadcast(sessionId:String, msg:String, retry: Boolean): Unit = {
     if (retry) {
       broadcastAttempt(sessionId, msg, 1)
     } else {
@@ -97,7 +100,7 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem,
     broadcast(sessionId, msg, retry = true)
   }
 
-  private def broadcastMessage(sessionId:String, msg:String):Boolean = {
+  private def broadcastMessage(sessionId:String, msg:String): Boolean = {
     val webSocketInfo = WebSocketActor.webSockets.get(sessionId)
     if (webSocketInfo.isDefined) {
       // Send message to the ActorRef of the session ID
