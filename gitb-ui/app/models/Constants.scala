@@ -97,7 +97,7 @@ object Constants {
   val HttpMethods: Set[String] = Set("get", "post", "put", "patch", "delete", "head", "options", "trace")
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.29.2"
+  val VersionNumber = "1.29.3"
   val VersionNumberPostfixForResources = ""
 
 }
