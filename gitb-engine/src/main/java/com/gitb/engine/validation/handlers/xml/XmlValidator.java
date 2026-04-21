@@ -103,11 +103,13 @@ public class XmlValidator extends AbstractValidator {
         if (!allReports.isEmpty()) {
             report = TestCaseUtils.mergeReports(allReports);
             var context = new AnyContent();
-            context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XsdReportHandler.XML_ITEM_NAME).getFirst());
+            if (report.getContext() != null) {
+                context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XsdReportHandler.XML_ITEM_NAME).getFirst());
+            }
             // Add validation artefacts.
             if (showArtefacts == null || showArtefacts.getValue()) {
                 // Add XSD.
-                if (xsdReport != null) {
+                if (xsdReport != null && xsdReport.getContext() != null) {
                     context.getItem().add(TestCaseUtils.getInputFor(xsdReport.getContext().getItem(), XsdReportHandler.XSD_ITEM_NAME).getFirst());
                 }
                 // Add schematrons.
@@ -115,14 +117,19 @@ public class XmlValidator extends AbstractValidator {
                     var schematronsToShow = new AnyContent();
                     if (schematronReports.size() == 1) {
                         // Show as single Schematron file.
-                        schematronsToShow = TestCaseUtils.getInputFor(schematronReports.getFirst().getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).getFirst();
+                        var schematronReport = schematronReports.getFirst();
+                        if (schematronReport.getContext() != null) {
+                            schematronsToShow = TestCaseUtils.getInputFor(schematronReports.getFirst().getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).getFirst();
+                        }
                     } else {
                         // Show as list of Schematron files.
                         schematronsToShow.setName(SchematronReportHandler.SCH_ITEM_NAME);
                         for (var schematronReport: schematronReports) {
-                            var item = TestCaseUtils.getInputFor(schematronReport.getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).getFirst();
-                            item.setName("");
-                            schematronsToShow.getItem().add(item);
+                            if (schematronReport.getContext() != null) {
+                                var item = TestCaseUtils.getInputFor(schematronReport.getContext().getItem(), SchematronReportHandler.SCH_ITEM_NAME).getFirst();
+                                item.setName("");
+                                schematronsToShow.getItem().add(item);
+                            }
                         }
                     }
                     context.getItem().add(schematronsToShow);

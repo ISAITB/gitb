@@ -167,7 +167,7 @@ public class MessagingReportUtils {
     private static Message getMessageFromReport(TAR report) {
         Message message = new Message();
         AnyContent context = report.getContext();
-        if (context.isForContext() && (context.getValue() != null || !context.getItem().isEmpty())) {
+        if (context != null && context.isForContext() && (context.getValue() != null || !context.getItem().isEmpty())) {
             var declaredType = DataTypeFactory.determineDataType(context);
             if (DataType.MAP_DATA_TYPE.equals(declaredType)) {
                 for (AnyContent child : context.getItem()) {

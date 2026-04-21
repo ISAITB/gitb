@@ -30,8 +30,6 @@ import com.gitb.types.StringType;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,8 +46,6 @@ import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
 @RestController
 public class HttpMessagingServer extends AbstractMessagingServer {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HttpMessagingServer.class);
 
     @RequestMapping(path = "/"+ API_PATH+"/{system}/{*extension}")
     public ResponseEntity<byte[]> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {

@@ -34,6 +34,7 @@ public class CoreConfiguration {
     public static String MESSAGING_CALLBACK_URL;
     public static String VALIDATION_CALLBACK_URL;
     public static String PROCESSING_CALLBACK_URL;
+	public static String GITB_REST_CALLBACK_API_ROOT;
 
     /*
      * Load the configurations from the configuration files

@@ -1065,6 +1065,8 @@ object ParameterExtractor {
     var authTokenPassword = optionalBodyParameter(request, ParameterNames.AUTH_TOKEN_PASSWORD)
     var authTokenUsername = optionalBodyParameter(request, ParameterNames.AUTH_TOKEN_USERNAME)
     var authTokenPasswordType = optionalShortBodyParameter(request, ParameterNames.AUTH_TOKEN_PASSWORD_TYPE).map(TestServiceAuthTokenPasswordType.apply(_).id.toShort)
+    var authHttpHeaderName = optionalBodyParameter(request, ParameterNames.AUTH_HTTP_HEADER_NAME)
+    var authHttpHeaderValue = optionalBodyParameter(request, ParameterNames.AUTH_HTTP_HEADER_VALUE)
     if (serviceId.isEmpty) {
       // This is a new test service - Ensure consistency of auth fields
       if ((authBasicUsername.nonEmpty || authBasicPassword.nonEmpty) && (authBasicUsername.isEmpty || authBasicPassword.isEmpty)) {
@@ -1075,6 +1077,10 @@ object ParameterExtractor {
         authTokenPassword = None
         authTokenUsername = None
         authTokenPasswordType = None
+      }
+      if ((authHttpHeaderName.nonEmpty || authHttpHeaderValue.nonEmpty) && (authHttpHeaderName.isEmpty || authHttpHeaderValue.isEmpty)) {
+        authHttpHeaderName = None
+        authHttpHeaderValue = None
       }
     }
     val service = TestService(
@@ -1088,6 +1094,8 @@ object ParameterExtractor {
       authTokenUsername = authTokenUsername,
       authTokenPassword = authTokenPassword,
       authTokenPasswordType = authTokenPasswordType,
+      authHttpHeaderName = authHttpHeaderName,
+      authHttpHeaderValue = authHttpHeaderValue,
       monitorHealth = optionalBooleanBodyParameter(request, ParameterNames.MONITOR).getOrElse(true),
       parameter = parameter.id
     )

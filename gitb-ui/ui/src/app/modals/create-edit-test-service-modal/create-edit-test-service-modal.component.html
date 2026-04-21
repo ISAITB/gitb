@@ -22,7 +22,7 @@
                 <div app-tooltip class="col-auto" tbTooltip="The endpoint address at which the service can be reached."></div>
             </div>
             <div class="row mt-3 pt-1">
-                <legend class="col-3 col-form-label text-end pt-0">* Service type:</legend>
+                <legend class="col-3 col-form-label text-end pt-0">Service type:</legend>
                 <div class="col-7">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.serviceType" name="serviceTypes" id="type_validation" [value]="Constants.TEST_SERVICE_TYPE.VALIDATION">
@@ -44,6 +44,23 @@
                     </div>
                 </div>
             </div>
+            <div class="row mt-3 pt-1">
+                <legend class="col-3 col-form-label text-end pt-0">API type:</legend>
+                <div class="col-7">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.apiType" name="apiTypes" id="api_soap" [value]="Constants.TEST_SERVICE_API_TYPE.SOAP">
+                        <label class="form-check-label" for="api_soap">{{dataService.testServiceApiTypeLabel(Constants.TEST_SERVICE_API_TYPE.SOAP)}}
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The service implements and is accessible via SOAP endpoint."></div>
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.apiType" name="apiTypes" id="api_rest" [value]="Constants.TEST_SERVICE_API_TYPE.REST">
+                        <label class="form-check-label" for="api_rest">{{dataService.testServiceApiTypeLabel(Constants.TEST_SERVICE_API_TYPE.REST)}}
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The service implements and is accessible via REST endpoint."></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
             <div class="mt-3 row">
                 <legend class="col-3 col-form-label text-end pt-0">Authentication:</legend>
                 <div class="col-7">
@@ -53,12 +70,21 @@
                             <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Authenticate using basic HTTP authentication with a username and password."></div>
                         </label>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="tokenAuthCheck" name="tokenAuthCheck" [(ngModel)]="hasTokenAuthentication">
-                        <label class="form-check-label" for="tokenAuthCheck">Token
-                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Authenticate using the WS-Security UsernameToken profile, with a username and password sent in digest or plaintext."></div>
-                        </label>
-                    </div>
+                    @if (testService.service?.apiType === Constants.TEST_SERVICE_API_TYPE.SOAP) {
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="tokenAuthCheck" name="tokenAuthCheck" [(ngModel)]="hasTokenAuthentication">
+                            <label class="form-check-label" for="tokenAuthCheck">Token
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Authenticate using the WS-Security UsernameToken profile, with a username and password sent in digest or plaintext."></div>
+                            </label>
+                        </div>
+                    } @else if (testService.service?.apiType === Constants.TEST_SERVICE_API_TYPE.REST) {
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="headerAuthCheck" name="headerAuthCheck" [(ngModel)]="hasHttpHeaderAuthentication">
+                            <label class="form-check-label" for="headerAuthCheck">Custom HTTP header
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Authenticate using a custom HTTP header included in requests."></div>
+                            </label>
+                        </div>
+                    }
                 </div>
             </div>
             <div [ngbCollapse]="!hasBasicAuthentication" [animation]="true">
@@ -93,7 +119,7 @@
                     <div app-tooltip class="col-auto" tbTooltip="The password to use for basic HTTP authentication."></div>
                 </div>
             </div>
-            <div [ngbCollapse]="!hasTokenAuthentication" [animation]="true">
+            <div [ngbCollapse]="testService.service?.apiType !== Constants.TEST_SERVICE_API_TYPE.SOAP || !hasTokenAuthentication" [animation]="true">
                 <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="tokenAuthUsername">* Token username:</label>
                     <div class="col-7"><input id="tokenAuthUsername" name="tokenAuthUsername" [(ngModel)]="testService.service!.authTokenUsername" class="form-control" type="text"></div>
@@ -140,6 +166,38 @@
                             </label>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div [ngbCollapse]="testService.service?.apiType !== Constants.TEST_SERVICE_API_TYPE.REST || !hasHttpHeaderAuthentication" [animation]="true">
+                <div class="row pt-3">
+                    <label class="col-3 col-form-label text-end" for="httpHeaderAuthName">* Header name:</label>
+                    <div class="col-7"><input id="httpHeaderAuthName" name="httpHeaderAuthName" [(ngModel)]="testService.service!.authHttpHeaderName" class="form-control" type="text"></div>
+                    <div app-tooltip class="col-auto" tbTooltip="The name of the HTTP header to be included in requests for authentication."></div>
+                </div>
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="httpHeaderAuthValue">* Header value:</label>
+                    <div class="col-7">
+                        @if (hasExistingHttpHeaderAuthentication) {
+                            <div class="row row-cols-auto align-items-center">
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="updateHeaderAuthValue" name="updateHeaderAuthValue" [(ngModel)]="updateHttpHeaderAuthValue">
+                                        <label class="form-check-label" for="updateHeaderAuthValue">Update</label>
+                                    </div>
+                                </div>
+                                <div class="col-auto flex-grow-1">
+                                    @if (updateHttpHeaderAuthValue) {
+                                        <app-secret-input inputId="headerAuthValue" inputName="headerAuthValue" name="headerAuthValueSecret" [(ngModel)]="testService.service!.authHttpHeaderValue"></app-secret-input>
+                                    } @else {
+                                        <input type="text" class="form-control" readonly="readonly" [value]="httpHeaderAuthValueMask">
+                                    }
+                                </div>
+                            </div>
+                        } @else {
+                            <app-secret-input inputId="headerAuthValue" inputName="headerAuthValue" name="headerAuthValueSecret" [(ngModel)]="testService.service!.authHttpHeaderValue"></app-secret-input>
+                        }
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="The value of the HTTP header."></div>
                 </div>
             </div>
             <div class="mt-3 row">

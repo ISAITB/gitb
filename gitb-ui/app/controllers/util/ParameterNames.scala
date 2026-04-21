@@ -293,6 +293,8 @@ object ParameterNames {
   val AUTH_TOKEN_USERNAME = "authTokenUsername"
   val AUTH_TOKEN_PASSWORD = "authTokenPassword"
   val AUTH_TOKEN_PASSWORD_TYPE = "authTokenPasswordType"
+  val AUTH_HTTP_HEADER_NAME = "authHttpHeaderName"
+  val AUTH_HTTP_HEADER_VALUE = "authHttpHeaderValue"
 
   val MENU_COLLAPSED = "menu_collapsed"
   val PAGE_SIZE = "page_size"

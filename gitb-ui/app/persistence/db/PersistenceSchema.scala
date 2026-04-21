@@ -221,9 +221,11 @@ object PersistenceSchema {
     def authTokenUsername = column[Option[String]]("auth_token_username")
     def authTokenPassword = column[Option[String]]("auth_token_password")
     def authTokenPasswordType = column[Option[Short]]("auth_token_password_type")
+    def authHttpHeaderName = column[Option[String]]("auth_http_header_name")
+    def authHttpHeaderValue = column[Option[String]]("auth_http_header_value")
     def monitorHealth = column[Boolean]("monitor_health")
     def parameter = column[Long]("parameter")
-    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, monitorHealth, parameter) <> (models.TestService.tupled, models.TestService.unapply)
+    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, authHttpHeaderName, authHttpHeaderValue, monitorHealth, parameter) <> (models.TestService.tupled, models.TestService.unapply)
   }
   val testServices = TableQuery[TestServicesTable]
 

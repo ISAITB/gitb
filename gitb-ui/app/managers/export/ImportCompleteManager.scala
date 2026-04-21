@@ -718,6 +718,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       Option(data.getAuthBasicUsername), Option(data.getAuthBasicPassword).map(decrypt(importSettings, _)),
       Option(data.getAuthTokenUsername), Option(data.getAuthTokenPassword).map(decrypt(importSettings, _)),
       Option(data.getAuthTokenPasswordType).map(toModelTestServiceAuthTokenPasswordType(_).id.toShort),
+      Option(data.getAuthHeaderName), Option(data.getAuthHeaderValue).map(decrypt(importSettings, _)),
       Option(data.isMonitorHealth).getOrElse(true),
       parameterId
     )

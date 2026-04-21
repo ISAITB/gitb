@@ -16,7 +16,9 @@
 package models
 
 case class TestService(id: Long, serviceType: Short, apiType: Short, identifier: Option[String], version: Option[String],
-                       authBasicUsername: Option[String], authBasicPassword: Option[String], authTokenUsername: Option[String], authTokenPassword: Option[String], authTokenPasswordType: Option[Short],
+                       authBasicUsername: Option[String], authBasicPassword: Option[String], authTokenUsername: Option[String],
+                       authTokenPassword: Option[String], authTokenPasswordType: Option[Short],
+                       authHttpHeaderName: Option[String], authHttpHeaderValue: Option[String],
                        monitorHealth: Boolean, parameter: Long)
 
 

@@ -22,9 +22,11 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.gitb.core.AnyContent;
+import com.gitb.engine.TestServiceInformation;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.HandlerApiType;
 import com.gitb.tr.*;
 import com.gitb.types.*;
 import com.gitb.utils.TestSessionNamespaceContext;
@@ -323,6 +325,20 @@ public class HandlerUtils {
             throw new IllegalArgumentException("Report item data was found to be null");
         }
         return wrapper.apply(item);
+    }
+
+    public static HandlerApiType determineHandlerApiType(TestServiceInformation serviceInformation, HandlerApiType declaredApiTypeInStep) {
+        // Prioritise API type defined in test step.
+        HandlerApiType apiTypeToUse = declaredApiTypeInStep;
+        if (apiTypeToUse == null && serviceInformation != null) {
+            // If not defined in step, use API type defined for the service.
+            apiTypeToUse = serviceInformation.apiType();
+        }
+        if (apiTypeToUse == null) {
+            // Default to SOAP if no API type was declared at either level.
+            apiTypeToUse = HandlerApiType.SOAP;
+        }
+        return apiTypeToUse;
     }
 
 }

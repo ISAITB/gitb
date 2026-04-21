@@ -15,6 +15,7 @@
 
 package com.gitb.engine.testcase;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.*;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.*;
@@ -32,6 +33,7 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.remote.ClientConfiguration;
 import com.gitb.remote.messaging.RemoteMessagingModuleClient;
+import com.gitb.remote.messaging.RemoteMessagingModuleRestClient;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
 import com.gitb.tr.TestResultType;
@@ -51,7 +53,6 @@ import org.slf4j.MarkerFactory;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -376,8 +377,21 @@ public class TestCaseContext {
                 String testKey = serviceConfiguration.getActor();
                 if (testKey != null && !serviceConfiguration.getConfig().isEmpty()) {
                     Properties authenticationProperties = new Properties();
-                    serviceConfiguration.getConfig().stream().filter(c -> c.getName() != null && c.getValue() != null).forEach(config -> authenticationProperties.setProperty(config.getName(), config.getValue()));
-                    registeredTestServices.put(testKey, new TestServiceInformation(authenticationProperties));
+                    serviceConfiguration.getConfig().stream().filter(c -> c.getName() != null && c.getValue() != null && !PropertyConstants.TEST_SERVICE_API_TYPE.equals(c.getName())).forEach(config -> authenticationProperties.setProperty(config.getName(), config.getValue()));
+					HandlerApiType apiType = serviceConfiguration.getConfig().stream()
+							.filter(c -> PropertyConstants.TEST_SERVICE_API_TYPE.equals(c.getName()))
+							.findAny()
+							.map(c -> {
+								if (TEST_SERVICE_API_TYPE_REST.equals(c.getValue())) {
+									return HandlerApiType.REST;
+								} else if (TEST_SERVICE_API_TYPE_SOAP.equals(c.getValue())) {
+									return HandlerApiType.SOAP;
+								} else {
+									throw new IllegalStateException("Unexpected test service API type [%s]".formatted(c.getValue()));
+								}
+							})
+							.orElse(HandlerApiType.SOAP);
+                    registeredTestServices.put(testKey, new TestServiceInformation(authenticationProperties, apiType));
                 }
             }
         }
@@ -741,20 +755,24 @@ public class TestCaseContext {
 		}
 	}
 
-    public Properties prepareRemoteServiceCallProperties(String serviceTestKey, Properties stepProperties) {
-        Properties propertiesToUse = new Properties();
-        if (stepProperties != null) {
-            propertiesToUse.putAll(stepProperties);
-        }
-        if (serviceTestKey != null) {
-            TestServiceInformation serviceInfo = registeredTestServices.get(serviceTestKey);
-            if (serviceInfo != null) {
-                // Use putIfAbsent, as the configuration coming from the test case supersedes the registered services.
-                serviceInfo.authenticationProperties().forEach(propertiesToUse::putIfAbsent);
-            }
-        }
-        return propertiesToUse;
-    }
+	public TestServiceInformation getRegisteredTestServiceInformation(String serviceTestKey) {
+		if (serviceTestKey == null) {
+			return null;
+		}
+		return registeredTestServices.get(serviceTestKey);
+	}
+
+	public Properties prepareRemoteServiceCallProperties(Properties stepProperties, TestServiceInformation testService) {
+		Properties propertiesToUse = new Properties();
+		if (stepProperties != null) {
+			propertiesToUse.putAll(stepProperties);
+		}
+		if (testService != null) {
+			// Use putIfAbsent, as the configuration coming from the test case supersedes the registered services.
+			testService.authenticationProperties().forEach(propertiesToUse::putIfAbsent);
+		}
+		return propertiesToUse;
+	}
 
 	private static class MessagingContextBuilder {
 		private final TransactionInfo transactionInfo;
@@ -792,23 +810,42 @@ public class TestCaseContext {
 
 		private IMessagingHandler getRemoteMessagingHandler(TransactionInfo transactionInfo, String sessionId) {
             TestCaseContext context = SessionManager.getInstance().getContext(sessionId);
+			TestServiceInformation serviceInformation = context.getRegisteredTestServiceInformation(transactionInfo.handlerDomainIdentifier());
+			HandlerApiType apiType = HandlerUtils.determineHandlerApiType(serviceInformation, transactionInfo.handlerApiType());
 			try {
-                return new RemoteMessagingModuleClient(
-                        new URI(transactionInfo.handler()).toURL(),
-                        context.prepareRemoteServiceCallProperties(transactionInfo.handlerDomainIdentifier(), transactionInfo.properties()),
-                        sessionId,
-                        context.getTestCaseIdentifier(),
-                        () -> {
-                            var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
-                            Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
-                            return new ClientConfiguration(handlerTimeout);
-                        },
-                        (completedTestSession) -> CallbackManager.getInstance().sessionEnded(sessionId)
-                );
+				switch (apiType) {
+					case REST -> {
+						return new RemoteMessagingModuleRestClient(
+								URI.create(transactionInfo.handler()),
+								context.prepareRemoteServiceCallProperties(transactionInfo.properties(), serviceInformation),
+								sessionId,
+								context.getTestCaseIdentifier(),
+								() -> {
+									var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
+									Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
+									return new ClientConfiguration(handlerTimeout);
+								},
+								(completedTestSession) -> CallbackManager.getInstance().sessionEnded(sessionId)
+						);
+					}
+					case SOAP -> {
+						return new RemoteMessagingModuleClient(
+								URI.create(transactionInfo.handler()).toURL(),
+								context.prepareRemoteServiceCallProperties(transactionInfo.properties(), serviceInformation),
+								sessionId,
+								context.getTestCaseIdentifier(),
+								() -> {
+									var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
+									Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
+									return new ClientConfiguration(handlerTimeout);
+								},
+								(completedTestSession) -> CallbackManager.getInstance().sessionEnded(sessionId)
+						);
+					}
+					default -> throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Unsupported handler API type [%s]".formatted(apiType)));
+				}
 			} catch (MalformedURLException e) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+transactionInfo.handler()+"]"), e);
-			} catch (URISyntaxException e) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+transactionInfo.handler()+"]"), e);
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote messaging module found with an malformed URL [%s]".formatted(transactionInfo.handler())), e);
 			}
 		}
 

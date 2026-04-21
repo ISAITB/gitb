@@ -15,17 +15,20 @@
 
 package managers
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.gitb.PropertyConstants
-import com.gitb.remote.messaging.RemoteMessagingModuleClient
-import com.gitb.remote.processing.RemoteProcessingModuleClient
-import com.gitb.remote.validation.RemoteValidationModuleClient
-import com.gitb.utils.XMLUtils
+import com.gitb.remote.messaging.{RemoteMessagingModuleClient, RemoteMessagingModuleRestClient}
+import com.gitb.remote.processing.{RemoteProcessingModuleClient, RemoteProcessingModuleRestClient}
+import com.gitb.remote.validation.{RemoteValidationModuleClient, RemoteValidationModuleRestClient}
+import com.gitb.utils.{ModelUtils, XMLUtils}
 import exceptions.{AutomationApiException, ErrorCodes}
 import jakarta.xml.bind.JAXBElement
+import managers.DomainParameterManager.JSON
 import managers.triggers.TriggerHelper
 import models.Enums.{TestServiceApiType, TestServiceAuthTokenPasswordType, TestServiceType, TriggerDataType}
-import models.automation.{DomainParameterInfo, TestServiceInfo, TestServiceSearchCriteria, TestServiceWithParameterAndDomainKey}
 import models._
+import models.automation.{DomainParameterInfo, TestServiceInfo, TestServiceSearchCriteria, TestServiceWithParameterAndDomainKey}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
@@ -39,6 +42,10 @@ import javax.xml.namespace.QName
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
+
+object DomainParameterManager {
+  val JSON: ObjectMapper = new ObjectMapper().setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
+}
 
 @Singleton
 class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
@@ -365,6 +372,14 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
             throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a token username is set you must also set the token password and password type")
           }
         }
+        if (data.service.authHttpHeaderName.isEmpty) {
+          if (receivedData.authHeaderName.flatten.isEmpty && receivedData.authHeaderValue.flatten.isDefined) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When HTTP header-based authentication is not used an update of the header value is not expected")
+          }
+          if (receivedData.authHeaderName.flatten.isDefined && receivedData.authHeaderValue.flatten.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a HTTP header name is set for authentication you must also set the header value")
+          }
+        }
         data
       }
       // Update the parameter data
@@ -383,6 +398,8 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         authTokenUsername = receivedData.authTokenUsername.getOrElse(existingData.service.authTokenUsername),
         authTokenPassword = receivedData.authTokenPassword.getOrElse(existingData.service.authTokenPassword),
         authTokenPasswordType = receivedData.authTokenPasswordType.getOrElse(existingData.service.authTokenPasswordType.map(x => TestServiceAuthTokenPasswordType.apply(x))).map(_.id.toShort),
+        authHttpHeaderName = receivedData.authHeaderName.getOrElse(existingData.service.authHttpHeaderName),
+        authHttpHeaderValue = receivedData.authHeaderValue.getOrElse(existingData.service.authHttpHeaderValue)
       ))
     } yield ()
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -575,10 +592,11 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
   }
 
   def createTestServiceInternal(service: TestService): DBIO[Long] = {
-    val serviceToSave = if (service.authBasicPassword.isDefined || service.authTokenPassword.isDefined) {
+    val serviceToSave = if (service.authBasicPassword.isDefined || service.authTokenPassword.isDefined || service.authHttpHeaderValue.isDefined) {
       service.copy(
         authBasicPassword = service.authBasicPassword.map(MimeUtil.encryptString),
-        authTokenPassword = service.authTokenPassword.map(MimeUtil.encryptString)
+        authTokenPassword = service.authTokenPassword.map(MimeUtil.encryptString),
+        authHttpHeaderValue = service.authHttpHeaderValue.map(MimeUtil.encryptString)
       )
     } else {
       service
@@ -657,8 +675,8 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       // Update non-password information
       _ <- PersistenceSchema.testServices
         .filter(_.id === service.id)
-        .map(x => (x.serviceType, x.apiType, x.identifier, x.version, x.authBasicUsername, x.authTokenUsername, x.authTokenPasswordType, x.monitorHealth, x.parameter))
-        .update((service.serviceType, service.apiType, service.identifier, service.version, service.authBasicUsername, service.authTokenUsername, service.authTokenPasswordType, service.monitorHealth, service.parameter))
+        .map(x => (x.serviceType, x.apiType, x.identifier, x.version, x.authBasicUsername, x.authTokenUsername, x.authTokenPasswordType, x.authHttpHeaderName, x.monitorHealth, x.parameter))
+        .update((service.serviceType, service.apiType, service.identifier, service.version, service.authBasicUsername, service.authTokenUsername, service.authTokenPasswordType, service.authHttpHeaderName, service.monitorHealth, service.parameter))
       // Handle basic auth password
       _ <- {
         if (service.authBasicUsername.isDefined) {
@@ -698,6 +716,27 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
           PersistenceSchema.testServices
             .filter(_.id === service.id)
             .map(_.authTokenPassword)
+            .update(None)
+        }
+      }
+      // Handle HTTP header auth header value
+      _ <- {
+        if (service.authHttpHeaderName.isDefined) {
+          if (service.authHttpHeaderValue.isDefined) {
+            // We are updating the header value
+            PersistenceSchema.testServices
+              .filter(_.id === service.id)
+              .map(_.authHttpHeaderValue)
+              .update(service.authHttpHeaderValue.map(MimeUtil.encryptString))
+          } else {
+            // No value update
+            DBIO.successful(())
+          }
+        } else {
+          // No header name - ensure the header value is not set
+          PersistenceSchema.testServices
+            .filter(_.id === service.id)
+            .map(_.authHttpHeaderValue)
             .update(None)
         }
       }
@@ -774,24 +813,26 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       // New test service - use provided data as-is.
       Future.successful(receivedServiceData)
     } else {
-      // Existing service - we may need to load passwords if these are not replaced in the received data.
+      // Existing service - we may need to load secrets if these are not replaced in the received data.
       if ((receivedServiceData.service.authBasicUsername.isEmpty || receivedServiceData.service.authBasicPassword.nonEmpty)
-          && (receivedServiceData.service.authTokenUsername.isEmpty || receivedServiceData.service.authTokenPassword.nonEmpty)) {
-        // Authentication is either disabled (both basic and token), or in both cases the passwords are provided in the received data.
+          && (receivedServiceData.service.authTokenUsername.isEmpty || receivedServiceData.service.authTokenPassword.nonEmpty)
+          && (receivedServiceData.service.authHttpHeaderName.isEmpty || receivedServiceData.service.authHttpHeaderValue.nonEmpty)) {
+        // Authentication is either disabled, or in all cases, secrets are provided in the received data.
         Future.successful(receivedServiceData)
       } else {
-        // We have active authentication but passwords were not received. We need to load the stored password information.
+        // We have active authentication but secrets were not received. We need to load the stored secret information.
         DB.run {
           PersistenceSchema.testServices
             .filter(_.id === receivedServiceData.service.id)
-            .map(x => (x.authBasicPassword, x.authTokenPassword))
+            .map(x => (x.authBasicPassword, x.authTokenPassword, x.authHttpHeaderValue))
             .result
             .head
         }.map { result =>
           receivedServiceData.copy(
             service = receivedServiceData.service.copy(
               authBasicPassword = result._1.map(MimeUtil.decryptString),
-              authTokenPassword = result._2.map(MimeUtil.decryptString)
+              authTokenPassword = result._2.map(MimeUtil.decryptString),
+              authHttpHeaderValue = result._3.map(MimeUtil.decryptString)
             )
           )
         }
@@ -803,15 +844,20 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     val props = new Properties
     testService.service.authBasicUsername.foreach(props.put(PropertyConstants.AUTH_BASIC_USERNAME, _))
     testService.service.authBasicPassword.foreach(props.put(PropertyConstants.AUTH_BASIC_PASSWORD, _))
-    testService.service.authTokenUsername.foreach(props.put(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME, _))
-    testService.service.authTokenPassword.foreach(props.put(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD, _))
-    testService.service.authTokenPasswordType.foreach { x =>
-      val passwordType = TestServiceAuthTokenPasswordType.apply(x) match {
-        case TestServiceAuthTokenPasswordType.Digest => PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST
-        case TestServiceAuthTokenPasswordType.Text => PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT
-        case _ => throw new IllegalStateException("Unexpected test service auth token password type [%s]".formatted(x))
+    if (testService.service.apiType == Enums.TestServiceApiType.SoapApi.id) {
+      testService.service.authTokenUsername.foreach(props.put(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME, _))
+      testService.service.authTokenPassword.foreach(props.put(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD, _))
+      testService.service.authTokenPasswordType.foreach { x =>
+        val passwordType = TestServiceAuthTokenPasswordType.apply(x) match {
+          case TestServiceAuthTokenPasswordType.Digest => PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST
+          case TestServiceAuthTokenPasswordType.Text => PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT
+          case _ => throw new IllegalStateException("Unexpected test service auth token password type [%s]".formatted(x))
+        }
+        props.put(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, passwordType)
       }
-      props.put(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, passwordType)
+    } else {
+      testService.service.authHttpHeaderName.foreach(props.put(PropertyConstants.AUTH_HEADER_NAME, _))
+      testService.service.authHttpHeaderValue.foreach(props.put(PropertyConstants.AUTH_HEADER_VALUE, _))
     }
     props
   }
@@ -822,7 +868,8 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         serviceData.copy(
           service = serviceData.service.copy(
             authBasicPassword = serviceData.service.authBasicPassword.map(MimeUtil.decryptString),
-            authTokenPassword = serviceData.service.authTokenPassword.map(MimeUtil.decryptString)
+            authTokenPassword = serviceData.service.authTokenPassword.map(MimeUtil.decryptString),
+            authHttpHeaderValue = serviceData.service.authHttpHeaderValue.map(MimeUtil.decryptString)
           )
         )
       }
@@ -837,35 +884,69 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield result
   }
 
-  private def makeTestServiceTestCall(serviceDataToUse: TestServiceWithParameter) = {
+  private def makeTestServiceTestCall(serviceDataToUse: TestServiceWithParameter): Future[ServiceTestResult] = {
     Future {
-      val serviceUrl = URI.create(serviceDataToUse.parameter.value.get).toURL
+      val serviceUri = URI.create(serviceDataToUse.parameter.value.get)
       val callProperties = prepareTestServiceCallProperties(serviceDataToUse)
-      val response = TestServiceType.apply(serviceDataToUse.service.serviceType) match {
-        case TestServiceType.ValidationService =>
-          val client = new RemoteValidationModuleClient(serviceUrl, callProperties)
-          val wrapper = new com.gitb.vs.GetModuleDefinitionResponse
-          wrapper.setModule(client.getModuleDefinition)
-          new JAXBElement[com.gitb.vs.GetModuleDefinitionResponse](new QName("http://www.gitb.com/vs/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.vs.GetModuleDefinitionResponse], wrapper)
-        case TestServiceType.MessagingService =>
-          val client = new RemoteMessagingModuleClient(serviceUrl, callProperties)
-          val wrapper = new com.gitb.ms.GetModuleDefinitionResponse
-          wrapper.setModule(client.getModuleDefinition)
-          new JAXBElement[com.gitb.ms.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ms/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ms.GetModuleDefinitionResponse], wrapper)
-        case TestServiceType.ProcessingService =>
-          val client = new RemoteProcessingModuleClient(serviceUrl, callProperties)
-          val wrapper = new com.gitb.ps.GetModuleDefinitionResponse
-          wrapper.setModule(client.getModuleDefinition)
-          new JAXBElement[com.gitb.ps.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ps.GetModuleDefinitionResponse], wrapper)
-        case _ => throw new IllegalArgumentException("Unknown test service type %s".formatted(serviceDataToUse.service.serviceType))
+      TestServiceApiType.apply(serviceDataToUse.service.apiType) match {
+        case TestServiceApiType.SoapApi =>
+          val serviceUrl = serviceUri.toURL
+          TestServiceType.apply(serviceDataToUse.service.serviceType) match {
+            case TestServiceType.ValidationService =>
+              val client = new RemoteValidationModuleClient(serviceUrl, callProperties)
+              val wrapper = new com.gitb.vs.GetModuleDefinitionResponse
+              wrapper.setModule(client.getModuleDefinition)
+              val response = new JAXBElement[com.gitb.vs.GetModuleDefinitionResponse](new QName("http://www.gitb.com/vs/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.vs.GetModuleDefinitionResponse], wrapper)
+              processTestServiceTestCallViaSoap(response)
+            case TestServiceType.MessagingService =>
+              val client = new RemoteMessagingModuleClient(serviceUrl, callProperties)
+              val wrapper = new com.gitb.ms.GetModuleDefinitionResponse
+              wrapper.setModule(client.getModuleDefinition)
+              val response = new JAXBElement[com.gitb.ms.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ms/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ms.GetModuleDefinitionResponse], wrapper)
+              processTestServiceTestCallViaSoap(response)
+            case TestServiceType.ProcessingService =>
+              val client = new RemoteProcessingModuleClient(serviceUrl, callProperties)
+              val wrapper = new com.gitb.ps.GetModuleDefinitionResponse
+              wrapper.setModule(client.getModuleDefinition)
+              val response = new JAXBElement[com.gitb.ps.GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[com.gitb.ps.GetModuleDefinitionResponse], wrapper)
+              processTestServiceTestCallViaSoap(response)
+            case _ => throw new IllegalArgumentException("Unknown test service type %s".formatted(serviceDataToUse.service.serviceType))
+          }
+        case TestServiceApiType.RestApi =>
+          TestServiceType.apply(serviceDataToUse.service.serviceType) match {
+            case TestServiceType.ValidationService =>
+              val client = new RemoteValidationModuleRestClient(serviceUri, callProperties)
+              val wrapper = new com.gitb.vs.GetModuleDefinitionResponse
+              wrapper.setModule(client.getModuleDefinition(false))
+              processTestServiceTestCallViaRest(ModelUtils.toModel(wrapper))
+            case TestServiceType.MessagingService =>
+              val client = new RemoteMessagingModuleRestClient(serviceUri, callProperties)
+              val wrapper = new com.gitb.ms.GetModuleDefinitionResponse
+              wrapper.setModule(client.getModuleDefinition(false))
+              processTestServiceTestCallViaRest(ModelUtils.toModel(wrapper))
+            case TestServiceType.ProcessingService =>
+              val client = new RemoteProcessingModuleRestClient(serviceUri, callProperties)
+              val wrapper = new com.gitb.ps.GetModuleDefinitionResponse
+              wrapper.setModule(client.getModuleDefinition(false))
+              processTestServiceTestCallViaRest(ModelUtils.toModel(wrapper))
+            case _ => throw new IllegalArgumentException("Unknown test service type %s".formatted(serviceDataToUse.service.serviceType))
+          }
+        case _ => throw new IllegalArgumentException("Unknown test service API type %s".formatted(serviceDataToUse.service.apiType))
       }
-      val bos = new ByteArrayOutputStream()
-      XMLUtils.marshalToStream(response, bos)
-      ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
     }.recover {
       case exception: Exception =>
         ServiceTestResult(success = false, Some(extractFailureDetails(exception)), Constants.MimeTypeTextPlain)
     }
+  }
+
+  private def processTestServiceTestCallViaRest(response: Object): ServiceTestResult = {
+    ServiceTestResult(success = true, Some(List(JSON.writeValueAsString(response))), Constants.MimeTypeJSON)
+  }
+
+  private def processTestServiceTestCallViaSoap(response: JAXBElement[_]): ServiceTestResult = {
+    val bos = new ByteArrayOutputStream()
+    XMLUtils.marshalToStream(response, bos)
+    ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
   }
 
   def getTestServicesForHealthCheck(communityId: Option[Long], domainId: Option[Long]): Future[Iterable[TestServiceBasicInfo]] = {

@@ -5657,6 +5657,14 @@
             "type": "string",
             "enum": ["digest", "text"]
           },
+          "authHttpHeaderName": {
+            "description": "When authentication via HTTP header is used, this is the name of the header.",
+            "type": "string"
+          },
+          "authHttpHeaderValue": {
+            "description": "When authentication via HTTP header is used, this is the value of the header.",
+            "type": "string"
+          },
           "identifier": {
             "description": "The service's reference identifier.",
             "type": "string"
@@ -5728,6 +5736,14 @@
             "description": "When the WS-Security UsernameToken profile is used, this is the type of password provision to use. Skip this if no update should be made.",
             "type": "string",
             "enum": ["digest", "text"]
+          },
+          "authHttpHeaderName": {
+            "description": "When authentication via HTTP header is used, this is the name of the header. Skip this if no update should be made or set with an empty string to delete all header-based authentication information.",
+            "type": "string"
+          },
+          "authHttpHeaderValue": {
+            "description": "When authentication via HTTP header is used, this is the value of the header to use. Skip this if no update should be made.",
+            "type": "string"
           },
           "identifier": {
             "description": "The service's reference identifier. Skip this if no update should be made or set with an empty string to delete the existing value.",

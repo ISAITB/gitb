@@ -111,10 +111,11 @@ public class SessionManager {
 	}
 
 	public void endSession(String sessionId) {
-		TestCaseContext testCaseContext = contexts.remove(sessionId);
+		TestCaseContext testCaseContext = contexts.get(sessionId);
 		if (testCaseContext != null) {
 			testCaseContext.destroy();
 		}
+		contexts.remove(sessionId);
 	}
 
 	public void destroy() {

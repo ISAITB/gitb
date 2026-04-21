@@ -26,13 +26,18 @@ public class PropertyConstants {
     public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE = "auth.token.password.type";
     public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT = "text";
     public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST = "digest";
-
     public static final String AUTH_BASIC_USERNAME = "auth.basic.username";
     public static final String AUTH_BASIC_PASSWORD = "auth.basic.password";
+    public static final String AUTH_HEADER_NAME = "auth.header.name";
+    public static final String AUTH_HEADER_VALUE = "auth.header.value";
 
     public static final String TEST_SESSION_ID = "TEST_SESSION_ID";
     public static final String TEST_CASE_ID = "TEST_CASE_ID";
     public static final String TEST_STEP_ID = "TEST_STEP_ID";
+
+    public static final String TEST_SERVICE_API_TYPE = "TEST_SERVICE_API_TYPE";
+    public static final String TEST_SERVICE_API_TYPE_SOAP = "SOAP";
+    public static final String TEST_SERVICE_API_TYPE_REST = "REST";
 
     public static final String DOMAIN_MAP = "DOMAIN";
     public static final String ORGANISATION_MAP = "ORGANISATION";

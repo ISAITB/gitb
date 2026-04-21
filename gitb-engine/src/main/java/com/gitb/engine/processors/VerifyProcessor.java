@@ -19,6 +19,7 @@ import com.gitb.common.AliasManager;
 import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
+import com.gitb.engine.TestServiceInformation;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -33,8 +34,10 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.remote.ClientConfiguration;
 import com.gitb.remote.HandlerTimeoutException;
 import com.gitb.remote.validation.RemoteValidationModuleClient;
+import com.gitb.remote.validation.RemoteValidationModuleRestClient;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.ErrorLevel;
+import com.gitb.tdl.HandlerApiType;
 import com.gitb.tdl.Verify;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
@@ -46,7 +49,6 @@ import com.gitb.validation.IValidationHandler;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.gitb.engine.utils.TestCaseUtils.postProcessReport;
@@ -93,7 +95,8 @@ public class VerifyProcessor implements IProcessor {
 			validator = getRemoteValidator(handler, handlerDomainIdentifier,
 					TestCaseUtils.getStepProperties(verify.getProperty(), resolver),
 					scope.getContext().getSessionId(),
-					HandlerUtils.getHandlerTimeout(verify.getHandlerTimeout(), resolver)
+					HandlerUtils.getHandlerTimeout(verify.getHandlerTimeout(), resolver),
+					verify.getHandlerApiType()
 			);
 		} else {
 			// This is a local validator.
@@ -202,20 +205,34 @@ public class VerifyProcessor implements IProcessor {
 		return true;
 	}
 
-	private IValidationHandler getRemoteValidator(String handler, String handlerDomainIdentifier, Properties connectionProperties, String sessionId, Long handlerTimeout) {
+	private IValidationHandler getRemoteValidator(String handler, String handlerDomainIdentifier, Properties connectionProperties, String sessionId, Long handlerTimeout, HandlerApiType declaredApiType) {
         TestCaseContext context = SessionManager.getInstance().getContext(sessionId);
+		TestServiceInformation serviceInformation = context.getRegisteredTestServiceInformation(handlerDomainIdentifier);
+		HandlerApiType apiType = HandlerUtils.determineHandlerApiType(serviceInformation, declaredApiType);
 		try {
-			return new RemoteValidationModuleClient(
-                    new URI(handler).toURL(),
-                    context.prepareRemoteServiceCallProperties(handlerDomainIdentifier, connectionProperties),
-                    sessionId,
-                    context.getTestCaseIdentifier(),
-                    new ClientConfiguration(handlerTimeout)
-            );
+			switch (apiType) {
+				case REST -> {
+					return new RemoteValidationModuleRestClient(
+							URI.create(handler),
+							context.prepareRemoteServiceCallProperties(connectionProperties, serviceInformation),
+							sessionId,
+							context.getTestCaseIdentifier(),
+							() -> new ClientConfiguration(handlerTimeout)
+					);
+				}
+				case SOAP -> {
+					return new RemoteValidationModuleClient(
+							URI.create(handler).toURL(),
+							context.prepareRemoteServiceCallProperties(connectionProperties, serviceInformation),
+							sessionId,
+							context.getTestCaseIdentifier(),
+							new ClientConfiguration(handlerTimeout)
+					);
+				}
+				default -> throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Unsupported handler API type [%s]".formatted(apiType)));
+			}
 		} catch (MalformedURLException e) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
-		} catch (URISyntaxException e) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+handler+"]"), e);
+			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL [%s]".formatted(handler)), e);
 		}
 	}
 

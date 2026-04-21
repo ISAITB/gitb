@@ -25,6 +25,7 @@ case class TestServiceInfo(parameterInfo: KeyValue, description: Option[Option[S
                            serviceType: Option[TestServiceType], apiType: Option[TestServiceApiType],
                            authBasicUsername: Option[Option[String]], authBasicPassword: Option[Option[String]],
                            authTokenUsername: Option[Option[String]], authTokenPassword: Option[Option[String]], authTokenPasswordType: Option[Option[TestServiceAuthTokenPasswordType]],
+                           authHeaderName: Option[Option[String]], authHeaderValue: Option[Option[String]],
                            identifier: Option[Option[String]], version: Option[Option[String]], domainApiKey: Option[String], replaceExisting: Boolean) {
 
   def getParameter(parameterId: Option[Long], domainId: Long): DomainParameter = {
@@ -35,7 +36,7 @@ case class TestServiceInfo(parameterInfo: KeyValue, description: Option[Option[S
     TestService(
       serviceId.getOrElse(0L), serviceType.get.id.toShort, apiType.getOrElse(TestServiceApiType.SoapApi).id.toShort, identifier.flatten, version.flatten,
       authBasicUsername.flatten, authBasicPassword.flatten, authTokenUsername.flatten, authTokenPassword.flatten, authTokenPasswordType.flatten.map(_.id.toShort),
-      monitorHealth = true, parameterId
+      authHeaderName.flatten, authHeaderValue.flatten, monitorHealth = true, parameterId
     )
   }
 

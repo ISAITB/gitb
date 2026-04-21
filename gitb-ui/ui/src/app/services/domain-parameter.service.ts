@@ -188,6 +188,8 @@ export class DomainParameterService {
       authTokenPassword : data.service.authTokenPassword,
       authTokenUsername : data.service.authTokenUsername,
       authTokenPasswordType : data.service.authTokenPasswordType,
+      authHttpHeaderName : data.service.authHttpHeaderName,
+      authHttpHeaderValue : data.service.authHttpHeaderValue,
       monitor: data.service.monitor,
     }
     if (updateExistingParameter != undefined) {

@@ -115,7 +115,8 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                     handlerInfo.domainIdentifier(),
                     TestCaseUtils.getStepProperties(step.getProperty(), resolver),
                     scope.getContext().getSessionId(),
-                    HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver)
+                    HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver),
+                    step.getHandlerApiType()
             );
         } else {
             // A processing transaction is referenced.

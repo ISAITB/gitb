@@ -61,7 +61,7 @@ public class TransactionInfoVisitor implements StepTraversalVisitor {
                         .map(TestRole::getId)
                         .orElseGet(() -> state.testCase().getActors().getActor().getFirst().getId());
             }
-            transactions.add(buildTransactionInfo(fromActor, toActor, beginTransactionStep.getHandler(), beginTransactionStep.getHandlerTimeout(), beginTransactionStep.getProperty(), state));
+            transactions.add(buildTransactionInfo(fromActor, toActor, beginTransactionStep.getHandler(), beginTransactionStep.getHandlerTimeout(), beginTransactionStep.getProperty(), state, beginTransactionStep.getHandlerApiType()));
         } else if (step instanceof MessagingStep messagingStep) {
             if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
                 String fromActor;
@@ -73,19 +73,19 @@ public class TransactionInfoVisitor implements StepTraversalVisitor {
                     fromActor = Objects.requireNonNullElseGet(messagingStep.getFrom(), state.context()::getDefaultNonSutActor);
                     toActor = Objects.requireNonNullElseGet(messagingStep.getTo(), state.context()::getDefaultSutActor);
                 }
-                transactions.add(buildTransactionInfo(fromActor, toActor, messagingStep.getHandler(), messagingStep.getHandlerTimeout(), messagingStep.getProperty(), state));
+                transactions.add(buildTransactionInfo(fromActor, toActor, messagingStep.getHandler(), messagingStep.getHandlerTimeout(), messagingStep.getProperty(), state, messagingStep.getHandlerApiType()));
             }
         } else if (step instanceof UserInteraction interactionStep) {
             if (!Strings.CS.equals(interactionStep.getHandlerEnabled(), "false") && interactionStep.getHandler() != null) {
                 // We have an interaction step that may delegate processing to a custom handler.
                 String interactionActor = state.context().getDefaultSutActor();
                 List<Configuration> stepProperties = Optional.ofNullable(interactionStep.getHandlerConfig()).map(HandlerConfiguration::getProperty).orElseGet(Collections::emptyList);
-                transactions.add(buildTransactionInfo(interactionActor, interactionActor, interactionStep.getHandler(), interactionStep.getHandlerTimeout(), stepProperties, state));
+                transactions.add(buildTransactionInfo(interactionActor, interactionActor, interactionStep.getHandler(), interactionStep.getHandlerTimeout(), stepProperties, state, interactionStep.getHandlerApiType()));
             }
         }
     }
 
-    private TransactionInfo buildTransactionInfo(String from, String to, String handler, String handlerTimeout, List<Configuration> properties, StepTraversalState state) {
+    private TransactionInfo buildTransactionInfo(String from, String to, String handler, String handlerTimeout, List<Configuration> properties, StepTraversalState state, HandlerApiType declaredHandlerApiType) {
         String handlerValue;
         String handlerDomainIdentifier;
         if (VariableResolver.isVariableReference(handler)) {
@@ -104,6 +104,7 @@ public class TransactionInfoVisitor implements StepTraversalVisitor {
                 handlerValue,
                 handlerDomainIdentifier,
                 handlerTimeout,
+                declaredHandlerApiType,
                 TestCaseUtils.getStepProperties(properties, state.getExpressionHandler().getVariableResolver())
         );
     }

@@ -624,6 +624,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 exportedTestService.setAuthTokenUsername(testService.authTokenUsername.orNull)
                 exportedTestService.setAuthTokenPassword(encryptText(testService.authTokenPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
                 exportedTestService.setAuthTokenPasswordType(testService.authTokenPasswordType.map(x => toExportedTestServiceAuthTokenPasswordType(models.Enums.TestServiceAuthTokenPasswordType.apply(x))).orNull)
+                exportedTestService.setAuthHeaderName(testService.authHttpHeaderName.orNull)
+                exportedTestService.setAuthHeaderValue(encryptText(testService.authHttpHeaderValue, isAlreadyEncrypted = true, exportSettings.encryptionKey))
                 exportedTestService.setMonitorHealth(testService.monitorHealth)
                 exportedTestService.setParameter(exportedDomainParameterMap(testService.parameter))
                 exportedDomain.getTestServices.getService.add(exportedTestService)

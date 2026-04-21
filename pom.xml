@@ -86,6 +86,7 @@
         <version.jackson>2.21.1</version.jackson>
         <version.jacksonAnnotations>2.21</version.jacksonAnnotations>
         <version.pdfbox>3.0.7</version.pdfbox>
+        <version.swaggerUi>5.32.4</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
         <engineVersion>${project.version}</engineVersion>
@@ -282,6 +283,11 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types-jakarta</artifactId>
+                <version>${version.gitbTypes}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.europa.ec.itb</groupId>
+                <artifactId>gitb-types-model</artifactId>
                 <version>${version.gitbTypes}</version>
             </dependency>
             <dependency>
@@ -597,6 +603,11 @@
                 <version>${version.jacksonAnnotations}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.pdfbox</groupId>
                 <artifactId>pdfbox</artifactId>
                 <version>${version.pdfbox}</version>
@@ -610,6 +621,11 @@
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${version.freeMarker}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>${version.swaggerUi}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

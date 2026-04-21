@@ -131,6 +131,7 @@ public class TestEngineConfiguration {
             CoreConfiguration.VALIDATION_CALLBACK_URL = validationCallbackUrl;
             CoreConfiguration.PROCESSING_CALLBACK_URL = processingCallbackUrl;
 			HANDLER_API_ROOT = rootCallbackUrl+HANDLER_API_SEGMENT+"/";
+			CoreConfiguration.GITB_REST_CALLBACK_API_ROOT = HANDLER_API_ROOT+"gitb";
 			// Determine callback URLs - end.
 			// Temp storage properties - start.
 			TEMP_STORAGE_ENABLED = config.getBoolean("gitb.engine.storage.enabled", Boolean.TRUE);

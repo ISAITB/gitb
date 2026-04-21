@@ -24,7 +24,7 @@ import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import managers.TestExecutionManager.{LOGGER, SessionCompletionData}
 import managers.triggers.TriggerHelper
-import models.Enums.{InputMappingMatchType, TestServiceAuthTokenPasswordType}
+import models.Enums.{InputMappingMatchType, TestServiceApiType, TestServiceAuthTokenPasswordType}
 import models._
 import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest}
 import models.prerequisites.PrerequisiteUtil
@@ -185,32 +185,46 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       PersistenceSchema.domainParameters
         .join(PersistenceSchema.testServices).on(_.id === _.parameter)
         .filter(_._1.domain === domainId)
-        .filter(x => x._2.authBasicUsername.isDefined || x._2.authTokenUsername.isDefined)
-        .map(x => (x._1.name, x._2.authBasicUsername, x._2.authBasicPassword, x._2.authTokenUsername, x._2.authTokenPassword, x._2.authTokenPasswordType))
+        .filter(x => x._2.authBasicUsername.isDefined || x._2.authTokenUsername.isDefined || x._2.authHttpHeaderName.isDefined || x._2.apiType =!= TestServiceApiType.SoapApi.id.toShort)
+        .map(x => (x._1.name, x._2.apiType, x._2.authBasicUsername, x._2.authBasicPassword, x._2.authTokenUsername, x._2.authTokenPassword, x._2.authTokenPasswordType, x._2.authHttpHeaderName, x._2.authHttpHeaderValue))
         .result
         .map { results =>
           Some(results.map { result =>
             val testKey = result._1
-            val authBasicUsername = result._2
-            val authBasicPassword = result._3
-            val authTokenUsername = result._4
-            val authTokenPassword = result._5
-            val authTokenPasswordType = result._6
+            val apiType = result._2
+            val authBasicUsername = result._3
+            val authBasicPassword = result._4
+            val authTokenUsername = result._5
+            val authTokenPassword = result._6
+            val authTokenPasswordType = result._7
+            val authHeaderName = result._8
+            val authHeaderValue = result._9
             val configs = new ListBuffer[TypedConfiguration]
             if (authBasicUsername.isDefined && authBasicPassword.isDefined) {
               configs += toTypedConfig(PropertyConstants.AUTH_BASIC_USERNAME, authBasicUsername.get, "SIMPLE")
               configs += toTypedConfig(PropertyConstants.AUTH_BASIC_PASSWORD, MimeUtil.decryptString(authBasicPassword.get), "SIMPLE")
             }
-            if (authTokenUsername.isDefined && authTokenPassword.isDefined && authTokenPasswordType.isDefined) {
-              configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME, authTokenUsername.get, "SIMPLE")
-              configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD, MimeUtil.decryptString(authTokenPassword.get), "SIMPLE")
-              TestServiceAuthTokenPasswordType.apply(authTokenPasswordType.get) match {
-                case TestServiceAuthTokenPasswordType.Digest =>
-                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST, "SIMPLE")
-                case TestServiceAuthTokenPasswordType.Text =>
-                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT, "SIMPLE")
-                case _ => throw new IllegalStateException("Unknown token password type [%s]".formatted(authTokenPasswordType.get))
-              }
+            TestServiceApiType.apply(apiType) match {
+              case TestServiceApiType.RestApi =>
+                configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_TYPE, PropertyConstants.TEST_SERVICE_API_TYPE_REST, "SIMPLE")
+                if (authHeaderName.isDefined && authHeaderValue.isDefined) {
+                  configs += toTypedConfig(PropertyConstants.AUTH_HEADER_NAME, authHeaderName.get, "SIMPLE")
+                  configs += toTypedConfig(PropertyConstants.AUTH_HEADER_VALUE, MimeUtil.decryptString(authHeaderValue.get), "SIMPLE")
+                }
+              case TestServiceApiType.SoapApi =>
+                configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_TYPE, PropertyConstants.TEST_SERVICE_API_TYPE_SOAP, "SIMPLE")
+                if (authTokenUsername.isDefined && authTokenPassword.isDefined && authTokenPasswordType.isDefined) {
+                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME, authTokenUsername.get, "SIMPLE")
+                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD, MimeUtil.decryptString(authTokenPassword.get), "SIMPLE")
+                  TestServiceAuthTokenPasswordType.apply(authTokenPasswordType.get) match {
+                    case TestServiceAuthTokenPasswordType.Digest =>
+                      configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST, "SIMPLE")
+                    case TestServiceAuthTokenPasswordType.Text =>
+                      configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT, "SIMPLE")
+                    case _ => throw new IllegalStateException("Unknown token password type [%s]".formatted(authTokenPasswordType.get))
+                  }
+                }
+              case _ => throw new IllegalStateException("Unknown test service API type [%s]".formatted(apiType))
             }
             val actorKey = "%s%s%s".formatted(PropertyConstants.ACTOR_CONFIG_TEST_SERVICE, PropertyConstants.ACTOR_CONFIG_TEST_SERVICE_SEPARATOR, testKey)
             TypedActorConfiguration(actorKey, actorKey, configs.toList)

@@ -62,7 +62,8 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
                 handlerInfo.domainIdentifier(),
                 TestCaseUtils.getStepProperties(step.getProperty(), resolver),
                 scope.getContext().getSessionId(),
-                HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver)
+                HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver),
+                step.getHandlerApiType()
         );
         String session = context.getHandler().beginTransaction(step.getId(), step.getConfig());
         if (session == null || session.isBlank()) {

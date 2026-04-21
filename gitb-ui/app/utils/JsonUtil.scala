@@ -948,6 +948,7 @@ object JsonUtil {
       "authBasicUsername" -> service.authBasicUsername,
       "authTokenUsername" -> service.authTokenUsername,
       "authTokenPasswordType" -> service.authTokenPasswordType,
+      "authHttpHeaderName" -> service.authHttpHeaderName,
       "monitor" -> service.monitorHealth
     )
   }
@@ -1646,6 +1647,8 @@ object JsonUtil {
       (json \ "authTokenUsername").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "authTokenPassword").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
       (json \ "authTokenPasswordType").asOpt[String].map(x => Some(Enums.parseTestServiceAuthTokenPasswordTypeForApi(x))),
+      (json \ "authHttpHeaderName").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "authHttpHeaderValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
       (json \ "identifier").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "version").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "domain").asOpt[String],
@@ -1680,6 +1683,12 @@ object JsonUtil {
       if (info.authTokenUsername.flatten.isEmpty && (info.authTokenPassword.flatten.isDefined || info.authTokenPasswordType.flatten.isDefined)) {
         throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a token authentication password but no username")
       }
+      if (info.authHeaderName.flatten.isDefined && info.authHeaderValue.flatten.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When an HTTP header name is provided for authentication you must also set the header value")
+      }
+      if (info.authHeaderName.flatten.isEmpty && info.authHeaderValue.flatten.isDefined) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a HTTP header value for authentication but no header name")
+      }
     } else {
       // Provided empty usernames means that we delete the relevant password information.
       if (info.authBasicUsername.exists(_.isEmpty) && info.authBasicPassword.exists(_.isDefined)) {
@@ -1693,6 +1702,12 @@ object JsonUtil {
       }
       if ((info.authTokenUsername.exists(_.isDefined) || info.authTokenUsername.isEmpty) && (info.authTokenPassword.exists(_.isEmpty) || info.authTokenPasswordType.exists(_.isEmpty))) {
         throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When token authentication is used the password and password type are required")
+      }
+      if (info.authHeaderName.exists(_.isEmpty) && info.authHeaderValue.exists(_.isDefined)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When removing HTTP header-based authentication you must not specify the header value")
+      }
+      if ((info.authHeaderName.exists(_.isDefined) || info.authHeaderName.isEmpty) && info.authHeaderValue.exists(_.isEmpty)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When HTTP header-based authentication is used the header value is required")
       }
     }
     info
