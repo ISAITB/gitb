@@ -252,6 +252,21 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <vulnerabilityName regex="true">(?s).*</vulnerabilityName>
-    </suppress>    
-
+    </suppress>
+    <suppress>
+        <!-- WebFlux not used and Docker image is linux-based. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.17.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-22745</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Affects example code that is not used. -->
+        <notes><![CDATA[
+    file name: pdfbox-3.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/.*@.*$</packageUrl>
+        <cve>CVE-2026-33929</cve>
+    </suppress>
 </suppressions>

@@ -317,5 +317,13 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-2332</vulnerabilityName>
-    </suppress>    
+    </suppress>
+    <suppress>
+        <!-- Affects example code that is not used. -->
+        <notes><![CDATA[
+    file name: pdfbox-3.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/.*@.*$</packageUrl>
+        <cve>CVE-2026-33929</cve>
+    </suppress>
 </suppressions>
