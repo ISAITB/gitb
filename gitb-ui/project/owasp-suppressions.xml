@@ -326,4 +326,12 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/.*@.*$</packageUrl>
         <cve>CVE-2026-33929</cve>
     </suppress>
+    <suppress>
+        <!-- Jetty not used for any accessible services. -->
+        <notes><![CDATA[
+    file name: jetty-io-12.1.6.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/.*@.*$</packageUrl>
+        <cve>CVE-2026-5795</cve>
+    </suppress>
 </suppressions>
