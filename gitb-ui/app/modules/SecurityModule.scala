@@ -47,7 +47,6 @@ import org.pac4j.oidc.config.OidcConfiguration
 import org.pac4j.oidc.profile.OidcProfile
 import org.pac4j.play.http.PlayHttpActionAdapter
 import org.pac4j.play.{CallbackController, LogoutController}
-import play.cache.SyncCacheApi
 
 import java.util
 import javax.inject.Singleton
@@ -118,7 +117,7 @@ class SecurityModule extends AbstractModule {
      * server's supported ones as published on the discovery URI. This would need to be set per installation depending on
      * the server and user preferences.
      */
-    Configurations.AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM.foreach(oidcConfiguration.setPreferredJwsAlgorithmAsString)
+    Configurations.AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM.foreach(oidcConfiguration.setIdTokenSigningAlgorithmAsString)
     Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.foreach(oidcConfiguration.setResponseType)
     Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.foreach(oidcConfiguration.setResponseMode)
     val oidcClient = new OidcClient(oidcConfiguration)
