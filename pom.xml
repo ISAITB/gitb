@@ -46,7 +46,7 @@
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.21.0</version.commonsIo>
         <version.commonsLang3>3.20.0</version.commonsLang3>
-        <version.tika>3.2.3</version.tika>
+        <version.tika>3.3.0</version.tika>
         <!--
             Xerces versions to support the XML Schema v1.1 distribution (not published on Maven
             The version in the following sections must remain consistent with the latest Xerces
