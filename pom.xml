@@ -60,7 +60,7 @@
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
         <version.jaxbApi>4.0.5</version.jaxbApi>
-        <version.jaxbRuntime>4.0.6</version.jaxbRuntime>
+        <version.jaxbRuntime>4.0.7</version.jaxbRuntime>
         <version.saxon>12.8</version.saxon>
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>

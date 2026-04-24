@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.3",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
   "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.6",
+  "com.sun.xml.bind" % "jaxb-impl" % "4.0.7",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
