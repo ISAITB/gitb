@@ -97,7 +97,7 @@ libraryDependencies ++= Seq(
   "net.lingala.zip4j" % "zip4j" % "2.11.6",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.9",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
-  "com.bucket4j" % "bucket4j_jdk17-core" % "8.16.1",
+  "com.bucket4j" % "bucket4j_jdk17-core" % "8.18.0",
   "com.github.ben-manes.caffeine" % "caffeine" % "3.2.3"
 )
 
