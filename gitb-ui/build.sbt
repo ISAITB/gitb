@@ -95,7 +95,7 @@ libraryDependencies ++= Seq(
   "org.flywaydb" % "flyway-mysql" % "12.0.2", // 12.0.3+ brings in Jackson 3
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260313.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.6",
-  "com.nimbusds" % "nimbus-jose-jwt" % "10.8",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.9",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
   "com.bucket4j" % "bucket4j_jdk17-core" % "8.16.1",
   "com.github.ben-manes.caffeine" % "caffeine" % "3.2.3"
