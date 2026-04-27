@@ -48,15 +48,15 @@
                 <legend class="col-3 col-form-label text-end pt-0">API type:</legend>
                 <div class="col-7">
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.apiType" name="apiTypes" id="api_soap" [value]="Constants.TEST_SERVICE_API_TYPE.SOAP">
-                        <label class="form-check-label" for="api_soap">{{dataService.testServiceApiTypeLabel(Constants.TEST_SERVICE_API_TYPE.SOAP)}}
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The service implements and is accessible via SOAP endpoint."></div>
-                        </label>
-                    </div>
-                    <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.apiType" name="apiTypes" id="api_rest" [value]="Constants.TEST_SERVICE_API_TYPE.REST">
                         <label class="form-check-label" for="api_rest">{{dataService.testServiceApiTypeLabel(Constants.TEST_SERVICE_API_TYPE.REST)}}
                             <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The service implements and is accessible via REST endpoint."></div>
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.apiType" name="apiTypes" id="api_soap" [value]="Constants.TEST_SERVICE_API_TYPE.SOAP">
+                        <label class="form-check-label" for="api_soap">{{dataService.testServiceApiTypeLabel(Constants.TEST_SERVICE_API_TYPE.SOAP)}}
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The service implements and is accessible via SOAP endpoint."></div>
                         </label>
                     </div>
                 </div>

@@ -144,8 +144,8 @@ public abstract class RemoteServiceRestClient {
     }
 
     private void addCustomHeaders(HttpRequest.Builder requestBuilder, Properties callProperties) {
-        requestBuilder.header("Gitb-Reply-To", GITB_REST_CALLBACK_API_ROOT);
-        requestBuilder.header("Gitb-Test-Engine-Version", TEST_ENGINE_VERSION);
+        if (GITB_REST_CALLBACK_API_ROOT != null) requestBuilder.header("Gitb-Reply-To", GITB_REST_CALLBACK_API_ROOT);
+        if (TEST_ENGINE_VERSION != null) requestBuilder.header("Gitb-Test-Engine-Version", TEST_ENGINE_VERSION);
         if (callProperties.containsKey(PropertyConstants.TEST_SESSION_ID)) requestBuilder.header("Gitb-Test-Session-Identifier", callProperties.getProperty(PropertyConstants.TEST_SESSION_ID));
         if (callProperties.containsKey(PropertyConstants.TEST_CASE_ID)) requestBuilder.header("Gitb-Test-Case-Identifier", callProperties.getProperty(PropertyConstants.TEST_CASE_ID));
         if (callProperties.containsKey(PropertyConstants.TEST_STEP_ID)) requestBuilder.header("Gitb-Test-Step-Identifier", callProperties.getProperty(PropertyConstants.TEST_STEP_ID));
