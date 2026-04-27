@@ -115,12 +115,17 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager,
 		q1.update(path, testSuiteOrder, Some(targetActors))
 	}
 
-	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String], specReference: Option[String], specDescription: Option[String], specLink: Option[String], group: Option[Long]): DBIO[_] = {
+	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String,
+										 authors: Option[String], lastModified: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short,
+										 path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String],
+										 isOptional: Boolean, isDisabled: Boolean, tags: Option[String],
+										 specReference: Option[String], specDescription: Option[String], specLink: Option[String],
+										 group: Option[Long]): DBIO[_] = {
 		for {
 			_ <- PersistenceSchema.testCases
 				.filter(_.id === testCaseId)
-				.map(t => (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink, t.group))
-				.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation, isOptional, isDisabled, tags, specReference, specDescription, specLink, group)
+				.map(t => (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.modificationDate, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink, t.group))
+				.update(identifier, shortName, fullName, version, authors, lastModified, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation, isOptional, isDisabled, tags, specReference, specDescription, specLink, group)
 			_ <- testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 		} yield ()
 	}

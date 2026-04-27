@@ -65,6 +65,15 @@
                         </div>
                     </div>
                 </div>
+                @if (testCase.modificationDate) {
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label text-end" for="name">Last modified:</label>
+                        <div class="col-auto align-content-center">
+                            <app-tag [icon]="true" [label]="Constants.BUTTON_ICON.TIME" [value]="testCase.modificationDate" [inForm]="true"></app-tag>
+                        </div>
+                        <div app-tooltip class="col-auto" tbTooltip="The last modification time of the test case. This value is readonly and copied as-is from the test case definition's metadata."></div>
+                    </div>
+                }
                 <app-specification-reference-form [reference]="testCase"></app-specification-reference-form>
                 <app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
                     <div class="row py-3">

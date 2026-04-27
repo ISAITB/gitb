@@ -1059,8 +1059,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	private def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
 		for {
 			_ <- {
-				val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.order, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden, t.specReference, t.specDescription, t.specLink)
-				q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.order, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden, newData.specReference, newData.specDescription, newData.specLink)
+				val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.order, t.authors, t.keywords, t.modificationDate, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden, t.specReference, t.specDescription, t.specLink)
+				q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.order, newData.authors, newData.keywords, newData.modificationDate, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden, newData.specReference, newData.specDescription, newData.specLink)
 			}
 			_ <- testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 		} yield ()
@@ -1359,7 +1359,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 								for {
 									_ <- testCaseManager.updateTestCase(
 										existingTestCaseId, testCaseToStore.identifier, testCaseToStore.shortname, testCaseToStore.fullname,
-										testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
+										testCaseToStore.version, testCaseToStore.authors, testCaseToStore.modificationDate, testCaseToStore.description,
 										testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
 										testCaseToStore.targetActors.get, testCaseToStore.documentation.isDefined, testCaseToStore.documentation,
 										testCaseToStore.isOptional, testCaseToStore.isDisabled, testCaseToStore.tags,

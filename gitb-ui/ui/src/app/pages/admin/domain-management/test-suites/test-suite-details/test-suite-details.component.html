@@ -41,6 +41,15 @@
                     <div class="col-1"><input id="order" name="order" [(ngModel)]="testSuite.order" class="form-control" type="number"></div>
                     <div app-tooltip class="col-auto" [tbTooltip]="'A number used to determine the display and execution order of this test suite relative to others (default being zero). Test suites with the same order are sorted based on their name. Note that any numeric value can be provided for the order (negative, positive or zero), also without having to be sequential or unique compared to the order of other test suites.'"></div>
                 </div>
+                @if (testSuite.modificationDate) {
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label text-end" for="name">Last modified:</label>
+                        <div class="col-auto align-content-center">
+                            <app-tag [icon]="true" [label]="Constants.BUTTON_ICON.TIME" [value]="testSuite.modificationDate" [inForm]="true"></app-tag>
+                        </div>
+                        <div app-tooltip class="col-auto" tbTooltip="The last modification time of the test suite. This value is readonly and copied as-is from the test suite definition's metadata."></div>
+                    </div>
+                }
 				<app-specification-reference-form [reference]="testSuite"></app-specification-reference-form>
 				<app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
 					<div class="row py-3">
