@@ -269,4 +269,28 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.pdfbox/.*@.*$</packageUrl>
         <cve>CVE-2026-33929</cve>
     </suppress>
+    <suppress>
+        <!-- Log4j wrongly flagged as it is only the API included via Spring Boot. -->
+        <notes><![CDATA[
+    file name: log4j-api-2.24.3.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
+        <cve>CVE-2026-34478</cve>
+    </suppress>
+    <suppress>
+        <!-- Log4j wrongly flagged as it is only the API included via Spring Boot. -->
+        <notes><![CDATA[
+    file name: log4j-api-2.24.3.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
+        <cve>CVE-2026-34480</cve>
+    </suppress>
+    <suppress>
+        <!-- Log4j wrongly flagged as it is only the API included via Spring Boot. -->
+        <notes><![CDATA[
+    file name: log4j-api-2.24.3.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
+        <cve>CVE-2026-34481</cve>
+    </suppress>
 </suppressions>
