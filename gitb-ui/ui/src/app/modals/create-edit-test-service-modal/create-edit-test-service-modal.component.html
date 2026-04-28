@@ -27,19 +27,19 @@
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.serviceType" name="serviceTypes" id="type_validation" [value]="Constants.TEST_SERVICE_TYPE.VALIDATION">
                         <label class="form-check-label" for="type_validation">{{dataService.testServiceTypeLabel(Constants.TEST_SERVICE_TYPE.VALIDATION)}}
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A GITB-compliant validation service used to validate data and produce validation reports."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A GITB-compliant validation service used to validate data and produce validation reports."></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.serviceType" name="serviceTypes" id="type_messaging" [value]="Constants.TEST_SERVICE_TYPE.MESSAGING">
                         <label class="form-check-label" for="type_messaging">{{dataService.testServiceTypeLabel(Constants.TEST_SERVICE_TYPE.MESSAGING)}}
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A GITB-compliant messaging service used to send and receive messages to external systems."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A GITB-compliant messaging service used to send and receive messages to external systems."></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.serviceType" name="serviceTypes" id="type_processing" [value]="Constants.TEST_SERVICE_TYPE.PROCESSING">
                         <label class="form-check-label" for="type_processing">{{dataService.testServiceTypeLabel(Constants.TEST_SERVICE_TYPE.PROCESSING)}}
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A GITB-compliant processing service used to provide utility functions to test cases."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A GITB-compliant processing service used to provide utility functions to test cases."></div>
                         </label>
                     </div>
                 </div>
@@ -50,13 +50,13 @@
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.apiType" name="apiTypes" id="api_rest" [value]="Constants.TEST_SERVICE_API_TYPE.REST">
                         <label class="form-check-label" for="api_rest">{{dataService.testServiceApiTypeLabel(Constants.TEST_SERVICE_API_TYPE.REST)}}
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The service implements and is accessible via REST endpoint."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="The service implements and is accessible via REST endpoint."></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.apiType" name="apiTypes" id="api_soap" [value]="Constants.TEST_SERVICE_API_TYPE.SOAP">
                         <label class="form-check-label" for="api_soap">{{dataService.testServiceApiTypeLabel(Constants.TEST_SERVICE_API_TYPE.SOAP)}}
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The service implements and is accessible via SOAP endpoint."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="The service implements and is accessible via SOAP endpoint."></div>
                         </label>
                     </div>
                 </div>
@@ -156,13 +156,13 @@
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.authTokenPasswordType" name="authTokenPasswordTypes" id="pwdTypeDigest" [value]="Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.DIGEST">
                             <label class="form-check-label" for="pwdTypeDigest">{{dataService.testServiceAuthTokenPasswordType(Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.DIGEST)}}
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The password used for a UsernameToken-based authentication will be sent in digest form."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="The password used for a UsernameToken-based authentication will be sent in digest form."></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.authTokenPasswordType" name="authTokenPasswordTypes" id="pwdTypeText" [value]="Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.TEXT">
                             <label class="form-check-label" for="pwdTypeText">{{dataService.testServiceAuthTokenPasswordType(Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.TEXT)}}
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The password used for a UsernameToken-based authentication will be sent in plaintext."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="The password used for a UsernameToken-based authentication will be sent in plaintext."></div>
                             </label>
                         </div>
                     </div>

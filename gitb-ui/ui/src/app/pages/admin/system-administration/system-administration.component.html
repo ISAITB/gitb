@@ -8,7 +8,7 @@
                         <input class="form-check-input" type="checkbox" role="switch" id="viewTypeToggle" [(ngModel)]="prepareForShutdown" (change)="togglePrepareForShutdown()">
                         <label class="form-check-label" for="viewTypeToggle">
                             Prepare for shutdown
-                            <div app-tooltip class="col-auto d-inline-flex ms-2" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Toggle the shutdown preparation mode. When enabled, launching new test sessions is disabled and a persistent warning is displayed to users to alert them of the pending shutdown."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Toggle the shutdown preparation mode. When enabled, launching new test sessions is disabled and a persistent warning is displayed to users to alert them of the pending shutdown."></div>
                         </label>
                     </div>
                 </div>

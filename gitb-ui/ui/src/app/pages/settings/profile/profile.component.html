@@ -53,13 +53,13 @@
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" [(ngModel)]="data.preferences.homePageType" name="homePageType" id="homePageTypeLanding" [value]="Constants.HOME_PAGE_TYPE.LANDING_PAGE">
                             <label class="form-check-label" for="homePageTypeLanding">{{dataService.isSystemAdmin?'Test Bed landing page':'Community landing page'}}
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="(dataService.isSystemAdmin)?'After logging in show the default landing page for the Test Bed.':'After logging in show the default landing page for my community.'"></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="(dataService.isSystemAdmin)?'After logging in show the default landing page for the Test Bed.':'After logging in show the default landing page for my community.'"></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" [(ngModel)]="data.preferences.homePageType" name="homePageType" id="homePageTypeConformance" [value]="Constants.HOME_PAGE_TYPE.CONFORMANCE_DASHBOARD">
                             <label class="form-check-label" for="homePageTypeConformance">{{(dataService.isSystemAdmin || dataService.isCommunityAdmin)?'Conformance dashboard':'My conformance statements'}}
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="(dataService.isSystemAdmin || dataService.isCommunityAdmin)?`After logging in show the conformance dashboard ${dataService.isSystemAdmin?'for all communities':'for my community'}.`:`After logging in show the conformance statements for my ${dataService.labelOrganisationLower()}.`"></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="(dataService.isSystemAdmin || dataService.isCommunityAdmin)?`After logging in show the conformance dashboard ${dataService.isSystemAdmin?'for all communities':'for my community'}.`:`After logging in show the conformance statements for my ${dataService.labelOrganisationLower()}.`"></div>
                             </label>
                         </div>
                     </div>

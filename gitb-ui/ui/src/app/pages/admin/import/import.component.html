@@ -15,27 +15,27 @@
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">
                                             <label class="form-check-label" for="choice_domain">{{dataService.labelDomain()}} configuration
-                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites.'"></div>
+                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Import data linked to conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites.'"></div>
                                             </label>
                                         </div>
                                     }
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_community" [value]="'community'" (change)="resetSettings()">
                                         <label class="form-check-label" for="choice_community">Community configuration
-                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to a community. This may also include the community\'s '+dataService.labelDomainLower()+' configuration.'"></div>
+                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Import data linked to a community. This may also include the community\'s '+dataService.labelDomainLower()+' configuration.'"></div>
                                         </label>
                                     </div>
                                     @if (dataService.isSystemAdmin) {
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_system" [value]="'settings'" (change)="resetSettings()">
                                             <label class="form-check-label" for="choice_system">System settings
-                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import system settings to apply for the entire Test Bed instance.'"></div>
+                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Import system settings to apply for the entire Test Bed instance.'"></div>
                                             </label>
                                         </div>
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_deletions" [value]="'deletions'" (change)="resetSettings()">
                                             <label class="form-check-label" for="choice_deletions">Deletions
-                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import definitions of items to delete. These items are top-level information such as communities and '+dataService.labelDomainsLower()+' that cannot be removed via regular imports.'"></div>
+                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Import definitions of items to delete. These items are top-level information such as communities and '+dataService.labelDomainsLower()+' that cannot be removed via regular imports.'"></div>
                                             </label>
                                         </div>
                                     }
@@ -150,19 +150,19 @@
                                             <div class="form-check form-check-inline">
                                                 <input class="form-check-input" type="checkbox" id="createNewData" name="createNewData" [(ngModel)]="settings.createNewData">
                                                 <label class="form-check-label" for="createNewData">Create new data found in the archive
-                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="When set, the data that is present in the provided archive that cannot be matched against existing data will be flagged for creation. Don't select this if you only want to process data that already exists."></div>
+                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="When set, the data that is present in the provided archive that cannot be matched against existing data will be flagged for creation. Don't select this if you only want to process data that already exists."></div>
                                                 </label>
                                             </div>
                                             <div class="form-check form-check-inline">
                                                 <input class="form-check-input" type="checkbox" id="deleteUnmatchedData" name="deleteUnmatchedData" [(ngModel)]="settings.deleteUnmatchedData">
                                                 <label class="form-check-label" for="deleteUnmatchedData">Delete unmatched existing data
-                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="When set, the data that exists but that is not matched against data from the provided archive, will be flagged for deletion. Don't select this if you want to leave such data unchanged."></div>
+                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="When set, the data that exists but that is not matched against data from the provided archive, will be flagged for deletion. Don't select this if you want to leave such data unchanged."></div>
                                                 </label>
                                             </div>
                                             <div class="form-check form-check-inline">
                                                 <input class="form-check-input" type="checkbox" id="updateMatchingData" name="updateMatchingData" [(ngModel)]="settings.updateMatchingData">
                                                 <label class="form-check-label" for="updateMatchingData">Update matched data
-                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="When set, all existing data that is matched against data from the provided archive will have their information updated. Don't select this to skip updating such data and only process additions and deletions."></div>
+                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="When set, all existing data that is matched against data from the provided archive will have their information updated. Don't select this to skip updating such data and only process additions and deletions."></div>
                                                 </label>
                                             </div>
                                         </div>

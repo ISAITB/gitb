@@ -124,19 +124,19 @@
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" name="selfRegRestriction" [(ngModel)]="community.selfRegRestriction" id="selfRegRestriction_1" [value]="Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION">
                             <label class="form-check-label" for="selfRegRestriction_1">No restriction
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'There is no restriction applied on self-registrations. As a result, users can self-register multiple times.'"></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'There is no restriction applied on self-registrations. As a result, users can self-register multiple times.'"></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" name="selfRegRestriction" [(ngModel)]="community.selfRegRestriction" id="selfRegRestriction_2" [value]="Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL">
                             <label class="form-check-label" for="selfRegRestriction_2">One registration allowed per user
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Each user can self-register only once. The restriction is applied based on the user\'s email address.'"></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Each user can self-register only once. The restriction is applied based on the user\'s email address.'"></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" name="selfRegRestriction" [(ngModel)]="community.selfRegRestriction" id="selfRegRestriction_3" [value]="Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL_DOMAIN">
                             <label class="form-check-label" for="selfRegRestriction_3">One registration allowed per user email domain
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Users with the same email domain can self-register only once. Use this to avoid multiple registrations from users in the same '+dataService.labelOrganisationLower()+'.'"></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Users with the same email domain can self-register only once. Use this to avoid multiple registrations from users in the same '+dataService.labelOrganisationLower()+'.'"></div>
                             </label>
                         </div>
                     </div>
@@ -148,13 +148,13 @@
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="selfRegRole" [(ngModel)]="community.selfRegJoinAsAdmin" id="selfRegRole_1" [value]="true">
                         <label class="form-check-label" for="selfRegRole_1">{{dataService.labelOrganisation()}} administrator
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'A role allowing to view and manage the '+dataService.labelOrganisationLower()+' (depending also on the community\'s configured permissions).'"></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'A role allowing to view and manage the '+dataService.labelOrganisationLower()+' (depending also on the community\'s configured permissions).'"></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="selfRegRole" [(ngModel)]="community.selfRegJoinAsAdmin" id="selfRegRole_2" [value]="false">
                         <label class="form-check-label" for="selfRegRole_2">{{dataService.labelOrganisation()}} user
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'A restricted role that does not include '+dataService.labelOrganisationLower()+' management operations.'"></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'A restricted role that does not include '+dataService.labelOrganisationLower()+' management operations.'"></div>
                         </label>
                     </div>
                 </div>
@@ -367,13 +367,13 @@
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="radio" [(ngModel)]="community.preferences!.homePageType" name="homePageType" id="homePageTypeLanding" [value]="Constants.HOME_PAGE_TYPE.LANDING_PAGE">
                 <label class="form-check-label" for="homePageTypeLanding">Community landing page
-                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="`After logging in, users will be displayed the default landing page for the community, or the specific one for their ${dataService.labelOrganisationLower()} (if configured).`"></div>
+                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="`After logging in, users will be displayed the default landing page for the community, or the specific one for their ${dataService.labelOrganisationLower()} (if configured).`"></div>
                 </label>
             </div>
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="radio" [(ngModel)]="community.preferences!.homePageType" name="homePageType" id="homePageTypeConformance" [value]="Constants.HOME_PAGE_TYPE.CONFORMANCE_DASHBOARD">
                 <label class="form-check-label" for="homePageTypeConformance">Conformance statements
-                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="`After logging in, users will be displayed the list of conformance statements. For community administrators this is the conformance dashboard, whereas for ${dataService.labelOrganisationLower()} users this is the 'My conformance statements' page.`"></div>
+                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="`After logging in, users will be displayed the list of conformance statements. For community administrators this is the conformance dashboard, whereas for ${dataService.labelOrganisationLower()} users this is the 'My conformance statements' page.`"></div>
                 </label>
             </div>
         </div>

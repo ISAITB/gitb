@@ -91,13 +91,13 @@
 										<div class="form-check form-check-inline my-0">
 											<input class="form-check-input" type="radio" id="choice_metadata_skip" name="choice_metadata_skip" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_skip" [value]="false">
 											<label class="form-check-label" for="choice_metadata_skip">Keep existing values
-												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Keep the metadata of the existing test suite unchanged."></div>
+												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Keep the metadata of the existing test suite unchanged."></div>
 											</label>
 										</div>
 										<div class="form-check form-check-inline">
 											<input class="form-check-input" type="radio" id="choice_metadata_update" name="choice_metadata_update" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_update" [value]="true">
 											<label class="form-check-label" for="choice_metadata_update">Update to match the uploaded archive
-												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></div>
+												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></div>
 											</label>
 										</div>
 									</div>

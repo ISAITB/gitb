@@ -12,26 +12,26 @@
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">
                                 <label class="form-check-label" for="choice_domain">{{dataService.labelDomain()}} configuration
-                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Export the data linked to the conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites. Select this if you want to fully skip the configuration linked to the community\'s members.'"></div>
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Export the data linked to the conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites. Select this if you want to fully skip the configuration linked to the community\'s members.'"></div>
                                 </label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_community" [value]="'community'" (change)="resetSettings()">
                                 <label class="form-check-label" for="choice_community">Community configuration
-                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the data linked to the community. As part of a community's data you may also select to export the data linked to its conformance testing scenarios. Select this to obtain a complete export of all information linked to a community's testing setup."></div>
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Export the data linked to the community. As part of a community's data you may also select to export the data linked to its conformance testing scenarios. Select this to obtain a complete export of all information linked to a community's testing setup."></div>
                                 </label>
                             </div>
                             @if (dataService.isSystemAdmin) {
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_system" [value]="'settings'" (change)="resetSettings()">
                                     <label class="form-check-label" for="choice_system">System settings
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the settings linked to the entire Test Bed instance."></div>
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Export the settings linked to the entire Test Bed instance."></div>
                                     </label>
                                 </div>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_deletions" [value]="'deletions'" (change)="resetSettings()">
                                     <label class="form-check-label" for="choice_deletions">Deletions
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export data references that are to be deleted on a target Test Bed instance."></div>
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Export data references that are to be deleted on a target Test Bed instance."></div>
                                     </label>
                                 </div>
                             }
