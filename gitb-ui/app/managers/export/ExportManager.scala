@@ -1670,8 +1670,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 case models.Enums.TriggerEventType.TestSessionStarted => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_STARTED)
               }
               models.Enums.TriggerServiceType.apply(trigger.trigger.serviceType) match {
-                case models.Enums.TriggerServiceType.GITB => exportedTrigger.setServiceType(TriggerServiceType.GITB)
-                case models.Enums.TriggerServiceType.JSON => exportedTrigger.setServiceType(TriggerServiceType.JSON)
+                case models.Enums.TriggerServiceType.GitbSoap => exportedTrigger.setServiceType(TriggerServiceType.GITB)
+                case models.Enums.TriggerServiceType.GitbRest => exportedTrigger.setServiceType(TriggerServiceType.GITB_REST)
+                case models.Enums.TriggerServiceType.Json => exportedTrigger.setServiceType(TriggerServiceType.JSON)
               }
               if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
                 exportedTrigger.setDataItems(new TriggerDataItems)

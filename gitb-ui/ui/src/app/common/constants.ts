@@ -349,7 +349,8 @@ export class Constants {
 
 	public static readonly TRIGGER_SERVICE_TYPE = {
 		GITB: 1,
-		JSON: 2
+		JSON: 2,
+    GITB_REST: 3
 	}
 
 	public static readonly TRIGGER_EVENT_TYPE = {

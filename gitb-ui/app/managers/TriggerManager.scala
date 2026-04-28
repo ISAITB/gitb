@@ -17,7 +17,8 @@ package managers
 
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
 import com.gitb.ps._
-import com.gitb.utils.{ClasspathResourceResolver, XMLUtils}
+import com.gitb.remote.processing.{RemoteProcessingModuleClient, RemoteProcessingModuleRestClient}
+import com.gitb.utils.{ClasspathResourceResolver, ModelUtils, XMLUtils}
 import jakarta.xml.bind.JAXBElement
 import managers.TriggerManager.parseResponse
 import managers.triggers.CacheCata.{fromCache, fromCacheWithCache}
@@ -29,7 +30,6 @@ import models.Enums.{TriggerDataType, TriggerFireExpressionType, TriggerServiceT
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.lang3.StringUtils
-import org.apache.cxf.frontend.ClientProxy
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.Environment
@@ -430,7 +430,7 @@ class TriggerManager @Inject()(env: Environment,
       result <- {
         val resultMap = mutable.LinkedHashMap[Long, (String, String, Option[String], Option[Long], Option[String])]()
         data.foreach { dataItem =>
-          resultMap += (dataItem._1 -> ((dataItem._2, dataItem._3, dataItem._4, dataItem._5, dataItem._6)))
+          resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4, dataItem._5, dataItem._6))
         }
         Future.successful {
           ListMap.from(resultMap)
@@ -1033,13 +1033,16 @@ class TriggerManager @Inject()(env: Environment,
 
   def previewTriggerCall(communityId: Long, operation: Option[String], serviceType: TriggerServiceType, data: Option[List[TriggerData]]): Future[String] = {
     prepareTriggerInput(new Trigger(Triggers(-1, "", None, "", -1, serviceType.id.toShort, operation, active = false, None, None, communityId), data, None), Map[String, Any](), None).map { request =>
-      if (serviceType == TriggerServiceType.GITB) {
-        val requestWrapper = new JAXBElement[ProcessRequest](new QName("http://www.gitb.com/ps/v1/", "ProcessRequest"), classOf[ProcessRequest], request.data.get)
-        val bos = new ByteArrayOutputStream()
-        XMLUtils.marshalToStream(requestWrapper, bos)
-        new String(bos.toByteArray, StandardCharsets.UTF_8)
-      } else {
-        JsonUtil.jsProcessRequest(request.data.get).toString()
+      serviceType match {
+        case TriggerServiceType.GitbSoap =>
+          val requestWrapper = new JAXBElement[ProcessRequest](new QName("http://www.gitb.com/ps/v1/", "ProcessRequest"), classOf[ProcessRequest], request.data.get)
+          val bos = new ByteArrayOutputStream()
+          XMLUtils.marshalToStream(requestWrapper, bos)
+          new String(bos.toByteArray, StandardCharsets.UTF_8)
+        case TriggerServiceType.GitbRest =>
+          JsonUtil.jsProcessRequest(request.data.get, forGitbRestApi = true).toString()
+        case TriggerServiceType.Json =>
+          JsonUtil.jsProcessRequest(request.data.get, forGitbRestApi = false).toString()
       }
     }
   }
@@ -1056,30 +1059,24 @@ class TriggerManager @Inject()(env: Environment,
     } yield response
   }
 
-  private def callProcessingService(url: String, fnCallOperation: ProcessingService => JAXBElement[_]): Future[ServiceTestResult] = {
-    Future {
-      val service = new ProcessingServiceService(URI.create(url).toURL)
-      val client = service.getProcessingServicePort
-      try {
-        val response = fnCallOperation.apply(client)
-        val bos = new ByteArrayOutputStream()
-        XMLUtils.marshalToStream(response, bos)
-        ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
-      } finally {
-        try { ClientProxy.getClient(client).destroy() } catch { case _: Exception => /* Ignore */ }
-      }
-    }
-  }
-
   def testTriggerEndpoint(url: String, serviceType: TriggerServiceType): Future[ServiceTestResult] = {
     val promise = Promise[ServiceTestResult]()
-    val future: Future[ServiceTestResult] = if (serviceType == TriggerServiceType.GITB) {
-      callProcessingService(url, service => {
-        val response = service.getModuleDefinition(new com.gitb.ps.Void())
-        new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response)
-      })
-    } else {
-      callHttpService(url, () => "{}")
+    val future: Future[ServiceTestResult] = serviceType match {
+      case TriggerServiceType.GitbSoap =>
+        Future {
+          val client = new RemoteProcessingModuleClient(URI.create(url).toURL, null)
+          val response = client.getModuleDefinitionResponse
+          val bos = new ByteArrayOutputStream()
+          XMLUtils.marshalToStream(new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response), bos)
+          ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
+        }
+      case TriggerServiceType.GitbRest =>
+        Future {
+          val client = new RemoteProcessingModuleRestClient(URI.create(url), null)
+          triggerHelper.processTestServiceTestCallViaRest(client.getModuleDefinitionModelResponse)
+        }
+      case TriggerServiceType.Json =>
+        callHttpService(url, () => "{}")
     }
     future.onComplete {
       case Success(result) => promise.success(result)
@@ -1090,21 +1087,40 @@ class TriggerManager @Inject()(env: Environment,
 
   def testTriggerCall(url: String, serviceType: TriggerServiceType, payload: String): Future[ServiceTestResult] = {
     val promise = Promise[ServiceTestResult]()
-    val future: Future[ServiceTestResult] = if (serviceType == TriggerServiceType.GITB) {
-      callProcessingService(url, service => {
-        val request = XMLUtils.unmarshal(classOf[ProcessRequest],
-          new StreamSource(new StringReader(payload)),
-          new StreamSource(this.getClass.getResourceAsStream("/schema/gitb_ps.xsd")),
-          new ClasspathResourceResolver())
-        val response = service.process(request)
-        new JAXBElement[ProcessResponse](new QName("http://www.gitb.com/ps/v1/", "ProcessResponse"), classOf[ProcessResponse], response)
-      })
-    } else {
-      callHttpService(url, () => {
-        val payloadAsJson = Json.parse(payload)
-        payloadAsJson.validate(JsonUtil.validatorForProcessRequest())
-        payloadAsJson.toString()
-      })
+    val future: Future[ServiceTestResult] = serviceType match {
+      case TriggerServiceType.GitbSoap =>
+        Future {
+          val request = XMLUtils.unmarshal(classOf[ProcessRequest],
+            new StreamSource(new StringReader(payload)),
+            new StreamSource(this.getClass.getResourceAsStream("/schema/gitb_ps.xsd")),
+            new ClasspathResourceResolver())
+          val client = new RemoteProcessingModuleClient(URI.create(url).toURL, null)
+          val response = client.process(request, null)
+          val bos = new ByteArrayOutputStream()
+          XMLUtils.marshalToStream(new JAXBElement[ProcessResponse](new QName("http://www.gitb.com/ps/v1/", "ProcessResponse"), classOf[ProcessResponse], response), bos)
+          ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
+        }
+      case TriggerServiceType.GitbRest =>
+        Future {
+          Json.parse(payload).validate(JsonUtil.validatorForProcessRequest(true)) match {
+            case JsSuccess(value, _) =>
+              val client = new RemoteProcessingModuleRestClient(URI.create(url), null)
+              val response = client.process(ModelUtils.toModel(value), null)
+              triggerHelper.processTestServiceTestCallViaRest(response)
+            case JsError(errors) =>
+              throw new IllegalArgumentException(s"Invalid payload: ${JsError.toJson(errors).toString()}")
+          }
+        }
+      case TriggerServiceType.Json =>
+        callHttpService(url, () => {
+          val payloadAsJson = Json.parse(payload)
+          payloadAsJson.validate(JsonUtil.validatorForProcessRequest(false)) match {
+            case JsSuccess(_, _) =>
+              payloadAsJson.toString()
+            case JsError(errors) =>
+              throw new IllegalArgumentException(s"Invalid payload: ${JsError.toJson(errors).toString()}")
+          }
+        })
     }
     future.onComplete {
       case Success(result) => promise.success(result)
@@ -1368,25 +1384,28 @@ class TriggerManager @Inject()(env: Environment,
   }
 
   private def callTriggerService(trigger: Triggers, request: ProcessRequest): Future[ProcessResponse] = {
-    if (TriggerServiceType.apply(trigger.serviceType) == TriggerServiceType.GITB) {
-      Future {
-        val client = new ProcessingServiceService(URI.create(trigger.url).toURL).getProcessingServicePort
-        try {
-          client.process(request)
-        } finally {
-          try { ClientProxy.getClient(client).destroy() } catch { case _: Exception => /* Ignore */ }
+    TriggerServiceType.apply(trigger.serviceType) match {
+      case TriggerServiceType.GitbSoap =>
+        Future {
+          val client = new RemoteProcessingModuleClient(URI.create(trigger.url).toURL, null)
+          client.process(request, null)
         }
-      }
-    } else {
-      callHttpService(trigger.url, () => {
-        JsonUtil.jsProcessRequest(request).toString()
-      }).map { result =>
-        if (result.success) {
-          JsonUtil.parseJsProcessResponse(Json.parse(result.errorMessages.flatMap(_.headOption).filter(StringUtils.isNotEmpty(_)).getOrElse("{}")))
-        } else {
-          throw new IllegalStateException(result.errorMessages.flatMap(_.headOption).getOrElse("Unexpected error"))
+      case TriggerServiceType.GitbRest =>
+        Future {
+          val client = new RemoteProcessingModuleRestClient(URI.create(trigger.url), null)
+          client.process(request, null)
         }
-      }
+      case TriggerServiceType.Json =>
+        callHttpService(trigger.url, () => {
+          JsonUtil.jsProcessRequest(request, forGitbRestApi = false).toString()
+        }).map { result =>
+          if (result.success) {
+            JsonUtil.parseJsProcessResponse(Json.parse(result.errorMessages.flatMap(_.headOption).filter(StringUtils.isNotEmpty(_)).getOrElse("{}")))
+          } else {
+            throw new IllegalStateException(result.errorMessages.flatMap(_.headOption).getOrElse("Unexpected error"))
+          }
+        }
+      case _ => Future.failed(new IllegalArgumentException("Unknown test service type %s".formatted(trigger.serviceType)))
     }
   }
 

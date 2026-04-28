@@ -610,6 +610,24 @@ public class ModelUtils {
     }
 
     /**
+     * Converts a model {@link com.gitb.model.ps.ProcessRequest} to a Jakarta
+     * {@link ProcessRequest}.
+     *
+     * @param source the model request
+     * @return the converted request, or {@code null} if source is {@code null}
+     */
+    public static com.gitb.model.ps.ProcessRequest toModel(ProcessRequest source) {
+        com.gitb.model.ps.ProcessRequest target = null;
+        if (source != null) {
+            target = new com.gitb.model.ps.ProcessRequest();
+            target.setSessionId(source.getSessionId());
+            target.setOperation(source.getOperation());
+            target.getInput().addAll(source.getInput().stream().map(ModelUtils::toModel).toList());
+        }
+        return target;
+    }
+
+    /**
      * Converts a model {@link com.gitb.model.ps.ProcessResponse} to a Jakarta
      * {@link ProcessResponse}.
      *

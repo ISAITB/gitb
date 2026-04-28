@@ -58,13 +58,19 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
         return true;
     }
 
+    public GetModuleDefinitionResponse getModuleDefinitionResponse() {
+        return call(
+                this::getServiceClient,
+                client -> Optional.ofNullable(client.getModuleDefinition(new Void()))
+                        .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"))
+        );
+    }
+
     @Override
     public ProcessingModule getModuleDefinition() {
         if (serviceModule == null) {
-            serviceModule = call(
-                    this::getServiceClient,
-                    client -> Optional.ofNullable(client.getModuleDefinition(new Void()).getModule()).orElseGet(ProcessingModule::new)
-            );
+            serviceModule = Optional.ofNullable(getModuleDefinitionResponse().getModule())
+                    .orElseGet(ProcessingModule::new);
         }
         return serviceModule;
     }
@@ -85,6 +91,13 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
         } else {
             return processingSessionId;
         }
+    }
+
+    public ProcessResponse process(ProcessRequest processRequest, String stepId) {
+        return call(
+                this::getServiceClient,
+                client -> client.process(processRequest), stepIdMap(stepId)
+        );
     }
 
     @Override

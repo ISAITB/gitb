@@ -100,7 +100,7 @@ object Enums {
 
   object TriggerServiceType extends Enumeration(1) {
     type TriggerServiceType = Value
-    val GITB, JSON = Value
+    val GitbSoap, Json, GitbRest  = Value
   }
 
   object TriggerEventType extends Enumeration(1) {

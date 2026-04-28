@@ -18,7 +18,6 @@ package com.gitb.remote.processing;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.model.ps.BeginTransactionRequest;
-import com.gitb.model.ps.ProcessRequest;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
@@ -55,25 +54,22 @@ public class RemoteProcessingModuleRestClient extends RemoteServiceRestClient im
         return null;
     }
 
-    @Override
-    public ProcessingModule getModuleDefinition() {
-        return getModuleDefinition(true);
+    public com.gitb.model.ps.GetModuleDefinitionResponse getModuleDefinitionModelResponse() {
+        return call("GET", "getModuleDefinition", Optional.empty(), Optional.of(com.gitb.model.ps.GetModuleDefinitionResponse.class))
+                .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
     }
 
-    public ProcessingModule getModuleDefinition(boolean cacheResult) {
-        if (serviceModule != null) {
-            return serviceModule;
-        } else {
-            com.gitb.ps.GetModuleDefinitionResponse response = call("GET", "getModuleDefinition", Optional.empty(), Optional.of(com.gitb.model.ps.GetModuleDefinitionResponse.class))
-                    .map(ModelUtils::fromModel)
-                    .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
-            ProcessingModule result = response.getModule();
-            if (cacheResult) {
-                if (result == null) result = new ProcessingModule();
-                serviceModule = result;
-            }
-            return result;
+    public com.gitb.ps.GetModuleDefinitionResponse getModuleDefinitionResponse() {
+        return ModelUtils.fromModel(getModuleDefinitionModelResponse());
+    }
+
+    @Override
+    public ProcessingModule getModuleDefinition() {
+        if (serviceModule == null) {
+            serviceModule = Optional.ofNullable(getModuleDefinitionResponse().getModule())
+                    .orElseGet(ProcessingModule::new);
         }
+        return serviceModule;
     }
 
     @Override
@@ -87,16 +83,24 @@ public class RemoteProcessingModuleRestClient extends RemoteServiceRestClient im
                 .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
     }
 
+    public com.gitb.ps.ProcessResponse process(com.gitb.ps.ProcessRequest request, String stepId) {
+        return ModelUtils.fromModel(process(ModelUtils.toModel(request), stepId));
+    }
+
+    public com.gitb.model.ps.ProcessResponse process(com.gitb.model.ps.ProcessRequest request, String stepId) {
+        return call("POST", "process", Optional.of(request), Optional.of(com.gitb.model.ps.ProcessResponse.class), stepIdMap(stepId))
+                .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
+    }
+
     @Override
     public ProcessingReport process(String session, String stepId, String operation, ProcessingData data) {
-        ProcessRequest request = ProcessRequest.builder()
+        com.gitb.model.ps.ProcessRequest request = com.gitb.model.ps.ProcessRequest.builder()
                 .withSessionId(session)
                 .withOperation(operation)
                 .withInput(getInput(data).toArray(com.gitb.model.core.AnyContent[]::new))
                 .build();
-        return call("POST", "process", Optional.of(request), Optional.of(com.gitb.model.ps.ProcessResponse.class), stepIdMap(stepId))
-                .map(response -> new ProcessingReport(ModelUtils.fromModel(response.getReport()), getOutput(response.getOutput())))
-                .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
+        com.gitb.ps.ProcessResponse response = ModelUtils.fromModel(process(request, stepId));
+        return new ProcessingReport(response.getReport(), getOutput(response.getOutput()));
     }
 
     @Override
@@ -121,11 +125,11 @@ public class RemoteProcessingModuleRestClient extends RemoteServiceRestClient im
         return result;
     }
 
-    private ProcessingData getOutput(List<com.gitb.model.core.AnyContent> output) {
+    private ProcessingData getOutput(List<com.gitb.core.AnyContent> output) {
         ProcessingData data = new ProcessingData();
-        for (com.gitb.model.core.AnyContent content : output) {
+        for (com.gitb.core.AnyContent content : output) {
             if (content.getName() != null) {
-                var value = DataTypeFactory.getInstance().create(ModelUtils.fromModel(content));
+                var value = DataTypeFactory.getInstance().create(content);
                 if (value != null) {
                     data.getData().put(content.getName(), value);
                 }

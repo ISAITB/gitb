@@ -763,8 +763,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   private def toModelTriggerServiceType(serviceType: com.gitb.xml.export.TriggerServiceType): Short = {
     require(serviceType != null, "Enum value cannot be null")
     serviceType match {
-      case com.gitb.xml.export.TriggerServiceType.GITB => Enums.TriggerServiceType.GITB.id.toShort
-      case com.gitb.xml.export.TriggerServiceType.JSON => Enums.TriggerServiceType.JSON.id.toShort
+      case com.gitb.xml.export.TriggerServiceType.GITB => Enums.TriggerServiceType.GitbSoap.id.toShort
+      case com.gitb.xml.export.TriggerServiceType.GITB_REST => Enums.TriggerServiceType.GitbRest.id.toShort
+      case com.gitb.xml.export.TriggerServiceType.JSON => Enums.TriggerServiceType.Json.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+serviceType+"]")
     }
   }

@@ -3618,7 +3618,7 @@ object JsonUtil {
     json
   }
 
-  def jsProcessRequest(processRequest: ProcessRequest): JsObject = {
+  def jsProcessRequest(processRequest: ProcessRequest, forGitbRestApi: Boolean): JsObject = {
     var json = Json.obj()
     if (processRequest.getOperation != null) {
       json += ("operation" -> JsString(processRequest.getOperation))
@@ -3628,7 +3628,7 @@ object JsonUtil {
       processRequest.getInput.asScala.foreach { input =>
         inputs = inputs.append(jsAnyContent(input))
       }
-      json += ("inputs" -> inputs)
+      json += ((if (forGitbRestApi) "input" else "inputs") -> inputs)
     }
     json
   }
@@ -3796,14 +3796,14 @@ object JsonUtil {
     }
   }
 
-  def validatorForProcessRequest(): Reads[ProcessRequest] = {
+  def validatorForProcessRequest(forGitbRestApi: Boolean): Reads[ProcessRequest] = {
     (js: JsValue) => {
       val processRequest = new ProcessRequest()
       val obj = js.asInstanceOf[JsObject]
       val definedKeys = new mutable.HashSet[String]()
       definedKeys.addAll(obj.keys)
       processRequest.setOperation(parseOptionalStringField(obj, "operation", definedKeys).orNull)
-      parseOptionalArrayField(obj, "inputs", validatorForAnyContent(), definedKeys).foreach { item =>
+      parseOptionalArrayField(obj, (if (forGitbRestApi) "input" else "inputs"), validatorForAnyContent(), definedKeys).foreach { item =>
         processRequest.getInput.add(item)
       }
       ensureNoExtraFields(definedKeys.toSet)

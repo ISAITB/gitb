@@ -54,25 +54,22 @@ public class RemoteValidationModuleRestClient extends RemoteServiceRestClient im
         return null;
     }
 
-    @Override
-    public ValidationModule getModuleDefinition() {
-        return getModuleDefinition(true);
+    public com.gitb.model.vs.GetModuleDefinitionResponse getModuleDefinitionModelResponse() {
+        return call("GET", "getModuleDefinition", Optional.empty(), Optional.of(com.gitb.model.vs.GetModuleDefinitionResponse.class))
+                .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
     }
 
-    public ValidationModule getModuleDefinition(boolean cacheResult) {
-        if (serviceModule != null) {
-            return serviceModule;
-        } else {
-            com.gitb.vs.GetModuleDefinitionResponse response = call("GET", "getModuleDefinition", Optional.empty(), Optional.of(com.gitb.model.vs.GetModuleDefinitionResponse.class))
-                    .map(ModelUtils::fromModel)
-                    .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
-            ValidationModule result = response.getModule();
-            if (cacheResult) {
-                if (result == null) result = new ValidationModule();
-                serviceModule = result;
-            }
-            return result;
+    public com.gitb.vs.GetModuleDefinitionResponse getModuleDefinitionResponse() {
+        return ModelUtils.fromModel(getModuleDefinitionModelResponse());
+    }
+
+    @Override
+    public ValidationModule getModuleDefinition() {
+        if (serviceModule == null) {
+            serviceModule = Optional.ofNullable(getModuleDefinitionResponse().getModule())
+                    .orElseGet(ValidationModule::new);
         }
+        return serviceModule;
     }
 
     @Override

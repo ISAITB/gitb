@@ -15,16 +15,13 @@
 
 package managers
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.gitb.PropertyConstants
 import com.gitb.remote.messaging.{RemoteMessagingModuleClient, RemoteMessagingModuleRestClient}
 import com.gitb.remote.processing.{RemoteProcessingModuleClient, RemoteProcessingModuleRestClient}
 import com.gitb.remote.validation.{RemoteValidationModuleClient, RemoteValidationModuleRestClient}
-import com.gitb.utils.{ModelUtils, XMLUtils}
+import com.gitb.utils.XMLUtils
 import exceptions.{AutomationApiException, ErrorCodes}
 import jakarta.xml.bind.JAXBElement
-import managers.DomainParameterManager.JSON
 import managers.triggers.TriggerHelper
 import models.Enums.{TestServiceApiType, TestServiceAuthTokenPasswordType, TestServiceType, TriggerDataType}
 import models._
@@ -42,10 +39,6 @@ import javax.xml.namespace.QName
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
-
-object DomainParameterManager {
-  val JSON: ObjectMapper = new ObjectMapper().setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
-}
 
 @Singleton
 class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
@@ -916,19 +909,13 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
           TestServiceType.apply(serviceDataToUse.service.serviceType) match {
             case TestServiceType.ValidationService =>
               val client = new RemoteValidationModuleRestClient(serviceUri, callProperties)
-              val wrapper = new com.gitb.vs.GetModuleDefinitionResponse
-              wrapper.setModule(client.getModuleDefinition(false))
-              processTestServiceTestCallViaRest(ModelUtils.toModel(wrapper))
+              triggerHelper.processTestServiceTestCallViaRest(client.getModuleDefinitionModelResponse)
             case TestServiceType.MessagingService =>
               val client = new RemoteMessagingModuleRestClient(serviceUri, callProperties)
-              val wrapper = new com.gitb.ms.GetModuleDefinitionResponse
-              wrapper.setModule(client.getModuleDefinition(false))
-              processTestServiceTestCallViaRest(ModelUtils.toModel(wrapper))
+              triggerHelper.processTestServiceTestCallViaRest(client.getModuleDefinitionModelResponse)
             case TestServiceType.ProcessingService =>
               val client = new RemoteProcessingModuleRestClient(serviceUri, callProperties)
-              val wrapper = new com.gitb.ps.GetModuleDefinitionResponse
-              wrapper.setModule(client.getModuleDefinition(false))
-              processTestServiceTestCallViaRest(ModelUtils.toModel(wrapper))
+              triggerHelper.processTestServiceTestCallViaRest(client.getModuleDefinitionModelResponse)
             case _ => throw new IllegalArgumentException("Unknown test service type %s".formatted(serviceDataToUse.service.serviceType))
           }
         case _ => throw new IllegalArgumentException("Unknown test service API type %s".formatted(serviceDataToUse.service.apiType))
@@ -937,10 +924,6 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       case exception: Exception =>
         ServiceTestResult(success = false, Some(extractFailureDetails(exception)), Constants.MimeTypeTextPlain)
     }
-  }
-
-  private def processTestServiceTestCallViaRest(response: Object): ServiceTestResult = {
-    ServiceTestResult(success = true, Some(List(JSON.writeValueAsString(response))), Constants.MimeTypeJSON)
   }
 
   private def processTestServiceTestCallViaSoap(response: JAXBElement[_]): ServiceTestResult = {

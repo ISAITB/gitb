@@ -67,25 +67,22 @@ public class RemoteMessagingModuleRestClient extends RemoteServiceRestClient imp
         return true;
     }
 
-    @Override
-    public MessagingModule getModuleDefinition() {
-        return getModuleDefinition(true);
+    public com.gitb.model.ms.GetModuleDefinitionResponse getModuleDefinitionModelResponse() {
+        return call("GET", "getModuleDefinition", Optional.empty(), Optional.of(com.gitb.model.ms.GetModuleDefinitionResponse.class))
+                .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
     }
 
-    public MessagingModule getModuleDefinition(boolean cacheResult) {
-        if (serviceModule != null) {
-            return serviceModule;
-        } else {
-            com.gitb.ms.GetModuleDefinitionResponse response = call("GET", "getModuleDefinition", Optional.empty(), Optional.of(com.gitb.model.ms.GetModuleDefinitionResponse.class))
-                    .map(ModelUtils::fromModel)
-                    .orElseThrow(() -> new IllegalStateException("Remote service did not return a valid response"));
-            MessagingModule result = response.getModule();
-            if (cacheResult) {
-                if (result == null) result = new MessagingModule();
-                serviceModule = result;
-            }
-            return result;
+    public com.gitb.ms.GetModuleDefinitionResponse getModuleDefinitionResponse() {
+        return ModelUtils.fromModel(getModuleDefinitionModelResponse());
+    }
+
+    @Override
+    public MessagingModule getModuleDefinition() {
+        if (serviceModule == null) {
+            serviceModule = Optional.ofNullable(getModuleDefinitionResponse().getModule())
+                    .orElseGet(MessagingModule::new);
         }
+        return serviceModule;
     }
 
     @Override
