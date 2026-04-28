@@ -63,7 +63,11 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
     if (context.value != undefined) {
       context.valueToUse = context.value
       if (!this.isFileReference(context) && context.embeddingMethod == Constants.EMBEDDING_METHOD.BASE64) {
-        context.valueToUse = this.dataService.base64ToString(context.valueToUse)
+        if (this.dataService.isDataURL(context.valueToUse)) {
+          context.valueToUse = this.dataService.base64ToString(this.dataService.base64FromDataURL(context.valueToUse))
+        } else {
+          context.valueToUse = this.dataService.base64ToString(context.valueToUse)
+        }
         context.embeddingMethod = 'STRING'
       }
     }
