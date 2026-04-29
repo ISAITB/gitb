@@ -495,6 +495,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     private void setInstructionValue(AnyContent target, com.gitb.tdl.Instruction instructionCommand, ExpressionHandler expressionHandler) {
         DataType computedValue = expressionHandler.processExpression(instructionCommand, instructionCommand.getType());
+        if (instructionCommand.isForceDisplay()) {
+            computedValue = computedValue.convertTo(DataType.STRING_DATA_TYPE);
+        }
         DataTypeUtils.setContentValueWithDataType(target, computedValue);
         if (instructionCommand.getMimeType() != null && !instructionCommand.getMimeType().isEmpty() && MimeTypeUtils.TEXT_HTML.equalsTypeAndSubtype(MimeType.valueOf(instructionCommand.getMimeType()))) {
             target.setMimeType(MimeTypeUtils.TEXT_HTML.toString());
