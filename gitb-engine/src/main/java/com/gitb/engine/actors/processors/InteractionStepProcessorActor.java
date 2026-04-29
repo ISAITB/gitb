@@ -67,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -359,58 +360,60 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         userInteractionRequest.setDesc(step.getDesc());
         userInteractionRequest.setHasTimeout(timeout > 0);
         for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
-            // Set the type in case this is missing.
-            if (StringUtils.isBlank(instructionOrRequest.getType())) {
-                if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64 || (instructionOrRequest instanceof UserRequest && ((UserRequest)instructionOrRequest).getInputType() == InputRequestInputType.UPLOAD)) {
-                    // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
-                    instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
-                } else {
-                    if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
-                        // If a target variable is referenced we can use this to determine the type.
-                        DataType targetVariable = expressionHandler.getVariableResolver().resolveVariable(instructionOrRequest.getValue());
-                        if (targetVariable == null) {
-                            throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
-                        }
-                        instructionOrRequest.setType(targetVariable.getType());
+            if (isIncluded(instructionOrRequest, expressionHandler)) {
+                // Set the type in case this is missing.
+                if (StringUtils.isBlank(instructionOrRequest.getType())) {
+                    if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64 || (instructionOrRequest instanceof UserRequest && ((UserRequest)instructionOrRequest).getInputType() == InputRequestInputType.UPLOAD)) {
+                        // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
+                        instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
                     } else {
-                        // Set "string" if no other type can be determined.
-                        instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
-                    }
-                }
-            }
-            // Ensure consistency and complete information for contentType and inputType.
-            if (DataType.isFileType(instructionOrRequest.getType())) {
-                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
-                if (instructionOrRequest instanceof UserRequest) {
-                    ((UserRequest) instructionOrRequest).setInputType(InputRequestInputType.UPLOAD);
-                }
-            } else {
-                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
-                if (instructionOrRequest instanceof UserRequest request) {
-                    if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
-                        if (request.getOptions() != null) {
-                            request.setInputType(InputRequestInputType.SELECT_SINGLE);
+                        if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
+                            // If a target variable is referenced we can use this to determine the type.
+                            DataType targetVariable = expressionHandler.getVariableResolver().resolveVariable(instructionOrRequest.getValue());
+                            if (targetVariable == null) {
+                                throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
+                            }
+                            instructionOrRequest.setType(targetVariable.getType());
                         } else {
-                            request.setInputType(InputRequestInputType.TEXT);
+                            // Set "string" if no other type can be determined.
+                            instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
                         }
                     }
                 }
-            }
-            //If it is an instruction
-            if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
-                hasInstructions = true;
-                // If no expression is specified consider it an empty expression.
-                if (StringUtils.isBlank(instruction.getValue())) {
-                    instructionOrRequest.setValue("''");
+                // Ensure consistency and complete information for contentType and inputType.
+                if (DataType.isFileType(instructionOrRequest.getType())) {
+                    instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
+                    if (instructionOrRequest instanceof UserRequest) {
+                        ((UserRequest) instructionOrRequest).setInputType(InputRequestInputType.UPLOAD);
+                    }
+                } else {
+                    instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+                    if (instructionOrRequest instanceof UserRequest request) {
+                        if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
+                            if (request.getOptions() != null) {
+                                request.setInputType(InputRequestInputType.SELECT_SINGLE);
+                            } else {
+                                request.setInputType(InputRequestInputType.TEXT);
+                            }
+                        }
+                    }
                 }
-                userInteractionRequest.getInstructionOrRequest().add(processInstruction(instruction, "" + childStepId, withValue, expressionHandler));
-            } else if (instructionOrRequest instanceof UserRequest request) { // If it is a request
-                hasRequests = true;
-                userInteractionRequest.getInstructionOrRequest().add(processRequest(request, "" + childStepId, withValue, expressionHandler.getVariableResolver()));
-            } else {
-                throw new IllegalStateException("Unsupported interaction type ["+instructionOrRequest+"]");
+                //If it is an instruction
+                if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
+                    hasInstructions = true;
+                    // If no expression is specified consider it an empty expression.
+                    if (StringUtils.isBlank(instruction.getValue())) {
+                        instructionOrRequest.setValue("''");
+                    }
+                    userInteractionRequest.getInstructionOrRequest().add(processInstruction(instruction, "" + childStepId, withValue, expressionHandler));
+                } else if (instructionOrRequest instanceof UserRequest request) { // If it is a request
+                    hasRequests = true;
+                    userInteractionRequest.getInstructionOrRequest().add(processRequest(request, "" + childStepId, withValue, expressionHandler.getVariableResolver()));
+                } else {
+                    throw new IllegalStateException("Unsupported interaction type ["+instructionOrRequest+"]");
+                }
+                childStepId++;
             }
-            childStepId++;
         }
         logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
         TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
@@ -419,6 +422,17 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             // The step is a non-blocking interaction containing only instructions. Notify immediately for its completion.
             self().tell(new InputEvent(scope.getContext().getSessionId(), stepId, Collections.emptyList(), step.isAdmin()), self());
         }
+    }
+
+    private boolean isIncluded(InstructionOrRequest instructionOrRequest, ExpressionHandler expressionHandler) {
+        if (instructionOrRequest != null && instructionOrRequest.getIncluded() != null) {
+            if (VariableResolver.isVariableReference(instructionOrRequest.getIncluded())) {
+                return expressionHandler.getVariableResolver().resolveVariableAsBoolean(instructionOrRequest.getIncluded()).getValue();
+            } else {
+                return Boolean.parseBoolean(instructionOrRequest.getIncluded());
+            }
+        }
+        return true;
     }
 
     private boolean isNonBlocking(VariableResolver resolver) {
@@ -452,6 +466,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), expressionHandler.getVariableResolver(), null));
         instruction.setForceDisplay(instructionCommand.isForceDisplay());
         instruction.setShowControls(instructionCommand.isShowControls());
+        instruction.setLevel(getInstructionLevel(instructionCommand, expressionHandler));
+        setInstructionValue(instruction, instructionCommand, expressionHandler);
+        return instruction;
+    }
+
+    private InstructionLevel getInstructionLevel(com.gitb.tdl.Instruction instructionCommand, ExpressionHandler expressionHandler) {
+        InstructionLevel result = null;
         if (instructionCommand.getLevel() != null) {
             String level;
             if (VariableResolver.isVariableReference(instructionCommand.getLevel())) {
@@ -466,16 +487,20 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'level' on interaction step instruction as it was invalid");
             }
             if (levelToSet != null && levelToSet != InstructionLevel.NONE) {
-                instruction.setLevel(levelToSet);
+                result = levelToSet;
             }
         }
+        return result;
+    }
 
-        ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
-        DataType computedValue = exprHandler.processExpression(instructionCommand, instructionCommand.getType());
-
-	    DataTypeUtils.setContentValueWithDataType(instruction, computedValue);
-
-        return instruction;
+    private void setInstructionValue(AnyContent target, com.gitb.tdl.Instruction instructionCommand, ExpressionHandler expressionHandler) {
+        DataType computedValue = expressionHandler.processExpression(instructionCommand, instructionCommand.getType());
+        DataTypeUtils.setContentValueWithDataType(target, computedValue);
+        if (instructionCommand.getMimeType() != null && !instructionCommand.getMimeType().isEmpty() && MimeTypeUtils.TEXT_HTML.equalsTypeAndSubtype(MimeType.valueOf(instructionCommand.getMimeType()))) {
+            target.setMimeType(MimeTypeUtils.TEXT_HTML.toString());
+            addMetadataToken(target, "sanitized", "true");
+            target.setValue(TestCaseUtils.sanitizeInstructionStepValue(target.getValue()));
+        }
     }
 
     private boolean validMimeType(String value) {
@@ -666,26 +691,31 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 VariableResolver variableResolver = expressionHandler.getVariableResolver();
                 // Determine the required request elements for which we expect inputs.
                 Set<Integer> requiredInputIndexes = IntStream.range(0, step.getInstructOrRequest().size())
-                        .filter(i -> step.getInstructOrRequest().get(i) instanceof UserRequest userRequest && isRequired(userRequest, variableResolver))
+                        .filter(i -> step.getInstructOrRequest().get(i) instanceof UserRequest userRequest && isRequired(userRequest, variableResolver) && isIncluded(userRequest, expressionHandler))
                         .boxed()
                         .collect(Collectors.toSet());
                 int index = 0;
                 for (InstructionOrRequest instructionOrRequest : step.getInstructOrRequest()) {
-                    if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
-                        // Process instruction.
-                        if (instruction.isReport()) {
-                            var instructionContent = new AnyContent();
-                            instructionContent.setName(fixedValueOrVariable(instruction.getDesc(), variableResolver, null));
-                            instructionContent.setMimeType(instruction.getMimeType());
-                            DataType computedValue = expressionHandler.processExpression(instruction, instruction.getType());
-                            DataTypeUtils.setContentValueWithDataType(instructionContent, computedValue);
-                            report.getContext().getItem().add(instructionContent);
+                    if (isIncluded(instructionOrRequest, expressionHandler)) {
+                        if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
+                            // Process instruction.
+                            if (instruction.isReport()) {
+                                var instructionContent = new AnyContent();
+                                instructionContent.setName(fixedValueOrVariable(instruction.getDesc(), variableResolver, null));
+                                instructionContent.setMimeType(fixedValueOrVariable(instruction.getMimeType(), expressionHandler.getVariableResolver(), null));
+                                setInstructionValue(instructionContent, instruction, expressionHandler);
+                                InstructionLevel level = getInstructionLevel(instruction, expressionHandler);
+                                if (level != null) addMetadataToken(instructionContent, "level", level.value());
+                                if (!instruction.isShowControls()) addMetadataToken(instructionContent, "showControls", "false");
+                                if (instruction.isForceDisplay()) addMetadataToken(instructionContent, "forceDisplay", "true");
+                                report.getContext().getItem().add(instructionContent);
+                            }
+                        } else if (instructionOrRequest instanceof UserRequest request) {
+                            // Process request.
+                            processUserInput(request, index, event, variableResolver, dataTypeFactory, requiredInputIndexes, report, interactionResult);
                         }
-                    } else if (instructionOrRequest instanceof UserRequest request) {
-                        // Process request.
-                        processUserInput(request, index, event, variableResolver, dataTypeFactory, requiredInputIndexes, report, interactionResult);
+                        index += 1;
                     }
-                    index += 1;
                 }
                 if (!requiredInputIndexes.isEmpty()) {
                     // Not all required inputs were provided with inputs - fail.
@@ -700,6 +730,15 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 scopedVariable.setValue(interactionResult);
             }
             promise.trySuccess(report);
+        }
+    }
+
+    private void addMetadataToken(AnyContent content, String tokenKey, String tokenValue) {
+        String metadataToAdd = tokenKey + "=" + tokenValue;
+        if (content.getMetadata() != null) {
+            content.setMetadata(content.getMetadata() + ";" + metadataToAdd);
+        } else {
+            content.setMetadata(metadataToAdd);
         }
     }
 

@@ -350,9 +350,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
             if (userInteractionStep.getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: userInteractionStep.getInstructOrRequest()) {
-                    checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);
                     checkConstantReferenceInScriptlet(ir.getWith(), ATTRIBUTE_WITH);
+                    checkToken(ir.getIncluded(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     if (ir instanceof UserRequest userRequest) {
+                        checkConstantReferenceInScriptlet(userRequest.getDesc(), ATTRIBUTE_DESC);
                         checkToken(ir.getValue(), TokenType.VARIABLE_REFERENCE);
                         checkToken(userRequest.getOptions(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getOptionLabels(), TokenType.STRING_OR_VARIABLE_REFERENCE);
@@ -363,6 +364,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         checkToken(userRequest.getDefault(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getAccept(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     } else if (ir instanceof Instruction instruction) {
+                        checkConstantReferenceInScriptlet(instruction.getDesc(), ATTRIBUTE_DESC);
                         checkToken(instruction.getLevel(), TokenType.INSTRUCTION_LEVEL_OR_VARIABLE_REFERENCE);
                         checkExpression(ir);
                     }

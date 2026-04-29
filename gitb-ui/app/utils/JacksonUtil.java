@@ -204,8 +204,8 @@ public class JacksonUtil {
             }
 
             json.writeArrayFieldStart("interactions");
-            for(Object ior : value.getInteraction().getInstructionOrRequest()){
-                if(ior instanceof InputRequest inputRequest) {
+            for (Object ior : value.getInteraction().getInstructionOrRequest()){
+                if (ior instanceof InputRequest inputRequest) {
                     json.writeStartObject();
                     json.writeStringField("type", "request");
                     if(inputRequest.getId() != null) {
@@ -260,32 +260,35 @@ public class JacksonUtil {
                 } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();
                     json.writeStringField("type", "instruction");
-                    if(instruction.getId() != null) {
+                    if (instruction.getId() != null) {
                         json.writeStringField("id", instruction.getId());
                     }
-                    if(instruction.getId() != null) {
+                    if (instruction.getId() != null) {
                         json.writeStringField("desc", instruction.getDesc());
                     }
-                    if(instruction.getWith() != null) {
+                    if (instruction.getWith() != null) {
                         json.writeStringField("with", instruction.getWith());
                     }
-                    if(instruction.getName() != null) {
+                    if (instruction.getName() != null) {
                         json.writeStringField("name", instruction.getName());
                     }
-                    if(instruction.getValue() != null) {
+                    if (instruction.getValue() != null) {
                         json.writeStringField("value", instruction.getValue());
                     }
-                    if(instruction.getType() != null) {
+                    if (instruction.getType() != null) {
                         json.writeStringField("variableType", instruction.getType());
                     }
-                    if(instruction.getEncoding() != null) {
+                    if (instruction.getEncoding() != null) {
                         json.writeStringField("encoding", instruction.getEncoding());
                     }
-                    if(instruction.getEmbeddingMethod() != null) {
+                    if (instruction.getEmbeddingMethod() != null) {
                         json.writeStringField("contentType", instruction.getEmbeddingMethod().value());
                     }
                     if (instruction.getMimeType() != null) {
                         json.writeStringField("mimeType", instruction.getMimeType());
+                    }
+                    if (instruction.getMetadata() != null) {
+                        json.writeStringField("metadata", instruction.getMetadata());
                     }
                     if (instruction.isForceDisplay()) {
                         json.writeBooleanField("forceDisplay", instruction.isForceDisplay());

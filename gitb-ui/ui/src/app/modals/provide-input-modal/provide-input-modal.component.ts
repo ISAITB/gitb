@@ -183,7 +183,8 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       value: instruction.value,
       valueToUse: instruction.value,
       embeddingMethod: (instruction.variableType == 'binary' || instruction.variableType == 'schema' || instruction.variableType == 'object') ? 'BASE64' : 'STRING',
-      mimeType: instruction.mimeType
+      mimeType: instruction.mimeType,
+      metadata: instruction.metadata
     }
   }
 

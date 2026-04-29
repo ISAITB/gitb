@@ -44,6 +44,7 @@ export interface UserInteraction {
   level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE';
   default?: string;
   accept?: string;
+  metadata?: string;
 
   reset?: EventEmitter<void>;
 

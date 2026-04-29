@@ -243,12 +243,13 @@ public class TestCaseConverter {
         Preliminary preliminary = new Preliminary();
         for(com.gitb.tdl.InstructionOrRequest interaction : description.getInstructOrRequest()){
             com.gitb.tpl.InstructionOrRequest ior = new com.gitb.tpl.InstructionOrRequest();
-            ior.setDesc(interaction.getDesc());
             ior.setWith(interaction.getWith());
 
-            if(interaction instanceof Instruction){
+            if (interaction instanceof Instruction instruction){
+                ior.setDesc(instruction.getDesc());
                 preliminary.getInstructOrRequest().add(ior);
-            } else if(interaction instanceof UserRequest){
+            } else if (interaction instanceof UserRequest request){
+                ior.setDesc(request.getDesc());
                 preliminary.getInstructOrRequest().add(ior);
             }
         }
@@ -481,15 +482,16 @@ public class TestCaseConverter {
 
         for (com.gitb.tdl.InstructionOrRequest interaction : description.getInstructOrRequest()){
             com.gitb.tpl.InstructionOrRequest ior = null;
-            if (interaction instanceof Instruction) {
+            if (interaction instanceof Instruction instruction) {
                 ior = new com.gitb.tpl.Instruction();
-                ((com.gitb.tpl.Instruction)ior).setForceDisplay(((Instruction) interaction).isForceDisplay());
-            } else if (interaction instanceof UserRequest) {
+                ior.setDesc(fixedOrVariableValueAsString(instruction.getDesc()));
+                ((com.gitb.tpl.Instruction)ior).setForceDisplay((instruction.isForceDisplay()));
+            } else if (interaction instanceof UserRequest request) {
                 ior = new com.gitb.tpl.UserRequest();
+                ior.setDesc(fixedOrVariableValueAsString(request.getDesc()));
             }
             if (ior != null) {
                 ior.setId("" + childIndex);
-                ior.setDesc(fixedOrVariableValueAsString(interaction.getDesc()));
                 ior.setWith(interaction.getWith());
             }
             interactionStep.getInstructOrRequest().add(ior);

@@ -21,20 +21,24 @@ public class ContextItem {
 
     private final String key;
     private final String value;
+    private final String level;
+    private final boolean skipEscape;
     private final List<ContextItem> items;
 
-    public ContextItem(String key, String value) {
-        this(key, value, null);
+    public ContextItem(String key, String value, String level, boolean skipEscape) {
+        this(key, value, level, skipEscape, null);
     }
 
     public ContextItem(String key, List<ContextItem> items) {
-        this(key, null, items);
+        this(key, null, null, false, items);
     }
 
-    private ContextItem(String key, String value, List<ContextItem> items) {
+    private ContextItem(String key, String value, String level, boolean skipEscape, List<ContextItem> items) {
         this.key = key;
         this.value = value;
         this.items = items;
+        this.skipEscape = skipEscape;
+        this.level = level;
     }
 
     public String getKey() {
@@ -43,6 +47,22 @@ public class ContextItem {
 
     public String getValue() {
         return value;
+    }
+
+    public String getLevel() {
+        return level;
+    }
+
+    public String getStyleLevel() {
+        if (level == null) {
+            return "normal";
+        } else {
+            return level.toLowerCase();
+        }
+    }
+
+    public boolean isSkipEscape() {
+        return skipEscape;
     }
 
     public List<ContextItem> getItems() {

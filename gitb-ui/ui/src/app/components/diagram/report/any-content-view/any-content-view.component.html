@@ -26,9 +26,13 @@
                         }
                         @if (withValue) {
                             @if (showValueInline) {
-                                <div class="content-value" [class.with-name]="withName"
-                                     [class.break-texts]="breakValueText">{{ value }}
-                                </div>
+                                @if (escapeValue) {
+                                    <div class="content-value" [class.with-name]="withName"
+                                         [class.break-texts]="breakValueText">{{ value }}</div>
+                                } @else if (value != undefined) {
+                                    <div class="content-value" [class.with-name]="withName"
+                                         [class.break-texts]="breakValueText" [innerHtml]="value | sanitizeHtml"></div>
+                                }
                             } @else if (!withName) {
                                 <div class="content-value not-inline-help-text">Download or view in editor</div>
                             }

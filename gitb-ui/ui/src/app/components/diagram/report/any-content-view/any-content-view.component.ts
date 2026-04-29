@@ -45,7 +45,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() forceDisplay = false
   @Input() preserveName = true
   @Input() showControls = true
-  @Input() level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE' = 'NONE'
+  @Input() level?: string = 'NONE'
 
   Constants = Constants
 
@@ -60,8 +60,8 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   hoveringTitle = false
   breakNameText = true
   breakValueText = true
-  showName = false
   collapsed = true
+  escapeValue = true
 
   constructor(
     private readonly testService: TestService,
@@ -74,6 +74,17 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   ) { super(modalService, reportService, htmlService, dataService) }
 
   ngOnInit(): void {
+    if (this.context.metadata) {
+      this.context.metadata.split(';').forEach(token => {
+        const tokenParts = token.trim().split('=')
+        const tokenKey = tokenParts[0].trim()
+        const tokenValue = tokenParts[1].trim()
+        if (tokenKey === 'level') this.level = tokenValue
+        else if (tokenKey === 'showControls' && tokenValue === 'false') this.showControls = false
+        else if (tokenKey === 'forceDisplay' && tokenValue === 'true') this.forceDisplay = true
+        else if (tokenKey === 'sanitized' && tokenValue === 'true') this.escapeValue = false
+      })
+    }
     this.name = this.context.name
     if (this.textProvided(this.context.valueToUse)) {
       this.value = this.context.valueToUse

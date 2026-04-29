@@ -499,8 +499,35 @@ public class ReportGeneratorTest {
             tar.getContext().getItem().get(3).setName("This is an item without a value");
             tar.getContext().getItem().add(new AnyContent());
             tar.getContext().getItem().get(4).setName("This is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value");
+
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=INFO");
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=WARNING");
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=ERROR");
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=SUCCESS");
+
+            AnyContent listContent = new AnyContent();
+            listContent.setName("My list");
+            listContent.getItem().add(new AnyContent());
+            listContent.getItem().get(0).setValue("The value of item 1");
+            listContent.getItem().get(0).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            listContent.getItem().add(new AnyContent());
+            listContent.getItem().get(1).setValue("The value of item 2");
+            listContent.getItem().get(1).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            tar.getContext().getItem().add(listContent);
         }
         return tar;
+    }
+
+    private void addHtmlContent(AnyContent context, String metadata) {
+        var htmlContent = new AnyContent();
+        htmlContent.setName("Instructions");
+        htmlContent.setValue("This is an item with <b>HTML content</b>."
+                + "<p style='margin-bottom:0'>This is a <a href=\"https://www.itb.ec.europa.eu/docs/guides/latest/\">link</a>.</p>"
+        );
+        htmlContent.setMimeType("text/html");
+        htmlContent.setMetadata(metadata);
+        htmlContent.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        context.getItem().add(htmlContent);
     }
 
     private JAXBElement<TestAssertionReportType> createItem(String description, String level, String test, String location) {

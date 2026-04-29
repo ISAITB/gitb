@@ -189,6 +189,21 @@
     .background-normal {
         background: #ededed;
     }
+    .context-item-background-error {
+        background-color: #f8d7da;
+    }
+    .context-item-background-warning {
+        background-color: #fdf5dc;
+    }
+    .context-item-background-info {
+        background-color: #d9edf7;
+    }
+    .context-item-background-success {
+        background: #e0f1de;
+    }
+    .context-item-background-normal {
+        background: #ffffff;
+    }
     .border-normal {
         border: 1px solid #000000;
     }

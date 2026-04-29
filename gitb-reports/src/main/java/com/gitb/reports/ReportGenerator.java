@@ -293,8 +293,15 @@ public class ReportGenerator {
         ContextItem item = null;
         if (content != null && content.isForDisplay()) {
             if (content.getItem().isEmpty()) {
+                Map<String,String> metadata = Optional.ofNullable(content.getMetadata())
+                        .map(tokens -> StringUtils.split(tokens, ';'))
+                        .map(tokens -> Arrays.stream(tokens)
+                                .map(token -> StringUtils.split(token, '='))
+                                .collect(Collectors.toMap(pair -> pair[0].trim(), pair -> pair[1].trim())))
+                        .orElse(null);
+                String value = null;
+                boolean isEscapedHtml = isEscapedHtml(content, metadata);
                 if (StringUtils.isNotBlank(content.getValue())) {
-                    String value;
                     if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.URI) {
                         value = "["+content.getValue()+"]";
                     } else if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64) {
@@ -306,10 +313,16 @@ public class ReportGenerator {
                     } else {
                         value = contextValueAsString(content.getValue());
                     }
-                    item = new ContextItem(StringUtils.defaultString(content.getName()), truncateIfNeeded(value, specs));
-                } else {
-                    item = new ContextItem(StringUtils.defaultString(content.getName()), (String)null);
+                    if (truncationNeeded(value, specs)) {
+                        if (isEscapedHtml) {
+                            value = "[HTML content]";
+                        } else {
+                            value = truncate(value, specs);
+                        }
+                    }
                 }
+                String level = metadata != null ? metadata.get("level") : null;
+                item = new ContextItem(StringUtils.defaultString(content.getName()), value, level, isEscapedHtml);
             } else {
                 var children = content.getItem().stream()
                         .filter(AnyContent::isForDisplay)
@@ -325,16 +338,22 @@ public class ReportGenerator {
         return item;
     }
 
-    private String truncateIfNeeded(String value, ReportSpecs specs) {
-        if (specs.getContextItemTruncateLimit() > 0) {
-            var truncatedValue = StringUtils.truncate(value, specs.getContextItemTruncateLimit());
-            if (value.length() > truncatedValue.length()) {
-                truncatedValue += " [...]";
-            }
-            return truncatedValue;
-        } else {
-            return value;
+    private boolean isEscapedHtml(AnyContent content, Map<String, String> metadata) {
+        return content.getMimeType() != null && metadata != null
+                && Objects.equals(metadata.get("sanitized"), "true")
+                && content.getMimeType().startsWith("text/html");
+    }
+
+    private boolean truncationNeeded(String value, ReportSpecs specs) {
+        return specs.getContextItemTruncateLimit() > 0 && value.length() > specs.getContextItemTruncateLimit();
+    }
+
+    private String truncate(String value, ReportSpecs specs) {
+        var truncatedValue = StringUtils.truncate(value, specs.getContextItemTruncateLimit());
+        if (value.length() > truncatedValue.length()) {
+            truncatedValue += " [...]";
         }
+        return truncatedValue;
     }
 
     private void addContextItems(TAR report, List<ContextItem> items, ReportSpecs specs) {

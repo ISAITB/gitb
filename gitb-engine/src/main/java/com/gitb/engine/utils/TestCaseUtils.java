@@ -37,6 +37,8 @@ import com.gitb.utils.XMLDateTimeUtils;
 import jakarta.xml.bind.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -51,6 +53,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static org.owasp.html.Sanitizers.*;
+
 /**
  * Created by senan on 10/13/14.
  */
@@ -59,6 +63,25 @@ public class TestCaseUtils {
     private static final ObjectFactory OBJECT_FACTORY_TR = new ObjectFactory();
     private static final JAXBContext REPORT_CONTEXT;
     private static final Logger LOG = LoggerFactory.getLogger(TestCaseUtils.class);
+    private static final PolicyFactory LINKS_WITH_TARGET = new HtmlPolicyBuilder()
+            .allowElements((elementName, attrs) -> {
+                int targetIndex = attrs.indexOf("target");
+                if (targetIndex < 0) {
+                    attrs.add("target");
+                    attrs.add("_blank");
+                } else {
+                    attrs.set(targetIndex + 1, "_blank");
+                }
+                return elementName;
+            }, "a")
+            .allowStandardUrlProtocols()
+            .allowAttributes("href", "target").onElements("a").requireRelsOnLinks("noopener", "noreferrer", "nofollow")
+            .toFactory();
+
+    private static final PolicyFactory LISTS = new HtmlPolicyBuilder()
+            .allowElements("ul", "ol", "li")
+            .toFactory();
+    private static final PolicyFactory INSTRUCTION_STEP_POLICY = BLOCKS.and(FORMATTING).and(LINKS_WITH_TARGET).and(STYLES).and(LISTS);
 
     static {
         try {
@@ -662,5 +685,14 @@ public class TestCaseUtils {
         return report;
     }
 
-}
+    /**
+     * Sanitize HTML content for a TDL instruction step.
+     *
+     * @param unsanitizedInput The unsafe input.
+     * @return The safe input.
+     */
+    public static String sanitizeInstructionStepValue(String unsanitizedInput) {
+        return INSTRUCTION_STEP_POLICY.sanitize(unsanitizedInput);
+    }
 
+}
