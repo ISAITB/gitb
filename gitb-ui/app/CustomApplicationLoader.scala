@@ -38,7 +38,7 @@ class CustomApplicationLoader extends GuiceApplicationLoader {
       val nonProxyHosts = {
         val automaticExclusions = scala.collection.mutable.LinkedHashSet("localhost", "127.*")
         try {
-          val internalHost = new java.net.URI(Configurations.TESTBED_CLIENT_URL_INTERNAL).getHost
+          val internalHost = new java.net.URI(Configurations.TESTBED_SERVICE_URL).getHost
           if (internalHost != null) automaticExclusions += internalHost
         } catch {
           case _: Exception =>
