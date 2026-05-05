@@ -91,7 +91,6 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % pdfBoxVersion,
   "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
   "org.jasypt" % "jasypt" % "1.9.3",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
   "org.flywaydb" % "flyway-mysql" % "12.0.2", // 12.0.3+ brings in Jackson 3
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260313.1",
