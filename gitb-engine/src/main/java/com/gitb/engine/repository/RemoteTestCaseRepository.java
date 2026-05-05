@@ -24,19 +24,16 @@ import com.gitb.utils.HmacUtils;
 import com.gitb.utils.XMLUtils;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.net.URLCodec;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
  * Created by serbay on 10/20/14.
@@ -72,7 +69,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	@Override
 	public String healthCheck(String message) throws Exception {
 		try (InputStream stream = retrieveRemoteTestResource(message, TestEngineConfiguration.REPOSITORY_HEALTHCHECK_URL)) {
-			return new String(IOUtils.toByteArray(stream));
+			return new String(stream.readAllBytes());
 		}
 	}
 
@@ -126,27 +123,27 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	private InputStream retrieveRemoteTestResource(String resourceId, String uri) throws IOException {
-		InputStream stream;
-		try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-			logger.debug("Requesting test resource definition [{}]", uri);
-			HttpGet request = new HttpGet(uri);
-			HmacUtils.TokenData tokenData = HmacUtils.getTokenData(resourceId);
-			request.addHeader(HmacUtils.HMAC_HEADER_TOKEN, tokenData.getTokenValue());
-			request.addHeader(HmacUtils.HMAC_HEADER_TIMESTAMP, tokenData.getTokenTimestamp());
-			try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
-				if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-					HttpEntity entity = httpResponse.getEntity();
-					byte[] content = IOUtils.toByteArray(entity.getContent());
-					stream = new ByteArrayInputStream(content);
-				} else {
-					throw new GITBEngineInternalError("Unexpected response returned while looking up resource: %s".formatted(httpResponse.getStatusLine().getStatusCode()));
-				}
-			} catch (Exception e) {
-				logger.debug("Resource lookup retrieval failure", e);
-				throw new GITBEngineInternalError("Resource lookup retrieval failure", e);
+		logger.debug("Requesting test resource definition [{}]", uri);
+		HmacUtils.TokenData tokenData = HmacUtils.getTokenData(resourceId);
+		HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(uri))
+				.header(HmacUtils.HMAC_HEADER_TOKEN, tokenData.getTokenValue())
+				.header(HmacUtils.HMAC_HEADER_TIMESTAMP, tokenData.getTokenTimestamp())
+				.GET()
+				.build();
+		try (HttpClient httpClient = HttpClient.newHttpClient()) {
+			HttpResponse<byte[]> httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+			if (httpResponse.statusCode() == 200) {
+				return new ByteArrayInputStream(httpResponse.body());
+			} else {
+				throw new GITBEngineInternalError("Unexpected response returned while looking up resource: %s".formatted(httpResponse.statusCode()));
 			}
+		} catch (GITBEngineInternalError e) {
+			throw e;
+		} catch (Exception e) {
+			logger.debug("Resource lookup retrieval failure", e);
+			throw new GITBEngineInternalError("Resource lookup retrieval failure", e);
 		}
-		return stream;
 
 	}
 }
