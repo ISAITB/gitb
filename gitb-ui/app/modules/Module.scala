@@ -17,13 +17,12 @@ package modules
 
 import actors.{BulkTaskActor, SessionLaunchActor, SessionManagerActor, SessionUpdateActor, TriggerActor}
 import com.google.inject.AbstractModule
-import hooks.{BeforeStartHook, OnStopHook, PostStartHook}
+import hooks.{OnStopHook, PostStartHook}
 import play.api.libs.concurrent.PekkoGuiceSupport
 
 class Module extends AbstractModule with PekkoGuiceSupport {
 
-  override def configure() = {
-    bind(classOf[BeforeStartHook]).asEagerSingleton()
+  override def configure(): Unit = {
     /*
      Calling here the initialisation of FlyWayDB (and not via its own module). The reason for this is to ensure a DB
      is correctly created/migrated before we do other changes that may require DB interactions at start-up.
