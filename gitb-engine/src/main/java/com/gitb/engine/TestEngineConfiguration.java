@@ -29,11 +29,16 @@ import org.apache.commons.configuration2.SystemConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -44,6 +49,8 @@ import static com.gitb.utils.ConfigUtils.getPropertiesConfiguration;
  * Configuration Handler for the TestEngine
  */
 public class TestEngineConfiguration {
+
+	private static final Logger logger = LoggerFactory.getLogger(TestEngineConfiguration.class);
 
 	public static int ITERATION_LIMIT;
 	public static String ROOT_CALLBACK_URL;
@@ -72,6 +79,13 @@ public class TestEngineConfiguration {
 	private static final String ENV_REPOSITORY_ROOT_URL = "REPOSITORY_ROOT_URL";
 	private static final String ENV_REPOSITORY_TEST_CASE_URL = "remote.testcase.repository.url";
 	private static final String ENV_REPOSITORY_TEST_RESOURCE_URL = "remote.testresource.repository.url";
+	private static final String ENV_PROXY_ENABLED = "PROXY_SERVER_ENABLED";
+	private static final String ENV_PROXY_HOST = "PROXY_SERVER_HOST";
+	private static final String ENV_PROXY_PORT = "PROXY_SERVER_PORT";
+	private static final String ENV_PROXY_AUTH_ENABLED = "PROXY_SERVER_AUTH_ENABLED";
+	private static final String ENV_PROXY_NON_PROXY_HOSTS = "PROXY_SERVER_NON_PROXY_HOSTS";
+	private static final String ENV_PROXY_AUTH_USERNAME = "PROXY_SERVER_AUTH_USERNAME";
+	private static final String ENV_PROXY_AUTH_PASSWORD = "PROXY_SERVER_AUTH_PASSWORD";
 
     /**
      * Load the configurations from the configuration files
@@ -172,6 +186,8 @@ public class TestEngineConfiguration {
 			// Embedded messaging handler configuration - end.
 			// JSON Path configuration
 			configureJsonPath();
+			// Proxy configuration
+			setupProxy();
 		} catch (ConfigurationException | IOException e) {
 			throw new IllegalStateException("Error loading configuration", e);
 		}
@@ -198,7 +214,46 @@ public class TestEngineConfiguration {
 				return EnumSet.noneOf(Option.class);
 			}
 		});
+	}
 
+	private static void setupProxy() {
+		boolean proxyEnabled = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_PROXY_ENABLED, "false"));
+		if (proxyEnabled) {
+			String proxyHost = System.getenv(ENV_PROXY_HOST);
+			String proxyPort = System.getenv(ENV_PROXY_PORT);
+			System.setProperty("http.proxyHost", proxyHost);
+			System.setProperty("http.proxyPort", proxyPort);
+			System.setProperty("https.proxyHost", proxyHost);
+			System.setProperty("https.proxyPort", proxyPort);
+			// Build the non-proxy hosts list, always excluding localhost and the repository host.
+			var nonProxyHosts = new LinkedHashSet<>(List.of("localhost", "127.*"));
+			try {
+				String repoHost = new URI(REPOSITORY_ROOT_URL).getHost();
+				if (repoHost != null) {
+					nonProxyHosts.add(repoHost);
+				}
+			} catch (Exception e) {
+				// Ignore.
+			}
+			String userDefined = System.getenv().getOrDefault(ENV_PROXY_NON_PROXY_HOSTS, "");
+			if (!userDefined.isBlank()) {
+				for (String host : userDefined.split("\\|")) {
+					String trimmed = host.trim();
+					if (!trimmed.isEmpty()) {
+						nonProxyHosts.add(trimmed);
+					}
+				}
+			}
+			String nonProxyHostsValue = String.join("|", nonProxyHosts);
+			System.setProperty("http.nonProxyHosts", nonProxyHostsValue);
+			System.setProperty("https.nonProxyHosts", nonProxyHostsValue);
+			boolean proxyAuthEnabled = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_PROXY_AUTH_ENABLED, "false"));
+			if (proxyAuthEnabled) {
+				System.setProperty("http.proxyUser", System.getenv(ENV_PROXY_AUTH_USERNAME));
+				System.setProperty("http.proxyPassword", getFromFileConfigOrEnvironment(ENV_PROXY_AUTH_PASSWORD, ""));
+			}
+			logger.info("Configured proxy [{}] at port [{}] for HTTP/HTTPS calls.", proxyHost, proxyPort);
+		}
 	}
 
 	private static String getFromFileConfigOrEnvironment(String baseName, String defaultValue) {
