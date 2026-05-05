@@ -100,6 +100,7 @@ object Configurations {
   var PROXY_SERVER_AUTH_ENABLED = false
   var PROXY_SERVER_AUTH_USERNAME = ""
   var PROXY_SERVER_AUTH_PASSWORD = ""
+  var PROXY_SERVER_NON_PROXY_HOSTS: Option[String] = None
 
   var TSA_SERVER_ENABLED = false
   var TSA_SERVER_URL = ""
@@ -315,6 +316,7 @@ object Configurations {
         PROXY_SERVER_HOST = fromEnv("PROXY_SERVER_HOST", conf.getString("proxy.host"))
         PROXY_SERVER_PORT = fromEnv("PROXY_SERVER_PORT", conf.getString("proxy.port")).toInt
         PROXY_SERVER_AUTH_ENABLED = fromEnv("PROXY_SERVER_AUTH_ENABLED", conf.getString("proxy.auth.enabled")).toBoolean
+        PROXY_SERVER_NON_PROXY_HOSTS = Option(fromEnv("PROXY_SERVER_NON_PROXY_HOSTS", "")).filter(_.nonEmpty)
         if (PROXY_SERVER_AUTH_ENABLED) {
           PROXY_SERVER_AUTH_USERNAME = fromEnv("PROXY_SERVER_AUTH_USERNAME", conf.getString("proxy.auth.user"))
           PROXY_SERVER_AUTH_PASSWORD = fromEnv("PROXY_SERVER_AUTH_PASSWORD", conf.getString("proxy.auth.password"))
