@@ -57,4 +57,4 @@ if [[ -n "$AUTHENTICATION_SSO_CONNECTION_PASSWORD_FILE" ]] ; then
     echo -n $(cat $AUTHENTICATION_SSO_CONNECTION_PASSWORD_FILE) >> /usr/local/gitb-ui/conf/overrides.conf;
     echo '"""' >> /usr/local/gitb-ui/conf/overrides.conf;
 fi
-exec gitb -Dconfig.file=/usr/local/gitb-ui/conf/overrides.conf
+exec gitb -Dconfig.file=/usr/local/gitb-ui/conf/overrides.conf ${JVM_OPTIONS}

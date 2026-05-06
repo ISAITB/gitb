@@ -2,19 +2,19 @@
 FROM sbtscala/scala-sbt:eclipse-temurin-jammy-21.0.2_13_1.10.0_2.13.14 AS builder
 
 # Install nodejs and npm (to build frontend app)
-ENV NVM_DIR /usr/local/nvm
-ENV NVM_VERSION 0.39.7
-ENV NODE_VERSION 20.10.0
+ENV NVM_DIR=/usr/local/nvm
+ENV NVM_VERSION=0.40.1
+ENV NODE_VERSION=22.14.0
 SHELL ["/bin/bash", "--login", "-c"]
 RUN mkdir $NVM_DIR
 RUN touch ~/.bashrc && chmod +x ~/.bashrc
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v$NVM_VERSION/install.sh | bash
 RUN . $NVM_DIR/nvm.sh && source ~/.bashrc && nvm install $NODE_VERSION
-ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
-ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
 # Install Maven to build shared snapshot dependencies
-ARG MAVEN_VERSION=3.9.6
+ARG MAVEN_VERSION=3.9.8
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ARG USER_HOME_DIR="/root"
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
@@ -22,10 +22,10 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
     && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
     && rm -f /tmp/apache-maven.tar.gz \
     && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
-ENV JAVA_HOME /opt/java/openjdk
-ENV MAVEN_HOME /usr/share/maven
-ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
-ENV PATH $MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
+ENV JAVA_HOME=/opt/java/openjdk
+ENV MAVEN_HOME=/usr/share/maven
+ENV MAVEN_CONFIG="$USER_HOME_DIR/.m2"
+ENV PATH=$MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
 
 # Build snapshot dependencies
 COPY . /app
@@ -44,16 +44,20 @@ RUN mkdir -p /app/tmp \
 # Stage 2: Run application
 FROM eclipse-temurin:21-jre-jammy
 
-ENV PATH /usr/local/gitb-ui/bin:$PATH
-ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService
-ENV TESTBED_CLIENT_URL http://gitb-ui:9090/TestbedClient
-ENV DB_DEFAULT_URL jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true
-ENV DB_DEFAULT_ROOTURL jdbc:mysql://gitb-mysql/
-ENV REDIS_HOST gitb-redis
+ENV PATH=/usr/local/gitb-ui/bin:$PATH
+ENV TESTBED_SERVICE_URL=http://gitb-srv:8080/itbsrv/TestbedService
+ENV TESTBED_CLIENT_URL_INTERNAL=http://0.0.0.0:9090/TestbedClient
+ENV TESTBED_CLIENT_URL=http://gitb-ui:9090/TestbedClient
+ENV DB_DEFAULT_URL=jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true
+ENV DB_DEFAULT_ROOTURL=jdbc:mysql://gitb-mysql/
+ENV REDIS_HOST=gitb-redis
 
 COPY --from=builder /app/tmp/gitb-ui/gitb-ui /usr/local/gitb-ui
+COPY --from=builder /app/etc/docker/gitb-ui/gitb-entrypoint.sh /usr/local/gitb-ui/bin
+RUN chmod +x /usr/local/gitb-ui/bin/gitb-entrypoint.sh
 
 EXPOSE 9000
 EXPOSE 9090
 WORKDIR /usr/local/gitb-ui
-CMD ["gitb"]
+
+ENTRYPOINT ["/usr/local/gitb-ui/bin/gitb-entrypoint.sh"]
