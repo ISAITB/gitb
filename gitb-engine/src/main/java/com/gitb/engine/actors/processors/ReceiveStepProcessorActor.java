@@ -91,6 +91,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	}
 
 	@Override
+	@SuppressWarnings("resource")
 	protected void start() {
 		processing();
 		VariableResolver resolver = new VariableResolver(scope);
@@ -224,6 +225,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 		}
 	}
 
+	@SuppressWarnings("resource")
 	private void scheduleDeferredTask(DeferredTask<?> deferredTask) {
 		if (deferredTask != null) {
 			getContext().system().scheduler().scheduleOnce(

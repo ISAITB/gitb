@@ -163,6 +163,18 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         return value;
     }
 
+    @SuppressWarnings("resource")
+    private void scheduleTimeout(ActorContext context, long timeoutMs) {
+        context.system().scheduler().scheduleOnce(
+                scala.concurrent.duration.Duration.apply(timeoutMs, TimeUnit.MILLISECONDS), () -> {
+                    if (!self().isTerminated()) {
+                        self().tell(new TimeoutExpired(), self());
+                    }
+                },
+                context.dispatcher()
+        );
+    }
+
     @Override
     protected void start() {
         processing();
@@ -187,14 +199,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     timeout = Double.valueOf(step.getTimeout()).longValue();
                 }
                 if (timeout > 0) {
-                    context.system().scheduler().scheduleOnce(
-                            scala.concurrent.duration.Duration.apply(timeout, TimeUnit.MILLISECONDS), () -> {
-                                if (!self().isTerminated()) {
-                                    self().tell(new TimeoutExpired(), self());
-                                }
-                            },
-                            context.dispatcher()
-                    );
+                    scheduleTimeout(context, timeout);
                 }
             }
             // Process the instructions and request the interaction from TestbedClient
