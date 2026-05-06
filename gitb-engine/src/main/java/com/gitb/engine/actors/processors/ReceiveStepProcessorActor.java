@@ -178,46 +178,47 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	@Override
 	public void onReceive(Object message) {
 		try {
-			if (message instanceof NotificationReceived notificationMessage) {
-				if (promise != null && !promise.isCompleted()) {
-					if (notificationMessage.getError() != null) {
-						promise.tryFailure(notificationMessage.getError());
-					} else {
-						logger.debug(addMarker(), "Received notification");
-						promise.trySuccess(handleMessagingResult(notificationMessage.getReport()));
-					}
-				}
-			} else if (message instanceof TimeoutExpired) {
-				if (promise != null && !promise.isCompleted()) {
-					VariableResolver resolver = new VariableResolver(scope);
-					String flagName = null;
-					if (!StringUtils.isBlank(step.getTimeoutFlag())) {
-						if (VariableResolver.isVariableReference(step.getTimeoutFlag())) {
-							flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
-						} else {
-							flagName = step.getTimeoutFlag();
-						}
-					}
-					boolean errorIfTimeout = false;
-					if (!StringUtils.isBlank(step.getTimeoutIsError())) {
-						if (VariableResolver.isVariableReference(step.getTimeoutIsError())) {
-							errorIfTimeout = resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
-						} else {
-							errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
-						}
-					}
-					if (errorIfTimeout) {
-						logger.error(addMarker(), "Timeout expired while waiting to receive message");
-					} else {
-						logger.debug(addMarker(), "Timeout expired while waiting to receive message");
-					}
-					promise.trySuccess(handleMessagingResult(getMessagingReportForTimeout(flagName, errorIfTimeout)));
-				}
-			} else if (message instanceof DeferredTask<?> deferredTask) {
-				handleDeferredTask(deferredTask);
-			} else {
-				super.onReceive(message);
-			}
+            switch (message) {
+                case NotificationReceived notificationMessage -> {
+                    if (promise != null && !promise.isCompleted()) {
+                        if (notificationMessage.getError() != null) {
+                            promise.tryFailure(notificationMessage.getError());
+                        } else {
+                            logger.debug(addMarker(), "Received notification");
+                            promise.trySuccess(handleMessagingResult(notificationMessage.getReport()));
+                        }
+                    }
+                }
+                case TimeoutExpired timeoutExpired -> {
+                    if (promise != null && !promise.isCompleted()) {
+                        VariableResolver resolver = new VariableResolver(scope);
+                        String flagName = null;
+                        if (!StringUtils.isBlank(step.getTimeoutFlag())) {
+                            if (VariableResolver.isVariableReference(step.getTimeoutFlag())) {
+                                flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
+                            } else {
+                                flagName = step.getTimeoutFlag();
+                            }
+                        }
+                        boolean errorIfTimeout = false;
+                        if (!StringUtils.isBlank(step.getTimeoutIsError())) {
+                            if (VariableResolver.isVariableReference(step.getTimeoutIsError())) {
+                                errorIfTimeout = resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
+                            } else {
+                                errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
+                            }
+                        }
+                        if (errorIfTimeout) {
+                            logger.error(addMarker(), "Timeout expired while waiting to receive message");
+                        } else {
+                            logger.debug(addMarker(), "Timeout expired while waiting to receive message");
+                        }
+                        promise.trySuccess(handleMessagingResult(getMessagingReportForTimeout(flagName, errorIfTimeout)));
+                    }
+                }
+                case DeferredTask<?> deferredTask -> handleDeferredTask(deferredTask);
+                case null, default -> super.onReceive(message);
+            }
 		} catch (Exception e) {
 			error(e);
 		}
@@ -301,10 +302,8 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					.setValue(map);
 			}
 			reportToReturn = report.getReport();
-		} else if (report != null) {
-			reportToReturn = report.getReport();
 		} else {
-			reportToReturn = generateSuccessReport(null).getReport();
+			reportToReturn = Objects.requireNonNullElseGet(report, () -> generateSuccessReport(null)).getReport();
 		}
 		ErrorLevel errorLevel = TestCaseUtils.resolveReportErrorLevel(step.getLevel(), scope.getContext().getSessionId(), resolver.orElse(new VariableResolver(scope)));
 		TestCaseUtils.postProcessReport(step.isInvert(), errorLevel, reportToReturn);
