@@ -61,8 +61,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -70,6 +68,7 @@ import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
+import scala.runtime.BoxedUnit;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.math.BigInteger;
@@ -130,18 +129,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
         promise = Futures.promise();
 
-        promise.future().foreach(new OnSuccess<>() {
-            @Override
-            public void onSuccess(TestStepReportType result) {
-                completed(result);
+        promise.future().onComplete(result -> {
+            if (result.isSuccess()) {
+                completed(result.get());
+            } else {
+                handleFutureFailure(result.failed().get());
             }
-        }, getContext().dispatcher());
-
-        promise.future().failed().foreach(new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                handleFutureFailure(failure);
-            }
+            return BoxedUnit.UNIT;
         }, getContext().dispatcher());
     }
 
@@ -217,11 +211,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
         }, context.dispatcher());
 
-        future.failed().foreach(new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                promise.tryFailure(failure);
+        future.onComplete(result -> {
+            if (result.isFailure()) {
+                promise.tryFailure(result.failed().get());
             }
+            return BoxedUnit.UNIT;
         }, context.dispatcher());
         waiting();
     }

@@ -42,12 +42,11 @@ import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
+import scala.runtime.BoxedUnit;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -81,18 +80,13 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 		promise = Futures.promise();
 
-		promise.future().foreach(new OnSuccess<>() {
-			@Override
-			public void onSuccess(TestStepReportType result) {
-				signalStepStatus(result);
+		promise.future().onComplete(result -> {
+			if (result.isSuccess()) {
+				signalStepStatus(result.get());
+			} else {
+				handleFutureFailure(result.failed().get());
 			}
-		}, context.dispatcher());
-
-		promise.future().failed().foreach(new OnFailure() {
-			@Override
-			public void onFailure(Throwable failure) {
-				handleFutureFailure(failure);
-			}
+			return BoxedUnit.UNIT;
 		}, context.dispatcher());
 	}
 
@@ -175,8 +169,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				}
 			}, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
-			future.foreach(handleSuccess(promise), getContext().dispatcher());
-			future.failed().foreach(handleFailure(promise), getContext().dispatcher());
+			attachFutureCallbacks(future, promise, getContext().dispatcher());
 		} else {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
 		}

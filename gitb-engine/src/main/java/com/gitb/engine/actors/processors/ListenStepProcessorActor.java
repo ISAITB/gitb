@@ -37,10 +37,9 @@ import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
+import scala.runtime.BoxedUnit;
 
 import java.util.Objects;
 
@@ -69,28 +68,24 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
         final ActorContext context = getContext();
         promise = Futures.promise();
 
-        promise.future().foreach(new OnSuccess<>() {
-            @Override
-            public void onSuccess(TestStepReportType result) {
-                if (result != null) {
-                    if (result.getResult() == TestResultType.SUCCESS) {
-                        updateTestStepStatus(context, StepStatus.COMPLETED, result);
-                    } else if (result.getResult() == TestResultType.WARNING) {
-                        updateTestStepStatus(context, StepStatus.WARNING, result);
+        promise.future().onComplete(result -> {
+            if (result.isSuccess()) {
+                TestStepReportType report = result.get();
+                if (report != null) {
+                    if (report.getResult() == TestResultType.SUCCESS) {
+                        updateTestStepStatus(context, StepStatus.COMPLETED, report);
+                    } else if (report.getResult() == TestResultType.WARNING) {
+                        updateTestStepStatus(context, StepStatus.WARNING, report);
                     } else {
-                        updateTestStepStatus(context, StepStatus.ERROR, result);
+                        updateTestStepStatus(context, StepStatus.ERROR, report);
                     }
                 } else {
                     updateTestStepStatus(context, StepStatus.COMPLETED, null);
                 }
+            } else {
+                handleFutureFailure(result.failed().get());
             }
-        }, context.dispatcher());
-
-        promise.future().failed().foreach(new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                handleFutureFailure(failure);
-            }
+            return BoxedUnit.UNIT;
         }, context.dispatcher());
     }
 
@@ -167,8 +162,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
 
             }, context.dispatcher());
 
-            future.foreach(handleSuccess(promise), getContext().dispatcher());
-            future.failed().foreach(handleFailure(promise), getContext().dispatcher());
+            attachFutureCallbacks(future, promise, getContext().dispatcher());
         } else {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
         }

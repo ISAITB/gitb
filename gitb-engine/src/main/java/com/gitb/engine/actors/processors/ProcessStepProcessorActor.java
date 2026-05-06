@@ -45,10 +45,9 @@ import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
+import scala.runtime.BoxedUnit;
 
 import java.util.Map;
 import java.util.Objects;
@@ -73,28 +72,25 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     protected void init() {
         final ActorContext context = getContext();
         promise = Futures.promise();
-        promise.future().foreach(new OnSuccess<>() {
-            @Override
-            public void onSuccess(TestStepReportType result) {
+        promise.future().onComplete(result -> {
+            if (result.isSuccess()) {
                 HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, false);
-                if (result != null) {
-                    if (result.getResult() == TestResultType.SUCCESS) {
-                        updateTestStepStatus(context, StepStatus.COMPLETED, result);
-                    } else if (result.getResult() == TestResultType.WARNING) {
-                        updateTestStepStatus(context, StepStatus.WARNING, result);
+                TestStepReportType report = result.get();
+                if (report != null) {
+                    if (report.getResult() == TestResultType.SUCCESS) {
+                        updateTestStepStatus(context, StepStatus.COMPLETED, report);
+                    } else if (report.getResult() == TestResultType.WARNING) {
+                        updateTestStepStatus(context, StepStatus.WARNING, report);
                     } else {
-                        updateTestStepStatus(context, StepStatus.ERROR, result);
+                        updateTestStepStatus(context, StepStatus.ERROR, report);
                     }
                 } else {
                     updateTestStepStatus(context, StepStatus.COMPLETED, null);
                 }
+            } else {
+                handleFutureFailure(result.failed().get());
             }
-        }, context.dispatcher());
-        promise.future().failed().foreach(new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                handleFutureFailure(failure);
-            }
+            return BoxedUnit.UNIT;
         }, context.dispatcher());
     }
 
@@ -151,29 +147,21 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             return taskPromise.future();
         }, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
-        future.foreach(new OnSuccess<>() {
-            @Override
-            public void onSuccess(Future<TestStepReportType> reportFuture) {
-                reportFuture.foreach(new OnSuccess<>() {
-                    @Override
-                    public void onSuccess(TestStepReportType report) {
-                        promise.trySuccess(report);
+        future.onComplete(outerResult -> {
+            if (outerResult.isSuccess()) {
+                Future<TestStepReportType> reportFuture = outerResult.get();
+                reportFuture.onComplete(innerResult -> {
+                    if (innerResult.isSuccess()) {
+                        promise.trySuccess(innerResult.get());
+                    } else {
+                        promise.tryFailure(innerResult.failed().get());
                     }
+                    return BoxedUnit.UNIT;
                 }, getContext().dispatcher());
-                reportFuture.failed().foreach(new OnFailure() {
-                    @Override
-                    public void onFailure(Throwable failure) {
-                        promise.tryFailure(failure);
-                    }
-                }, getContext().dispatcher());
+            } else {
+                promise.tryFailure(outerResult.failed().get());
             }
-        }, getContext().dispatcher());
-
-        future.failed().foreach(new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                promise.tryFailure(failure);
-            }
+            return BoxedUnit.UNIT;
         }, getContext().dispatcher());
     }
 
