@@ -86,6 +86,14 @@ public class TestEngineConfiguration {
 	private static final String ENV_PROXY_NON_PROXY_HOSTS = "PROXY_SERVER_NON_PROXY_HOSTS";
 	private static final String ENV_PROXY_AUTH_USERNAME = "PROXY_SERVER_AUTH_USERNAME";
 	private static final String ENV_PROXY_AUTH_PASSWORD = "PROXY_SERVER_AUTH_PASSWORD";
+	private static final String ENV_TEMP_STORAGE_ENABLED = "GITB_ENGINE_STORAGE_ENABLED";
+	private static final String ENV_TEMP_STORAGE_LOCATION = "GITB_ENGINE_STORAGE_LOCATION";
+	private static final String ENV_TEMP_STORAGE_BINARY_ENABLED = "GITB_ENGINE_STORAGE_BINARY_ENABLED";
+	private static final String ENV_TEMP_STORAGE_STRING_ENABLED = "GITB_ENGINE_STORAGE_STRING_ENABLED";
+	private static final String ENV_TEMP_STORAGE_XML_ENABLED = "GITB_ENGINE_STORAGE_XML_ENABLED";
+	private static final String ENV_TEMP_STORAGE_BINARY_THRESHOLD = "GITB_ENGINE_STORAGE_BINARY_THRESHOLD";
+	private static final String ENV_TEMP_STORAGE_STRING_THRESHOLD = "GITB_ENGINE_STORAGE_STRING_THRESHOLD";
+	private static final String ENV_TEMP_STORAGE_XML_THRESHOLD = "GITB_ENGINE_STORAGE_XML_THRESHOLD";
 
     /**
      * Load the configurations from the configuration files
@@ -148,14 +156,14 @@ public class TestEngineConfiguration {
 			CoreConfiguration.GITB_REST_CALLBACK_API_ROOT = HANDLER_API_ROOT+"gitb";
 			// Determine callback URLs - end.
 			// Temp storage properties - start.
-			TEMP_STORAGE_ENABLED = config.getBoolean("gitb.engine.storage.enabled", Boolean.TRUE);
-			TEMP_STORAGE_LOCATION = config.getString("gitb.engine.storage.location", "./temp/session/");
-			TEMP_STORAGE_BINARY_ENABLED = config.getBoolean("gitb.engine.storage.binary.enabled", Boolean.TRUE);
-			TEMP_STORAGE_STRING_ENABLED = config.getBoolean("gitb.engine.storage.string.enabled", Boolean.TRUE);
-			TEMP_STORAGE_XML_ENABLED = config.getBoolean("gitb.engine.storage.xml.enabled", Boolean.TRUE);
-			TEMP_STORAGE_BINARY_THRESHOLD_BYTES = config.getLong("gitb.engine.storage.binary.threshold", 50 * 1024L); // 50 KB
-			TEMP_STORAGE_STRING_THRESHOLD_CHARS = config.getLong("gitb.engine.storage.string.threshold", 50 * 512L); // 50 KB (considering 2-byte encoding)
-			TEMP_STORAGE_XML_THRESHOLD_BYTES = config.getLong("gitb.engine.storage.xml.threshold", 50 * 1024L); // 50 KB
+			TEMP_STORAGE_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_ENABLED, config.getString("gitb.engine.storage.enabled", "true")));
+			TEMP_STORAGE_LOCATION = System.getenv().getOrDefault(ENV_TEMP_STORAGE_LOCATION, config.getString("gitb.engine.storage.location", "./temp/session/"));
+			TEMP_STORAGE_BINARY_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_BINARY_ENABLED, config.getString("gitb.engine.storage.binary.enabled", "true")));
+			TEMP_STORAGE_STRING_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_STRING_ENABLED, config.getString("gitb.engine.storage.string.enabled", "true")));
+			TEMP_STORAGE_XML_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_XML_ENABLED, config.getString("gitb.engine.storage.xml.enabled", "true")));
+			TEMP_STORAGE_BINARY_THRESHOLD_BYTES = Long.parseLong(System.getenv().getOrDefault(ENV_TEMP_STORAGE_BINARY_THRESHOLD, config.getString("gitb.engine.storage.binary.threshold", String.valueOf(50 * 1024L)))); // 50 KB
+			TEMP_STORAGE_STRING_THRESHOLD_CHARS = Long.parseLong(System.getenv().getOrDefault(ENV_TEMP_STORAGE_STRING_THRESHOLD, config.getString("gitb.engine.storage.string.threshold", String.valueOf(50 * 512L)))); // 50 KB (considering 2-byte encoding)
+			TEMP_STORAGE_XML_THRESHOLD_BYTES = Long.parseLong(System.getenv().getOrDefault(ENV_TEMP_STORAGE_XML_THRESHOLD, config.getString("gitb.engine.storage.xml.threshold", String.valueOf(50 * 1024L)))); // 50 KB
 			// Temp storage properties - end.
 			// Remote repository - start.
 			if (System.getenv().containsKey(ENV_REPOSITORY_TEST_CASE_URL)) {
