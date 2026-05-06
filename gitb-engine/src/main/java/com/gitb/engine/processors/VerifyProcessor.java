@@ -197,12 +197,9 @@ public class VerifyProcessor implements IProcessor {
 
 
 	private boolean isURL(String handler) {
-		try {
-			new URI(handler).toURL();
-		} catch (Exception e) {
-			return false;
-		}
-		return true;
+		if (handler == null) return false;
+		String lower = handler.toLowerCase(Locale.ROOT);
+		return lower.startsWith("http://") || lower.startsWith("https://");
 	}
 
 	private IValidationHandler getRemoteValidator(String handler, String handlerDomainIdentifier, Properties connectionProperties, String sessionId, Long handlerTimeout, HandlerApiType declaredApiType) {
