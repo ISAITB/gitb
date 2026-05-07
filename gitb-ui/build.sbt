@@ -1,8 +1,8 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
-val pekkoVersion = "1.5.0"
-val jacksonVersion = "2.21.2"
+val pekkoVersion = "1.6.0"
+val jacksonVersion = "2.21.3"
 val jacksonAnnotationsVersion = "2.21"
 val cxfVersion = "4.2.0"
 val gitbCommonsVersion = "1.30.0-SNAPSHOT"
@@ -10,7 +10,7 @@ val gitbTypesVersion = "1.30.0-SNAPSHOT"
 val bouncyCastleVersion = "1.84"
 val commonsTextVersion = "1.15.0"
 val mySqlConnectorVersion = "9.7.0"
-val pac4jVersion = "6.4.3"
+val pac4jVersion = "6.5.0"
 val nettyVersion = "4.2.12.Final"
 val pdfBoxVersion = "3.0.7"
 
@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
-  "org.pac4j" %% "play-pac4j" % "13.0.2-PLAY3.0",
+  "org.pac4j" %% "play-pac4j" % "13.0.3-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % pac4jVersion exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.pac4j" % "pac4j-http" % pac4jVersion,
@@ -83,14 +83,13 @@ libraryDependencies ++= Seq(
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.3",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
   "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.7",
+  "com.sun.xml.bind" % "jaxb-impl" % "4.0.8",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.5", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
   "org.apache.pdfbox" % "pdfbox" % pdfBoxVersion,
   "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
-  "org.jasypt" % "jasypt" % "1.9.3",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
   "org.flywaydb" % "flyway-mysql" % "12.0.2", // 12.0.3+ brings in Jackson 3
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260313.1",
@@ -98,7 +97,7 @@ libraryDependencies ++= Seq(
   "com.nimbusds" % "nimbus-jose-jwt" % "10.9",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
   "com.bucket4j" % "bucket4j_jdk17-core" % "8.18.0",
-  "com.github.ben-manes.caffeine" % "caffeine" % "3.2.3"
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.2.4"
 )
 
 // Deactivate repeatable builds to speed up via parallelization

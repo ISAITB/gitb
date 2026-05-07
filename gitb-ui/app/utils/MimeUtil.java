@@ -21,12 +21,18 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
-import org.jasypt.util.text.BasicTextEncryptor;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.Locale;
 import java.util.Set;
 
@@ -34,6 +40,9 @@ public class MimeUtil {
 
     private static final Tika tika = new Tika();
     private static final Set<String> imageMimeTypes = Set.of("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml");
+    private static final String PBE_ALGORITHM = "PBEWithMD5AndDES";
+    private static final int PBE_ITERATIONS = 1000;
+    private static final int PBE_SALT_SIZE = 8;
 
     public static String base64AsDataURL(String base64Content) {
         return base64AsDataURL(base64Content, null);
@@ -105,7 +114,7 @@ public class MimeUtil {
                 MimeType mimeTypeObj = TikaConfig.getDefaultConfig().getMimeRepository().forName(mimeType);
                 extension = mimeTypeObj.getExtension();
             } catch (MimeTypeException e) {
-                extension = null;
+                // Ignore.
             }
         }
         return extension;
@@ -132,25 +141,42 @@ public class MimeUtil {
     }
 
     public static String encryptString(String input, char[] key) {
-        return new Encryptor(key).encryptor.encrypt(input);
+        try {
+            byte[] salt = new byte[PBE_SALT_SIZE];
+            new SecureRandom().nextBytes(salt);
+            Cipher cipher = Cipher.getInstance(PBE_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, pbeKey(key), new PBEParameterSpec(salt, PBE_ITERATIONS));
+            byte[] encrypted = cipher.doFinal(input.getBytes(StandardCharsets.UTF_8));
+            byte[] combined = new byte[PBE_SALT_SIZE + encrypted.length];
+            System.arraycopy(salt, 0, combined, 0, PBE_SALT_SIZE);
+            System.arraycopy(encrypted, 0, combined, PBE_SALT_SIZE, encrypted.length);
+            return Base64.encodeBase64String(combined);
+        } catch (Exception e) {
+            throw new IllegalStateException("Encryption failed", e);
+        }
     }
 
     public static String decryptString(String input) {
-        return new Encryptor(Configurations.MASTER_PASSWORD()).encryptor.decrypt(input);
+        return decryptString(input, Configurations.MASTER_PASSWORD());
     }
 
     public static String decryptString(String input, char[] key) {
-        return new Encryptor(key).encryptor.decrypt(input);
-    }
-
-    private static class Encryptor {
-
-        private BasicTextEncryptor encryptor;
-
-        private Encryptor(char[] key) {
-            encryptor = new BasicTextEncryptor();
-            encryptor.setPasswordCharArray(key);
+        try {
+            byte[] combined = Base64.decodeBase64(input);
+            byte[] salt = new byte[PBE_SALT_SIZE];
+            System.arraycopy(combined, 0, salt, 0, PBE_SALT_SIZE);
+            byte[] ciphertext = new byte[combined.length - PBE_SALT_SIZE];
+            System.arraycopy(combined, PBE_SALT_SIZE, ciphertext, 0, ciphertext.length);
+            Cipher cipher = Cipher.getInstance(PBE_ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, pbeKey(key), new PBEParameterSpec(salt, PBE_ITERATIONS));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new IllegalStateException("Decryption failed", e);
         }
-
     }
+
+    private static SecretKey pbeKey(char[] key) throws Exception {
+        return SecretKeyFactory.getInstance(PBE_ALGORITHM).generateSecret(new PBEKeySpec(key));
+    }
+
 }

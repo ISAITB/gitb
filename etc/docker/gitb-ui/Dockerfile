@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 ENV PATH=/usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL=http://gitb-srv:8080/itbsrv/TestbedService

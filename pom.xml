@@ -27,12 +27,12 @@
         -->
         <!-- Plugin versions -->
         <version.plugin.dependency-check-maven>12.2.2</version.plugin.dependency-check-maven>
-        <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
-        <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
-        <version.plugin.jaxb2-maven-plugin>3.1.0</version.plugin.jaxb2-maven-plugin>
-        <version.plugin.license-maven-plugin>2.5.0</version.plugin.license-maven-plugin>
-        <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
-        <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
+        <version.plugin.maven-deploy-plugin>3.1.4</version.plugin.maven-deploy-plugin>
+        <version.plugin.maven-compiler-plugin>3.15.0</version.plugin.maven-compiler-plugin>
+        <version.plugin.jaxb2-maven-plugin>4.1.0</version.plugin.jaxb2-maven-plugin>
+        <version.plugin.license-maven-plugin>2.7.1</version.plugin.license-maven-plugin>
+        <version.plugin.antrun-plugin>3.2.0</version.plugin.antrun-plugin>
+        <version.plugin.versions-maven-plugin>2.21.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
         <version.gitbTypes>1.30.0-SNAPSHOT</version.gitbTypes>
         <version.springBoot>3.5.14</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
@@ -60,16 +60,16 @@
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
         <version.jaxbApi>4.0.5</version.jaxbApi>
-        <version.jaxbRuntime>4.0.7</version.jaxbRuntime>
+        <version.jaxbRuntime>4.0.8</version.jaxbRuntime>
         <version.saxon>12.8</version.saxon>
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.13.0</version.commonsConfiguration>
         <version.commonsText>1.15.0</version.commonsText>
-        <version.pekko>1.5.0</version.pekko>
+        <version.pekko>1.6.0</version.pekko>
         <version.rgxgen>3.1</version.rgxgen>
-        <version.saajImpl>3.0.4</version.saajImpl>
+        <version.saajImpl>3.0.5</version.saajImpl>
         <version.helgerCommons>12.0.0</version.helgerCommons>
         <version.dnsJava>3.6.3</version.dnsJava>
         <version.commonsFileUpload>1.6.0</version.commonsFileUpload>
@@ -83,7 +83,7 @@
         <version.topbraid>1.4.4</version.topbraid>
         <version.json-schema-validator>2.0.1</version.json-schema-validator>
         <version.jayway>2.9.0</version.jayway>
-        <version.jackson>2.21.2</version.jackson>
+        <version.jackson>2.21.3</version.jackson>
         <version.jacksonAnnotations>2.21</version.jacksonAnnotations>
         <version.pdfbox>3.0.7</version.pdfbox>
         <version.swaggerUi>5.32.5</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
