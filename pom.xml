@@ -124,7 +124,7 @@
                     <version>${version.plugin.maven-compiler-plugin}</version>
                     <configuration>
                         <release>21</release>
-                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                        <forceLegacyJavacApi>true</forceLegacyJavacApi>
                     </configuration>
                 </plugin>
                 <plugin>
