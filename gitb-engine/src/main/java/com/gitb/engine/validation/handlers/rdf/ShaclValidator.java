@@ -428,6 +428,7 @@ public class ShaclValidator extends AbstractValidator {
         return result;
     }
 
+    @SuppressWarnings("removal")
     private void loadImportsForModel(Model model) {
         ModelMaker modelMaker = ModelFactory.createMemModelMaker();
         OntModelSpec spec = new OntModelSpec(OntModelSpec.OWL_MEM_RULE_INF);
@@ -436,6 +437,7 @@ public class ShaclValidator extends AbstractValidator {
         addImports(model, ModelFactory.createOntologyModel(spec, model), new HashSet<>());
     }
 
+    @SuppressWarnings("removal")
     private void addImports(Model model, OntModel baseOntModel, Set<String> reachedURIs) {
         baseOntModel.loadImports();
         Set<String> listImportedURI = baseOntModel.listImportedOntologyURIs();
