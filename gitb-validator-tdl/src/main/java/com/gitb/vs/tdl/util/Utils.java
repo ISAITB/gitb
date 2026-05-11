@@ -101,8 +101,9 @@ public class Utils {
             entryName = entryName.replace('\\', '/');
             hasBadSeparators = true;
         }
-        Path destFile = destinationDir.resolve(entryName).normalize().toAbsolutePath();
-        if (!destFile.startsWith(destinationDir)) {
+        Path destDir = destinationDir.normalize().toAbsolutePath();
+        Path destFile = destDir.resolve(entryName).normalize().toAbsolutePath();
+        if (!destFile.startsWith(destDir.toAbsolutePath())) {
             throw new IllegalStateException("Entry is outside of the target dir: " + entryName);
         }
         return new PathFromZipEntry(destFile, hasBadSeparators);
