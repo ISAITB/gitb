@@ -15,10 +15,6 @@
 
 package com.gitb.engine;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gitb.PropertyConstants;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
@@ -37,6 +33,11 @@ import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -262,7 +263,7 @@ public class TestbedService {
 			repoResult = HealthCheckResult.failure("repo", serialiseThrowable(e));
         }
 		// Create result.
-		ObjectMapper mapper = new ObjectMapper();
+		ObjectMapper mapper = JsonMapper.shared();
 		ObjectNode root = mapper.createObjectNode();
 		ArrayNode resultArray = mapper.createArrayNode();
 		resultArray.add(mapper.valueToTree(tbsResult));
@@ -272,7 +273,7 @@ public class TestbedService {
 		root.put("hmacHash", HmacUtils.getHashedKey());
         try {
             return mapper.writeValueAsString(root);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Unexpected error while serialising health check status", e);
         }
     }

@@ -19,9 +19,9 @@ import com.gitb.CoreConfiguration;
 import com.gitb.engine.messaging.handlers.server.Configuration;
 import com.gitb.utils.HmacUtils;
 import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.Jackson3JsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.Jackson3MappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.EnvironmentConfiguration;
@@ -36,11 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.EnumSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static com.gitb.utils.ConfigUtils.getPropertiesConfiguration;
 
@@ -204,8 +200,8 @@ public class TestEngineConfiguration {
 	private static void configureJsonPath() {
 		com.jayway.jsonpath.Configuration.setDefaults(new com.jayway.jsonpath.Configuration.Defaults() {
 
-			private final JsonProvider jsonProvider = new JacksonJsonProvider();
-			private final MappingProvider mappingProvider = new JacksonMappingProvider();
+			private final JsonProvider jsonProvider = new Jackson3JsonProvider();
+			private final MappingProvider mappingProvider = new Jackson3MappingProvider();
 
 			@Override
 			public JsonProvider jsonProvider() {

@@ -15,8 +15,6 @@
 
 package com.gitb.engine.validation.handlers.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ValueEmbeddingEnumeration;
@@ -37,6 +35,8 @@ import com.networknt.schema.utils.JsonNodes;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -262,7 +262,7 @@ public class JsonValidator extends AbstractValidator {
                     .resourceLoaders(builder -> builder.add(new LocalSchemaResolver(sharedSchemaInfo, getScope(sessionId).getContext())))
                     .build();
             return registry.getSchema(jsonNode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Error while parsing JSON schema: %s".formatted(e.getMessage()), e);
         }
     }

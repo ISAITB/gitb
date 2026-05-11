@@ -15,7 +15,6 @@
 
 package controllers.rest
 
-import com.fasterxml.jackson.core.JsonParseException
 import config.Configurations
 import controllers.rest.BaseAutomationService.EndpointSignature
 import controllers.util.{ParameterExtractor, RequestWithAttributes, ResponseConstructor}
@@ -24,6 +23,7 @@ import managers.ratelimit.RateLimitManager
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsResultException, JsValue, Json}
 import play.api.mvc._
+import tools.jackson.core.JacksonException
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -101,7 +101,7 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents,
 
   protected def handleException(cause: Throwable): Result = {
     cause match {
-      case e: JsonParseException =>
+      case e: JacksonException =>
         LOG.warn("Failed to parse automation API payload: "+e.getMessage)
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
       case e: JsResultException =>

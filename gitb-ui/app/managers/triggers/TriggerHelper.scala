@@ -17,8 +17,6 @@ package managers.triggers
 
 import actors.events.{ConformanceStatementCreatedEvent, OrganisationCreatedEvent, SystemCreatedEvent, TriggerEvent}
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import managers.BaseManager
 import managers.triggers.TriggerHelper.JSON
 import models.Enums.TriggerDataType
@@ -29,6 +27,8 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.api._
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
@@ -36,10 +36,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object TriggerHelper {
 
-  val JSON: ObjectMapper = new ObjectMapper()
-    .registerModule(new JavaTimeModule)
-    .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
-    .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+  val JSON: ObjectMapper = JsonMapper.builder()
+    .changeDefaultPropertyInclusion(inc => inc.withContentInclusion(JsonInclude.Include.NON_EMPTY))
+    .build()
 
 }
 

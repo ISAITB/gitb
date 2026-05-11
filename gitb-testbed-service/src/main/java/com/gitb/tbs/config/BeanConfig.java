@@ -23,10 +23,10 @@ import jakarta.servlet.MultipartConfigElement;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxws.EndpointImpl;
 import org.apache.cxf.transport.servlet.CXFServlet;
-import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletRegistrationBean;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
+import org.springframework.boot.webmvc.autoconfigure.DispatcherServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.DispatcherServlet;
@@ -54,11 +54,11 @@ public class BeanConfig {
     }
 
     @Bean
-    public DispatcherServletRegistrationBean dispatcherServletRegistration(DispatcherServlet dispatcherServlet, MultipartConfigElement multipartConfig) {
+    public DispatcherServletRegistrationBean dispatcherServletRegistration(DispatcherServlet dispatcherServlet, ObjectProvider<MultipartConfigElement> multipartConfig) {
         var registration = new DispatcherServletRegistrationBean(dispatcherServlet, "/"+ HANDLER_API_SEGMENT +"/*");
         registration.setLoadOnStartup(0);
         registration.setName(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME);
-        registration.setMultipartConfig(multipartConfig);
+        multipartConfig.ifAvailable(registration::setMultipartConfig);
         return registration;
     }
 
@@ -99,24 +99,6 @@ public class BeanConfig {
         endpoint.setPublishedEndpointUrl(PROCESSING_CALLBACK_URL);
         endpoint.publish("/ProcessingClient");
         return endpoint;
-    }
-
-    @Bean
-    public TomcatServletWebServerFactory tomcatFactory() {
-        return new TomcatServletWebServerFactory() {
-            @Override
-            protected void customizeConnector(org.apache.catalina.connector.Connector connector) {
-                super.customizeConnector(connector);
-                /*
-                 * Requests received by the validator web app are multipart requests (if performed
-                 * through the UI). In this case we need to make sure that Tomcat's limit to the
-                 * maximum number of multipart request parts does not block us (a default limit of
-                 * 10 was added in Tomcat release 10.1.42).
-                 */
-                connector.setMaxParameterCount(10000);
-                connector.setMaxPartCount(100);
-            }
-        };
     }
 
 }

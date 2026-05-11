@@ -15,9 +15,9 @@
 
 package com.gitb.engine.processing.handlers;
 
-import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ValueNode;
+import tools.jackson.core.JsonPointer;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ValueNode;
 import com.gitb.core.ConfigurationParameters;
 import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
@@ -89,7 +89,7 @@ public class JsonPointerProcessor extends AbstractProcessingHandler {
         String resultString = null;
         var resultNode = documentNode.at(pointer);
         if (resultNode instanceof ValueNode) {
-            resultString = resultNode.asText();
+            resultString = resultNode.asString();
         } else if (resultNode != null) {
             resultString = writer.apply(resultNode);
         }

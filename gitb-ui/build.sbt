@@ -2,7 +2,7 @@ import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
 val pekkoVersion = "1.6.0"
-val jacksonVersion = "2.21.3"
+val jacksonVersion = "3.1.3"
 val jacksonAnnotationsVersion = "2.21"
 val cxfVersion = "4.2.0"
 val gitbCommonsVersion = "1.30.0-SNAPSHOT"
@@ -59,12 +59,11 @@ libraryDependencies ++= Seq(
   "io.netty" % "netty-transport-native-kqueue" % nettyVersion,
   // - END.
   "org.apache.commons" % "commons-lang3" % "3.20.0",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
+  "tools.jackson.module" %% "jackson-module-scala" % jacksonVersion,
+  "tools.jackson.core" % "jackson-databind" % jacksonVersion,
+  "tools.jackson.core" % "jackson-core" % jacksonVersion,
+  "tools.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationsVersion,
-  "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonVersion,
   "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
@@ -91,7 +90,7 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % pdfBoxVersion,
   "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "12.0.2", // 12.0.3+ brings in Jackson 3
+  "org.flywaydb" % "flyway-mysql" % "12.6.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260313.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.6",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.9",

@@ -15,7 +15,6 @@
 
 package utils
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.gitb.core._
 import com.gitb.tdl.TestCaseEntry
 import com.gitb.utils.XMLUtils
@@ -30,6 +29,7 @@ import org.apache.commons.lang3.{RandomStringUtils, StringUtils, Strings}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import tools.jackson.databind.json.JsonMapper
 import utils.RepositoryUtils.{ParsedTestCase, TdlTestSuiteInfo, TestCaseGroupWithIndexes, TestCaseInfo}
 
 import java.io.{File, StringWriter}
@@ -67,7 +67,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
-	private final val objectMapper = new ObjectMapper()
+	private final val objectMapper = JsonMapper.shared()
 
 	private final val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
 	private final val TEST_CASE_ELEMENT_LABEL: String = "testcase"

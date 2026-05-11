@@ -16,11 +16,9 @@
 package com.gitb.remote;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.gitb.PropertyConstants;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -37,10 +35,9 @@ import static com.gitb.CoreConfiguration.TEST_ENGINE_VERSION;
 
 public abstract class RemoteServiceRestClient {
 
-    protected static final ObjectMapper JSON = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY)
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    protected static final ObjectMapper JSON = JsonMapper.builder()
+            .changeDefaultPropertyInclusion(incl -> incl.withContentInclusion(JsonInclude.Include.NON_EMPTY))
+            .build();
 
     private final Properties callProperties;
     protected final String testSessionId;
@@ -76,7 +73,7 @@ public abstract class RemoteServiceRestClient {
                 .method(method, requestBody.map(x -> {
                     try {
                         return HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(x));
-                    } catch (JsonProcessingException e) {
+                    } catch (Exception e) {
                         throw new IllegalStateException("Unable to serialise request as JSON", e);
                     }
                 }).orElse(HttpRequest.BodyPublishers.noBody()));
