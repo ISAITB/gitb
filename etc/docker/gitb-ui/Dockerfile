@@ -16,4 +16,7 @@ EXPOSE 9000
 EXPOSE 9090
 WORKDIR /usr/local/gitb-ui
 
+# JDK_JAVA_OPTIONS is the JVM standard environment variable for passing arguments to the JVM
+# This can be set when creating a container to override the defaults.
+
 ENTRYPOINT ["/usr/local/gitb-ui/bin/gitb-entrypoint.sh"]
