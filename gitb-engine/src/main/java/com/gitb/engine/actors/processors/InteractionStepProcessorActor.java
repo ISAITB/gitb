@@ -65,7 +65,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 import scala.runtime.BoxedUnit;
@@ -498,8 +497,8 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             computedValue = computedValue.convertTo(DataType.STRING_DATA_TYPE);
         }
         DataTypeUtils.setContentValueWithDataType(target, computedValue);
-        if (instructionCommand.getMimeType() != null && !instructionCommand.getMimeType().isEmpty() && MimeTypeUtils.TEXT_HTML.equalsTypeAndSubtype(MimeType.valueOf(instructionCommand.getMimeType()))) {
-            target.setMimeType(MimeTypeUtils.TEXT_HTML.toString());
+        if (instructionCommand.getMimeType() != null && instructionCommand.getMimeType().startsWith("text/html")) {
+            target.setMimeType("text/html");
             addMetadataToken(target, "sanitized", "true");
             target.setValue(TestCaseUtils.sanitizeInstructionStepValue(target.getValue()));
         }
