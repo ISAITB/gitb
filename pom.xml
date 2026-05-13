@@ -40,7 +40,8 @@
         <version.bouncycastle>1.84</version.bouncycastle>
         <version.helgerSchematron>9.0.1</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.2.0</version.cxf>
+        <version.cxf>4.2.0</version.cxf> <!-- When upgrading ensure that the neethi version is up to date. -->
+        <version.neethi>3.2.2</version.neethi>
         <version.httpComponents>4.5.14</version.httpComponents>
         <version.commonsCodec>1.20.0</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
@@ -79,7 +80,9 @@
         <version.freeMarker>2.3.34</version.freeMarker>
         <version.openhtmltopdf>1.1.37</version.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
-        <version.jena>6.0.0</version.jena>
+        <version.jena>6.1.0</version.jena>
+        <!-- Ensure the libthrift version matches the one used within Jena. -->
+        <version.libthrift>0.23.0</version.libthrift>
         <version.topbraid>1.5.0</version.topbraid>
         <version.json-schema-validator>3.0.2</version.json-schema-validator>
         <version.jayway>3.0.0</version.jayway>
@@ -643,6 +646,16 @@
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
                 <artifactId>owasp-java-html-sanitizer</artifactId>
                 <version>${version.owaspHtmlSanitizer}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.neethi</groupId>
+                <artifactId>neethi</artifactId>
+                <version>${version.neethi}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${version.libthrift}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
