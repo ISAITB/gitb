@@ -60,8 +60,7 @@
         <version.serializer>2.7.3</version.serializer>
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
-        <version.jaxbApi>4.0.5</version.jaxbApi>
-        <version.jaxbRuntime>4.0.8</version.jaxbRuntime>
+        <version.jaxb>4.0.8</version.jaxb>
         <version.saxon>12.8</version.saxon>
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
@@ -443,16 +442,6 @@
                 Section END.
             -->
             <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jaxbApi}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.jaxbRuntime}</version>
-            </dependency>
-            <dependency>
                 <groupId>net.sf.saxon</groupId>
                 <artifactId>Saxon-HE</artifactId>
                 <version>${version.saxon}</version>
@@ -466,11 +455,6 @@
                 <groupId>jakarta.jws</groupId>
                 <artifactId>jakarta.jws-api</artifactId>
                 <version>${version.jwsApi}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.activation</groupId>
-                <artifactId>jakarta.activation-api</artifactId>
-                <version>${version.activation}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -656,6 +640,14 @@
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libthrift</artifactId>
                 <version>${version.libthrift}</version>
+            </dependency>
+            <!-- JAXB BOM to align JAXB-related APIs and implementations. -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-bom</artifactId>
+                <version>${version.jaxb}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

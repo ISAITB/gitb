@@ -13,6 +13,7 @@ val mySqlConnectorVersion = "9.7.0"
 val pac4jVersion = "6.5.0"
 val nettyVersion = "4.2.12.Final"
 val pdfBoxVersion = "3.0.7"
+val jaxbVersion = "4.0.8"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -77,12 +78,12 @@ libraryDependencies ++= Seq(
   "org.webjars" % "swagger-ui" % "5.32.5",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
-  "org.eclipse.angus" % "angus-activation" % "2.0.3",
-  "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
+  "org.glassfish.jaxb"  % "jaxb-runtime" % jaxbVersion,
+  "org.eclipse.angus" % "angus-activation" % "2.0.3", // Should match the version in the org.glassfish.jaxb:jaxb-bom@jaxbVersion
+  "jakarta.activation" % "jakarta.activation-api" % "2.1.4", // Should match the version in the org.glassfish.jaxb:jaxb-bom@jaxbVersion
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5", // Should match the version in the org.glassfish.jaxb:jaxb-bom@jaxbVersion
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.3",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.8",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.5", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
