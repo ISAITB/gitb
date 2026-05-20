@@ -65,7 +65,7 @@
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
-        <version.commonsConfiguration>2.13.0</version.commonsConfiguration>
+        <version.commonsConfiguration>2.15.0</version.commonsConfiguration>
         <version.commonsText>1.15.0</version.commonsText>
         <version.pekko>1.4.0</version.pekko>
         <version.rgxgen>3.1</version.rgxgen>
