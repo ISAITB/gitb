@@ -341,4 +341,12 @@
         <packageUrl regex="true">^pkg:maven/org\.topbraid/shacl@.*$</packageUrl>
         <cve>CVE-2024-45745</cve>
     </suppress>
+    <suppress>
+        <!-- False-positive (Jena is already at least at the patched version). -->
+        <notes><![CDATA[
+    file name: jelly-jena-3.7.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/eu\.neverblink\.jelly/jelly-jena@.*$</packageUrl>
+        <cve>CVE-2025-50151</cve>
+    </suppress>
 </suppressions>
