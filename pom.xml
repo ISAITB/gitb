@@ -80,6 +80,8 @@
         <version.openhtmltopdf>1.1.37</version.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
         <version.jena>5.2.0</version.jena>
+        <!-- Ensure the libthrift version matches the one used within Jena. -->
+        <version.libthrift>0.23.0</version.libthrift>
         <version.topbraid>1.4.4</version.topbraid>
         <version.json-schema-validator>2.0.1</version.json-schema-validator>
         <version.jayway>2.9.0</version.jayway>
@@ -575,6 +577,11 @@
                 <groupId>org.topbraid</groupId>
                 <artifactId>shacl</artifactId>
                 <version>${version.topbraid}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${version.libthrift}</version>
             </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>
