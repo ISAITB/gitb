@@ -7,11 +7,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.13</version>
+        <version>3.5.14</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.29.3</version>
+    <version>1.29.4</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -26,7 +26,7 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>12.2.1</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>12.2.2</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
         <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
         <version.plugin.jaxb2-maven-plugin>3.1.0</version.plugin.jaxb2-maven-plugin>
@@ -34,13 +34,13 @@
         <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
         <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
-        <version.gitbTypes>1.29.3</version.gitbTypes>
-        <version.springBoot>3.5.13</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
-        <tomcat.version>10.1.54</tomcat.version>
-        <version.bouncycastle>1.83</version.bouncycastle>
+        <version.gitbTypes>1.29.4</version.gitbTypes>
+        <version.springBoot>3.5.14</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
+        <tomcat.version>10.1.55</tomcat.version>
+        <version.bouncycastle>1.84</version.bouncycastle>
         <version.helgerSchematron>9.0.1</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.2.0</version.cxf>
+        <version.cxf>4.2.1</version.cxf>
         <version.httpComponents>4.5.14</version.httpComponents>
         <version.commonsCodec>1.20.0</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
@@ -65,7 +65,7 @@
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
-        <version.commonsConfiguration>2.13.0</version.commonsConfiguration>
+        <version.commonsConfiguration>2.15.0</version.commonsConfiguration>
         <version.commonsText>1.15.0</version.commonsText>
         <version.pekko>1.4.0</version.pekko>
         <version.rgxgen>3.1</version.rgxgen>
@@ -80,6 +80,8 @@
         <version.openhtmltopdf>1.1.37</version.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
         <version.jena>5.2.0</version.jena>
+        <!-- Ensure the libthrift version matches the one used within Jena. -->
+        <version.libthrift>0.23.0</version.libthrift>
         <version.topbraid>1.4.4</version.topbraid>
         <version.json-schema-validator>2.0.1</version.json-schema-validator>
         <version.jayway>2.9.0</version.jayway>
@@ -257,8 +259,8 @@
                         <execution>
                             <phase>none</phase>
                             <!--
-                                Run manually with `mvn versions:set -DnewVersion=1.29.3`
-                                For a new development cycle run `mvn versions:set -DnewVersion=1.29.3-SNAPSHOT`
+                                Run manually with `mvn versions:set -DnewVersion=1.29.4`
+                                For a new development cycle run `mvn versions:set -DnewVersion=1.29.4-SNAPSHOT`
                                 The version number should be aligned with the gitb-types-jakarta dependency.
                             -->
                         </execution>
@@ -575,6 +577,11 @@
                 <groupId>org.topbraid</groupId>
                 <artifactId>shacl</artifactId>
                 <version>${version.topbraid}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${version.libthrift}</version>
             </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>

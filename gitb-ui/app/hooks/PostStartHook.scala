@@ -72,6 +72,9 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
               logger.info("Starting Application")
               System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
               BUILD_TIMESTAMP = getBuildTimestamp()
+              if (Configurations.PROXY_SERVER_ENABLED) {
+                logger.info("Configured proxy [{}] at port [{}] for HTTP/HTTPS calls.", Configurations.PROXY_SERVER_HOST, Configurations.PROXY_SERVER_PORT)
+              }
             }
             _ <- checkOperationMode()
             _ <- initialiseTestbedClient()
@@ -460,7 +463,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
       // Make sure the root temp folders exist
       Files.createDirectories(repositoryUtils.getTempReportFolder().toPath)
       Files.createDirectories(repositoryUtils.getTempArchivedSessionWorkspaceFolder().toPath)
-      // Schedule the cleanup job.
+      // Schedule the clean-up job.
       actorSystem.scheduler.scheduleAtFixedRate(0.minutes, 5.minutes) {
         () => {
           deleteSubfolders(repositoryUtils.getTempReportFolder(), 300000) // 5 minutes
@@ -560,9 +563,9 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                     val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
                     Files.deleteIfExists(zipArchive)
                     new ZipArchiver(monthFolder.toPath, zipArchive).zip()
-                    // All ok - delete the folder.
+                    // All OK - delete the folder.
                     FileUtils.deleteDirectory(monthFolder)
-                    logger.info("Archived test session folder for year ["+yearFolder.getName+"] and month ["+monthFolder.getName+"]")
+                    logger.info("Archived test session folder for year [{}] and month [{}]", yearFolder.getName, monthFolder.getName)
                   }
                 }
               }

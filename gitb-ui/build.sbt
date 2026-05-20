@@ -4,14 +4,14 @@ scalaVersion := "2.13.18"
 val pekkoVersion = "1.4.0"
 val jacksonVersion = "2.21.1"
 val jacksonAnnotationsVersion = "2.21"
-val cxfVersion = "4.2.0"
-val gitbCommonsVersion = "1.29.3"
-val gitbTypesVersion = "1.29.3"
-val bouncyCastleVersion = "1.83"
+val cxfVersion = "4.2.1"
+val gitbCommonsVersion = "1.29.4"
+val gitbTypesVersion = "1.29.4"
+val bouncyCastleVersion = "1.84"
 val commonsTextVersion = "1.15.0"
-val mySqlConnectorVersion = "9.6.0"
-val pac4jVersion = "6.3.3"
-val nettyVersion = "4.1.132.Final"
+val mySqlConnectorVersion = "9.7.0"
+val pac4jVersion = "6.5.1"
+val nettyVersion = "4.2.13.Final"
 val pdfBoxVersion = "3.0.7"
 
 name := """GITB"""
@@ -73,7 +73,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.2.3",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.32.2",
+  "org.webjars" % "swagger-ui" % "5.32.5",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
   "org.eclipse.angus" % "angus-activation" % "2.0.3",

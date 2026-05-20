@@ -25,19 +25,13 @@ import com.gitb.types.BinaryType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import com.gitb.utils.ConfigurationUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Objects;
 
@@ -71,7 +65,6 @@ public class HttpProxySender extends HttpSender {
 
         MapType requestData = (MapType) message.getFragments().get(HttpProxyMessagingHandler.HTTP_REQUEST_DATA);
         String httpMethod = requestData.getItem(HttpProxyMessagingHandler.HTTP_METHOD_FIELD_NAME).getValue().toString();
-        HttpRequestBase httpRequest = null;
         String requestPath = requestData.getItem(HttpProxyMessagingHandler.HTTP_PATH_FIELD_NAME).getValue().toString();
         if (requestPath != null) {
             if (!receiverAddress.endsWith("/")) {
@@ -82,37 +75,27 @@ public class HttpProxySender extends HttpSender {
             }
             receiverAddress += requestPath;
         }
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(URI.create(receiverAddress));
         if ("POST".equals(httpMethod)) {
-            httpRequest = new HttpPost(receiverAddress);
             BinaryType body = (BinaryType) requestData.getItem(HttpProxyMessagingHandler.HTTP_BODY_FIELD_NAME);
-            if (body != null) {
-                ByteArrayEntity contentEntity = new ByteArrayEntity(body.getValue());
-                ((HttpPost)httpRequest).setEntity(contentEntity);
-            }
+            byte[] bodyBytes = body != null ? body.getValue() : new byte[0];
+            requestBuilder.POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes));
         } else if ("GET".equals(httpMethod)) {
-            httpRequest = new HttpGet(receiverAddress);
+            requestBuilder.GET();
         }
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        CloseableHttpResponse response = null;
-        byte[] responseContent;
-        try {
-            response = httpclient.execute(httpRequest);
-            HttpEntity responseEntity = response.getEntity();
-            responseContent = EntityUtils.toByteArray(responseEntity);
+        HttpResponse<byte[]> response;
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
             logger.error(addMarker(), "Error sending message to proxied receiver", e);
             throw e;
-        } finally {
-            if (response != null) {
-                response.close();
-            }
         }
         MapType headers = new MapType();
-        for (Header header: response.getAllHeaders()) {
-            headers.addItem(header.getName(), new StringType(header.getValue()));
-        }
+        response.headers().map().forEach((name, values) ->
+                values.forEach(value -> headers.addItem(name, new StringType(value)))
+        );
         BinaryType responseMessageContent = new BinaryType();
-        responseMessageContent.setValue(responseContent);
+        responseMessageContent.setValue(response.body());
         configurations.add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_METHOD_CONFIG_NAME, httpMethod));
         message.getFragments().put(HttpMessagingHandler.HTTP_BODY_FIELD_NAME, responseMessageContent);
         message.getFragments().put(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME, headers);

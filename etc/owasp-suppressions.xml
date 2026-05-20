@@ -292,5 +292,22 @@
     ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
         <cve>CVE-2026-34481</cve>
-    </suppress>    
+    </suppress>
+    <suppress>
+        <!-- False-positive (we don't use Log4J). -->
+        <notes><![CDATA[
+    file name: log4j-api-2.24.3.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
+        <cve>CVE-2026-34479</cve>
+    </suppress>
+    <suppress>
+        <!-- False-positive (we don't use Log4J). -->
+        <notes><![CDATA[
+    file name: log4j-api-2.24.3.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
+        <cve>CVE-2026-34477</cve>
+    </suppress>
+
 </suppressions>

@@ -15,20 +15,6 @@
 
 package utils.signature;
 
-import config.Configurations;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpStatus;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -38,8 +24,13 @@ import org.bouncycastle.tsp.*;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+
+import static java.net.HttpURLConnection.HTTP_OK;
 
 /**
  * Time Stamping Authority (TSA) Client [RFC 3161].
@@ -105,46 +96,21 @@ public class TSAClient {
     // gets response data for the given encoded TimeStampRequest data
     // throws IOException if a connection to the TSA cannot be established
     private byte[] getTSAResponse(byte[] request) throws IOException {
-        CloseableHttpClient httpClient = null;
         try {
-            HttpPost post = new HttpPost(url.toString());
-            if (Configurations.PROXY_SERVER_ENABLED()) {
-                HttpHost proxy = new HttpHost(Configurations.PROXY_SERVER_HOST(), Configurations.PROXY_SERVER_PORT());
-                if (Configurations.PROXY_SERVER_AUTH_ENABLED()) {
-                    Credentials credentials = new UsernamePasswordCredentials(Configurations.PROXY_SERVER_AUTH_USERNAME(), Configurations.PROXY_SERVER_AUTH_PASSWORD());
-                    AuthScope authScope = new AuthScope(Configurations.PROXY_SERVER_HOST(), Configurations.PROXY_SERVER_PORT());
-                    CredentialsProvider credsProvider = new BasicCredentialsProvider();
-                    credsProvider.setCredentials(authScope, credentials);
-                    httpClient = HttpClients.custom().setDefaultCredentialsProvider(credsProvider).build();
-                }
-                RequestConfig config = RequestConfig.custom()
-                        .setProxy(proxy)
-                        .build();
-                post.setConfig(config);
-            }
-            if (httpClient == null) {
-                httpClient = HttpClients.createDefault();
-            }
-            post.setEntity(new ByteArrayEntity(request));
-            post.setHeader("Content-type", "application/timestamp-query");
-            byte[] response = null;
-            try {
-                CloseableHttpResponse httpResponse = httpClient.execute(post);
-                if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                    response = org.apache.commons.io.IOUtils.toByteArray(httpResponse.getEntity().getContent());
-                }
-            } finally {
-                post.releaseConnection();
-            }
-            return response;
-        } finally {
-            if (httpClient != null) {
-                try {
-                    httpClient.close();
-                } catch (IOException e) {
-                    // Ignore.
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(url.toURI())
+                    .header("Content-type", "application/timestamp-query")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(request))
+                    .build();
+            try (var client = HttpClient.newHttpClient()) {
+                HttpResponse<byte[]> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofByteArray());
+                if (response.statusCode() == HTTP_OK) {
+                    return response.body();
                 }
             }
+            return null;
+        } catch (Exception e) {
+            throw new IOException("Error while calling TSA server", e);
         }
     }
 

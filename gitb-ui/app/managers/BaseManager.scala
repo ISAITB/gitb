@@ -76,7 +76,7 @@ abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	private def extractFailureDetailsInternal(error: Throwable, handledErrors: ListBuffer[Throwable], messages: ListBuffer[Option[String]]): Unit = {
 		if (error != null && !handledErrors.contains(error)) {
 			handledErrors += error
-			messages += Option(error.getMessage)
+			messages += Some(error.getClass.getSimpleName + Option(error.getMessage).map(": " + _).getOrElse(""))
 			extractFailureDetailsInternal(error.getCause, handledErrors, messages)
 		}
 	}
