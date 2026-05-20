@@ -140,6 +140,7 @@ public class ReportGeneratorTest {
         data.setLabelActor("Actor");
         // Basic data
         data.setGroup(groupId);
+//        data.setOrganisation("My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation ");
         data.setOrganisation("My organisation");
         data.setSystem("My system");
         data.setTestDomain("My domain");
@@ -161,6 +162,9 @@ public class ReportGeneratorTest {
         data.setOutputMessages(List.of("This is the output message for your test session. Check the different report steps for details.", "This is an extra message."));
         data.setOptional(optional);
         data.setDisabled(disabled);
+        // Comments
+        data.setAdminComment(new TestCaseOverview.AdminComment("<p>The test case is set as <strong>failed</strong>.</p>", "06/04/2023 10:21:48", true, true));
+        data.setUserComment(new TestCaseOverview.UserComment("<p>Please review.</p>", "06/04/2023 10:21:44"));
         // Test steps
         data.setSteps(List.of(
                 generator.fromTestStepReportType(getTAR(), "Step 1.1: Define access identifiers", specs),

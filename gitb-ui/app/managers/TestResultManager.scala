@@ -39,7 +39,7 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 

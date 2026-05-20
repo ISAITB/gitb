@@ -108,7 +108,17 @@
                                         } @else {
                                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="!exportEnabled(testCase) || testCaseOperationPending[testCase.id]" [pending]="testCaseOperationPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
                                         }
-                                        <div class="viewLogButton">
+                                        <div class="position-relative">
+                                            <button type="button" class="btn btn-secondary position-relative" [disabled]="!exportEnabled(testCase) || testCaseCommentsPending[testCase.id]" (click)="viewComments(testCase)">
+                                                <span class="mini-tab label-icon"><i [class]="testCaseCommentsPending[testCase.id]?Constants.BUTTON_ICON.PENDING_SMALL:Constants.BUTTON_ICON.COMMENT"></i></span>Comment
+                                                <span
+                                                    [class.badgeComments]="testCaseWithComments[testCase.id]"
+                                                    [class.hidden]="testCaseWithComments[testCase.id] == undefined || !testCaseWithComments[testCase.id]"
+                                                    class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                                                </span>
+                                            </button>
+                                        </div>
+                                        <div class="position-relative">
                                             <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
                                                 <span class="mini-tab label-icon"><i [class]="Constants.BUTTON_ICON.VIEW_LOG"></i></span>View log
                                                 <span
@@ -117,7 +127,7 @@
                                                     [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
                                                     [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]"
                                                     class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
-                                            </span>
+                                                </span>
                                             </button>
                                         </div>
                                     </div>

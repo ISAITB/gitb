@@ -87,7 +87,7 @@ export class TableRowComponent implements OnInit, TableRowApi {
     }
   }
 
-  private refreshData() {
+  public refreshData() {
     this.columnDataItemsAtLeft = []
     this.columnDataItemsAtRight = []
     for (let column of this.columns) {

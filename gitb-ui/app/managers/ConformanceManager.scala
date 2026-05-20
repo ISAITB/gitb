@@ -15,7 +15,7 @@
 
 package managers
 
-import actors.events.ConformanceStatementUpdatedEvent
+import actors.events.{ConformanceStatementSucceededEvent, ConformanceStatementUpdatedEvent}
 import com.gitb.tr.TestResultType
 import config.Configurations
 import managers.ConformanceManager._
@@ -321,6 +321,14 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
       }
       statement.withChildren(retainedChildren)
       retainedChildren.nonEmpty
+    }
+  }
+
+  def fireConformanceStatementCompletionTriggers(communityId: Long, systemId: Long, sessionId: String): Future[Unit] = {
+    getCompletedConformanceStatementsForTestSession(systemId, sessionId).map { completedActors =>
+      completedActors.foreach { actorId =>
+        triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+      }
     }
   }
 

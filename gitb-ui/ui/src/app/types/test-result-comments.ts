@@ -13,10 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface TableRowApi {
+export interface TestResultComments {
 
-  documentEscape: () => void;
-  documentClick: (event: Event) => void;
-  refreshData: () => void;
+  sessionId: string;
+  userComment?: string;
+  userCommentTime?: string;
+  userCommentTimeMillis?: number;
+  userCommentAllowed: boolean;
+  adminComment?: string;
+  adminCommentTime?: string;
+  adminCommentTimeMillis?: number;
+  resultForced?: string;
+  resultOriginal?: string;
 
 }

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { SessionData } from "src/app/components/diagram/test-session-presentation/session-data";
+import {SessionData} from 'src/app/components/diagram/test-session-presentation/session-data';
 
 export interface TestResultForDisplay extends SessionData {
 
@@ -37,5 +37,9 @@ export interface TestResultForDisplay extends SessionData {
     optionPending?: boolean,
     checked?: boolean,
     communityId?: number
+
+    commentsPending?: boolean
+    commentsLoaded?: boolean
+    hasComments?: boolean
 
 }

@@ -1011,4 +1011,17 @@ object PersistenceSchema {
   }
   val userPreferenceDefaults = TableQuery[UserPreferenceDefaultsTable]
 
+  class TestResultCommentsTable(tag: Tag) extends Table[TestResultComments](tag, "TestResultComments") {
+    def testSessionId = column[String]("test_session_id", O.PrimaryKey)
+    def userComment = column[Option[String]]("user_comment")
+    def userCommentTime = column[Option[Timestamp]]("user_comment_time", O.SqlType("TIMESTAMP"))
+    def userCommentAllowed = column[Boolean]("user_comment_allowed")
+    def adminComment = column[Option[String]]("admin_comment")
+    def adminCommentTime = column[Option[Timestamp]]("admin_comment_time", O.SqlType("TIMESTAMP"))
+    def resultForced = column[Option[String]]("result_forced")
+    def resultOriginal = column[Option[String]]("result_original")
+    def * = (testSessionId :: userComment :: userCommentTime :: userCommentAllowed :: adminComment :: adminCommentTime :: resultForced :: resultOriginal :: HNil).mapTo[TestResultComments]
+  }
+  val testResultComments = TableQuery[TestResultCommentsTable]
+
 }

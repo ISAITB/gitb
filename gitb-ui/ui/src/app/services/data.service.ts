@@ -711,16 +711,19 @@ export class DataService {
     }
   }
 
-  iconForTestResult(result?: string): string {
+  iconForTestResult(result?: string, noSizing?: boolean): string {
     let icon: string
     if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
-      icon = "fa-solid testsuite-progress-icon fa-check-circle test-case-success"
+      icon = "fa-solid fa-check-circle test-case-success"
     } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
-      icon = "fa-solid testsuite-progress-icon fa-times-circle test-case-error"
+      icon = "fa-solid fa-times-circle test-case-error"
     } else if (result == Constants.TEST_CASE_RESULT.WARNING) {
-      icon = "fa-solid testsuite-progress-icon fa-exclamation test-case-warning"
+      icon = "fa-solid fa-exclamation test-case-warning"
     } else {
-      icon = "fa-solid testsuite-progress-icon fa-ban test-case-undefined"
+      icon = "fa-solid fa-ban test-case-undefined"
+    }
+    if (noSizing !== true) {
+      icon += " testsuite-progress-icon"
     }
     return icon
   }

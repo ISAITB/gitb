@@ -303,5 +303,8 @@ object ParameterNames {
   val PREFERENCES = "preferences"
   val FORCE_PREFERENCES = "force_preferences"
   val MONITOR = "monitor"
+  val COMMENT = "comment"
+  val RESULT = "result"
+  val ALLOWED = "allowed"
 
 }

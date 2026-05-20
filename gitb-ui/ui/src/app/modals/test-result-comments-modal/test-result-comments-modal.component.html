@@ -1,0 +1,128 @@
+<div class="modal-header">
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
+    <div class="modal-title">Test session comments</div>
+</div>
+<form>
+    <div class="modal-body">
+        @if (editMode) {
+            <div class="row">
+                <div class="col-12">
+                    <app-editor name="comment" [(ngModel)]="commentContent" [type]="'minimal'" [height]="300"></app-editor>
+                </div>
+            </div>
+            @if (editingAdminComment) {
+                <div class="row pt-3 align-items-center">
+                    <div class="col-12 col-lg-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="disableUserComment" name="disableUserComment" [(ngModel)]="disableUserComment">
+                            <label class="form-check-label" for="disableUserComment">Disable comment updates
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Prevent further comment updates by the owner of the test session. Note that the administrator's comment may still be modified."></div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-auto col-lg-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="overrideResult" name="overrideResult" [(ngModel)]="overrideResult">
+                            <label class="form-check-label" for="overrideResult">Override test session result
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Override the test session result. Doing so may result in a change of status in the related conformance statement, enable generation of reports, and trigger webhook executions (if configured)."></div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-5 col-lg-4 result-container" [class.invisible]="!overrideResult">
+                        <div class="btn-group result w-100" ngbDropdown>
+                            <button id="button-result" ngbDropdownToggle type="button" class="form-control w-100 d-flex align-items-center" aria-controls="dropdown-result">
+                                <div class="result-option">
+                                    <span class="result-icon"><i [class]="dataService.iconForTestResult(forcedResult)"></i></span> {{ dataService.tooltipForTestResult(forcedResult) }}
+                                </div>
+                            </button>
+                            <div id="dropdown-iterations" ngbDropdownMenu aria-labelledby="button-result" class="w-100">
+                                <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.SUCCESS)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.SUCCESS) }}</div></button>
+                                <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.FAILURE)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.FAILURE) }}</div></button>
+                                <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.UNDEFINED)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED) }}</div></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        } @else {
+            @if (commentsToShow.length > 0) {
+                @if (comments?.userCommentAllowed === false) {
+                    <div class="row comments-disabled-message">
+                        <div class="col-12">
+                            <div class="alert alert-info rounded mb-0">
+                                <span>Further comment updates have been disabled for this test session.</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div class="comments-container">
+                    @for (comment of commentsToShow; track $index) {
+                        @if (!$first) {
+                            <div class="comments-container-line"></div>
+                        }
+                        <ng-container *ngTemplateOutlet="commentTemplate; context: { $implicit: comment }"></ng-container>
+                    }
+                </div>
+            } @else {
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info rounded mb-0">
+                            <span>No comments has been made for this test session.</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        <ng-template #commentTemplate let-comment>
+            <div class="comment-root" [class.admin-comment]="comment.admin">
+                <div class="comment-container">
+                    <div class="comment-header" (click)="toggleCommentCollapse(comment)" [class.expanded]="!comment.hidden">
+                        <div class="comment-header-icon">
+                            <span><i [class]="comment.admin?Constants.BUTTON_ICON.USER_ADMIN:Constants.BUTTON_ICON.ORGANISATION" class="fa-lg"></i></span>
+                        </div>
+                        <div class="comment-header-author">
+                            {{ comment.admin?'Administrator':ownerNameToDisplay }}
+                        </div>
+                        @if (comment.admin && comments?.resultForced != undefined) {
+                            <div class="comment-header-result me-2" [ngbTooltip]="'The test session result has been manually overwritten by the administrator.'" container="body">
+                                <app-tag [background]="'#FFFFFF'" [label]="dataService.iconForTestResult(comments?.resultForced, true)" [icon]="true" [value]="`${dataService.tooltipForTestResult(comments?.resultForced)} (forced)`"></app-tag>
+                            </div>
+                        }
+                        <div class="comment-header-timestamp">
+                            <app-tag [background]="'#FFFFFF'" [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="comment.commentTime"></app-tag>
+                        </div>
+                        <div class="ms-3">
+                            <app-collapsing-icon [isCollapsed]="comment.collapsed" [padded]="false"></app-collapsing-icon>
+                        </div>
+                    </div>
+                    <div [ngbCollapse]="comment.collapsed === true" [animation]="true" (hidden)="comment.hidden = true">
+                        <div class="comment-content no-margin-on-last-p" [innerHtml]="comment.comment | sanitizeHtml"></div>
+                    </div>
+                </div>
+            </div>
+        </ng-template>
+    </div>
+    <div class="modal-footer button-container">
+        @if (editMode && ((editingAdminComment && this.comments?.adminComment != undefined) || (!editingAdminComment && this.comments?.userComment != undefined))) {
+            <div class="btn-toolbar btn-toolbar-delete">
+                <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="deleteComment()" [disable]="savePending" [pending]="deletePending">Delete</button>
+            </div>
+        }
+        <div class="btn-toolbar">
+            @if (editMode) {
+                <button [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" type="button" (click)="cancelEdit()">Cancel</button>
+                <button [labelIcon]="Constants.BUTTON_ICON.SAVE" [pending]="savePending" [disable]="!saveEnabled()" class="btn btn-secondary" type="button" (click)="saveComment()">Save comment</button>
+            } @else {
+                <button [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" type="button" (click)="close()">Close</button>
+                @if (commentsEditable) {
+                    @if (sessionOwner === dataService.vendor?.id && comments?.userCommentAllowed !== false) {
+                        <button [labelIcon]="(comments?.userComment == undefined)?Constants.BUTTON_ICON.NEW:Constants.BUTTON_ICON.EDIT" class="btn btn-secondary" type="button" (click)="editUserComment()">{{(comments?.userComment == undefined)?'Add comment':'Edit comment'}}</button>
+                    }
+                    @if (dataService.isCommunityAdmin || dataService.isSystemAdmin) {
+                        <button [labelIcon]="(comments?.adminComment == undefined)?Constants.BUTTON_ICON.NEW:Constants.BUTTON_ICON.EDIT" class="btn btn-secondary" type="button" (click)="editAdminComment()">{{(comments?.adminComment == undefined)?'Add administrator comment':'Edit administrator comment'}}</button>
+                    }
+                }
+            }
+        </div>
+    </div>
+</form>

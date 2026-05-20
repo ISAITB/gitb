@@ -13,10 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface TableRowApi {
+package models
 
-  documentEscape: () => void;
-  documentClick: (event: Event) => void;
-  refreshData: () => void;
+import java.sql.Timestamp
+
+case class TestResultComments(sessionId: String, userComment: Option[String], userCommentTime: Option[Timestamp], userCommentAllowed: Boolean, adminComment: Option[String], adminCommentTime: Option[Timestamp], resultForced: Option[String], resultOriginal: Option[String]) {
+
+  def isEmpty(): Boolean = {
+    userComment.isEmpty && adminComment.isEmpty && resultForced.isEmpty
+  }
 
 }

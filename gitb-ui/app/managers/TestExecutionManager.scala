@@ -17,12 +17,12 @@ package managers
 
 import actors.SessionManagerActor
 import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent}
-import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
+import actors.events.{TestSessionFailedEvent, TestSessionSucceededEvent}
 import com.gitb.PropertyConstants
 import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
-import managers.TestExecutionManager.{LOGGER, SessionCompletionData}
+import managers.TestExecutionManager.{LOGGER, SessionCompletionData, TestResultTriggerInfo, TestSessionCommentUpdateResult}
 import managers.triggers.TriggerHelper
 import models.Enums.{InputMappingMatchType, TestServiceApiType, TestServiceAuthTokenPasswordType}
 import models._
@@ -50,7 +50,9 @@ import scala.concurrent.{ExecutionContext, Future}
 object TestExecutionManager {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[TestExecutionManager])
-  case class SessionCompletionData(sessionId: String, result: String)
+  private case class SessionCompletionData(sessionId: String, result: String)
+  private case class TestResultTriggerInfo(communityId: Option[Long], systemId: Option[Long], result: String)
+  private case class TestSessionCommentUpdateResult(updatedComments: Option[TestResultComments], triggerInfo: Option[TestResultTriggerInfo])
 
 }
 
@@ -672,24 +674,31 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             .result
             .headOption
         ).flatMap { sessionIds =>
-          if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
-            val communityId = sessionIds.get._1.get
-            val systemId = sessionIds.get._2.get
-            // We have all the data we need to fire the triggers.
-            if (status == TestResultType.SUCCESS) {
-              triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
-            } else if (status == TestResultType.FAILURE) {
-              triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
-            }
-            // See if the conformance statement is now successfully completed and fire an additional trigger if so.
-            conformanceManager.getCompletedConformanceStatementsForTestSession(systemId, sessionId).map { completedActors =>
-              completedActors.foreach { actorId =>
-                triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+          for {
+            // Triggers
+            _ <- {
+              if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
+                val communityId = sessionIds.get._1.get
+                val systemId = sessionIds.get._2.get
+                // We have all the data we need to fire the triggers.
+                if (status == TestResultType.SUCCESS) {
+                  triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
+                  // See if the conformance statement is now successfully completed and fire an additional trigger if so.
+                  conformanceManager.fireConformanceStatementCompletionTriggers(communityId, systemId, sessionId).map(_ => ())
+                } else if (status == TestResultType.FAILURE) {
+                  Future.successful {
+                    triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
+                  }
+                } else {
+                  Future.successful(())
+                }
+              } else {
+                Future.successful(())
               }
             }
-          }
-          // Flush remaining log messages
-          testResultManager.flushSessionLogs(sessionId, None)
+            // Flush remaining log messages
+            _ <- testResultManager.flushSessionLogs(sessionId, None)
+          } yield ()
         }
       } else {
         Future.successful(())
@@ -792,6 +801,167 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       }
       _ <- testResultManager.deleteTestInteractions(sessionIds)
     } yield ()
+  }
+
+  def getTestSessionComments(sessionId: String): Future[Option[TestResultComments]] = {
+    DB.run {
+      getTestSessionCommentsInternal(sessionId)
+    }
+  }
+
+  private def getTestSessionCommentsInternal(sessionId: String): DBIO[Option[TestResultComments]] = {
+    PersistenceSchema.testResultComments
+      .filter(_.testSessionId === sessionId)
+      .result
+      .headOption
+  }
+
+  private def deleteTestSessionComments(sessionId: String): DBIO[Unit] = {
+    PersistenceSchema.testResultComments.filter(_.testSessionId === sessionId).delete.map(_ => ())
+  }
+
+  def updateTestSessionUserComment(sessionId: String, comment: Option[String]): Future[Option[TestResultComments]] = {
+    val dbAction = for {
+      existingComments <- getTestSessionCommentsInternal(sessionId)
+      updatedComments <- {
+        if (existingComments.isEmpty) {
+          // No pre-existing comments.
+          if (comment.isEmpty) {
+            // Nothing to do.
+            DBIO.successful(None)
+          } else {
+            val commentsToSave = TestResultComments(sessionId, comment, Some(TimeUtil.getCurrentTimestamp()), userCommentAllowed = true, None, None, None, None)
+            (PersistenceSchema.testResultComments += commentsToSave).map(_ => Some(commentsToSave))
+          }
+        } else {
+          // Pre-existing comments.
+          if (existingComments.get.userCommentAllowed) {
+            val commentToPersist = existingComments.get.copy(userComment = comment, userCommentTime = Some(TimeUtil.getCurrentTimestamp()))
+            if (commentToPersist.isEmpty()) {
+              // Delete comment.
+              deleteTestSessionComments(sessionId).map(_ => None)
+            } else {
+              // Update comment.
+              PersistenceSchema.testResultComments
+                .filter(_.testSessionId === sessionId)
+                .map(x => (x.userComment, x.userCommentTime))
+                .update(commentToPersist.userComment, commentToPersist.userCommentTime)
+                .map(_ => Some(commentToPersist))
+            }
+          } else {
+            // User comments have been disabled for this test session - take no action.
+            DBIO.successful(existingComments)
+          }
+        }
+      }
+    } yield updatedComments
+    DB.run(dbAction.transactionally)
+  }
+
+  def updateTestSessionAdminComment(sessionId: String, comment: Option[String], forcedResult: Option[TestResultType], userCommentAllowed: Boolean): Future[Option[TestResultComments]] = {
+    val dbAction: DBIO[TestSessionCommentUpdateResult] = for {
+      existingSession <- PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(x => (x.communityId, x.sutId, x.result))
+        .result
+        .map(_.map(x => TestResultTriggerInfo(x._1, x._2, x._3)).head)
+      existingComments <- getTestSessionCommentsInternal(sessionId)
+      forcedResultToSave = forcedResult.map(_.value()) match {
+        case Some(forced) =>
+          existingComments.flatMap(_.resultOriginal) match {
+            case Some(original) =>
+              if (original != forced) Some(forced) else None
+            case None =>
+              if (existingSession.result != forced) Some(forced) else None
+          }
+        case None =>
+          None
+      }
+      existingResultToSave = forcedResultToSave match {
+        case Some(_) =>
+          existingComments.flatMap(_.resultOriginal).orElse(Some(existingSession.result))
+        case None =>
+          None
+      }
+      sessionResultToSave = forcedResultToSave.orElse(existingComments.flatMap(_.resultOriginal))
+      // Update the recorded comments
+      updatedComments: Option[TestResultComments] <- {
+        if (existingComments.isEmpty) {
+          // No pre-existing comments.
+          if (comment.isEmpty) {
+            // Nothing to do.
+            DBIO.successful(None)
+          } else {
+            val commentsToSave = TestResultComments(sessionId, None, None, userCommentAllowed, comment, Some(TimeUtil.getCurrentTimestamp()), forcedResultToSave, existingResultToSave)
+            (PersistenceSchema.testResultComments += commentsToSave).map(_ => Some(commentsToSave))
+          }
+        } else {
+          // Pre-existing comments.
+          val commentToPersist = existingComments.get.copy(
+            userCommentAllowed = userCommentAllowed,
+            adminComment = comment,
+            adminCommentTime = Some(TimeUtil.getCurrentTimestamp()),
+            resultForced = forcedResultToSave,
+            resultOriginal = existingResultToSave
+          )
+          if (commentToPersist.isEmpty()) {
+            // Delete comment.
+            deleteTestSessionComments(sessionId).map(_ => None)
+          } else {
+            // Update comment.
+            PersistenceSchema.testResultComments
+              .filter(_.testSessionId === sessionId)
+              .map(x => (x.adminComment, x.adminCommentTime, x.resultForced, x.resultOriginal, x.userCommentAllowed))
+              .update(commentToPersist.adminComment, commentToPersist.adminCommentTime, commentToPersist.resultForced, commentToPersist.resultOriginal, userCommentAllowed)
+              .map(_ => Some(commentToPersist))
+          }
+        }
+      }
+      // Update the test session result (if needed)
+      modifiedTestSessionResult <- {
+        // We have a forced result that differs from the test session's result, that does not match a previously forced result;
+        // Or no forced result but a previously recorded forced result.
+        sessionResultToSave match {
+          case Some(resultToSave) =>
+            for {
+              // Update test session.
+              _ <- PersistenceSchema.testResults
+                .filter(_.testSessionId === sessionId)
+                .map(_.result)
+                .update(resultToSave)
+              // Update conformance result (if linked to the updated test session).
+              updatedSession <- PersistenceSchema.conformanceResults
+                .filter(_.testsession === sessionId)
+                .map(_.result)
+                .update(resultToSave)
+                .map(updateCount => {
+                  if (updateCount == 0) {
+                    // No conformance statement result was updated - nothing further to do.
+                    None
+                  } else {
+                    // Conformance statement result updated - we may need to fire triggers.
+                    Some(existingSession.copy(result = resultToSave))
+                  }
+                })
+            } yield updatedSession
+          case None =>
+            DBIO.successful(None)
+        }
+      }
+    } yield TestSessionCommentUpdateResult(updatedComments, modifiedTestSessionResult)
+    DB.run(dbAction.transactionally).flatMap { results =>
+      // Check to fire conformance statement triggers (not test session triggers).
+      results.triggerInfo match {
+        case Some(info) =>
+          if (info.communityId.isDefined && info.systemId.isDefined && info.result == TestResultType.SUCCESS.value()) {
+            // A non-obsolete test session that has been forced-changed to a success.
+            conformanceManager.fireConformanceStatementCompletionTriggers(info.communityId.get, info.systemId.get, sessionId).map(_ => results.updatedComments)
+          } else {
+            Future.successful(results.updatedComments)
+          }
+        case _ => Future.successful(results.updatedComments)
+      }
+    }
   }
 
 }

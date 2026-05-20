@@ -4077,6 +4077,26 @@ object JsonUtil {
     )
   }
 
+  def jsTestResultComments(value: TestResultComments): JsObject = {
+    var json = Json.obj(
+      "sessionId" -> value.sessionId,
+      "userCommentAllowed" -> value.userCommentAllowed
+    )
+    if (value.userComment.isDefined) json = json + ("userComment" -> JsString(value.userComment.get))
+    if (value.userCommentTime.isDefined) {
+      json = json + ("userCommentTime" -> JsString(TimeUtil.serializeTimestamp(value.userCommentTime.get)))
+      json = json + ("userCommentTimeMillis" -> JsNumber(value.userCommentTime.get.getTime))
+    }
+    if (value.adminComment.isDefined) json = json + ("adminComment" -> JsString(value.adminComment.get))
+    if (value.adminCommentTime.isDefined) {
+      json = json + ("adminCommentTime" -> JsString(TimeUtil.serializeTimestamp(value.adminCommentTime.get)))
+      json = json + ("adminCommentTimeMillis" -> JsNumber(value.adminCommentTime.get.getTime))
+    }
+    if (value.resultForced.isDefined) json = json + ("resultForced" -> JsString(value.resultForced.get))
+    if (value.resultOriginal.isDefined) json = json + ("resultOriginal" -> JsString(value.resultOriginal.get))
+    json
+  }
+
   def parseJsSoftwareVersionInfo(json: JsValue): SoftwareVersionInfo = {
     SoftwareVersionInfo(
       latest = parseJsReleaseInfo((json \ "latest").toOption.getOrElse {

@@ -35,6 +35,13 @@ export abstract class BaseComponent {
         return value != undefined && value!.trim().length > 0
     }
 
+    visibleHtmlProvided(html: string|undefined): boolean {
+      if (html == undefined) return false
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      return doc.body.innerText.trim().length > 0;
+    }
+
     isValidEmail(email: string|undefined): boolean {
         let valid = true
         if (email === undefined || !Constants.EMAIL_REGEX.test(email)) {

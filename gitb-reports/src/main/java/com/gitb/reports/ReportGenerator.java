@@ -537,6 +537,8 @@ public class ReportGenerator {
             if (specs.isIncludeLogs()) {
                 parameters.put("logMessages", testCaseOverview.getLogMessages());
             }
+            parameters.put("userComment", testCaseOverview.getUserComment());
+            parameters.put("adminComment", testCaseOverview.getAdminComment());
             writeClasspathReport("reports/TestCaseOverview.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException(e);

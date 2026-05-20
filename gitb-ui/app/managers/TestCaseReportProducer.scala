@@ -23,8 +23,8 @@ import com.gitb.tpl
 import com.gitb.tpl._
 import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
-import managers.TestCaseReportProducer.ReportGenerationInput
-import models.{CommunityLabels, Constants, SessionReportPath}
+import managers.TestCaseReportProducer.{ReportGenerationInput, TestSessionData}
+import models.{CommunityLabels, Constants, SessionReportPath, TestResult, TestResultComments}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
@@ -47,6 +47,7 @@ import scala.util.Using
 object TestCaseReportProducer {
 
   case class ReportGenerationInput(stepReports: List[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], sessionId: String, keepStepContexts: Boolean)
+  private case class TestSessionData(result: TestResult, presentation: com.gitb.tpl.TestCase, comments: Option[TestResultComments])
 
 }
 
@@ -74,33 +75,32 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
           sessionFolderInfo
         }
       }
-      // Load test result
-      testResult <- testResultManager.getTestResultForSessionWrapper(sessionId)
+      // Load test session data
+      sessionData <- loadTestSessionDataForReport(sessionId)
       // Generate the report
       exportedReport <- {
-        if (testResult.isDefined) {
+        if (sessionData.isDefined) {
           val reportData = contentType match {
             case Some(Constants.MimeTypePDF) => (".report.pdf", (input: ReportGenerationInput) => {
-              generateDetailedTestCaseReportPdf(input, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
+              generateDetailedTestCaseReportPdf(input, sessionData.get, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
             })
-            case Some(Constants.MimeTypeZIP) =>  (".reportData.v1.xml", (input: ReportGenerationInput) => {
-              generateDetailedTestCaseReportXml(input)
+            case Some(Constants.MimeTypeZIP) =>  (".reportData.xml", (input: ReportGenerationInput) => {
+              generateDetailedTestCaseReportXml(input, sessionData.get)
             })
-            case _ => (".report.v3.xml", (input: ReportGenerationInput) => {
-              generateDetailedTestCaseReportXml(input)
+            case _ => (".report.xml", (input: ReportGenerationInput) => {
+              generateDetailedTestCaseReportXml(input, sessionData.get)
             })
           }
-          val exportedReport = if (testResult.get._1.endTime.isEmpty || contentType.contains(Constants.MimeTypePDF)) {
-            // This name will be unique to ensure that a report generated for a pending session never gets cached. Also, PDF reports are never cached.
-            new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + reportData._1)
-          } else {
-            // XML reports for completed test sessions are cached as they will never change.
-            new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
-          }
-          if (!exportedReport.exists() && testResult.get._1.testCaseId.isDefined) {
-            testCaseManager.getTestCase(testResult.get._1.testCaseId.get.toString).flatMap { testCase =>
-              val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
-              val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+          /*
+           * The report name will be unique to ensure that reports never get cached. This is because:
+           * - Pending test sessions will be expected to change.
+           * - Completed test sessions may still have comment updates after having completed.
+           */
+          val exportedReport = new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + reportData._1)
+          // Given that reports never get cached, the `if` here is superfluous. However, we keep the then case in case we have a report caching case again.
+          if (!exportedReport.exists() && sessionData.get.result.testCaseId.isDefined) {
+            testCaseManager.getTestCase(sessionData.get.result.testCaseId.get.toString).flatMap { testCase =>
+              val list = getListOfTestSteps(sessionData.get.presentation, sessionFolderInfo.path.toFile)
               val keepStepContexts = contentType.contains(Constants.MimeTypeZIP)
               reportData._2.apply(ReportGenerationInput(list, exportedReport, testCase, sessionId, keepStepContexts)).map { _ =>
                 Some(exportedReport)
@@ -128,42 +128,77 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
     } yield result
   }
 
-  private def generateDetailedTestCaseReportXml(input: ReportGenerationInput): Future[Path] = {
+  private def loadTestSessionDataForReport(testSessionId: String): Future[Option[TestSessionData]] = {
+    DB.run {
+      PersistenceSchema.testResults
+        .joinLeft(PersistenceSchema.testResultComments).on(_.testSessionId === _.testSessionId)
+        .joinLeft(PersistenceSchema.testResultDefinitions).on(_._1.testSessionId === _.testSessionId)
+        .filter(_._1._1.testSessionId === testSessionId)
+        .result
+        .headOption
+        .map {
+          case Some(x) =>
+            val testCasePresentation = x._2 match {
+              case Some(presentation) =>
+                XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(presentation.tpl)))
+              case None =>
+                throw new IllegalStateException("Test case definition not found for test session")
+            }
+            Some(TestSessionData(x._1._1, testCasePresentation, x._1._2))
+          case None => None
+        }
+    }
+  }
+
+  private def generateDetailedTestCaseReportXml(input: ReportGenerationInput, testData: TestSessionData): Future[Path] = {
     val reportPath = Paths.get(input.exportedReportPath.getAbsolutePath)
     for {
-      overview <- {
-        DB.run(PersistenceSchema.testResults.filter(_.testSessionId === input.sessionId).result.head).map { testResult =>
-          val overview = new TestCaseOverviewReportType()
-          overview.setResult(TestResultType.fromValue(testResult.result))
-          testResult.outputMessage.foreach { msgs =>
-            msgs.split('\n').foreach { msg =>
-              overview.getMessage.add(msg)
-            }
+      overview <- Future.successful {
+        val overview = new TestCaseOverviewReportType()
+        overview.setResult(TestResultType.fromValue(testData.result.result))
+        testData.result.outputMessage.foreach { msgs =>
+          msgs.split('\n').foreach { msg =>
+            overview.getMessage.add(msg)
           }
-          overview.setSessionId(testResult.sessionId)
-          overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
-          if (testResult.endTime.isDefined) {
-            overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
-          }
-          if (input.testCase.isDefined) {
-            overview.setId(input.testCase.get.identifier)
-            overview.setMetadata(new Metadata())
-            overview.getMetadata.setName(input.testCase.get.fullname)
-            overview.getMetadata.setDescription(input.testCase.get.description.orNull)
-            overview.getMetadata.setVersion(StringUtils.trimToNull(input.testCase.get.version))
-          }
-          if (input.stepReports.nonEmpty) {
-            overview.setSteps(new TestCaseStepsType())
-            input.stepReports.foreach { stepReport =>
-              val report = new TestCaseStepReportType()
-              report.setId(stepReport.getWrapped.getId)
-              report.setDescription(stepReport.getTitle)
-              report.setReport(stepReport.getWrapped)
-              overview.getSteps.getStep.add(report)
-            }
-          }
-          overview
         }
+        overview.setSessionId(testData.result.sessionId)
+        overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testData.result.startTime))
+        if (testData.result.endTime.isDefined) {
+          overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testData.result.endTime.get))
+        }
+        if (testData.comments.isDefined) {
+          if (testData.comments.get.userComment.isDefined && testData.comments.get.userCommentTime.isDefined) {
+            val comment = new TestCaseCommentType()
+            comment.setComment(testData.comments.get.userComment.get)
+            comment.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testData.comments.get.userCommentTime.get))
+            overview.setUserComment(comment)
+          }
+          if (testData.comments.get.adminComment.isDefined && testData.comments.get.adminCommentTime.isDefined) {
+            val comment = new TestCaseAdminCommentType()
+            comment.setComment(testData.comments.get.adminComment.get)
+            comment.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testData.comments.get.adminCommentTime.get))
+            comment.setForcedResult(testData.comments.get.resultForced.nonEmpty)
+            overview.setAdminComment(comment)
+          }
+        }
+        if (input.testCase.isDefined) {
+          overview.setId(input.testCase.get.identifier)
+          overview.setMetadata(new Metadata())
+          overview.getMetadata.setName(input.testCase.get.fullname)
+          overview.getMetadata.setDescription(input.testCase.get.description.orNull)
+          overview.getMetadata.setVersion(StringUtils.trimToNull(input.testCase.get.version))
+        }
+        if (input.stepReports.nonEmpty) {
+          overview.setSteps(new TestCaseStepsType())
+          input.stepReports.foreach { stepReport =>
+            val report = new TestCaseStepReportType()
+            report.setId(stepReport.getWrapped.getId)
+            report.setDescription(stepReport.getTitle)
+            report.setReport(stepReport.getWrapped)
+            overview.getSteps.getStep.add(report)
+          }
+        }
+        overview
       }
       reportPath <- {
         Files.createDirectories(reportPath.getParent)
@@ -176,7 +211,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
     } yield reportPath
   }
 
-  private def generateDetailedTestCaseReportPdf(input: ReportGenerationInput, labels: Future[Map[Short, CommunityLabels]], specs: ReportSpecs): Future[Path] = {
+  private def generateDetailedTestCaseReportPdf(input: ReportGenerationInput, testData: TestSessionData, labels: Future[Map[Short, CommunityLabels]], specs: ReportSpecs): Future[Path] = {
     val reportPath = Paths.get(input.exportedReportPath.getAbsolutePath)
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     for {
@@ -195,74 +230,90 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
         }
       }
       // Result
-      overview <- {
-        DB.run(PersistenceSchema.testResults.filter(_.testSessionId === input.sessionId).result.head).map { testResult =>
-          // Test results
-          overview.setReportResult(testResult.result)
-          testResult.outputMessage.foreach { msgs =>
-            overview.setOutputMessages(new util.ArrayList())
-            msgs.split('\n').foreach { msg =>
-              overview.getOutputMessages.add(msg)
-            }
+      overview <- Future {
+        // Test results
+        val testResult = testData.result
+        overview.setReportResult(testResult.result)
+        testResult.outputMessage.foreach { msgs =>
+          overview.setOutputMessages(new util.ArrayList())
+          msgs.split('\n').foreach { msg =>
+            overview.getOutputMessages.add(msg)
           }
-          overview.setSessionId(testResult.sessionId)
-          // Start time
-          val start = testResult.startTime
-          overview.setStartTime(sdf.format(new Date(start.getTime)))
-          // End time
-          if (testResult.endTime.isDefined) {
-            val end = testResult.endTime.get
-            overview.setEndTime(sdf.format(new Date(end.getTime)))
-          }
-          if (testResult.testCase.isDefined) {
-            overview.setTestName(testResult.testCase.get)
-          } else {
-            overview.setTestName("-")
-          }
-          if (testResult.system.isDefined) {
-            overview.setSystem(testResult.system.get)
-          } else {
-            overview.setSystem("-")
-          }
-          if (testResult.organization.isDefined) {
-            overview.setOrganisation(testResult.organization.get)
-          } else {
-            overview.setOrganisation("-")
-          }
-          if (testResult.actor.isDefined) {
-            overview.setTestActor(testResult.actor.get)
-          } else {
-            overview.setTestActor("-")
-          }
-          if (testResult.specification.isDefined) {
-            overview.setTestSpecification(testResult.specification.get)
-          } else {
-            overview.setTestSpecification("-")
-          }
-          if (testResult.domain.isDefined) {
-            overview.setTestDomain(testResult.domain.get)
-          } else {
-            overview.setTestDomain("-")
-          }
-          if (input.testCase.isDefined) {
-            if (input.testCase.get.description.isDefined) {
-              overview.setTestDescription(input.testCase.get.description.get)
-            }
-            overview.setSpecReference(input.testCase.get.specReference.orNull)
-            overview.setSpecDescription(input.testCase.get.specDescription.orNull)
-            overview.setSpecLink(input.testCase.get.specLink.orNull)
-          } else {
-            // This is a deleted test case - get data as possible from TestResult
-            overview.setTestDescription("-")
-          }
-          for (stepReport <- input.stepReports) {
-            overview.getSteps.add(ReportGenerator.getInstance().fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, specs))
-          }
-          if (overview.getSteps.isEmpty) {
-            overview.setSteps(null)
-          }
-          overview
         }
+        overview.setSessionId(testResult.sessionId)
+        // Start time
+        val start = testResult.startTime
+        overview.setStartTime(sdf.format(new Date(start.getTime)))
+        // End time
+        if (testResult.endTime.isDefined) {
+          val end = testResult.endTime.get
+          overview.setEndTime(sdf.format(new Date(end.getTime)))
+        }
+        // Comments
+        if (testData.comments.isDefined) {
+          if (testData.comments.get.userComment.isDefined && testData.comments.get.userCommentTime.isDefined) {
+            overview.setUserComment(new TestCaseOverview.UserComment(
+              testData.comments.get.userComment.get,
+              sdf.format(new Date(testData.comments.get.userCommentTime.get.getTime))
+            ))
+          }
+          if (testData.comments.get.adminComment.isDefined && testData.comments.get.adminCommentTime.isDefined) {
+            overview.setAdminComment(new TestCaseOverview.AdminComment(
+              testData.comments.get.adminComment.get,
+              sdf.format(new Date(testData.comments.get.adminCommentTime.get.getTime)),
+              testData.comments.get.resultForced.nonEmpty,
+              testData.comments.get.userCommentTime.isEmpty || testData.comments.get.userCommentTime.get.before(testData.comments.get.adminCommentTime.get)
+            ))
+          }
+        }
+        if (testResult.testCase.isDefined) {
+          overview.setTestName(testResult.testCase.get)
+        } else {
+          overview.setTestName("-")
+        }
+        if (testResult.system.isDefined) {
+          overview.setSystem(testResult.system.get)
+        } else {
+          overview.setSystem("-")
+        }
+        if (testResult.organization.isDefined) {
+          overview.setOrganisation(testResult.organization.get)
+        } else {
+          overview.setOrganisation("-")
+        }
+        if (testResult.actor.isDefined) {
+          overview.setTestActor(testResult.actor.get)
+        } else {
+          overview.setTestActor("-")
+        }
+        if (testResult.specification.isDefined) {
+          overview.setTestSpecification(testResult.specification.get)
+        } else {
+          overview.setTestSpecification("-")
+        }
+        if (testResult.domain.isDefined) {
+          overview.setTestDomain(testResult.domain.get)
+        } else {
+          overview.setTestDomain("-")
+        }
+        if (input.testCase.isDefined) {
+          if (input.testCase.get.description.isDefined) {
+            overview.setTestDescription(input.testCase.get.description.get)
+          }
+          overview.setSpecReference(input.testCase.get.specReference.orNull)
+          overview.setSpecDescription(input.testCase.get.specDescription.orNull)
+          overview.setSpecLink(input.testCase.get.specLink.orNull)
+        } else {
+          // This is a deleted test case - get data as possible from TestResult
+          overview.setTestDescription("-")
+        }
+        for (stepReport <- input.stepReports) {
+          overview.getSteps.add(ReportGenerator.getInstance().fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, specs))
+        }
+        if (overview.getSteps.isEmpty) {
+          overview.setSteps(null)
+        }
+        overview
       }
       // Documentation and logs
       overview <- {

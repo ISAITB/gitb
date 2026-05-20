@@ -53,6 +53,7 @@ import {Utils} from '../../common/utils';
 import {NgbModal, NgbModalRef} from '@ng-bootstrap/ng-bootstrap';
 import {UserInteractionInput} from '../../types/user-interaction-input';
 import {CheckBoxOptionPanelComponentApi} from '../../components/checkbox-option-panel/check-box-option-panel-component-api';
+import {TestResultCommentsModalComponent} from '../../modals/test-result-comments-modal/test-result-comments-modal.component';
 
 @Component({
   selector: 'app-test-execution',
@@ -91,6 +92,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   progressIcons: {[key: number]: string} = {}
   testCaseStatus: {[key: number]: number} = {}
+  testCaseWithComments: {[key: number]: boolean} = {}
   testCaseOutput: {[key: number]: string} = {}
   testCaseExpanded: {[key: number]: boolean} = {}
   testCaseVisible: {[key: number]: boolean} = {}
@@ -106,6 +108,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   unreadLogWarnings: {[key: number]: boolean} = {}
   testCaseWithOpenLogView?: number
   testCaseOperationPending: {[key: number]: boolean} = {}
+  testCaseCommentsPending: {[key: number]: boolean} = {}
 
   actor?: string
   session?: string
@@ -1305,6 +1308,62 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }).add(() => {
       this.testCaseOperationPending[testCase.id] = false
     })
+  }
+
+  private statusToTestCaseResult(status: number): string {
+    switch (status) {
+      case Constants.TEST_CASE_STATUS.COMPLETED: return Constants.TEST_CASE_RESULT.SUCCESS;
+      case Constants.TEST_CASE_STATUS.ERROR: return Constants.TEST_CASE_RESULT.FAILURE;
+      default: return Constants.TEST_CASE_RESULT.UNDEFINED;
+    }
+  }
+
+  private testCaseResultToStatus(result: string): number {
+    switch (result) {
+      case Constants.TEST_CASE_RESULT.SUCCESS: return Constants.TEST_CASE_STATUS.COMPLETED;
+      case Constants.TEST_CASE_RESULT.FAILURE: return Constants.TEST_CASE_STATUS.ERROR;
+      default: return Constants.TEST_CASE_STATUS.STOPPED;
+    }
+  }
+
+  private organisationName() {
+    if (this.organisationId === this.dataService.vendor?.id) {
+      // Organisation matches connected user.
+      return this.dataService.vendor.fname;
+    } else {
+      /*
+       * Administrator executing a test session for another user. The administrator cannot add/edit another organisation's comment, and given
+       * that this is the test execution screen it is very unlikely that existing organisation comments will be defined. In any case as a
+       * fallback solution we just show the general label for organisations instead of the organisation name (to avoid making an unnecessary lookup).
+       */
+      return this.dataService.labelOrganisation();
+    }
+  }
+
+  viewComments(testCase: ConformanceTestCase) {
+    if (testCase.sessionId) {
+      this.testCaseCommentsPending[testCase.id] = true
+      this.testService.getTestSessionComments(testCase.sessionId).subscribe((comments) => {
+        const modal = this.modalService.open(TestResultCommentsModalComponent, { size: 'lg' });
+        const modalInstance = modal.componentInstance as TestResultCommentsModalComponent;
+        modalInstance.sessionId = testCase.sessionId!;
+        modalInstance.sessionResult = this.statusToTestCaseResult(this.testCaseStatus[testCase.id]);
+        modalInstance.sessionOwner = this.organisationId;
+        modalInstance.sessionOwnerName = this.organisationName();
+        modalInstance.comments = comments;
+        modalInstance.commentsEditable = true;
+        modalInstance.updateResult.subscribe((result) => {
+          if (result == 'SUCCESS' || result == 'FAILURE' || result == 'UNDEFINED') {
+            this.updateTestCaseStatus(testCase.id, this.testCaseResultToStatus(result));
+          }
+        });
+        modalInstance.commentUpdate.subscribe((hasComments) => {
+          this.testCaseWithComments[testCase.id] = hasComments;
+        });
+      }).add(() => {
+        this.testCaseCommentsPending[testCase.id] = false;
+      })
+    }
   }
 
   @HostListener('document:click', ['$event'])

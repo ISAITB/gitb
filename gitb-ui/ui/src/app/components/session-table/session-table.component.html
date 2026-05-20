@@ -58,7 +58,7 @@
                     </td>
                 </tr>
             }
-            @for (row of data; let i = $index; track row.session) {
+            @for (row of data; let i = $index; track row.session+'|'+row.result) {
                 <tr table-row-directive #tableRowComponent
                     class="table-row-directive expandable-table-row-collapsed"
                     [class.disable-events]="contentRefreshing"
@@ -137,7 +137,18 @@
                                                 </div>
                                             }
                                         }
-                                    @if (showNavigationControls) {
+                                        <!-- View comments -->
+                                        @if (!supportRefresh) {
+                                            <div class="position-relative">
+                                                <button type="button" class="btn btn-secondary position-relative" [disabled]="row.commentsPending" (click)="viewComments(row)">
+                                                    <span class="mini-tab label-icon"><i [class]="row.commentsPending?Constants.BUTTON_ICON.PENDING_SMALL:Constants.BUTTON_ICON.COMMENT"></i></span>View comments
+                                                    <span [class.badgeComments]="row.hasComments" [class.hidden]="!row.hasComments"
+                                                        class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                                                </span>
+                                                </button>
+                                            </div>
+                                        }
+                                        @if (showNavigationControls) {
                                             <!-- Copy link -->
                                             @if (copyForOtherRoleOption) {
                                                 <div class="btn-group" ngbDropdown>
@@ -158,7 +169,7 @@
                                             }
                                             <!-- View -->
                                             <app-navigation-controls [config]="toNavigationConfig(row)"></app-navigation-controls>
-                                    }
+                                        }
                                     </div>
                                 </div>
                                 <div #sessionContainer class="test-case-session">

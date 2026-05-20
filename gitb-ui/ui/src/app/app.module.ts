@@ -294,6 +294,7 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
 import { StartRedirectComponent } from './components/start-redirect/start-redirect.component';
 import { DomainTagIndicatorComponent } from './components/domain-tag-indicator/domain-tag-indicator.component';
 import { CommunityTagIndicatorComponent } from './components/community-tag-indicator/community-tag-indicator.component';
+import { TestResultCommentsModalComponent } from './modals/test-result-comments-modal/test-result-comments-modal.component';
 
 @NgModule({
   declarations: [
@@ -497,7 +498,8 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     DateRangeComponent,
     StartRedirectComponent,
     DomainTagIndicatorComponent,
-    CommunityTagIndicatorComponent
+    CommunityTagIndicatorComponent,
+    TestResultCommentsModalComponent
   ],
     imports: [
         NgxColorPickerComponent,

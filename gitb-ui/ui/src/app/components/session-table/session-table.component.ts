@@ -44,6 +44,7 @@ import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 import {NavigationControlsConfig} from '../navigation-controls/navigation-controls-config';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {UserInteractionInput} from '../../types/user-interaction-input';
+import {TestResultCommentsModalComponent} from '../../modals/test-result-comments-modal/test-result-comments-modal.component';
 
 @Component({
     selector: '[app-session-table]',
@@ -160,6 +161,16 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       } else {
         this.expandedCounter.count = this.expandedCounter.count - 1
       }
+    }
+    // Load comments eagerly to show indicator.
+    if (data.commentsLoaded !== true) {
+      data.commentsPending = true
+      this.testService.getTestSessionComments(data.session).subscribe((comments) => {
+        data.hasComments = comments != undefined
+      }).add(() => {
+        data.commentsPending = false
+        data.commentsLoaded = true
+      })
     }
   }
 
@@ -328,6 +339,31 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       testCaseId: row.testCaseId,
       testSuiteId: row.testSuiteId,
     }
+  }
+
+  viewComments(row: TestResultForDisplay) {
+    row.commentsPending = true
+    this.testService.getTestSessionComments(row.session).subscribe((comments) => {
+      const modal = this.modalService.open(TestResultCommentsModalComponent, { size: 'lg' })
+      const modalInstance = modal.componentInstance as TestResultCommentsModalComponent
+      modalInstance.sessionId = row.session
+      modalInstance.sessionResult = row.result
+      modalInstance.sessionOwner = row.organizationId
+      modalInstance.sessionOwnerName = row.organization
+      modalInstance.comments = comments
+      modalInstance.commentsEditable = !row.obsolete
+      modalInstance.updateResult.subscribe((result) => {
+        if (result == 'SUCCESS' || result == 'FAILURE' || result == 'UNDEFINED') {
+          row.result = result;
+          this.tableRowComponents?.forEach((component) => component.refreshData())
+        }
+      });
+      modalInstance.commentUpdate.subscribe((hasComments) => {
+        row.hasComments = hasComments;
+      });
+    }).add(() => {
+      row.commentsPending = false
+    })
   }
 
 }

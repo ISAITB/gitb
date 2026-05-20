@@ -18,12 +18,13 @@ package controllers
 import actors.events.TestSessionStartedEvent
 import actors.events.sessions.TerminateAllSessionsEvent
 import com.gitb.tbs._
+import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers._
 import managers.triggers.TriggerHelper
-import models.SessionConfigurationData
+import models.{SessionConfigurationData, TestResultComments}
 import org.apache.commons.io.FileUtils
 import org.apache.pekko.actor.ActorSystem
 import play.api.mvc._
@@ -337,6 +338,42 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
           authorizationManager.markRequestAsAuthorized(request)
           ResponseConstructor.constructEmptyResponse
         }
+      }
+    }
+  }
+
+  private def serializeTestResultComments(comments: Option[TestResultComments]): Result = {
+    if (comments.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsTestResultComments(comments.get).toString())
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getTestSessionComments(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestResultForSession(request, sessionId).flatMap { _ =>
+      testExecutionManager.getTestSessionComments(sessionId).map { comments =>
+        serializeTestResultComments(comments)
+      }
+    }
+  }
+
+  def updateTestSessionUserComment(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = false, requireOwnTestSessionIfNotAdmin = true).flatMap { _ =>
+      val comment = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMENT).map(HtmlUtil.sanitizeMinimalEditorContent)
+      testExecutionManager.updateTestSessionUserComment(sessionId, comment).map { comments =>
+        serializeTestResultComments(comments)
+      }
+    }
+  }
+
+  def updateTestSessionAdminComment(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = true, requireOwnTestSessionIfNotAdmin = true).flatMap { _ =>
+      val comment = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMENT).map(HtmlUtil.sanitizeMinimalEditorContent)
+      val forcedResult = ParameterExtractor.optionalBodyParameter(request, ParameterNames.RESULT).map(TestResultType.fromValue)
+      val userCommentAllowed = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED).forall(_.toBoolean)
+      testExecutionManager.updateTestSessionAdminComment(sessionId, comment, forcedResult, userCommentAllowed).map { comments =>
+        serializeTestResultComments(comments)
       }
     }
   }
