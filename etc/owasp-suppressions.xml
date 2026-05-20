@@ -309,4 +309,5 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
         <cve>CVE-2026-34477</cve>
     </suppress>
+
 </suppressions>
