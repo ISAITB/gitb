@@ -163,7 +163,11 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       }
     }
     // Load comments eagerly to show indicator.
-    if (data.commentsLoaded !== true) {
+    this.loadSessionComments(data)
+  }
+
+  public loadSessionComments(data: TestResultForDisplay) {
+    if (!this.supportRefresh && data.commentsLoaded !== true) {
       data.commentsPending = true
       this.testService.getTestSessionComments(data.session).subscribe((comments) => {
         data.hasComments = comments != undefined

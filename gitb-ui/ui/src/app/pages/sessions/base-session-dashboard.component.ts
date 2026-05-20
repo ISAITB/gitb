@@ -349,6 +349,11 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       this.sessionIdToShow = undefined
       this.testCaseIdToShow = undefined
       this.systemIdToShow = undefined
+      if (completed) {
+        setTimeout(() => {
+          this.completedSessionsTable?.loadSessionComments(result)
+        })
+      }
     }
     return result
   }
