@@ -38,5 +38,53 @@
     "1115809": {
         "active": true,
         "notes": "Lodash is only used in development tooling and as a transitive dependency of mermaid which is not vulnerable in this context."
+    },
+    "1115921": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1115922": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1116663": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1117138": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1117139": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1117140": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1117795": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1117991": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1117995": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1118513": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1118515": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1117637": {
+        "active": true,
+        "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
     }
 }
