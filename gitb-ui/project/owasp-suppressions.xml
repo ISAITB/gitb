@@ -334,4 +334,20 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/.*@.*$</packageUrl>
         <cve>CVE-2026-5795</cve>
     </suppress>
+    <suppress>
+        <!-- Jetty is not exposed as a server. -->
+        <notes><![CDATA[
+    file name: jetty-ee11-servlet-12.1.6.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\..*/.*@.*$</packageUrl>
+        <cve>CVE-2026-2332</cve>
+    </suppress>
+    <suppress>
+        <!-- Jetty is not exposed as a server. -->
+        <notes><![CDATA[
+    file name: jetty-ee11-servlet-12.1.6.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\..*/.*@.*$</packageUrl>
+        <cve>CVE-2026-5795</cve>
+    </suppress>
 </suppressions>
