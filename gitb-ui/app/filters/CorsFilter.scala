@@ -31,7 +31,7 @@ object CorsFilter {
 class CorsFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Materializer) extends EssentialFilter {
 
   def apply(next: EssentialAction): EssentialAction = (requestHeader: RequestHeader) => {
-    if (requestHeader.path.contains("font-awesome") || requestHeader.path.contains("fontawesome")) {
+    if (requestHeader.path.contains("font-awesome") || requestHeader.path.contains("assets/")) {
       next(requestHeader).map { result =>
         result.withHeaders(
           ACCESS_CONTROL_ALLOW_ORIGIN -> CorsFilter.origin
