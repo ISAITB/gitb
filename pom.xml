@@ -40,7 +40,7 @@
         <version.bouncycastle>1.83</version.bouncycastle>
         <version.helgerSchematron>9.0.1</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.2.0</version.cxf>
+        <version.cxf>4.2.1</version.cxf>
         <version.httpComponents>4.5.14</version.httpComponents>
         <version.commonsCodec>1.20.0</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
