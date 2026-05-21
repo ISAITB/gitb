@@ -451,16 +451,16 @@ Library licences are organised in three sections:
 
 | License type                    | Name                              | Installed version | Link  |
 | :------------------------------ | :-------------------------------- | :---------------- | :---- |
-| MIT                             | @angular/localize                 | 21.2.10           | n/a   |
-| MIT                             | @angular/animations               | 21.2.10           | n/a   |
-| MIT                             | @angular/cdk                      | 21.2.8            | n/a   |
-| MIT                             | @angular/common                   | 21.2.10           | n/a   |
-| MIT                             | @angular/compiler                 | 21.2.10           | n/a   |
-| MIT                             | @angular/core                     | 21.2.10           | n/a   |
-| MIT                             | @angular/forms                    | 21.2.10           | n/a   |
-| MIT                             | @angular/platform-browser         | 21.2.10           | n/a   |
-| MIT                             | @angular/platform-browser-dynamic | 21.2.10           | n/a   |
-| MIT                             | @angular/router                   | 21.2.10           | n/a   |
+| MIT                             | @angular/localize                 | 21.2.14           | n/a   |
+| MIT                             | @angular/animations               | 21.2.14           | n/a   |
+| MIT                             | @angular/cdk                      | 21.2.12           | n/a   |
+| MIT                             | @angular/common                   | 21.2.14           | n/a   |
+| MIT                             | @angular/compiler                 | 21.2.14           | n/a   |
+| MIT                             | @angular/core                     | 21.2.14           | n/a   |
+| MIT                             | @angular/forms                    | 21.2.14           | n/a   |
+| MIT                             | @angular/platform-browser         | 21.2.14           | n/a   |
+| MIT                             | @angular/platform-browser-dynamic | 21.2.14           | n/a   |
+| MIT                             | @angular/router                   | 21.2.14           | n/a   |
 | MIT                             | @ctrl/ngx-codemirror              | 7.0.0             | n/a   |
 | (CC-BY-4.0 AND OFL-1.1 AND MIT) | @fortawesome/fontawesome-free     | 6.7.2             | n/a   |
 | MIT                             | @hugerte/hugerte-angular          | 1.0.3             | n/a   |
