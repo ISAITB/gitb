@@ -86,5 +86,9 @@
     "1117637": {
         "active": true,
         "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    },
+    "1119441": {
+        "active": true,
+        "notes": "Non-exploitable vulnerability from transitive dependency."
     }
 }
