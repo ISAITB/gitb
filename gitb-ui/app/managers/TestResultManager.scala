@@ -826,6 +826,20 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     DB.run(query.result.headOption)
   }
 
+  def getTestResultMinimal(sessionId: String): Future[Option[TestResultMinimal]] = {
+    DB.run {
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(x => (x.result, x.outputMessage))
+        .result
+        .headOption
+        .map {
+          case Some(result) => Some(TestResultMinimal(sessionId, result._1, result._2))
+          case None => None
+        }
+    }
+  }
+
   private def getSpecIdsCriterionToUse(specIds: Option[List[Long]], specGroupIds: Option[List[Long]]): Future[Option[List[Long]]] = {
     // We use the groups to get the applicable spec IDs. This is because specs can move around in groups, and we shouldn't link
     // test results directly to the groups.

@@ -22,7 +22,7 @@ import com.gitb.PropertyConstants
 import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
-import managers.TestExecutionManager.{LOGGER, SessionCompletionData, TestResultTriggerInfo, TestSessionCommentUpdateResult}
+import managers.TestExecutionManager.{LOGGER, SessionCompletionData, TestResultInfo, TestResultTriggerInfo, TestSessionCommentUpdateResult}
 import managers.triggers.TriggerHelper
 import models.Enums.{InputMappingMatchType, TestServiceApiType, TestServiceAuthTokenPasswordType}
 import models._
@@ -51,7 +51,8 @@ object TestExecutionManager {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[TestExecutionManager])
   private case class SessionCompletionData(sessionId: String, result: String)
-  private case class TestResultTriggerInfo(communityId: Option[Long], systemId: Option[Long], result: String)
+  private case class TestResultInfo(result: String, outputMessage: Option[String])
+  private case class TestResultTriggerInfo(communityId: Option[Long], systemId: Option[Long], resultInfo: TestResultInfo)
   private case class TestSessionCommentUpdateResult(updatedComments: Option[TestResultComments], triggerInfo: Option[TestResultTriggerInfo])
 
 }
@@ -830,7 +831,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             // Nothing to do.
             DBIO.successful(None)
           } else {
-            val commentsToSave = TestResultComments(sessionId, comment, Some(TimeUtil.getCurrentTimestamp()), userCommentAllowed = true, None, None, None, None)
+            val commentsToSave = TestResultComments(sessionId, comment, Some(TimeUtil.getCurrentTimestamp()), userCommentAllowed = true, None, None, None, None, None, None)
             (PersistenceSchema.testResultComments += commentsToSave).map(_ => Some(commentsToSave))
           }
         } else {
@@ -858,32 +859,50 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     DB.run(dbAction.transactionally)
   }
 
-  def updateTestSessionAdminComment(sessionId: String, comment: Option[String], forcedResult: Option[TestResultType], userCommentAllowed: Boolean): Future[Option[TestResultComments]] = {
+  def updateTestSessionAdminComment(sessionId: String, comment: Option[String], forcedResult: Option[TestResultType], forcedOutputMessage: Option[String], userCommentAllowed: Boolean): Future[Option[TestResultComments]] = {
     val dbAction: DBIO[TestSessionCommentUpdateResult] = for {
       existingSession <- PersistenceSchema.testResults
         .filter(_.testSessionId === sessionId)
-        .map(x => (x.communityId, x.sutId, x.result))
+        .map(x => (x.communityId, x.sutId, x.result, x.outputMessage))
         .result
-        .map(_.map(x => TestResultTriggerInfo(x._1, x._2, x._3)).head)
+        .map(_.map(x => TestResultTriggerInfo(x._1, x._2, TestResultInfo(x._3, x._4))).head)
       existingComments <- getTestSessionCommentsInternal(sessionId)
       forcedResultToSave = forcedResult.map(_.value()) match {
-        case Some(forced) =>
-          existingComments.flatMap(_.resultOriginal) match {
-            case Some(original) =>
-              if (original != forced) Some(forced) else None
-            case None =>
-              if (existingSession.result != forced) Some(forced) else None
-          }
-        case None =>
-          None
+        case Some(forced) => Some(TestResultInfo(forced, forcedOutputMessage))
+        case None => None
       }
       existingResultToSave = forcedResultToSave match {
         case Some(_) =>
-          existingComments.flatMap(_.resultOriginal).orElse(Some(existingSession.result))
-        case None =>
-          None
+          // We are saving a forced result
+          existingComments match {
+            case Some(existing) =>
+              // We have an already existing comment
+              existing.resultOriginal match {
+                case Some(originalResult) =>
+                  // Comment has original result recorded - reuse the existing comment's original result and output message
+                  Some(TestResultInfo(originalResult, existing.outputMessageOriginal))
+                case None =>
+                  // Comment does not have original result recorded - use the result and output message from the test session
+                  Some(existingSession.resultInfo)
+              }
+            case None =>
+              // No existing comment - use the result and output message from the test session
+              Some(existingSession.resultInfo)
+          }
+        case None => None
       }
-      sessionResultToSave = forcedResultToSave.orElse(existingComments.flatMap(_.resultOriginal))
+      sessionResultToSave = forcedResultToSave match {
+        case Some(forced) => Some(forced)
+        case None =>
+          existingComments match {
+            case Some(comment) =>
+              comment.resultOriginal match {
+                case Some(original) => Some(TestResultInfo(original, comment.outputMessageOriginal))
+                case None => None
+              }
+            case None => None
+          }
+      }
       // Update the recorded comments
       updatedComments: Option[TestResultComments] <- {
         if (existingComments.isEmpty) {
@@ -892,7 +911,10 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             // Nothing to do.
             DBIO.successful(None)
           } else {
-            val commentsToSave = TestResultComments(sessionId, None, None, userCommentAllowed, comment, Some(TimeUtil.getCurrentTimestamp()), forcedResultToSave, existingResultToSave)
+            val commentsToSave = TestResultComments(sessionId, None, None, userCommentAllowed, comment, Some(TimeUtil.getCurrentTimestamp()),
+              forcedResultToSave.map(_.result), existingResultToSave.map(_.result),
+              forcedResultToSave.flatMap(_.outputMessage), existingResultToSave.flatMap(_.outputMessage)
+            )
             (PersistenceSchema.testResultComments += commentsToSave).map(_ => Some(commentsToSave))
           }
         } else {
@@ -901,8 +923,10 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             userCommentAllowed = userCommentAllowed,
             adminComment = comment,
             adminCommentTime = Some(TimeUtil.getCurrentTimestamp()),
-            resultForced = forcedResultToSave,
-            resultOriginal = existingResultToSave
+            resultForced = forcedResultToSave.map(_.result),
+            resultOriginal = existingResultToSave.map(_.result),
+            outputMessageForced = forcedResultToSave.flatMap(_.outputMessage),
+            outputMessageOriginal = existingResultToSave.flatMap(_.outputMessage)
           )
           if (commentToPersist.isEmpty()) {
             // Delete comment.
@@ -911,8 +935,8 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             // Update comment.
             PersistenceSchema.testResultComments
               .filter(_.testSessionId === sessionId)
-              .map(x => (x.adminComment, x.adminCommentTime, x.resultForced, x.resultOriginal, x.userCommentAllowed))
-              .update(commentToPersist.adminComment, commentToPersist.adminCommentTime, commentToPersist.resultForced, commentToPersist.resultOriginal, userCommentAllowed)
+              .map(x => (x.adminComment, x.adminCommentTime, x.resultForced, x.resultOriginal, x.outputMessageForced, x.outputMessageOriginal, x.userCommentAllowed))
+              .update(commentToPersist.adminComment, commentToPersist.adminCommentTime, commentToPersist.resultForced, commentToPersist.resultOriginal, commentToPersist.outputMessageForced, commentToPersist.outputMessageOriginal, userCommentAllowed)
               .map(_ => Some(commentToPersist))
           }
         }
@@ -927,20 +951,20 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
               // Update test session.
               _ <- PersistenceSchema.testResults
                 .filter(_.testSessionId === sessionId)
-                .map(_.result)
-                .update(resultToSave)
+                .map(x => (x.result, x.outputMessage))
+                .update((resultToSave.result, resultToSave.outputMessage))
               // Update conformance result (if linked to the updated test session).
               updatedSession <- PersistenceSchema.conformanceResults
                 .filter(_.testsession === sessionId)
-                .map(_.result)
-                .update(resultToSave)
+                .map(x => (x.result, x.outputMessage))
+                .update((resultToSave.result, resultToSave.outputMessage))
                 .map(updateCount => {
                   if (updateCount == 0) {
                     // No conformance statement result was updated - nothing further to do.
                     None
                   } else {
                     // Conformance statement result updated - we may need to fire triggers.
-                    Some(existingSession.copy(result = resultToSave))
+                    Some(existingSession.copy(resultInfo = resultToSave))
                   }
                 })
             } yield updatedSession
@@ -953,7 +977,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       // Check to fire conformance statement triggers (not test session triggers).
       results.triggerInfo match {
         case Some(info) =>
-          if (info.communityId.isDefined && info.systemId.isDefined && info.result == TestResultType.SUCCESS.value()) {
+          if (info.communityId.isDefined && info.systemId.isDefined && info.resultInfo.result == TestResultType.SUCCESS.value()) {
             // A non-obsolete test session that has been forced-changed to a success.
             conformanceManager.fireConformanceStatementCompletionTriggers(info.communityId.get, info.systemId.get, sessionId).map(_ => results.updatedComments)
           } else {

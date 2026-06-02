@@ -181,6 +181,15 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def getTestSessionResultMinimal(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestResultForSession(request, sessionId).flatMap { _ =>
+      testResultManager.getTestResultMinimal(sessionId).map {
+        case Some(result) => ResponseConstructor.constructStringResponse(JsonUtil.jsTestResultMinimal(result).toString())
+        case None => ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
   def getTestSessionLog(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId).flatMap { _ =>
       testResultManager.getTestSessionLog(sessionId, isExpected = true).map { logContents =>

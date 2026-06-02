@@ -4077,6 +4077,15 @@ object JsonUtil {
     )
   }
 
+  def jsTestResultMinimal(value: TestResultMinimal): JsObject = {
+    var json = Json.obj(
+      "sessionId" -> value.sessionId,
+      "result" -> value.result
+    )
+    if (value.outputMessage.isDefined) json = json + ("outputMessage" -> JsString(value.outputMessage.get))
+    json
+  }
+
   def jsTestResultComments(value: TestResultComments): JsObject = {
     var json = Json.obj(
       "sessionId" -> value.sessionId,
@@ -4094,6 +4103,8 @@ object JsonUtil {
     }
     if (value.resultForced.isDefined) json = json + ("resultForced" -> JsString(value.resultForced.get))
     if (value.resultOriginal.isDefined) json = json + ("resultOriginal" -> JsString(value.resultOriginal.get))
+    if (value.outputMessageForced.isDefined) json = json + ("outputMessageForced" -> JsString(value.outputMessageForced.get))
+    if (value.outputMessageOriginal.isDefined) json = json + ("outputMessageOriginal" -> JsString(value.outputMessageOriginal.get))
     json
   }
 

@@ -25,5 +25,7 @@ export interface TestResultComments {
   adminCommentTimeMillis?: number;
   resultForced?: string;
   resultOriginal?: string;
+  outputMessageForced?: string;
+  outputMessageOriginal?: string;
 
 }

@@ -199,7 +199,7 @@
                                             <div [ngbCollapse]="!row.diagramExpanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
                                                 @if (row.expanded || row.diagramLoaded) {
                                                     <div>
-                                                        <app-test-session-presentation
+                                                        <app-test-session-presentation #testSessionPresentationComponent
                                                             [session]="row"
                                                             (ready)="diagramReady($event)">
                                                         </app-test-session-presentation>

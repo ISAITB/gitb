@@ -33,7 +33,7 @@ import {TestResultForDisplay} from 'src/app/types/test-result-for-display';
 import {BaseTableComponent} from '../base-table/base-table.component';
 import {SessionData} from '../diagram/test-session-presentation/session-data';
 import {SessionLogModalComponent} from '../session-log-modal/session-log-modal.component';
-import {mergeMap, Observable, of} from 'rxjs';
+import {forkJoin, mergeMap, Observable, of} from 'rxjs';
 import {ProvideInputModalComponent} from 'src/app/modals/provide-input-modal/provide-input-modal.component';
 import {TestService} from 'src/app/services/test.service';
 import {TestResultReport} from 'src/app/types/test-result-report';
@@ -45,6 +45,7 @@ import {NavigationControlsConfig} from '../navigation-controls/navigation-contro
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {UserInteractionInput} from '../../types/user-interaction-input';
 import {TestResultCommentsModalComponent} from '../../modals/test-result-comments-modal/test-result-comments-modal.component';
+import {TestSessionPresentationComponent} from '../diagram/test-session-presentation/test-session-presentation.component';
 
 @Component({
     selector: '[app-session-table]',
@@ -65,6 +66,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
   @ViewChild("tableContainer") tableContainer?: ElementRef
   @ViewChildren("sessionContainer") sessionContainers?: QueryList<ElementRef>
+  @ViewChildren("testSessionPresentationComponent") testSessionPresentationComponents?: QueryList<TestSessionPresentationComponent>
 
   Constants = Constants
   columnCount = 0
@@ -347,20 +349,23 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   viewComments(row: TestResultForDisplay) {
     row.commentsPending = true
-    this.testService.getTestSessionComments(row.session).subscribe((comments) => {
+    forkJoin([
+      this.testService.getTestSessionComments(row.session),
+      this.testService.getTestSessionResultMinimal(row.session)
+    ]).subscribe((data) => {
       const modal = this.modalService.open(TestResultCommentsModalComponent, { size: 'lg' })
       const modalInstance = modal.componentInstance as TestResultCommentsModalComponent
       modalInstance.sessionId = row.session
       modalInstance.sessionResult = row.result
+      modalInstance.sessionOutputMessage = data[1]?.outputMessage
       modalInstance.sessionOwner = row.organizationId
       modalInstance.sessionOwnerName = row.organization
-      modalInstance.comments = comments
+      modalInstance.comments = data[0]
       modalInstance.commentsEditable = !row.obsolete
       modalInstance.updateResult.subscribe((result) => {
-        if (result == 'SUCCESS' || result == 'FAILURE' || result == 'UNDEFINED') {
-          row.result = result;
-          this.tableRowComponents?.forEach((component) => component.refreshData())
-        }
+        row.result = result.result;
+        this.testSessionPresentationComponents?.find((presentation => presentation.sessionId() === row.session))?.updateOutputMessage(result.outputMessage, result.result)
+        this.tableRowComponents?.forEach((component) => component.refreshData())
       });
       modalInstance.commentUpdate.subscribe((hasComments) => {
         row.hasComments = hasComments;

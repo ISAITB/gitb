@@ -147,7 +147,10 @@
                                             [events]="testEvents[testCase.id]">
                                         </app-sequence-diagram>
                                         @if (testCaseOutput[testCase.id]) {
-                                            <app-output-message-display [message]="testCaseOutput[testCase.id]" [messageType]="alertTypeForStatus(testCaseStatus[testCase.id])"></app-output-message-display>
+                                            <app-output-message-display #outputMessageDisplayComponent
+                                                                        [testCaseId]="testCase.id"
+                                                                        [message]="testCaseOutput[testCase.id]"
+                                                                        [messageType]="alertTypeForStatus(testCaseStatus[testCase.id])"></app-output-message-display>
                                         }
                                     </div>
                                 }

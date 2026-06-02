@@ -17,7 +17,11 @@ package models
 
 import java.sql.Timestamp
 
-case class TestResultComments(sessionId: String, userComment: Option[String], userCommentTime: Option[Timestamp], userCommentAllowed: Boolean, adminComment: Option[String], adminCommentTime: Option[Timestamp], resultForced: Option[String], resultOriginal: Option[String]) {
+case class TestResultComments(sessionId: String, userComment: Option[String],
+                              userCommentTime: Option[Timestamp], userCommentAllowed: Boolean,
+                              adminComment: Option[String], adminCommentTime: Option[Timestamp],
+                              resultForced: Option[String], resultOriginal: Option[String],
+                              outputMessageForced: Option[String], outputMessageOriginal: Option[String]) {
 
   def isEmpty(): Boolean = {
     userComment.isEmpty && adminComment.isEmpty && resultForced.isEmpty

@@ -1020,7 +1020,9 @@ object PersistenceSchema {
     def adminCommentTime = column[Option[Timestamp]]("admin_comment_time", O.SqlType("TIMESTAMP"))
     def resultForced = column[Option[String]]("result_forced")
     def resultOriginal = column[Option[String]]("result_original")
-    def * = (testSessionId :: userComment :: userCommentTime :: userCommentAllowed :: adminComment :: adminCommentTime :: resultForced :: resultOriginal :: HNil).mapTo[TestResultComments]
+    def outputMessageForced = column[Option[String]]("output_message_forced", O.SqlType("TEXT"))
+    def outputMessageOriginal = column[Option[String]]("output_message_original", O.SqlType("TEXT"))
+    def * = (testSessionId :: userComment :: userCommentTime :: userCommentAllowed :: adminComment :: adminCommentTime :: resultForced :: resultOriginal :: outputMessageForced :: outputMessageOriginal :: HNil).mapTo[TestResultComments]
   }
   val testResultComments = TableQuery[TestResultCommentsTable]
 

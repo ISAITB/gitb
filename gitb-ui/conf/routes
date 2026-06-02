@@ -398,6 +398,7 @@ GET     /api/repository/reports/teststep/:session_id/*file       @controllers.Re
 GET     /api/repository/reports/testdata/:session_id/:data_id    @controllers.RepositoryService.getTestStepReportData(session_id: String, data_id: String)
 GET     /api/repository/reports/testdataurl/:session_id/:data_id @controllers.RepositoryService.getTestStepReportDataAsDataUrl(session_id: String, data_id: String)
 GET     /api/repository/reports/logs/:session_id                 @controllers.RepositoryService.getTestSessionLog(session_id: String)
+GET     /api/repository/reports/minimal/:session_id              @controllers.RepositoryService.getTestSessionResultMinimal(session_id: String)
 GET     /api/repository/tests/:session_id/interactions           @controllers.RepositoryService.getPendingTestSessionInteractions(session_id: String)
 GET     /api/repository/tests/:session_id/admininteractions      @controllers.RepositoryService.getPendingTestSessionInteractionsAdmin(session_id: String)
 GET     /api/repository/export/testcase                          @controllers.RepositoryService.exportTestCaseReport()

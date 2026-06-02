@@ -24,6 +24,7 @@ import {PopupService} from '../../services/popup.service';
 import {CommentData} from './comment-data';
 import {ConfirmationDialogService} from '../../services/confirmation-dialog.service';
 import {Observable, of} from 'rxjs';
+import {TestResultMinimal} from '../../types/test-result-minimal';
 
 @Component({
   selector: 'app-test-result-comments-modal',
@@ -35,12 +36,13 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
 
   @Input() sessionId!: string;
   @Input() sessionResult!: string;
+  @Input() sessionOutputMessage?: string;
   @Input() sessionOwner?: number;
   @Input() sessionOwnerName?: string
   @Input() comments?: Partial<TestResultComments>;
   @Input() commentsEditable = true;
   @Output() commentUpdate = new EventEmitter<boolean>();
-  @Output() updateResult = new EventEmitter<string>();
+  @Output() updateResult = new EventEmitter<TestResultMinimal>();
 
   protected commentsToShow: CommentData[] = []
   protected editMode = false;
@@ -52,8 +54,10 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
   protected deletePending = false;
   protected overrideResult = false;
   protected forcedResult?: string
+  protected forcedOutputMessage?: string
   protected disableUserComment = false;
   private originalSessionResult!: string;
+  private originalSessionOutputMessage?: string;
 
   constructor(
     private readonly modalInstance: NgbActiveModal,
@@ -71,7 +75,9 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
       this.ownerNameToDisplay = this.sessionOwnerName
     }
     this.forcedResult = this.sessionResult;
+    this.forcedOutputMessage = this.sessionOutputMessage;
     this.originalSessionResult = (this.comments?.resultOriginal != undefined)?this.comments.resultOriginal:this.sessionResult;
+    this.originalSessionOutputMessage = (this.comments?.outputMessageOriginal != undefined)?this.comments.outputMessageOriginal:this.sessionOutputMessage;
     this.disableUserComment = (this.comments?.userCommentAllowed == undefined)?false:!this.comments.userCommentAllowed
     this.parseCommentData(false);
   }
@@ -93,8 +99,10 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
     this.overrideResult = this.comments?.resultForced != undefined;
     if (this.comments?.resultForced != undefined) {
       this.forcedResult = this.comments?.resultForced;
+      this.forcedOutputMessage = this.comments?.outputMessageForced;
     } else {
       this.forcedResult = this.sessionResult;
+      this.forcedOutputMessage = this.sessionOutputMessage;
     }
     this.disableUserComment = (this.comments?.userCommentAllowed == undefined)?false:!this.comments.userCommentAllowed
   }
@@ -103,14 +111,17 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
     this.editMode = false;
     this.overrideResult = false;
     this.forcedResult = undefined;
+    this.forcedOutputMessage = undefined;
     this.disableUserComment = false;
   }
 
   protected saveComment() {
-    if (this.editingAdminComment) {
-      this.saveAdminComment();
-    } else {
-      this.saveUserComment();
+    if (this.saveEnabled()) {
+      if (this.editingAdminComment) {
+        this.saveAdminComment();
+      } else {
+        this.saveUserComment();
+      }
     }
   }
 
@@ -134,12 +145,15 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
 
   private saveAdminComment() {
     let proceed$: Observable<any>
-    const hasNewForcedResult = (this.overrideResult && ((this.comments?.resultForced != undefined && this.forcedResult != this.comments.resultForced) || (this.comments?.resultForced == undefined && this.forcedResult != this.sessionResult)))
-      || (!this.overrideResult && this.comments?.resultForced != undefined);
+    const hasNewForcedResult = (this.overrideResult && (
+            (this.comments == undefined && this.forcedResult != undefined) || // No previous comment
+            (this.comments != undefined && (this.comments.resultForced != this.forcedResult || this.comments.outputMessageForced != this.forcedOutputMessage)) // Previous comment with different result or message
+          )) ||
+          (!this.overrideResult && this.comments?.resultForced != undefined);
     if (hasNewForcedResult) {
-      let message: string
-      if (this.originalSessionResult == this.forcedResult || !this.overrideResult) {
-        message = "Are you sure you want to revert to the test session's original result?"
+      let message: string;
+      if (!this.overrideResult && this.comments != undefined) {
+        message = "Are you sure you want to revert to the test session's original result?";
       } else {
         message = "Are you sure you want to change the test session's result?";
       }
@@ -152,18 +166,24 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
       let contentToSave = this.commentContent;
       if (!this.textProvided(contentToSave)) contentToSave = undefined;
       let forcedResultToSave = this.forcedResult;
-      if (!this.overrideResult) forcedResultToSave = undefined;
-      this.testService.updateTestSessionAdminComment(this.sessionId, contentToSave, forcedResultToSave, !this.disableUserComment).subscribe((result) => {
+      let forcedOutputMessageToSave = this.forcedOutputMessage;
+      if (!this.overrideResult) {
+        forcedResultToSave = undefined;
+        forcedOutputMessageToSave = undefined;
+      }
+      this.testService.updateTestSessionAdminComment(this.sessionId, contentToSave, forcedResultToSave, forcedOutputMessageToSave, !this.disableUserComment).subscribe((result) => {
         this.comments = result;
         this.parseCommentData(true);
         this.editMode = false;
         if (hasNewForcedResult) {
           if (forcedResultToSave != undefined) {
             this.sessionResult = forcedResultToSave;
+            this.sessionOutputMessage = forcedOutputMessageToSave;
           } else {
             this.sessionResult = this.originalSessionResult;
+            this.sessionOutputMessage = this.originalSessionOutputMessage;
           }
-          this.updateResult.emit(this.sessionResult);
+          this.signalResultUpdate();
           this.popupService.success('Comment saved and result changed.');
         } else {
           this.popupService.success('Comment saved.');
@@ -172,6 +192,16 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
         this.savePending = false;
       });
     });
+  }
+
+  private signalResultUpdate() {
+    if (this.sessionResult == 'SUCCESS' || this.sessionResult == 'FAILURE' || this.sessionResult == 'UNDEFINED') {
+      this.updateResult.emit({
+        sessionId: this.sessionId,
+        result: this.sessionResult,
+        outputMessage: this.sessionOutputMessage
+      });
+    }
   }
 
   private parseCommentData(fireEvents: boolean) {
@@ -247,14 +277,15 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
       popupMessage = "Comment deleted.";
     }
     this.confirmationDialogService.confirmedDangerous("Delete comment", message, actionButton, "Cancel").subscribe(() => {
-      this.testService.updateTestSessionAdminComment(this.sessionId, undefined, undefined, undefined).subscribe((result) => {
+      this.testService.updateTestSessionAdminComment(this.sessionId, undefined, undefined, undefined, undefined).subscribe((result) => {
         this.comments = result;
         this.sessionResult = this.originalSessionResult;
+        this.sessionOutputMessage = this.originalSessionOutputMessage;
         this.parseCommentData(true);
         this.editMode = false;
         this.popupService.success(popupMessage);
         if (hasForcedResult) {
-          this.updateResult.emit(this.sessionResult);
+          this.signalResultUpdate();
         }
       }).add(() => {
         this.deletePending = false;

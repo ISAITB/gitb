@@ -2,7 +2,7 @@
     <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
     <div class="modal-title">Test session comments</div>
 </div>
-<form>
+<form (ngSubmit)="saveComment()">
     <div class="modal-body">
         @if (editMode) {
             <div class="row">
@@ -11,8 +11,8 @@
                 </div>
             </div>
             @if (editingAdminComment) {
-                <div class="row pt-3 align-items-center">
-                    <div class="col-12 col-lg-4">
+                <div class="row mt-3 row-cols-auto align-items-center gx-4">
+                    <div class="col-auto">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="disableUserComment" name="disableUserComment" [(ngModel)]="disableUserComment">
                             <label class="form-check-label" for="disableUserComment">Disable comment updates
@@ -20,28 +20,43 @@
                             </label>
                         </div>
                     </div>
-                    <div class="col-auto col-lg-4">
+                    <div class="col-auto">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="overrideResult" name="overrideResult" [(ngModel)]="overrideResult">
                             <label class="form-check-label" for="overrideResult">Override test session result
-                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Override the test session result. Doing so may result in a change of status in the related conformance statement, enable generation of reports, and trigger webhook executions (if configured)."></div>
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Override the test session result. Doing so may result in a change of status of the related conformance statement, enable generation of reports, and trigger webhook executions (if configured)."></div>
                             </label>
                         </div>
                     </div>
-                    <div class="col-5 col-lg-4 result-container" [class.invisible]="!overrideResult">
-                        <div class="btn-group result w-100" ngbDropdown>
-                            <button id="button-result" ngbDropdownToggle type="button" class="form-control w-100 d-flex align-items-center" aria-controls="dropdown-result">
-                                <div class="result-option">
-                                    <span class="result-icon"><i [class]="dataService.iconForTestResult(forcedResult)"></i></span> {{ dataService.tooltipForTestResult(forcedResult) }}
+                </div>
+                <div [ngbCollapse]="!overrideResult" [animation]="true">
+                    <app-form-section sectionTitle="Test session result" [marginBefore]="true">
+                        <div class="row pt-3">
+                            <label class="col-3 col-form-label text-end" for="outputMessage">Result:</label>
+                            <div class="col-5 col-lg-4 result-container">
+                                <div class="btn-group result w-100" ngbDropdown>
+                                    <button id="button-result" ngbDropdownToggle type="button" class="form-control w-100 d-flex align-items-center" aria-controls="dropdown-result">
+                                        <div class="result-option">
+                                            <span class="result-icon"><i [class]="dataService.iconForTestResult(forcedResult)"></i></span> {{ dataService.tooltipForTestResult(forcedResult) }}
+                                        </div>
+                                    </button>
+                                    <div id="dropdown-iterations" ngbDropdownMenu aria-labelledby="button-result" class="w-100">
+                                        <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.SUCCESS)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.SUCCESS) }}</div></button>
+                                        <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.FAILURE)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.FAILURE) }}</div></button>
+                                        <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.UNDEFINED)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED) }}</div></button>
+                                    </div>
                                 </div>
-                            </button>
-                            <div id="dropdown-iterations" ngbDropdownMenu aria-labelledby="button-result" class="w-100">
-                                <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.SUCCESS)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.SUCCESS) }}</div></button>
-                                <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.FAILURE)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.FAILURE) }}</div></button>
-                                <button ngbDropdownItem type="button" (click)="selectResult(Constants.TEST_CASE_RESULT.UNDEFINED)"><div class="result-option"><span class="result-icon"><i [class]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)"></i></span> {{ dataService.tooltipForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED) }}</div></button>
                             </div>
+                            <div app-tooltip class="col-auto" tbTooltip="The test session result to apply. Note that changing this may change the status of the related conformance statement."></div>
                         </div>
-                    </div>
+                        <div class="row pt-3">
+                            <label class="col-3 col-form-label text-end" for="outputMessage">Result message:</label>
+                            <div class="col-8">
+                                <textarea ctrlEnterSubmit id="outputMessage" name="outputMessage" [(ngModel)]="forcedOutputMessage" class="form-control"></textarea>
+                            </div>
+                            <div app-tooltip class="col-auto" tbTooltip="The result message presented as part of the test session's execution diagram. If empty, no message will be displayed."></div>
+                        </div>
+                    </app-form-section>
                 </div>
             }
         } @else {

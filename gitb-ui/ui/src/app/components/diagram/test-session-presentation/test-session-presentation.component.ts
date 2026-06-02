@@ -13,9 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import { DiagramLoaderService } from './diagram-loader.service';
 import { SessionData } from './session-data';
+import {TestSessionPresentationApi} from './test-session-presentation-api';
+import {OutputMessageDisplayApi} from '../../output-message-display/output-message-display-api';
 
 @Component({
     selector: 'app-test-session-presentation',
@@ -23,14 +25,19 @@ import { SessionData } from './session-data';
     styleUrl: './test-session-presentation.component.less',
     standalone: false
 })
-export class TestSessionPresentationComponent implements OnInit {
+export class TestSessionPresentationComponent implements OnInit, TestSessionPresentationApi {
 
   @Input() session!: SessionData
   @Output() ready = new EventEmitter<SessionData>()
+  @ViewChild('outputMessageDisplayComponent') outputMessageDisplayComponent?: OutputMessageDisplayApi
 
   constructor(
     private readonly diagramLoaderService: DiagramLoaderService
   ) { }
+
+  sessionId(): string {
+    return this.session.session
+  }
 
   ngOnInit(): void {
     if (this.session.diagramState) {
@@ -41,6 +48,14 @@ export class TestSessionPresentationComponent implements OnInit {
         this.session.diagramState = data
         this.ready.emit(this.session)
       })
+    }
+  }
+
+  updateOutputMessage(message: string|undefined, result: "SUCCESS"|"FAILURE"|"UNDEFINED"): void {
+    if (this.session.diagramState) {
+      this.session.diagramState.outputMessage = message;
+      this.session.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(result);
+      this.outputMessageDisplayComponent?.update(message??'');
     }
   }
 

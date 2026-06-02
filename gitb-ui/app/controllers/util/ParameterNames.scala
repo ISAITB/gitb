@@ -305,6 +305,7 @@ object ParameterNames {
   val MONITOR = "monitor"
   val COMMENT = "comment"
   val RESULT = "result"
+  val OUTPUT = "output"
   val ALLOWED = "allowed"
 
 }

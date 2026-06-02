@@ -13,17 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {TestResultMinimal} from './test-result-minimal';
+export interface TestSessionPresentationApi {
 
-export interface TestResult extends TestResultMinimal{
-
-    systemId?: number,
-    actorId?: number,
-    testId?: number,
-    specificationId?: number,
-    startTime: string,
-    endTime?: string,
-    tpl?: string,
-    obsolete: boolean
+  sessionId(): string;
+  updateOutputMessage(message: string, messageType: string): void;
 
 }

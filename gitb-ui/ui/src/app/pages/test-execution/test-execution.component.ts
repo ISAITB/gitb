@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {Observable, of, Subscription, throwError, timer} from 'rxjs';
@@ -54,6 +54,7 @@ import {NgbModal, NgbModalRef} from '@ng-bootstrap/ng-bootstrap';
 import {UserInteractionInput} from '../../types/user-interaction-input';
 import {CheckBoxOptionPanelComponentApi} from '../../components/checkbox-option-panel/check-box-option-panel-component-api';
 import {TestResultCommentsModalComponent} from '../../modals/test-result-comments-modal/test-result-comments-modal.component';
+import {OutputMessageDisplayApi} from '../../components/output-message-display/output-message-display-api';
 
 @Component({
   selector: 'app-test-execution',
@@ -141,6 +142,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     ]
   ]
   @ViewChild("testOptionsControl") testOptionsControl?: CheckBoxOptionPanelComponentApi
+  @ViewChildren("outputMessageDisplayComponent") outputMessageDisplayComponents?: QueryList<OutputMessageDisplayApi>
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -1348,14 +1350,15 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
         const modalInstance = modal.componentInstance as TestResultCommentsModalComponent;
         modalInstance.sessionId = testCase.sessionId!;
         modalInstance.sessionResult = this.statusToTestCaseResult(this.testCaseStatus[testCase.id]);
+        modalInstance.sessionOutputMessage = this.testCaseOutput[testCase.id];
         modalInstance.sessionOwner = this.organisationId;
         modalInstance.sessionOwnerName = this.organisationName();
         modalInstance.comments = comments;
         modalInstance.commentsEditable = true;
         modalInstance.updateResult.subscribe((result) => {
-          if (result == 'SUCCESS' || result == 'FAILURE' || result == 'UNDEFINED') {
-            this.updateTestCaseStatus(testCase.id, this.testCaseResultToStatus(result));
-          }
+          this.updateTestCaseStatus(testCase.id, this.testCaseResultToStatus(result.result));
+          this.testCaseOutput[testCase.id] = result.outputMessage??'';
+          this.outputMessageDisplayComponents?.find(display => display.testCaseIdReference() === testCase.id)?.update(this.testCaseOutput[testCase.id]);
         });
         modalInstance.commentUpdate.subscribe((hasComments) => {
           this.testCaseWithComments[testCase.id] = hasComments;

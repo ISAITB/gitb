@@ -25,6 +25,7 @@ import {TestCaseDefinitionActors} from '../types/test-case-definition-actors';
 import {ErrorDescription} from '../types/error-description';
 import {Value} from '../types/value';
 import {TestResultComments} from '../types/test-result-comments';
+import {TestResultMinimal} from '../types/test-result-minimal';
 
 @Injectable({
   providedIn: 'root'
@@ -232,6 +233,13 @@ export class TestService {
     })
   }
 
+  getTestSessionResultMinimal(sessionId: string) {
+    return this.restService.get<TestResultMinimal|undefined>({
+      path: ROUTES.controllers.RepositoryService.getTestSessionResultMinimal(sessionId).url,
+      authenticate: true
+    })
+  }
+
   updateTestSessionUserComment(sessionId: string, comment: string|undefined) {
     return this.restService.post<TestResultComments|undefined>({
       path: ROUTES.controllers.TestService.updateTestSessionUserComment(sessionId).url,
@@ -242,12 +250,13 @@ export class TestService {
     })
   }
 
-  updateTestSessionAdminComment(sessionId: string, comment: string|undefined, forcedResult: string|undefined, userCommentAllowed: boolean|undefined) {
+  updateTestSessionAdminComment(sessionId: string, comment: string|undefined, forcedResult: string|undefined, forcedOutputMessage: string|undefined, userCommentAllowed: boolean|undefined) {
     return this.restService.post<TestResultComments|undefined>({
       path: ROUTES.controllers.TestService.updateTestSessionAdminComment(sessionId).url,
       data: {
         comment: comment,
         result: forcedResult,
+        output: forcedOutputMessage,
         allowed: userCommentAllowed
       },
       authenticate: true

@@ -371,8 +371,9 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageTestSession(request, sessionId, requireAdmin = true, requireOwnTestSessionIfNotAdmin = true).flatMap { _ =>
       val comment = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMENT).map(HtmlUtil.sanitizeMinimalEditorContent)
       val forcedResult = ParameterExtractor.optionalBodyParameter(request, ParameterNames.RESULT).map(TestResultType.fromValue)
+      val forcedOutputMessage = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OUTPUT)
       val userCommentAllowed = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED).forall(_.toBoolean)
-      testExecutionManager.updateTestSessionAdminComment(sessionId, comment, forcedResult, userCommentAllowed).map { comments =>
+      testExecutionManager.updateTestSessionAdminComment(sessionId, comment, forcedResult, forcedOutputMessage, userCommentAllowed).map { comments =>
         serializeTestResultComments(comments)
       }
     }
