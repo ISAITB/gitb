@@ -63,6 +63,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     public void initialiseTestCase(TestCase currentTestCase) {
         super.initialiseTestCase(currentTestCase);
         testCaseScope.clear();
+        testCaseScope.put(Utils.ACTOR_MAP, true);
         testCaseScope.put(Utils.DOMAIN_MAP, true);
         testCaseScope.put(Utils.ORGANISATION_MAP, true);
         testCaseScope.put(Utils.SYSTEM_MAP, true);
@@ -538,6 +539,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         reportCustomPropertyUsage(ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE, context.getCustomDomainParametersUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ORGANISATION_VARIABLE, context.getCustomOrganisationPropertiesUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_SYSTEM_VARIABLE, context.getCustomSystemPropertiesUsed());
+        reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ACTOR_VARIABLE, context.getCustomActorParametersUsed());
     }
 
     private void reportCustomPropertyUsage(ErrorCode code, Collection<String> propertyNames) {

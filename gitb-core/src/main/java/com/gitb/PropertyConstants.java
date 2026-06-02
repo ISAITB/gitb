@@ -39,6 +39,7 @@ public class PropertyConstants {
     public static final String TEST_SERVICE_API_TYPE_SOAP = "SOAP";
     public static final String TEST_SERVICE_API_TYPE_REST = "REST";
 
+    public static final String ACTOR_MAP = "ACTOR";
     public static final String DOMAIN_MAP = "DOMAIN";
     public static final String ORGANISATION_MAP = "ORGANISATION";
     public static final String SYSTEM_MAP = "SYSTEM";
@@ -77,7 +78,7 @@ public class PropertyConstants {
 
     public static final String SYSTEM_MAP_API_KEY = "apiKey";
 
-    private static final Set<String> BUILT_IN_PROPERTIES = Set.of(DOMAIN_MAP, ORGANISATION_MAP, SYSTEM_MAP, SESSION_MAP, STEP_STATUS_MAP, STEP_SUCCESS_MAP, TEST_SUCCESS);
+    private static final Set<String> BUILT_IN_PROPERTIES = Set.of(ACTOR_MAP, DOMAIN_MAP, ORGANISATION_MAP, SYSTEM_MAP, SESSION_MAP, STEP_STATUS_MAP, STEP_SUCCESS_MAP, TEST_SUCCESS);
 
     public static boolean isBuiltInProperty(String name) {
         return name != null && BUILT_IN_PROPERTIES.contains(name);

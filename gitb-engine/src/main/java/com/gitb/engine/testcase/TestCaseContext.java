@@ -315,7 +315,8 @@ public class TestCaseContext {
         traverseSteps(testCase.getSteps(), new StepTraversalState(null, this, new LinkedList<>(), expressionHandlerStack, testCase), List.of(transactionInfoVisitor, persistentReportVisitor));
         requiresPersistentReports = persistentReportVisitor.isPersistentReportsNeeded();
         List<SUTConfiguration> sutConfigurations = configureDynamicActorProperties(testCase, configurations, transactionInfoVisitor.getTransactions());
-		bindActorConfigurationsToScope();
+		var actorConfigurationMap = bindActorConfigurationsToScope();
+		addSpecialConfiguration(ACTOR_MAP, actorConfigurationMap);
         return sutConfigurations;
     }
 
@@ -354,7 +355,7 @@ public class TestCaseContext {
 				if (input != null) {
 					if (input.getName() == null) {
 						logger.warn("Session [{}] received input with no name", getSessionId());
-					} else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP)) {
+					} else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP) || input.getName().equals(ACTOR_MAP)) {
 						logger.warn("Session [{}] received input with reserved name [{}]", getSessionId(), input.getName());
 					} else {
 						// Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables
@@ -397,12 +398,18 @@ public class TestCaseContext {
         }
     }
 
-	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration domainConfiguration) {
-		if (domainConfiguration != null) {
-			DataTypeFactory factory = DataTypeFactory.getInstance();
+	private void addSpecialConfiguration(String mapVariableName, MapType configurationMap) {
+		if (configurationMap != null) {
 			TestCaseScope.ScopedVariable variable = scope.createVariable(mapVariableName);
+			variable.setValue(configurationMap);
+		}
+	}
+
+	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration configurationData) {
+		if (configurationData != null) {
+			DataTypeFactory factory = DataTypeFactory.getInstance();
 			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
-			for (Configuration configuration : domainConfiguration.getConfig()) {
+			for (Configuration configuration : configurationData.getConfig()) {
 				DataType configurationValue;
 				if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
 					// Data URL
@@ -416,7 +423,7 @@ public class TestCaseContext {
 				}
 				map.addItem(configuration.getName(), configurationValue);
 			}
-			variable.setValue(map);
+			addSpecialConfiguration(mapVariableName, map);
 		}
 	}
 
@@ -449,16 +456,13 @@ public class TestCaseContext {
 		}
 	}
 
-	private void bindActorConfigurationsToScope() {
-
+	private MapType bindActorConfigurationsToScope() {
 		DataTypeFactory factory = DataTypeFactory.getInstance();
-
-		for(ActorConfiguration actorConfiguration : sutConfigurations.values()) {
+		MapType map = null;
+		for (ActorConfiguration actorConfiguration : sutConfigurations.values()) {
 			TestCaseScope.ScopedVariable variable = scope.createVariable(actorConfiguration.getActor());
-
-			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
-
-			for(Configuration configuration : actorConfiguration.getConfig()) {
+			map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
+			for (Configuration configuration : actorConfiguration.getConfig()) {
 				DataType configurationValue;
 				if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
 					// Data URL
@@ -472,14 +476,11 @@ public class TestCaseContext {
 				}
 				map.addItem(configuration.getName(), configurationValue);
 			}
-
 			List<ActorConfiguration> actorSUTConfigurations = sutHandlerConfigurations.get(new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()}));
-
 			if (actorSUTConfigurations != null) {
-				for(ActorConfiguration sutConfiguration : actorSUTConfigurations) {
+				for (ActorConfiguration sutConfiguration : actorSUTConfigurations) {
 					if (sutConfiguration != null) {
 						MapType sutConfigurationMap = (MapType) factory.create(DataType.MAP_DATA_TYPE);
-
 						for(Configuration configuration : sutConfiguration.getConfig()) {
 							DataType configurationValue;
 							if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
@@ -494,14 +495,13 @@ public class TestCaseContext {
 							}
 							sutConfigurationMap.addItem(configuration.getName(), configurationValue);
 						}
-
 						map.addItem(sutConfiguration.getActor(), sutConfigurationMap);
 					}
 				}
 			}
-
 			variable.setValue(map);
 		}
+		return map;
 	}
 
 	private TestRoleEnumeration actorRole(TestRole role) {

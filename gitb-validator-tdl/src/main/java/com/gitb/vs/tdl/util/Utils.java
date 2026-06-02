@@ -49,6 +49,7 @@ import java.util.zip.ZipInputStream;
 
 public class Utils {
 
+    public static final String ACTOR_MAP = "ACTOR";
     public static final String DOMAIN_MAP = "DOMAIN";
     public static final String ORGANISATION_MAP = "ORGANISATION";
     public static final String ORGANISATION_MAP_SHORT_NAME = "shortName";
