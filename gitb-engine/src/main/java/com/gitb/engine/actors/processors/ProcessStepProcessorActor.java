@@ -199,6 +199,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
 
     @Override
     protected void stop() {
+        super.stop();
         if (promise != null) {
             promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step [" + stepId + "] is cancelled.")));
         }

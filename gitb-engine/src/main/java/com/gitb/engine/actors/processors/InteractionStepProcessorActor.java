@@ -819,6 +819,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     @Override
     protected void stop() {
+        super.stop();
         if (promise != null && !promise.isCompleted()) {
             promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
         }

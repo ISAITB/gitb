@@ -18,10 +18,10 @@ package com.gitb.engine.actors.processors;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
+import com.gitb.engine.events.model.ExitEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
-import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.ScriptletInfo;
 import com.gitb.engine.utils.StepContext;
@@ -84,6 +84,9 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	@Override
 	protected void handleStatusEvent(StatusEvent event) {
 		StepStatus status = event.getStatus();
+		if (event instanceof ExitEvent exitEvent && exitEvent.getExitScope() != ExitScopeType.SCRIPTLET) {
+			setExitScopeToReport(exitEvent.getExitScope());
+		}
 		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
 			generateOutput();
 			if (status == StepStatus.COMPLETED) {
@@ -97,7 +100,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	private void generateOutput() {
-		if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+		if (isRunnable()) {
 			Set<String> specificOutputsToReturn = new HashSet<>();
 			for (var output: step.getOutput()) {
 				if (StringUtils.isNotBlank(output.getName())) {

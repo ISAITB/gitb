@@ -21,6 +21,7 @@ import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.events.TestStepStatusEventBus;
+import com.gitb.engine.events.model.ExitEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
@@ -28,8 +29,8 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.tr.TestResultType;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -139,76 +140,43 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
             return;
         }
         StepStatus status = event.getStatus();
-        //If a step is completed, continue from next step
-        int senderUid = getSender().path().uid();
-        int completedStepIndex = childActorUidIndexMap.get(senderUid);
-        Object childStep = childSteps.get(senderUid);
-
-        childStepStatuses.put(completedStepIndex, status);
-
         if (status == StepStatus.COMPLETED
                 || status == StepStatus.WARNING
                 || status == StepStatus.ERROR
                 || status == StepStatus.SKIPPED) {
-
             ActorRef nextStep = null;
-            if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+            int senderUid = getSender().path().uid();
+            int completedStepIndex = childActorUidIndexMap.get(senderUid);
+            Object childStep = childSteps.get(senderUid);
+            childStepStatuses.put(completedStepIndex, status);
+            if (isRunnable()) {
+                ExecutionFlags executionFlags;
+                boolean nextStepAlwaysSkipped = false;
+                if (event instanceof ExitEvent exitEvent) {
+                    nextStepAlwaysSkipped = true;
+                    if (exitEvent.getExitScope() != ExitScopeType.SEQUENCE) {
+                        /*
+                         * For exit scopes other than 'SEQUENCE' further processing may be needed by steps further
+                         * up the hierarchy. To achieve this we ensure the received status gets propagated up
+                         * the call stack.
+                         */
+                        setExitScopeToReport(exitEvent.getExitScope());
+                    }
+                }
                 if (status == StepStatus.ERROR && childStep instanceof TestConstruct construct) {
-                    boolean stopExecution;
-                    boolean skipNextStep;
-                    if (Boolean.TRUE.equals(construct.isStopOnError())) {
-                        if (Boolean.FALSE.equals(step.isStopOnChildError())) {
-                            stopExecution = false;
-                            skipNextStep = false;
-                        } else if (Boolean.TRUE.equals(step.isStopOnChildError())) {
-                            skipNextStep = true;
-                            if (Boolean.FALSE.equals(stepContext.parentStopOnChildError())) {
-                                stopExecution = false;
-                            } else if (Boolean.TRUE.equals(stepContext.parentStopOnChildError())) {
-                                stopExecution = Boolean.TRUE.equals(stepContext.parentStopOnError());
-                            } else {
-                                stopExecution = false;
-                            }
-                        } else {
-                            stopExecution = true;
-                            skipNextStep = true;
-                        }
-                    } else {
-                        if (Boolean.TRUE.equals(step.isStopOnError())) {
-                            if (Boolean.FALSE.equals(step.isStopOnChildError())) {
-                                stopExecution = false;
-                                skipNextStep = false;
-                            } else if (Boolean.TRUE.equals(step.isStopOnChildError())) {
-                                stopExecution = true;
-                                skipNextStep = true;
-                            } else {
-                                stopExecution = true;
-                                skipNextStep = true;
-                            }
-                        } else {
-                            if (Boolean.TRUE.equals(step.isStopOnChildError())) {
-                                stopExecution = false;
-                                skipNextStep = true;
-                            } else if (Boolean.FALSE.equals(step.isStopOnChildError())) {
-                                stopExecution = false;
-                                skipNextStep = false;
-                            } else {
-                                stopExecution = false;
-                                skipNextStep = false;
-                            }
-                        }
-                    }
-                    if (stopExecution) {
-                        scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
-                        try {
-                            getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
-                        } catch (Exception e) {
-                            LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [{}].", stepId);
-                        }
-                    } else if (!skipNextStep) {
-                        nextStep = startTestStepAtIndex(completedStepIndex + 1);
-                    }
+                    executionFlags = determineExecutionFlagsForError(construct, nextStepAlwaysSkipped);
                 } else {
+                    executionFlags = new ExecutionFlags(false, nextStepAlwaysSkipped);
+                }
+                // Look up and start next step (if allowed to).
+                if (executionFlags.stopExecution()) {
+                    scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+                    try {
+                        getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
+                    } catch (Exception e) {
+                        LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [{}].", stepId);
+                    }
+                } else if (!executionFlags.skipNextStep()) {
                     // Proceed.
                     nextStep = startTestStepAtIndex(completedStepIndex + 1);
                 }
@@ -292,4 +260,31 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     public static ActorRef create(ActorContext context, Sequence step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
         return create(SequenceProcessorActor.class, context, step, scope, stepId, stepContext);
     }
+
+    private ExecutionFlags determineExecutionFlagsForError(TestConstruct construct, boolean nextStepAlwaysSkipped) {
+        ExecutionFlags executionFlags;
+        if (Boolean.TRUE.equals(construct.isStopOnError())) {
+            if (Boolean.FALSE.equals(step.isStopOnChildError())) {
+                executionFlags = new ExecutionFlags(false, nextStepAlwaysSkipped);
+            } else if (Boolean.TRUE.equals(step.isStopOnChildError())) {
+                executionFlags = new ExecutionFlags(Boolean.TRUE.equals(stepContext.parentStopOnChildError()), true);
+            } else {
+                executionFlags = new ExecutionFlags(true, true);
+            }
+        } else {
+            if (Boolean.TRUE.equals(step.isStopOnError())) {
+                if (Boolean.FALSE.equals(step.isStopOnChildError())) {
+                    executionFlags = new ExecutionFlags(false, nextStepAlwaysSkipped);
+                } else {
+                    executionFlags = new ExecutionFlags(true, true);
+                }
+            } else {
+                executionFlags = new ExecutionFlags(false, Boolean.TRUE.equals(step.isStopOnChildError()));
+            }
+        }
+        return executionFlags;
+    }
+
+    private record ExecutionFlags(boolean stopExecution, boolean skipNextStep) {}
+
 }

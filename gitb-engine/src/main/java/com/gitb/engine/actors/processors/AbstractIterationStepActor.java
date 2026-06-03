@@ -18,15 +18,12 @@ package com.gitb.engine.actors.processors;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.TestEngineConfiguration;
+import com.gitb.engine.events.model.ExitEvent;
 import com.gitb.engine.events.model.StatusEvent;
-import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tdl.ForEachStep;
-import com.gitb.tdl.RepeatUntilStep;
-import com.gitb.tdl.TestConstruct;
-import com.gitb.tdl.WhileStep;
+import com.gitb.tdl.*;
 import com.gitb.utils.ErrorUtils;
 
 /**
@@ -73,8 +70,16 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 		}
 		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED || status == StepStatus.SKIPPED) {
 			// Final state for the step.
-			boolean stopping = scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPING || scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPED;
-			boolean shouldContinue = !stopping && (status != StepStatus.ERROR || !(step instanceof TestConstruct construct) || !Boolean.TRUE.equals(construct.isStopOnError()));
+			boolean exitingLoop = false;
+			if (event instanceof ExitEvent exitEvent) {
+				// Ensure we don't execute other iterations.
+				exitingLoop = true;
+				if (exitEvent.getExitScope() != ExitScopeType.LOOP) {
+					// Exit scope that may be interesting to steps further up the hierarchy.
+					setExitScopeToReport(exitEvent.getExitScope());
+				}
+			}
+			boolean shouldContinue = isRunnable() && !exitingLoop && (status != StepStatus.ERROR || !(step instanceof TestConstruct construct) || !Boolean.TRUE.equals(construct.isStopOnError()));
 			if (shouldContinue) {
 				shouldContinue = handleStatusEventInternal(event);
 			}
