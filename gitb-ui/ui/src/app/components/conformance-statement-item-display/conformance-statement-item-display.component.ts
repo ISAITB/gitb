@@ -237,7 +237,11 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   }
 
   updateChecked() {
-    this.notifyForSelectionChange()
+    if (this.hasChildren) {
+      this.itemSelected(this.item.items![0])
+    } else {
+      this.itemSelected()
+    }
   }
 
   expanded() {
