@@ -43,7 +43,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 	def updateTestSuiteMetadata(testSuiteId:Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canEditTestSuite(request, testSuiteId).flatMap { _ =>
 			val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
-			val version:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VERSION)
+			val version:String = ParameterExtractor.optionalBodyParameter(request, ParameterNames.VERSION).getOrElse("")
 			val order:Short = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ORDER).toShort
 			val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
 			val specReference = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_REFERENCE)
