@@ -1,5 +1,5 @@
 # Stage 1: Build app
-FROM sbtscala/scala-sbt:eclipse-temurin-jammy-21.0.2_13_1.10.0_2.13.14 AS builder
+FROM sbtscala/scala-sbt:eclipse-temurin-25.0.1_8_1.12.11_2.13.18 AS builder
 
 # Install nodejs and npm (to build frontend app)
 ENV NVM_DIR=/usr/local/nvm
@@ -14,11 +14,13 @@ ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
 # Install Maven to build shared snapshot dependencies
-ARG MAVEN_VERSION=3.9.8
-ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
+ARG MAVEN_VERSION=3.9.16
+ARG BASE_URL=https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries
+ARG BASE_URL_FALLBACK=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries
 ARG USER_HOME_DIR="/root"
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
-    && curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    && (curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+        || curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL_FALLBACK}/apache-maven-${MAVEN_VERSION}-bin.tar.gz) \
     && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
     && rm -f /tmp/apache-maven.tar.gz \
     && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
@@ -42,7 +44,7 @@ RUN mkdir -p /app/tmp \
     && mv /app/tmp/gitb-ui/gitb-1.0-SNAPSHOT /app/tmp/gitb-ui/gitb-ui
 
 # Stage 2: Run application
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 ARG APPLICATION_SECRET=""
 ARG HMAC_KEY=""
