@@ -2,6 +2,7 @@ FROM eclipse-temurin:25-jre-jammy
 
 RUN mkdir /itbsrv
 COPY itbsrv.war /itbsrv
+COPY extra-configs /itbsrv/extra-configs
 RUN sh -c 'touch /itbsrv/itbsrv.war'
 
 EXPOSE 8080-8090

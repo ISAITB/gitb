@@ -1,0 +1,3 @@
+# Placeholder to keep the directory in source control.
+# CI may add fallback configuration files in this folder at image build time.
+

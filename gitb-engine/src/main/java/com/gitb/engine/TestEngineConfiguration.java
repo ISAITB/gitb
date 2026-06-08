@@ -90,6 +90,9 @@ public class TestEngineConfiguration {
 	private static final String ENV_TEMP_STORAGE_BINARY_THRESHOLD = "GITB_ENGINE_STORAGE_BINARY_THRESHOLD";
 	private static final String ENV_TEMP_STORAGE_STRING_THRESHOLD = "GITB_ENGINE_STORAGE_STRING_THRESHOLD";
 	private static final String ENV_TEMP_STORAGE_XML_THRESHOLD = "GITB_ENGINE_STORAGE_XML_THRESHOLD";
+	private static final String ENV_FILE_SUFFIX = "_FILE";
+	private static final String ENV_DEV_FILE_SUFFIX = "_FILE_DEV";
+	private static final Path DEFAULT_EXTRA_CONFIGS_PATH = Path.of("/itbsrv/extra-configs");
 
     /**
      * Load the configurations from the configuration files
@@ -181,7 +184,10 @@ public class TestEngineConfiguration {
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
 			// Configure also the HMAC information used to authorize remote calls.
-			String hmacKey = getFromFileConfigOrEnvironment("HMAC_KEY", "devKey");
+			String hmacKey = getFromFileConfigOrEnvironment("HMAC_KEY", "");
+			if (hmacKey.isBlank()) {
+				throw new IllegalStateException("No HMAC key could be determined. Configure one of HMAC_KEY_FILE, HMAC_KEY, or HMAC_KEY_FILE_DEV.");
+			}
 			String hmacKeyWindow = System.getenv().getOrDefault("HMAC_WINDOW", "10000");
 			HmacUtils.configure(hmacKey, Long.valueOf(hmacKeyWindow));
 			// Remote repository - end.
@@ -261,22 +267,37 @@ public class TestEngineConfiguration {
 	}
 
 	private static String getFromFileConfigOrEnvironment(String baseName, String defaultValue) {
-		String filePathName = baseName+"_FILE";
+		String filePathName = baseName + ENV_FILE_SUFFIX;
 		if (System.getenv().containsKey(filePathName)) {
-			// Load from file.
-            try {
-				/*
-				 * In the case of gitb-ui and file-based secrets, values are always trimmed of
-				 * leading and trailing whitespace. Failing to do so in gitb-srv may lead to
-				 * inconsistencies and failures (e.g. a HMAC key that doesn't match).
-				 */
-                return Files.readString(Path.of(System.getenv(filePathName))).trim();
-            } catch (IOException e) {
-                throw new IllegalStateException("Error reading file", e);
-            }
-        } else {
-			// Load from environment variable or the default.
-			return System.getenv().getOrDefault(baseName, defaultValue);
+			return readSecretFromFile(Path.of(System.getenv(filePathName)));
+		}
+		if (System.getenv().containsKey(baseName)) {
+			return System.getenv(baseName);
+		}
+		String devFilePathName = baseName + ENV_DEV_FILE_SUFFIX;
+		String devFilePath = System.getenv(devFilePathName);
+		Path resolvedDevFilePath;
+		if (devFilePath != null && !devFilePath.isBlank()) {
+			resolvedDevFilePath = Path.of(devFilePath);
+		} else {
+			resolvedDevFilePath = DEFAULT_EXTRA_CONFIGS_PATH.resolve(baseName);
+		}
+		if (Files.isRegularFile(resolvedDevFilePath)) {
+			return readSecretFromFile(resolvedDevFilePath);
+		}
+		return defaultValue;
+	}
+
+	private static String readSecretFromFile(Path path) {
+		try {
+			/*
+			 * In the case of gitb-ui and file-based secrets, values are always trimmed of
+			 * leading and trailing whitespace. Failing to do so in gitb-srv may lead to
+			 * inconsistencies and failures (e.g. a HMAC key that doesn't match).
+			 */
+			return Files.readString(path).trim();
+		} catch (IOException e) {
+			throw new IllegalStateException("Error reading file", e);
 		}
 	}
 

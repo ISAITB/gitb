@@ -17,15 +17,41 @@ import config.Configurations
 import play.api.ApplicationLoader
 import play.api.inject.guice.{GuiceApplicationBuilder, GuiceApplicationLoader}
 
+import scala.collection.mutable.ArrayBuffer
+
 class CustomApplicationLoader extends GuiceApplicationLoader {
 
   override protected def builder(context: ApplicationLoader.Context): GuiceApplicationBuilder = {
     // Load application configurations before the applications starts.
     Configurations.loadConfigurations()
+    validateRequiredConfiguration(context)
     // Load proxy settings because Guice needs to read the system properties when wiring together classes such as Play's WSClient.
     setupProxy()
     // Allow WebJars to be injected into the ErrorHandler by allowing circular dependencies (which only occur in the error handler).
     super.builder(context).disableCircularProxies(false)
+  }
+
+  private def validateRequiredConfiguration(context: ApplicationLoader.Context): Unit = {
+    val missing = ArrayBuffer[String]()
+    if (Configurations.DB_PASSWORD.isBlank) {
+      missing += "DB_DEFAULT_PASSWORD"
+    }
+    if (Configurations.MASTER_PASSWORD == null || Configurations.MASTER_PASSWORD.forall(Character.isWhitespace)) {
+      missing += "MASTER_PASSWORD"
+    }
+    val conf = context.initialConfiguration
+    if (conf.getOptional[String]("play.http.secret.key").forall(_.isBlank)) {
+      missing += "APPLICATION_SECRET"
+    }
+    if (conf.getOptional[String]("hmac.key").forall(_.isBlank)) {
+      missing += "HMAC_KEY"
+    }
+    if (missing.nonEmpty) {
+      throw new IllegalStateException(
+        "Missing required secret configuration(s): %s. Configure each via *_FILE, environment variable, or *_FILE_DEV."
+          .formatted(missing.mkString(", "))
+      )
+    }
   }
 
   private def setupProxy(): Unit = {
