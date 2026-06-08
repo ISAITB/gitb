@@ -1,6 +1,6 @@
 #!/bin/bash
 
-resolve_file_fallback() {
+resolve_env_fallback() {
   local base_name="$1"
   local file_var_name="${base_name}_FILE"
   local value_var_name="${base_name}"
@@ -13,13 +13,15 @@ resolve_file_fallback() {
       dev_file_path="$default_dev_file"
     fi
     if [[ -f "$dev_file_path" ]]; then
-      export "$file_var_name=$dev_file_path"
+      local secret_value
+      secret_value="$(<"$dev_file_path")"
+      export "$value_var_name=$secret_value"
     fi
   fi
 }
 
-resolve_file_fallback "MYSQL_ROOT_PASSWORD"
-resolve_file_fallback "MYSQL_PASSWORD"
+resolve_env_fallback "MYSQL_ROOT_PASSWORD"
+resolve_env_fallback "MYSQL_PASSWORD"
 
 if [[ -n "$MYSQL_ROOT_PASSWORD_FILE" ]] ; then
   unset MYSQL_ROOT_PASSWORD
