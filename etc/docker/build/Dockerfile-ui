@@ -44,6 +44,11 @@ RUN mkdir -p /app/tmp \
 # Stage 2: Run application
 FROM eclipse-temurin:21-jre-jammy
 
+ARG APPLICATION_SECRET=""
+ARG HMAC_KEY=""
+ARG MASTER_PASSWORD=""
+ARG DB_DEFAULT_PASSWORD=""
+
 ENV PATH=/usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL=http://gitb-srv:8080/itbsrv/TestbedService
 ENV TESTBED_CLIENT_URL_INTERNAL=http://0.0.0.0:9090/TestbedClient
@@ -54,6 +59,11 @@ ENV REDIS_HOST=gitb-redis
 
 COPY --from=builder /app/tmp/gitb-ui/gitb-ui /usr/local/gitb-ui
 COPY --from=builder /app/etc/docker/gitb-ui/gitb-entrypoint.sh /usr/local/gitb-ui/bin
+RUN mkdir -p /usr/local/gitb-ui/conf/extra-configs \
+    && if [ -n "$APPLICATION_SECRET" ]; then printf '%s' "$APPLICATION_SECRET" > /usr/local/gitb-ui/conf/extra-configs/APPLICATION_SECRET; fi \
+    && if [ -n "$HMAC_KEY" ]; then printf '%s' "$HMAC_KEY" > /usr/local/gitb-ui/conf/extra-configs/HMAC_KEY; fi \
+    && if [ -n "$MASTER_PASSWORD" ]; then printf '%s' "$MASTER_PASSWORD" > /usr/local/gitb-ui/conf/extra-configs/MASTER_PASSWORD; fi \
+    && if [ -n "$DB_DEFAULT_PASSWORD" ]; then printf '%s' "$DB_DEFAULT_PASSWORD" > /usr/local/gitb-ui/conf/extra-configs/DB_DEFAULT_PASSWORD; fi
 RUN chmod +x /usr/local/gitb-ui/bin/gitb-entrypoint.sh
 
 EXPOSE 9000

@@ -10,6 +10,9 @@ services:
    gitb-mysql:
       build:
         context: ./etc/docker/gitb-mysql
+        args:
+         MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
+         MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
       restart: unless-stopped
       volumes:
        - gitb-dbdata:/var/lib/mysql
@@ -21,6 +24,8 @@ services:
       build:
         context: ./
         dockerfile: etc/docker/build/Dockerfile-srv
+        args:
+         HMAC_KEY: ${HMAC_KEY:-}
       restart: unless-stopped
       environment:
        - CALLBACK_ROOT_URL=http://localhost:8080/itbsrv
@@ -29,7 +34,12 @@ services:
    gitb-ui:
       build:
         context: ./
-        dockerfile: etc/docker/build/Dockerfile-ui   
+        dockerfile: etc/docker/build/Dockerfile-ui
+        args:
+         APPLICATION_SECRET: ${APPLICATION_SECRET:-}
+         HMAC_KEY: ${HMAC_KEY:-}
+         MASTER_PASSWORD: ${MASTER_PASSWORD:-}
+         DB_DEFAULT_PASSWORD: ${DB_DEFAULT_PASSWORD:-}
       restart: unless-stopped
       ports:
        - "9000:9000"
