@@ -147,14 +147,44 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
   }
 
   private def secretsSetForDevelopment(): Boolean = {
-    val appSecret = config.get[String]("play.http.secret.key")
-    val dbPassword = DB_PASSWORD
-    val hmacKey = HmacUtils.getKey
-    val masterPassword = String.valueOf(MASTER_PASSWORD)
-    appSecret == "value_used_during_development_to_be_replaced_in_production" || appSecret == "CHANGE_ME" ||
-      masterPassword == "value_used_during_development_to_be_replaced_in_production" || masterPassword == "CHANGE_ME" ||
-      dbPassword == "gitb" || dbPassword == "CHANGE_ME" ||
-      hmacKey == "devKey" || hmacKey == "CHANGE_ME"
+    val appSecret = Option(config.get[String]("play.http.secret.key")).map(_.trim).getOrElse("")
+    val dbPassword = Option(DB_PASSWORD).map(_.trim).getOrElse("")
+    val hmacKey = Option(HmacUtils.getKey).map(_.trim).getOrElse("")
+    val masterPassword = Option(String.valueOf(MASTER_PASSWORD)).map(_.trim).getOrElse("")
+
+    val developmentDefaults = Map(
+      "APPLICATION_SECRET" -> readDevSecretValue("APPLICATION_SECRET"),
+      "MASTER_PASSWORD" -> readDevSecretValue("MASTER_PASSWORD"),
+      "DB_DEFAULT_PASSWORD" -> readDevSecretValue("DB_DEFAULT_PASSWORD"),
+      "HMAC_KEY" -> readDevSecretValue("HMAC_KEY")
+    )
+
+    isSameAsDevelopmentDefault(appSecret, developmentDefaults("APPLICATION_SECRET")) ||
+      isSameAsDevelopmentDefault(masterPassword, developmentDefaults("MASTER_PASSWORD")) ||
+      isSameAsDevelopmentDefault(dbPassword, developmentDefaults("DB_DEFAULT_PASSWORD")) ||
+      isSameAsDevelopmentDefault(hmacKey, developmentDefaults("HMAC_KEY"))
+  }
+
+  private def isSameAsDevelopmentDefault(currentValue: String, developmentDefault: Option[String]): Boolean = {
+    currentValue.nonEmpty && (developmentDefault.contains(currentValue) || currentValue.equalsIgnoreCase("CHANGE_ME"))
+  }
+
+  private def readDevSecretValue(secretName: String): Option[String] = {
+    val path = sys.env.get(secretName + "_FILE_DEV") match {
+      case Some(envPath) if envPath.trim.nonEmpty => Path.of(envPath.trim)
+      case _ => Path.of("/usr/local/gitb-ui/conf/extra-configs", secretName)
+    }
+    if (Files.isRegularFile(path)) {
+      try {
+        Option(Files.readString(path).trim).filter(_.nonEmpty)
+      } catch {
+        case e: Exception =>
+          logger.warn("Unable to read development fallback configuration file [{}]", path.toAbsolutePath, e)
+          None
+      }
+    } else {
+      None
+    }
   }
 
   private def adaptSystemConfiguration(): Future[Unit] = {

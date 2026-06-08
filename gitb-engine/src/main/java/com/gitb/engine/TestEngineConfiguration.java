@@ -86,6 +86,17 @@ public class TestEngineConfiguration {
 	private static final String ENV_PROXY_NON_PROXY_HOSTS = "PROXY_SERVER_NON_PROXY_HOSTS";
 	private static final String ENV_PROXY_AUTH_USERNAME = "PROXY_SERVER_AUTH_USERNAME";
 	private static final String ENV_PROXY_AUTH_PASSWORD = "PROXY_SERVER_AUTH_PASSWORD";
+	private static final String ENV_TEMP_STORAGE_ENABLED = "GITB_ENGINE_STORAGE_ENABLED";
+	private static final String ENV_TEMP_STORAGE_LOCATION = "GITB_ENGINE_STORAGE_LOCATION";
+	private static final String ENV_TEMP_STORAGE_BINARY_ENABLED = "GITB_ENGINE_STORAGE_BINARY_ENABLED";
+	private static final String ENV_TEMP_STORAGE_STRING_ENABLED = "GITB_ENGINE_STORAGE_STRING_ENABLED";
+	private static final String ENV_TEMP_STORAGE_XML_ENABLED = "GITB_ENGINE_STORAGE_XML_ENABLED";
+	private static final String ENV_TEMP_STORAGE_BINARY_THRESHOLD = "GITB_ENGINE_STORAGE_BINARY_THRESHOLD";
+	private static final String ENV_TEMP_STORAGE_STRING_THRESHOLD = "GITB_ENGINE_STORAGE_STRING_THRESHOLD";
+	private static final String ENV_TEMP_STORAGE_XML_THRESHOLD = "GITB_ENGINE_STORAGE_XML_THRESHOLD";
+	private static final String ENV_FILE_SUFFIX = "_FILE";
+	private static final String ENV_DEV_FILE_SUFFIX = "_FILE_DEV";
+	private static final Path DEFAULT_EXTRA_CONFIGS_PATH = Path.of("/itbsrv/extra-configs");
 
     /**
      * Load the configurations from the configuration files
@@ -147,14 +158,14 @@ public class TestEngineConfiguration {
 			HANDLER_API_ROOT = rootCallbackUrl+HANDLER_API_SEGMENT+"/";
 			// Determine callback URLs - end.
 			// Temp storage properties - start.
-			TEMP_STORAGE_ENABLED = config.getBoolean("gitb.engine.storage.enabled", Boolean.TRUE);
-			TEMP_STORAGE_LOCATION = config.getString("gitb.engine.storage.location", "./temp/session/");
-			TEMP_STORAGE_BINARY_ENABLED = config.getBoolean("gitb.engine.storage.binary.enabled", Boolean.TRUE);
-			TEMP_STORAGE_STRING_ENABLED = config.getBoolean("gitb.engine.storage.string.enabled", Boolean.TRUE);
-			TEMP_STORAGE_XML_ENABLED = config.getBoolean("gitb.engine.storage.xml.enabled", Boolean.TRUE);
-			TEMP_STORAGE_BINARY_THRESHOLD_BYTES = config.getLong("gitb.engine.storage.binary.threshold", 50 * 1024L); // 50 KB
-			TEMP_STORAGE_STRING_THRESHOLD_CHARS = config.getLong("gitb.engine.storage.string.threshold", 50 * 512L); // 50 KB (considering 2-byte encoding)
-			TEMP_STORAGE_XML_THRESHOLD_BYTES = config.getLong("gitb.engine.storage.xml.threshold", 50 * 1024L); // 50 KB
+			TEMP_STORAGE_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_ENABLED, config.getString("gitb.engine.storage.enabled", "true")));
+			TEMP_STORAGE_LOCATION = System.getenv().getOrDefault(ENV_TEMP_STORAGE_LOCATION, config.getString("gitb.engine.storage.location", "./temp/session/"));
+			TEMP_STORAGE_BINARY_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_BINARY_ENABLED, config.getString("gitb.engine.storage.binary.enabled", "true")));
+			TEMP_STORAGE_STRING_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_STRING_ENABLED, config.getString("gitb.engine.storage.string.enabled", "true")));
+			TEMP_STORAGE_XML_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_XML_ENABLED, config.getString("gitb.engine.storage.xml.enabled", "true")));
+			TEMP_STORAGE_BINARY_THRESHOLD_BYTES = Long.parseLong(System.getenv().getOrDefault(ENV_TEMP_STORAGE_BINARY_THRESHOLD, config.getString("gitb.engine.storage.binary.threshold", String.valueOf(50 * 1024L)))); // 50 KB
+			TEMP_STORAGE_STRING_THRESHOLD_CHARS = Long.parseLong(System.getenv().getOrDefault(ENV_TEMP_STORAGE_STRING_THRESHOLD, config.getString("gitb.engine.storage.string.threshold", String.valueOf(50 * 512L)))); // 50 KB (considering 2-byte encoding)
+			TEMP_STORAGE_XML_THRESHOLD_BYTES = Long.parseLong(System.getenv().getOrDefault(ENV_TEMP_STORAGE_XML_THRESHOLD, config.getString("gitb.engine.storage.xml.threshold", String.valueOf(50 * 1024L)))); // 50 KB
 			// Temp storage properties - end.
 			// Remote repository - start.
 			if (System.getenv().containsKey(ENV_REPOSITORY_TEST_CASE_URL)) {
@@ -176,7 +187,10 @@ public class TestEngineConfiguration {
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
 			// Configure also the HMAC information used to authorize remote calls.
-			String hmacKey = getFromFileConfigOrEnvironment("HMAC_KEY", "devKey");
+			String hmacKey = getFromFileConfigOrEnvironment("HMAC_KEY", "");
+			if (hmacKey.isBlank()) {
+				throw new IllegalStateException("No HMAC key could be determined. Configure one of HMAC_KEY_FILE, HMAC_KEY, or HMAC_KEY_FILE_DEV.");
+			}
 			String hmacKeyWindow = System.getenv().getOrDefault("HMAC_WINDOW", "10000");
 			HmacUtils.configure(hmacKey, Long.valueOf(hmacKeyWindow));
 			// Remote repository - end.
@@ -256,22 +270,37 @@ public class TestEngineConfiguration {
 	}
 
 	private static String getFromFileConfigOrEnvironment(String baseName, String defaultValue) {
-		String filePathName = baseName+"_FILE";
+		String filePathName = baseName + ENV_FILE_SUFFIX;
 		if (System.getenv().containsKey(filePathName)) {
-			// Load from file.
-            try {
-				/*
-				 * In the case of gitb-ui and file-based secrets, values are always trimmed of
-				 * leading and trailing whitespace. Failing to do so in gitb-srv may lead to
-				 * inconsistencies and failures (e.g. a HMAC key that doesn't match).
-				 */
-                return Files.readString(Path.of(System.getenv(filePathName))).trim();
-            } catch (IOException e) {
-                throw new IllegalStateException("Error reading file", e);
-            }
-        } else {
-			// Load from environment variable or the default.
-			return System.getenv().getOrDefault(baseName, defaultValue);
+			return readSecretFromFile(Path.of(System.getenv(filePathName)));
+		}
+		if (System.getenv().containsKey(baseName)) {
+			return System.getenv(baseName);
+		}
+		String devFilePathName = baseName + ENV_DEV_FILE_SUFFIX;
+		String devFilePath = System.getenv(devFilePathName);
+		Path resolvedDevFilePath;
+		if (devFilePath != null && !devFilePath.isBlank()) {
+			resolvedDevFilePath = Path.of(devFilePath);
+		} else {
+			resolvedDevFilePath = DEFAULT_EXTRA_CONFIGS_PATH.resolve(baseName);
+		}
+		if (Files.isRegularFile(resolvedDevFilePath)) {
+			return readSecretFromFile(resolvedDevFilePath);
+		}
+		return defaultValue;
+	}
+
+	private static String readSecretFromFile(Path path) {
+		try {
+			/*
+			 * In the case of gitb-ui and file-based secrets, values are always trimmed of
+			 * leading and trailing whitespace. Failing to do so in gitb-srv may lead to
+			 * inconsistencies and failures (e.g. a HMAC key that doesn't match).
+			 */
+			return Files.readString(path).trim();
+		} catch (IOException e) {
+			throw new IllegalStateException("Error reading file", e);
 		}
 	}
 
