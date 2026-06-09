@@ -309,5 +309,36 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
         <cve>CVE-2026-34477</cve>
     </suppress>
-
+    <suppress>
+        <!-- User-provided patterns and SpEl expressions are not supported or considered in any way. -->
+        <notes><![CDATA[
+    file name: spring-core-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-41848</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- User-provided patterns and SpEl expressions are not supported or considered in any way. -->
+        <notes><![CDATA[
+    file name: spring-expression-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-41850</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- User-provided patterns and SpEl expressions are not supported or considered in any way. -->
+        <notes><![CDATA[
+    file name: spring-expression-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-41851</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- User-provided patterns and SpEl expressions are not supported or considered in any way. -->
+        <notes><![CDATA[
+    file name: spring-expression-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-41852</vulnerabilityName>
+    </suppress>
 </suppressions>
