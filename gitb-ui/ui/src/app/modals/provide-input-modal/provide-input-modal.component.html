@@ -37,14 +37,31 @@
 									}
 									@case ("UPLOAD") {
 										 <!-- Upload -->
-										<div>
-											<app-file-select [fileName]="interaction.file?.name"
-                                                             [reset]="interaction.reset"
-                                                             [accepts]="(interaction.accept != undefined)?interaction.accept.split(','):undefined"
-                                                             (onUpload)="onFileSelect(interaction, $event)"
-                                                             [validation]="validation.get('input_'+index)"></app-file-select>
-										</div>
-									}
+                                        <div class="d-flex flex-column gap-2">
+                                            @if (interaction.tempFiles != undefined && interaction.tempFiles.length > 0) {
+                                                @for (inputFile of interaction.tempFiles; let fileIndex = $index; track inputFile.uuid) {
+                                                    <div>
+                                                        <app-file-select [fileName]="inputFile.name"
+                                                                         [reset]="interaction.reset"
+                                                                         [accepts]="(interaction.accept != undefined)?interaction.accept.split(','):undefined"
+                                                                         (onUpload)="onFileSelect(interaction, fileIndex, $event)"
+                                                                         [extraActions]="inputFile.file != undefined"
+                                                                         [validation]="validation.get('input_'+index+(fileIndex==0?'':('_'+fileIndex)))">
+                                                            <button #pop=ngbTooltip type="button" class="btn btn-secondary" (click)="onFileRemove(interaction, fileIndex, pop)" container="body" tooltipClass="shortTooltip" ngbTooltip="Remove" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
+                                                        </app-file-select>
+                                                    </div>
+                                                }
+                                                @if (interaction.multiple) {
+                                                    <div class="d-flex">
+                                                        <button type="button" [disabled]="interaction.tempFiles[interaction.tempFiles.length-1].file == undefined || interaction.tempFiles.length >= Constants.MAX_PROVIDE_INPUT_FILES" class="btn btn-secondary" (click)="addTempFile(interaction)" container="body" tooltipClass="shortTooltip" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.NEW"></i></button>
+                                                        @if (interaction.tempFiles.length >= Constants.MAX_PROVIDE_INPUT_FILES) {
+                                                            <div class="ms-2" app-tooltip [tbTooltip]="`You can only add up to ${Constants.MAX_PROVIDE_INPUT_FILES} files per input.`"></div>
+                                                        }
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    }
 									@case ("CODE") {
 										<!-- Code editor -->
 										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" (codeMirrorLoaded)="editorInitialized($event, interaction)" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></ngx-codemirror>

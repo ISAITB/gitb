@@ -160,18 +160,27 @@ export class TestService {
     const inputsToSend: any[] = []
     let files: FileParam[] = []
     for (let input of inputs) {
-      const inputToSend: any = {
-        id: input.id,
-        name: input.name,
-        type: input.type,
-        embeddingMethod: input.embeddingMethod
-      }
       if (input.file) {
-        files.push({param: 'file_'+input.id, data: input.file})
+        input.file.forEach((file, index) => {
+          inputsToSend.push({
+            id: input.id,
+            name: input.name,
+            type: input.type,
+            embeddingMethod: input.embeddingMethod,
+            value: input.value,
+            counter: index
+          })
+          files.push({param: `file_${input.id}_${index}`, data: file})
+        })
       } else {
-        inputToSend.value = input.value
+        inputsToSend.push({
+          id: input.id,
+          name: input.name,
+          type: input.type,
+          embeddingMethod: input.embeddingMethod,
+          value: input.value
+        })
       }
-      inputsToSend.push(inputToSend)
     }
     let path: string
     if (admin) {

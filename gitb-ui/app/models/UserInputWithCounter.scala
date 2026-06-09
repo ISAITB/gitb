@@ -13,12 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface FileData {
+package models
 
-    name: string
-    size: number
-    type: string
-    file?: File
-    uuid?: string
+import com.gitb.tbs.UserInput
 
+class UserInputWithCounter(val counter: Option[Short]) extends UserInput {
 }

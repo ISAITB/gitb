@@ -23,7 +23,7 @@ import {UserInteractionInput} from 'src/app/types/user-interaction-input';
 import {ValidationState} from '../../types/validation-state';
 import {ValueLabel} from '../../types/value-label';
 import {Constants} from '../../common/constants';
-import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {NgbActiveModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-provide-input-modal',
@@ -114,6 +114,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           }
         } else if (interaction.inputType == 'UPLOAD') {
           interaction.reset = new EventEmitter<void>()
+          this.resetTempFiles(interaction)
         } else {
           // Basic text inputs (secret, text, multiline)
           if (this.firstTextIndex == undefined) {
@@ -223,6 +224,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       delete interaction.selectedOption
       delete interaction.selectedOptions
       delete interaction.file
+      this.resetTempFiles(interaction)
       index += 1
     }
   }
@@ -262,8 +264,11 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
         } else if (interaction.optionData == undefined) {
           if (interaction.data != undefined) {
             inputData.value = interaction.data
-          } else if (interaction.file?.file) {
-            inputData.file = interaction.file.file
+          } else if (interaction.tempFiles != undefined) {
+            inputData.file = interaction.tempFiles.filter((file: Partial<FileData>) => { return file.file != undefined }).map((file: Partial<FileData>) => { return file.file! })
+            if (inputData.file!.length == 0) {
+              inputData.file = undefined
+            }
           }
         }
         const hasValue = (inputData.value != undefined && inputData.value.length > 0) || inputData.file != undefined
@@ -281,8 +286,30 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     }
   }
 
-  onFileSelect(request: UserInteraction, file: FileData) {
-    request.file = file
+  resetTempFiles(request: UserInteraction) {
+    request.tempFiles = [{ uuid: crypto.randomUUID()}]
+  }
+
+  addTempFile(request: UserInteraction) {
+    if (request.tempFiles == undefined) {
+      this.resetTempFiles(request)
+    } else {
+      request.tempFiles.push({ uuid: crypto.randomUUID()})
+    }
+  }
+
+  onFileSelect(request: UserInteraction, index: number, file: FileData) {
+    request.tempFiles[index] = file
+  }
+
+  onFileRemove(request: UserInteraction, index: number, pop?: NgbTooltip) {
+    if (pop) {
+      pop.disableTooltip = true;
+    }
+    request.tempFiles.splice(index, 1);
+    if (request.tempFiles.length == 0) {
+      this.addTempFile(request);
+    }
   }
 
   private interactionNeedsInput() {

@@ -179,8 +179,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
       val userInputs = JsonUtil.parseJsUserInputs(inputs)
       // Set files to inputs.
       userInputs.foreach { userInput =>
-        if (userInput.getValue == null && files.contains(s"file_${userInput.getId}")) {
-          val fileInfo = files(s"file_${userInput.getId}")
+        if (userInput.getValue == null && userInput.counter.exists(counter => files.contains(s"file_${userInput.getId}_$counter"))) {
+          val fileInfo = files(s"file_${userInput.getId}_${userInput.counter.get}")
           userInput.setValue(MimeUtil.getFileAsDataURL(fileInfo.file, fileInfo.contentType.orNull))
           userInput.setFileName(Path.of(fileInfo.name).getFileName.toString)
         }

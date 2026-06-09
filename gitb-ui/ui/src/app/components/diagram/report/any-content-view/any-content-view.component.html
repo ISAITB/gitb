@@ -12,13 +12,12 @@
                 <div class="any-content-view-container">
                     <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
                         @if (withName) {
-                            <div [class.content-name]="withValue" [class.content-value]="!withValue" [class.with-items]="withItems" [class.break-texts]="breakNameText"
-                                 (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
+                            <div class="d-flex" [class.content-name]="withValue" [class.content-value]="!withValue" [class.with-items]="withItems" [class.break-texts]="breakNameText" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
                                 @if (!this.root) {
                                     <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
                                 }
                                 @if (name) {
-                                    {{ name }}
+                                    <div>{{ name }}</div>
                                 } @else {
                                     <div class="not-inline-help-text">Expand to view</div>
                                 }

@@ -2106,11 +2106,11 @@ object JsonUtil {
     )
   }
 
-  def parseJsUserInputs(json:String): List[UserInput] = {
+  def parseJsUserInputs(json:String): List[UserInputWithCounter] = {
     val jsArray = Json.parse(json).as[JsArray].value
-    val list = ListBuffer[UserInput]()
+    val list = ListBuffer[UserInputWithCounter]()
     jsArray.foreach { jsonInput =>
-      val input = new UserInput()
+      val input = new UserInputWithCounter((jsonInput \ "counter").asOpt[Short])
       input.setId((jsonInput \ "id").as[String])
       input.setName((jsonInput \ "name").as[String])
       input.setType((jsonInput \ "type").as[String])

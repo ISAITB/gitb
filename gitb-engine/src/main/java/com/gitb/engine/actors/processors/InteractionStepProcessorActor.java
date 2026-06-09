@@ -50,10 +50,7 @@ import com.gitb.tdl.UserRequest;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.types.DataType;
-import com.gitb.types.DataTypeFactory;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
@@ -162,7 +159,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         return value;
     }
 
-    @SuppressWarnings("resource")
     private void scheduleTimeout(ActorContext context, long timeoutMs) {
         context.system().scheduler().scheduleOnce(
                 scala.concurrent.duration.Duration.apply(timeoutMs, TimeUnit.MILLISECONDS), () -> {
@@ -550,6 +546,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     inputRequest.setAccept(acceptValues);
                 }
             }
+            if (request.getMultiple() != null) {
+                if (VariableResolver.isVariableReference(request.getMultiple())) {
+                    inputRequest.setMultiple(variableResolver.resolveVariableAsBoolean(request.getMultiple()).getValue());
+                } else {
+                    inputRequest.setMultiple(Boolean.parseBoolean(request.getMultiple()));
+                }
+            }
         } else {
             // Handle text inputs.
             // Select options.
@@ -745,59 +748,125 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     private void processUserInput(UserRequest targetRequest, int requestIndex, InputEvent inputEvent, VariableResolver variableResolver, DataTypeFactory dataTypeFactory, Set<Integer> requiredInputIndexes, TAR report, MapType interactionResult) {
         if (inputEvent.getUserInputs() != null) {
-            inputEvent.getUserInputs().stream()
+            List<UserInput> matchingInputs = inputEvent.getUserInputs().stream()
                     .filter(userInput -> {
                         int stepIndex = Integer.parseInt(userInput.getId());
                         return requestIndex == stepIndex - 1;
                     })
-                    .findFirst()
-                    .ifPresent((userInput) -> {
-                        if (userInput.getValue() != null && !userInput.getValue().isEmpty()) {
-                            requiredInputIndexes.remove(requestIndex);
-                            if (targetRequest.isReport()) {
-                                // Construct the value to return for the step's report.
-                                report.getContext().getItem().add(getAnyContent(userInput, targetRequest));
+                    .toList();
+            if (!matchingInputs.isEmpty()) {
+                boolean multipleExpected = false;
+                if (targetRequest.getMultiple() != null) {
+                    if (VariableResolver.isVariableReference(targetRequest.getMultiple())) {
+                        multipleExpected = variableResolver.resolveVariableAsBoolean(targetRequest.getMultiple()).getValue();
+                    } else {
+                        multipleExpected = Boolean.parseBoolean(targetRequest.getMultiple());
+                    }
+                }
+                boolean recordFileNames = StringUtils.isNotBlank(targetRequest.getFileName());
+                AnyContent contentForContext;
+                String dataTypeForContext;
+                DataType fileNameValue = null;
+                if (!multipleExpected) {
+                    UserInput userInput = matchingInputs.getFirst();
+                    if (userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                        requiredInputIndexes.remove(requestIndex);
+                        if (targetRequest.isReport()) {
+                            // Construct the value to return for the step's report.
+                            report.getContext().getItem().add(getAnyContent(userInput, targetRequest));
+                        }
+                    }
+                    // Value for session context.
+                    contentForContext = userInput;
+                    dataTypeForContext = targetRequest.getType();
+                    // File name
+                    if (recordFileNames && StringUtils.isNotBlank(userInput.getFileName())) {
+                        fileNameValue = new StringType(userInput.getFileName());
+                    }
+                } else {
+                    List<UserInput> inputsWithValues = matchingInputs.stream()
+                            .filter(userInput -> userInput.getValue() != null && !userInput.getValue().isEmpty())
+                            .toList();
+                    if (!inputsWithValues.isEmpty()) {
+                        requiredInputIndexes.remove(requestIndex);
+                        if (targetRequest.isReport()) {
+                            // Construct the value to return for the step's report.
+                            if (inputsWithValues.size() == 1) {
+                                // Single item - add it without a list.
+                                report.getContext().getItem().add(getAnyContent(inputsWithValues.getFirst(), targetRequest));
+                            } else {
+                                // Add items as a list.
+                                AnyContent userInputs = new AnyContent();
+                                userInputs.setType("list");
+                                List<AnyContent> userInputItems = inputsWithValues.stream().map(userInput -> getAnyContent(userInput, targetRequest)).toList();
+                                userInputs.setName(userInputItems.getFirst().getName());
+                                userInputItems.forEach(userInputItem -> {
+                                    userInputItem.setName(null);
+                                    userInputs.getItem().add(userInputItem);
+                                });
+                                report.getContext().getItem().add(userInputs);
                             }
                         }
-                        if (StringUtils.isNotBlank(targetRequest.getValue())) {
-                            //Find the variable that the given input content is assigned(bound) to
-                            String assignedVariableExpression = targetRequest.getValue();
-                            DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
-                            if (targetRequest.isAsTemplate()) {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
-                                    DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                                    dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                                });
-                            } else {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
-                            }
+                    }
+                    if (targetRequest.getType() == null) {
+                        dataTypeForContext = "list";
+                    } else {
+                        dataTypeForContext = "list["+targetRequest.getType()+"]";
+                    }
+                    // Value for session context.
+                    contentForContext = new AnyContent();
+                    contentForContext.setType("list");
+                    contentForContext.setName(matchingInputs.getFirst().getName());
+                    contentForContext.getItem().addAll(matchingInputs);
+                    // File names
+                    if (recordFileNames) {
+                        List<StringType> fileNames = matchingInputs.stream().filter(userInput -> StringUtils.isNotBlank(userInput.getFileName()))
+                                .map(userInput -> new StringType(userInput.getFileName()))
+                                .toList();
+                        ListType fileNameTypes = new ListType(DataType.STRING_DATA_TYPE);
+                        fileNameTypes.getElements().addAll(fileNames);
+                        fileNameValue = fileNameTypes;
+                    }
+                }
+                if (StringUtils.isNotBlank(targetRequest.getValue())) {
+                    // Find the variable that the given input content is assigned(bound) to
+                    String assignedVariableExpression = targetRequest.getValue();
+                    DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
+                    if (targetRequest.isAsTemplate()) {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, contentForContext, (dataType) -> {
+                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                        });
+                    } else {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, contentForContext);
+                    }
+                } else {
+                    // Create an empty value
+                    DataType assignedValue = dataTypeFactory.create(dataTypeForContext);
+                    if (targetRequest.isAsTemplate()) {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, contentForContext, (dataType) -> {
+                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                        });
+                    } else {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, contentForContext);
+                    }
+                    // Put it to the Interaction Result map
+                    if (targetRequest.getName() != null) {
+                        interactionResult.addItem(targetRequest.getName(), assignedValue);
+                    }
+                    if (fileNameValue != null) {
+                        // Record the file name under the provided variable
+                        String variableName;
+                        if (VariableResolver.isVariableReference(targetRequest.getFileName())) {
+                            variableName = variableResolver.resolveVariableAsString(targetRequest.getFileName()).toString();
                         } else {
-                            //Create an empty value
-                            DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
-                            if (targetRequest.isAsTemplate()) {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
-                                    DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                                    dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                                });
-                            } else {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
-                            }
-                            // Put it to the Interaction Result map
-                            if (targetRequest.getName() != null) {
-                                interactionResult.addItem(targetRequest.getName(), assignedValue);
-                            }
-                            if (StringUtils.isNotBlank(targetRequest.getFileName()) && StringUtils.isNotBlank(userInput.getFileName())) {
-                                // Record the file name under the provided variable
-                                String variableName;
-                                if (VariableResolver.isVariableReference(targetRequest.getFileName())) {
-                                    variableName = variableResolver.resolveVariableAsString(targetRequest.getFileName()).toString();
-                                } else {
-                                    variableName = targetRequest.getFileName().trim();
-                                }
-                                interactionResult.addItem(variableName, new StringType(userInput.getFileName()));
-                            }
+                            variableName = targetRequest.getFileName().trim();
                         }
-                    });
+                        interactionResult.addItem(variableName, fileNameValue);
+                    }
+                }
+            }
         }
     }
 
