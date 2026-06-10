@@ -374,4 +374,46 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
         <cve>CVE-2026-41851</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: spring-core-6.2.18.jar
+        ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41842</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: spring-core-6.2.18.jar
+        ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41850</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: spring-core-6.2.18.jar
+        ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41851</cve>
+    </suppress>            
+    <suppress>
+        <notes><![CDATA[
+        file name: spring-core-6.2.18.jar
+        ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41840</cve>
+    </suppress>            
+    <suppress>
+        <notes><![CDATA[
+        file name: spring-core-6.2.18.jar
+        ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41841</cve>
+    </suppress>            
+    <suppress>
+        <notes><![CDATA[
+        file name: spring-core-6.2.18.jar
+        ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41843</cve>
+    </suppress>     
 </suppressions>
