@@ -358,4 +358,20 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
         <cve>CVE-2026-41843</cve>
     </suppress>
+    <suppress>
+        <!-- CVE suppressed as WebFlux is not in use and the requirements for static resource exposure are not met. -->
+        <notes><![CDATA[
+   file name: spring-core-6.2.18.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-41850</cve>
+    </suppress>
+    <suppress>
+        <!-- CVE suppressed as WebFlux is not in use and the requirements for static resource exposure are not met. -->
+        <notes><![CDATA[
+   file name: spring-core-6.2.18.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-41851</cve>
+    </suppress>
 </suppressions>
