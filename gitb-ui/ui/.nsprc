@@ -90,5 +90,25 @@
     "1119441": {
         "active": true,
         "notes": "Non-exploitable vulnerability from transitive dependency."
+    },
+    "1120368": {
+        "active": true,
+        "notes": "Non-exploitable vulnerability from transitive dependency."
+    },
+    "1120140": {
+        "active": true,
+        "notes": "Non-exploitable vulnerability from transitive dependency."
+    },
+    "1120324": {
+        "active": true,
+        "notes": "Non-exploitable vulnerability from transitive dependency."
+    },
+    "1120326": {
+        "active": true,
+        "notes": "Non-exploitable vulnerability from transitive dependency."
+    },
+    "1120138": {
+        "active": true,
+        "notes": "Non-exploitable vulnerability from transitive dependency."
     }
 }
