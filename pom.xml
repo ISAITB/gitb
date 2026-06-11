@@ -179,9 +179,9 @@
                             <licenseMerge>MIT License|The MIT License|MIT</licenseMerge>
                             <licenseMerge>Eclipse Distribution License - v1.0|EDL 1.0|Eclipse Distribution License - v 1.0</licenseMerge>
                             <licenseMerge>Eclipse Public License - v1.0|Eclipse Public License - v 1.0</licenseMerge>
-                            <licenseMerge>Eclipse Public License - v2.0|EPL 2.0|Eclipse Public License 2.0</licenseMerge>
+                            <licenseMerge>Eclipse Public License - v2.0|EPL 2.0|EPL-2.0|Eclipse Public License 2.0</licenseMerge>
                             <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception</licenseMerge>
-                            <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
+                            <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|LGPL-2.1-only|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
                             <licenseMerge>The 3-Clause BSD License|BSD-3-Clause</licenseMerge>
                             <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
                             <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
