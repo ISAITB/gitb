@@ -270,7 +270,7 @@ public class JsonValidator extends AbstractValidator {
     private JsonNode getContentNode(InputInfo inputInfo, NodeReader reader) {
         try {
             return reader.readTree(inputInfo.content(), inputInfo.isYaml()?InputFormat.YAML:InputFormat.JSON);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to parse JSON input", e);
         }
     }
