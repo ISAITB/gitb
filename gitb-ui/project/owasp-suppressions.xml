@@ -444,4 +444,47 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
         <cve>CVE-2026-41846</cve>
     </suppress>
+    <!-- CVE not applicable as Spring is used an an internal transitive dependency only for specific and controlled purposes. -->
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41838</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41848</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41844</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41845</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41846</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41852</cve>
+    </suppress>
 </suppressions>
