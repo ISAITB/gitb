@@ -373,4 +373,32 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
         <cve>CVE-2026-41843</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-41838</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-41844</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-41845</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-7.0.7.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-41846</cve>
+    </suppress>
 </suppressions>
