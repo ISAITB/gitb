@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-pure-ref-preserves-type" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Pure variable reference preserves type</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="original" type="number">42</assign>
+        <!-- Pure reference: type should be preserved as number -->
+        <assign to="copy">$original</assign>
+        <verify handler="ExpressionValidator" desc="copy equals original numerically">
+            <input name="expression">$copy = 42</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="arithmetic still works on copy">
+            <input name="expression">$copy + 1 = 43</input>
+        </verify>
+    </steps>
+</testcase>

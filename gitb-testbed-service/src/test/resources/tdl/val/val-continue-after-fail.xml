@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-continue-after-fail" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>stopOnError false continues execution after failure</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <!-- stopOnError=false: execution continues even after ERROR-level failure -->
+    <steps stopOnError="false">
+        <verify handler="ExpressionValidator" desc="deliberate failure">
+            <input name="expression">false()</input>
+        </verify>
+        <!-- This step runs because stopOnError=false -->
+        <assign to="x">'ran'</assign>
+        <verify handler="StringValidator" desc="subsequent step ran">
+            <input name="actual">$x</input>
+            <input name="expected">'ran'</input>
+        </verify>
+    </steps>
+</testcase>

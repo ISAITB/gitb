@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-list-count" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>List count function</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="nums" append="true">'one'</assign>
+        <assign to="nums" append="true">'two'</assign>
+        <assign to="nums" append="true">'three'</assign>
+        <assign to="nums" append="true">'four'</assign>
+        <process id="sz" handler="CollectionUtils" operation="size">
+            <input name="list">$nums</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="size is 4">
+            <input name="expression">$sz{output} = 4</input>
+        </verify>
+    </steps>
+</testcase>

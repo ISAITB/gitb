@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-call-outputs" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Call captures scriptlet output variable</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <scriptlets>
+        <scriptlet id="compute">
+            <params>
+                <var name="x" type="number"/>
+                <var name="y" type="number"/>
+            </params>
+            <steps>
+                <assign to="sum" type="number">$x + $y</assign>
+            </steps>
+            <output name="sum"/>
+        </scriptlet>
+    </scriptlets>
+    <steps stopOnError="true">
+        <call path="compute" output="total">
+            <input name="x">10</input>
+            <input name="y">25</input>
+        </call>
+        <verify handler="ExpressionValidator" desc="output captured as number 35">
+            <input name="expression">$total = 35</input>
+        </verify>
+    </steps>
+</testcase>

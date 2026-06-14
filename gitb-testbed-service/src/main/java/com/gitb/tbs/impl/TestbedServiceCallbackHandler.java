@@ -85,6 +85,10 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
         frontEndToClientMap.clear();
     }
 
+    public void registerForTest(String sessionId, TestbedClient client) {
+        sessionToClientMap.put(sessionId, client);
+    }
+
     @Override
     public TestbedClient getTestbedClient(String sessionId) {
         return sessionToClientMap.get(sessionId);

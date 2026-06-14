@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-xmlmatch-nomatch" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlMatchValidator mismatch fails session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="actual" type="object"><![CDATA['<response><code>404</code><message>Not Found</message></response>']]></assign>
+        <assign to="template" type="object"><![CDATA['<response><code>200</code><message>OK</message></response>']]></assign>
+        <verify handler="XmlMatchValidator" desc="code 404 does not match 200">
+            <input name="xml">$actual</input>
+            <input name="template">$template</input>
+        </verify>
+    </steps>
+</testcase>

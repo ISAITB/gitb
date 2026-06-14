@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-xpath-conditional" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XPath if-then-else expression</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="score" type="number">85</assign>
+        <assign to="grade">if ($score &gt;= 90) then 'A' else if ($score &gt;= 80) then 'B' else 'C'</assign>
+        <verify handler="StringValidator" desc="grade is B">
+            <input name="actual">$grade</input>
+            <input name="expected">'B'</input>
+        </verify>
+        <assign to="score2" type="number">95</assign>
+        <assign to="grade2">if ($score2 &gt;= 90) then 'A' else 'B'</assign>
+        <verify handler="StringValidator" desc="grade2 is A">
+            <input name="actual">$grade2</input>
+            <input name="expected">'A'</input>
+        </verify>
+    </steps>
+</testcase>

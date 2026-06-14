@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-expr-warning" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>ExpressionValidator fail at WARNING level produces SUCCESS session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- WARNING-level failure: doesn't stop execution, and session outcome is SUCCESS not WARNING -->
+        <verify handler="ExpressionValidator" desc="warning-level failure" level="WARNING">
+            <input name="expression">false()</input>
+        </verify>
+        <!-- session still reaches here because WARNING doesn't stop execution -->
+        <verify handler="ExpressionValidator" desc="still runs">
+            <input name="expression">true()</input>
+        </verify>
+    </steps>
+</testcase>

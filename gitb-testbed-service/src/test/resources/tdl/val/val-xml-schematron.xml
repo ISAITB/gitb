@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-xml-schematron" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator inline Schematron rule passes</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<invoice><total>100</total><currency>EUR</currency></invoice>']]></assign>
+        <assign to="schText"><![CDATA['<?xml version="1.0"?><sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron"><sch:pattern><sch:rule context="/invoice"><sch:assert test="total">Invoice must have a total element</sch:assert><sch:assert test="currency">Invoice must have a currency element</sch:assert></sch:rule></sch:pattern></sch:schema>']]></assign>
+        <assign to="schList" append="true">$schText</assign>
+        <verify handler="XmlValidator" desc="Schematron rules pass">
+            <input name="xml">$xmlDoc</input>
+            <input name="schematron">$schList</input>
+        </verify>
+    </steps>
+</testcase>

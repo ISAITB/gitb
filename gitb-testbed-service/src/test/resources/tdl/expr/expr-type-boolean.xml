@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-type-boolean" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Boolean type conversions</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <verify handler="ExpressionValidator" desc="empty string is false">
+            <input name="expression">not(boolean(''))</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="zero is false">
+            <input name="expression">not(boolean(0))</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="non-empty string is true">
+            <input name="expression">boolean('x')</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="non-zero is true">
+            <input name="expression">boolean(1)</input>
+        </verify>
+    </steps>
+</testcase>

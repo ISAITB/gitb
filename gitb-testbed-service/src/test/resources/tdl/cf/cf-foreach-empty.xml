@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-foreach-empty" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Foreach over empty list</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="emptyList" type="list"/>
+        <assign to="count" type="number">0</assign>
+        <foreach of="$emptyList" item="x">
+            <do>
+                <assign to="count" type="number">$count + 1</assign>
+            </do>
+        </foreach>
+        <verify handler="ExpressionValidator" desc="zero iterations">
+            <input name="expression">$count = 0</input>
+        </verify>
+    </steps>
+</testcase>

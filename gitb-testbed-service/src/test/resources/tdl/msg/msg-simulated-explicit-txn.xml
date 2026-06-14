@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-simulated-explicit-txn" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>SimulatedMessaging with explicit transaction lifecycle</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <btxn txnId="t1" handler="SimulatedMessaging"/>
+        <send handler="SimulatedMessaging" txnId="t1" desc="Send within explicit transaction"/>
+        <receive id="msg" handler="SimulatedMessaging" txnId="t1" desc="Receive within explicit transaction"/>
+        <etxn txnId="t1" handler="SimulatedMessaging"/>
+    </steps>
+</testcase>

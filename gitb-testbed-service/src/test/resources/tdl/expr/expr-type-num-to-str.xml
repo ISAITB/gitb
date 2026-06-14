@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-type-num-to-str" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Number to string conversion</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="num" type="number">7</assign>
+        <!-- NumberType.toStringType() returns "7.0" for integer-valued doubles -->
+        <assign to="str" type="string">$num</assign>
+        <verify handler="ExpressionValidator" desc="string value is 7.0">
+            <input name="expression">$str = '7.0'</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="can concat">
+            <input name="expression">$str || '-items' = '7.0-items'</input>
+        </verify>
+    </steps>
+</testcase>

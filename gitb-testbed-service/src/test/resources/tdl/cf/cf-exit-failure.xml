@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-exit-failure" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Exit with failure</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">1</assign>
+        <exit success="false"/>
+        <!-- Unreachable -->
+        <assign to="x" type="number">2</assign>
+    </steps>
+</testcase>

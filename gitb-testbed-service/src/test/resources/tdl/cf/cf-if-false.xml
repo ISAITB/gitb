@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-if-false" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>If false else branch</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">5</assign>
+        <assign to="result">'initial'</assign>
+        <if>
+            <cond>$x &gt; 10</cond>
+            <then>
+                <assign to="result">'then-branch'</assign>
+            </then>
+            <else>
+                <assign to="result">'else-branch'</assign>
+                <log>'else-branch executed'</log>
+            </else>
+        </if>
+        <verify handler="StringValidator" desc="else branch ran">
+            <input name="actual">$result</input>
+            <input name="expected">'else-branch'</input>
+        </verify>
+    </steps>
+</testcase>

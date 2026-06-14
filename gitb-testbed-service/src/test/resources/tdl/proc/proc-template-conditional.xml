@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-template-conditional" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TemplateProcessor multi-variable substitution</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="firstName">'John'</assign>
+        <assign to="lastName">'Doe'</assign>
+        <assign to="role">'Developer'</assign>
+        <process handler="TemplateProcessor" output="result">
+            <input name="template">'${firstName} ${lastName} - ${role}'</input>
+        </process>
+        <verify handler="StringValidator" desc="multi-var template output">
+            <input name="actual">$result</input>
+            <input name="expected">'John Doe - Developer'</input>
+        </verify>
+    </steps>
+</testcase>

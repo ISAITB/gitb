@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-assign-type-convert" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Assign with explicit type conversion</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="numStr">'3.14'</assign>
+        <assign to="num" type="number">$numStr</assign>
+        <verify handler="ExpressionValidator" desc="string to number conversion">
+            <input name="expression">$num &gt; 3 and $num &lt; 4</input>
+        </verify>
+        <assign to="backToStr" type="string">$num</assign>
+        <verify handler="ExpressionValidator" desc="number back to string">
+            <input name="expression">string-length($backToStr) &gt; 0</input>
+        </verify>
+    </steps>
+</testcase>

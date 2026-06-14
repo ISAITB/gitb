@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-complex-compound" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Complex compound expression</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">6</assign>
+        <assign to="y" type="number">4</assign>
+        <assign to="label">'result'</assign>
+        <!-- Compound: arithmetic + string concat + conditional -->
+        <assign to="out">$label || ': ' || string($x * $y) || (if ($x * $y &gt; 20) then ' (big)' else ' (small)')</assign>
+        <verify handler="StringValidator" desc="compound result">
+            <input name="actual">$out</input>
+            <input name="expected">'result: 24 (big)'</input>
+        </verify>
+    </steps>
+</testcase>

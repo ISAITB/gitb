@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-regexp-collect" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RegExpProcessor collect groups</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="text">'2026-06-15'</assign>
+        <process handler="RegExpProcessor" operation="collect" output="groups">
+            <input name="input">$text</input>
+            <input name="expression">"(\d{4})-(\d{2})-(\d{2})"</input>
+        </process>
+        <verify handler="StringValidator" desc="year group">
+            <input name="actual">$groups{0}</input>
+            <input name="expected">'2026'</input>
+        </verify>
+        <verify handler="StringValidator" desc="month group">
+            <input name="actual">$groups{1}</input>
+            <input name="expected">'06'</input>
+        </verify>
+        <verify handler="StringValidator" desc="day group">
+            <input name="actual">$groups{2}</input>
+            <input name="expected">'15'</input>
+        </verify>
+    </steps>
+</testcase>

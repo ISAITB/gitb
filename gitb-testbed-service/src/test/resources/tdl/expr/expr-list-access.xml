@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-list-access" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>List index access</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="items" append="true">'alpha'</assign>
+        <assign to="items" append="true">'beta'</assign>
+        <assign to="items" append="true">'gamma'</assign>
+        <verify handler="StringValidator" desc="first element">
+            <input name="actual">$items{0}</input>
+            <input name="expected">'alpha'</input>
+        </verify>
+        <verify handler="StringValidator" desc="second element">
+            <input name="actual">$items{1}</input>
+            <input name="expected">'beta'</input>
+        </verify>
+        <verify handler="StringValidator" desc="third element">
+            <input name="actual">$items{2}</input>
+            <input name="expected">'gamma'</input>
+        </verify>
+    </steps>
+</testcase>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-repuntil-first" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Repeat-until stops after first iteration</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="counter" type="number">0</assign>
+        <repuntil>
+            <do>
+                <assign to="counter" type="number">$counter + 1</assign>
+            </do>
+            <!-- counter starts at 0, after first body counter=1; 1 < 1 is false so loop stops -->
+            <cond>$counter &lt; 1</cond>
+        </repuntil>
+        <verify handler="ExpressionValidator" desc="ran exactly once">
+            <input name="expression">$counter = 1</input>
+        </verify>
+    </steps>
+</testcase>

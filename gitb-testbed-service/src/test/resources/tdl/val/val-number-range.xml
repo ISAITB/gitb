@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-number-range" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>ExpressionValidator numeric range check</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="score" type="number">75</assign>
+        <verify handler="ExpressionValidator" desc="score in valid range">
+            <input name="expression">$score &gt;= 0 and $score &lt;= 100</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="score is a passing grade">
+            <input name="expression">$score &gt;= 60</input>
+        </verify>
+    </steps>
+</testcase>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-numeric-comparison" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Numeric comparison</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">5</assign>
+        <assign to="y" type="number">10</assign>
+        <verify handler="ExpressionValidator" desc="less-than">
+            <input name="expression">$x &lt; $y</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="greater-than">
+            <input name="expression">$y &gt; $x</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="equals">
+            <input name="expression">$x = 5</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="not-equals">
+            <input name="expression">$x != $y</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="less-or-equal">
+            <input name="expression">$x &lt;= 5</input>
+        </verify>
+    </steps>
+</testcase>

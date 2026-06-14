@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-type-str-to-num" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>String to number conversion</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="str">'42'</assign>
+        <assign to="num" type="number">$str</assign>
+        <verify handler="ExpressionValidator" desc="num equals 42">
+            <input name="expression">$num = 42</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="arithmetic works">
+            <input name="expression">$num + 8 = 50</input>
+        </verify>
+    </steps>
+</testcase>

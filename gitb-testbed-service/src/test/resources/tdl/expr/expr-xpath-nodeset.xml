@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-xpath-nodeset" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XPath nodeset to string conversion</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<items><item>first</item><item>second</item></items>']]></assign>
+        <process handler="XPathProcessor" output="firstItem">
+            <input name="input">$xmlDoc</input>
+            <input name="expression">"string(/items/item[1])"</input>
+        </process>
+        <verify handler="StringValidator" desc="first item value">
+            <input name="actual">$firstItem</input>
+            <input name="expected">'first'</input>
+        </verify>
+    </steps>
+</testcase>

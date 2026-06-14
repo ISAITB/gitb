@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-simulated-receive-timeout" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>SimulatedMessaging receive timeout fires before deferred callback</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps>
+        <!-- timeout=200ms fires before the delay=2000ms callback → TimeoutExpired → FAILURE -->
+        <receive handler="SimulatedMessaging" desc="Receive with timeout error" timeout="200" timeoutIsError="true">
+            <input name="delay">2000</input>
+        </receive>
+    </steps>
+</testcase>

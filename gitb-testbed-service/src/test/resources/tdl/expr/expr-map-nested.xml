@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-map-nested" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Nested step output map access</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- Generate a UUID; access via output attribute ($myUuid) and via step id map ($p1{value}) -->
+        <process id="p1" handler="TokenGenerator" operation="uuid" output="myUuid"/>
+        <verify handler="ExpressionValidator" desc="named output equals step-id output">
+            <input name="expression">$myUuid = $p1{value}</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="step-id access non-empty">
+            <input name="expression">string-length($p1{value}) &gt; 0</input>
+        </verify>
+    </steps>
+</testcase>

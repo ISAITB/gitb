@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-template-list" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TemplateProcessor with multiple variables</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="count">'42'</assign>
+        <assign to="unit">'items'</assign>
+        <process handler="TemplateProcessor" output="result">
+            <input name="template">'Total: ${count} ${unit}'</input>
+        </process>
+        <verify handler="StringValidator" desc="template with string variables">
+            <input name="actual">$result</input>
+            <input name="expected">'Total: 42 items'</input>
+        </verify>
+    </steps>
+</testcase>

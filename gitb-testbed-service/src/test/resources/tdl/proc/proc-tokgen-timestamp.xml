@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-tokgen-timestamp" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TokenGenerator timestamp</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- Default timestamp: epoch milliseconds -->
+        <process handler="TokenGenerator" operation="timestamp" output="ts"/>
+        <verify handler="ExpressionValidator" desc="timestamp is a non-empty string">
+            <input name="expression">string-length($ts) &gt; 0</input>
+        </verify>
+        <!-- Custom format -->
+        <process handler="TokenGenerator" operation="timestamp" output="dateStr">
+            <input name="format">"yyyy-MM-dd"</input>
+        </process>
+        <verify handler="RegExpValidator" desc="date format yyyy-MM-dd">
+            <input name="input">$dateStr</input>
+            <input name="expression">'\d{4}-\d{2}-\d{2}'</input>
+        </verify>
+    </steps>
+</testcase>

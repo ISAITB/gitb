@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-xpath-on-xml" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XPath applied to XML object variable</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<root><name>Alice</name><age>30</age></root>']]></assign>
+        <process handler="XPathProcessor" output="extracted">
+            <input name="input">$xmlDoc</input>
+            <input name="expression">"/root/name"</input>
+        </process>
+        <verify handler="StringValidator" desc="extracted name">
+            <input name="actual">$extracted</input>
+            <input name="expected">'Alice'</input>
+        </verify>
+    </steps>
+</testcase>

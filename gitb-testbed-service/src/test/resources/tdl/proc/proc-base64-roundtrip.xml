@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-base64-roundtrip" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Base64 encode then decode returns original</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="original">'RoundTrip123'</assign>
+        <process handler="Base64Processor" operation="encode" output="encoded">
+            <input name="input">$original</input>
+        </process>
+        <process handler="Base64Processor" operation="decode" output="decoded">
+            <input name="input">$encoded</input>
+        </process>
+        <verify handler="StringValidator" desc="round-trip matches original">
+            <input name="actual">$decoded</input>
+            <input name="expected">$original</input>
+        </verify>
+    </steps>
+</testcase>

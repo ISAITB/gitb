@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-xml-valid" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator well-formed XML passes</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<root><child>valid</child></root>']]></assign>
+        <!-- No XSD: just checks well-formedness -->
+        <verify handler="XmlValidator" desc="well-formed XML">
+            <input name="xml">$xmlDoc</input>
+        </verify>
+    </steps>
+</testcase>

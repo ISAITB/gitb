@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-tokgen-number" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TokenGenerator random number in range</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <process handler="TokenGenerator" operation="random" output="rnd">
+            <input name="minimum">1</input>
+            <input name="maximum">100</input>
+            <input name="integer">true()</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="within range">
+            <input name="expression">number($rnd) &gt;= 1 and number($rnd) &lt; 100</input>
+        </verify>
+    </steps>
+</testcase>

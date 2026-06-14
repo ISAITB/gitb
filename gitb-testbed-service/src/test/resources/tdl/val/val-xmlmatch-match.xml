@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-xmlmatch-match" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlMatchValidator matching documents succeed</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="actual" type="object"><![CDATA['<response><code>200</code><message>OK</message></response>']]></assign>
+        <assign to="template" type="object"><![CDATA['<response><code>200</code><message>OK</message></response>']]></assign>
+        <verify handler="XmlMatchValidator" desc="identical documents match">
+            <input name="xml">$actual</input>
+            <input name="template">$template</input>
+        </verify>
+    </steps>
+</testcase>

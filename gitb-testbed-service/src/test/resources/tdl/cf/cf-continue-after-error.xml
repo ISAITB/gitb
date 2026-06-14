@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-continue-after-error" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>stopOnError false continues after failure</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="false">
+        <assign to="x">'value'</assign>
+        <!-- This verify fails (ERROR level) but execution continues -->
+        <verify handler="StringValidator" desc="failing verify">
+            <input name="actual">$x</input>
+            <input name="expected">'wrong'</input>
+        </verify>
+        <!-- This assign runs because stopOnError=false -->
+        <assign to="y">$x || '_appended'</assign>
+        <!-- This verify passes -->
+        <verify handler="StringValidator" desc="subsequent verify passes">
+            <input name="actual">$y</input>
+            <input name="expected">'value_appended'</input>
+        </verify>
+    </steps>
+</testcase>

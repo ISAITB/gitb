@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-group-basic" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Group contains and runs child steps</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">0</assign>
+        <group desc="Setup group">
+            <assign to="x" type="number">$x + 1</assign>
+            <assign to="x" type="number">$x + 1</assign>
+        </group>
+        <verify handler="ExpressionValidator" desc="both assigns in group ran">
+            <input name="expression">$x = 2</input>
+        </verify>
+    </steps>
+</testcase>

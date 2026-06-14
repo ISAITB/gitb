@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-embed-casts-string" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Embedding number in concat casts to string</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="n" type="number">7</assign>
+        <!-- Concatenating a number with a string forces string conversion -->
+        <assign to="label">$n || ' items'</assign>
+        <verify handler="StringValidator" desc="label is '7 items'">
+            <input name="actual">$label</input>
+            <input name="expected">'7 items'</input>
+        </verify>
+        <assign to="prefix">'count: '</assign>
+        <assign to="full">$prefix || $n</assign>
+        <verify handler="StringValidator" desc="full is 'count: 7'">
+            <input name="actual">$full</input>
+            <input name="expected">'count: 7'</input>
+        </verify>
+    </steps>
+</testcase>

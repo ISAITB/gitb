@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-nested-if" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Nested if within if</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="a" type="number">5</assign>
+        <assign to="b" type="number">10</assign>
+        <assign to="result">'neither'</assign>
+        <if>
+            <cond>$a &lt; 10</cond>
+            <then>
+                <if>
+                    <cond>$b &gt; 5</cond>
+                    <then>
+                        <assign to="result">'both-conditions'</assign>
+                    </then>
+                </if>
+            </then>
+        </if>
+        <verify handler="StringValidator" desc="nested conditions met">
+            <input name="actual">$result</input>
+            <input name="expected">'both-conditions'</input>
+        </verify>
+    </steps>
+</testcase>

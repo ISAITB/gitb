@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-string-functions" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>String functions</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="s">'Hello World'</assign>
+        <verify handler="ExpressionValidator" desc="upper-case">
+            <input name="expression">upper-case($s) = 'HELLO WORLD'</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="lower-case">
+            <input name="expression">lower-case($s) = 'hello world'</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="contains">
+            <input name="expression">contains($s, 'World')</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="starts-with">
+            <input name="expression">starts-with($s, 'Hello')</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="string-length">
+            <input name="expression">string-length($s) = 11</input>
+        </verify>
+    </steps>
+</testcase>

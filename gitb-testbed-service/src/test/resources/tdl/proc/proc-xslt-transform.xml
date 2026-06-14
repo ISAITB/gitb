@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-xslt-transform" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XsltProcessor applies inline XSLT</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlIn">'&lt;root&gt;&lt;item&gt;hello&lt;/item&gt;&lt;/root&gt;'</assign>
+        <assign to="xslt"><![CDATA['<?xml version="1.0"?><xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"><xsl:output method="text"/><xsl:template match="/"><xsl:value-of select="/root/item"/></xsl:template></xsl:stylesheet>']]></assign>
+        <process handler="XsltProcessor" operation="process" output="transformed">
+            <input name="xml">$xmlIn</input>
+            <input name="xslt">$xslt</input>
+        </process>
+        <verify handler="StringValidator" desc="transformed output">
+            <input name="actual">normalize-space($transformed)</input>
+            <input name="expected">'hello'</input>
+        </verify>
+    </steps>
+</testcase>
