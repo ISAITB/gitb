@@ -137,7 +137,7 @@ public class MessagingHandlerUtils {
 					if (valueStr == null || valueStr.isBlank()) {
 						return Optional.empty();
 					} else {
-						return Optional.of(valueStr.trim().toLowerCase());
+						return Optional.of(valueStr.trim());
 					}
 				});
 	}
