@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.29.4</version>
+    <version>1.29.5</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -34,7 +34,7 @@
         <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
         <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
-        <version.gitbTypes>1.29.4</version.gitbTypes>
+        <version.gitbTypes>1.29.5</version.gitbTypes>
         <version.springBoot>3.5.15</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
         <tomcat.version>10.1.55</tomcat.version>
         <version.bouncycastle>1.84</version.bouncycastle>
@@ -177,9 +177,9 @@
                             <licenseMerge>MIT License|The MIT License|MIT</licenseMerge>
                             <licenseMerge>Eclipse Distribution License - v1.0|EDL 1.0|Eclipse Distribution License - v 1.0</licenseMerge>
                             <licenseMerge>Eclipse Public License - v1.0|Eclipse Public License - v 1.0</licenseMerge>
-                            <licenseMerge>Eclipse Public License - v2.0|EPL 2.0|Eclipse Public License 2.0</licenseMerge>
+                            <licenseMerge>Eclipse Public License - v2.0|EPL-2.0|EPL 2.0|Eclipse Public License 2.0</licenseMerge>
                             <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception</licenseMerge>
-                            <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
+                            <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|LGPL-2.1-only|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
                             <licenseMerge>The 3-Clause BSD License|BSD-3-Clause</licenseMerge>
                             <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
                             <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
@@ -259,8 +259,8 @@
                         <execution>
                             <phase>none</phase>
                             <!--
-                                Run manually with `mvn versions:set -DnewVersion=1.29.4`
-                                For a new development cycle run `mvn versions:set -DnewVersion=1.29.4-SNAPSHOT`
+                                Run manually with `mvn versions:set -DnewVersion=1.29.5`
+                                For a new development cycle run `mvn versions:set -DnewVersion=1.29.5-SNAPSHOT`
                                 The version number should be aligned with the gitb-types-jakarta dependency.
                             -->
                         </execution>

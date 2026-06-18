@@ -30,21 +30,21 @@ Library licences are organised in three sections:
 
 | Licence type | Name | Dependency | Version | Link |
 | :----------- | :--- | :--------- | :------ | :--- |
-| Eclipse Public License - v 2.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Classic Module | ch.qos.logback:logback-classic | 1.5.32 | http://logback.qos.ch/logback-classic |
-| Eclipse Public License - v 2.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Core Module | ch.qos.logback:logback-core | 1.5.32 | http://logback.qos.ch/logback-core |
+| Eclipse Public License - v2.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Classic Module | ch.qos.logback:logback-classic | 1.5.34 | http://logback.qos.ch/logback-classic |
+| Eclipse Public License - v2.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Core Module | ch.qos.logback:logback-core | 1.5.34 | http://logback.qos.ch/logback-core |
 | Apache License, Version 2.0 | Titanium JSON-LD 1.1 (JRE11) | com.apicatalog:titanium-json-ld | 1.4.1 | https://github.com/filip26/titanium-json-ld |
 | Apache License, Version 2.0 | Internet Time Utility | com.ethlo.time:itu | 1.14.0 | https://github.com/ethlo/itu |
 | Apache License, Version 2.0 | ClassMate | com.fasterxml:classmate | 1.7.3 | https://github.com/FasterXML/java-classmate |
 | Apache License, Version 2.0 | Jackson-annotations | com.fasterxml.jackson.core:jackson-annotations | 2.21 | https://github.com/FasterXML/jackson |
-| Apache License, Version 2.0 | Jackson-core | com.fasterxml.jackson.core:jackson-core | 2.21.2 | https://github.com/FasterXML/jackson-core |
+| Apache License, Version 2.0 | Jackson-core | com.fasterxml.jackson.core:jackson-core | 2.21.4 | https://github.com/FasterXML/jackson-core |
 | Apache License, Version 2.0 | jackson-databind | com.fasterxml.jackson.core:jackson-databind | 2.21.1 | https://github.com/FasterXML/jackson |
-| Apache License, Version 2.0 | Jackson-dataformat-YAML | com.fasterxml.jackson.dataformat:jackson-dataformat-yaml | 2.21.2 | https://github.com/FasterXML/jackson-dataformats-text |
-| Apache License, Version 2.0 | Jackson datatype: jdk8 | com.fasterxml.jackson.datatype:jackson-datatype-jdk8 | 2.21.2 | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8 |
-| Apache License, Version 2.0 | Jackson datatype: JSR310 | com.fasterxml.jackson.datatype:jackson-datatype-jsr310 | 2.21.2 | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310 |
-| Apache License, Version 2.0 | Jackson-module-parameter-names | com.fasterxml.jackson.module:jackson-module-parameter-names | 2.21.2 | https://github.com/FasterXML/jackson-modules-java8/jackson-module-parameter-names |
-| Apache License, Version 2.0 | Woodstox | com.fasterxml.woodstox:woodstox-core | 7.1.1 | https://github.com/FasterXML/woodstox |
+| Apache License, Version 2.0 | Jackson-dataformat-YAML | com.fasterxml.jackson.dataformat:jackson-dataformat-yaml | 2.21.4 | https://github.com/FasterXML/jackson-dataformats-text |
+| Apache License, Version 2.0 | Jackson datatype: jdk8 | com.fasterxml.jackson.datatype:jackson-datatype-jdk8 | 2.21.4 | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8 |
+| Apache License, Version 2.0 | Jackson datatype: JSR310 | com.fasterxml.jackson.datatype:jackson-datatype-jsr310 | 2.21.4 | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310 |
+| Apache License, Version 2.0 | Jackson-module-parameter-names | com.fasterxml.jackson.module:jackson-module-parameter-names | 2.21.4 | https://github.com/FasterXML/jackson-modules-java8/jackson-module-parameter-names |
+| Apache License, Version 2.0 | Woodstox | com.fasterxml.woodstox:woodstox-core | 7.2.0 | https://github.com/FasterXML/woodstox |
 | MIT License | dexx | com.github.andrewoma.dexx:collection | 0.7 | https://github.com/andrewoma/dexx |
-| Apache License, Version 2.0 | Caffeine cache | com.github.ben-manes.caffeine:caffeine | 3.2.3 | https://github.com/ben-manes/caffeine |
+| Apache License, Version 2.0 | Caffeine cache | com.github.ben-manes.caffeine:caffeine | 3.2.4 | https://github.com/ben-manes/caffeine |
 | Apache License, Version 2.0 | RgxGen | com.github.curious-odd-man:rgxgen | 3.1 | https://github.com/curious-odd-man/RgxGen |
 | Apache License, Version 2.0 | FindBugs-jsr305 | com.google.code.findbugs:jsr305 | 3.0.2 | http://findbugs.sourceforge.net/ |
 | Apache License, Version 2.0 | Gson | com.google.code.gson:gson | 2.13.2 | https://github.com/google/gson |
@@ -72,7 +72,7 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | json-path | com.jayway.jsonpath:json-path | 2.9.0 | https://github.com/jayway/JsonPath |
 | Apache License, Version 2.0 | JsonSchemaValidator | com.networknt:json-schema-validator | 2.0.1 | https://github.com/networknt/json-schema-validator |
 | Eclipse Distribution License - v1.0 | istack common utility code runtime | com.sun.istack:istack-commons-runtime | 4.1.2 | https://projects.eclipse.org/projects/ee4j/istack-commons/istack-commons-runtime |
-| Eclipse Distribution License - v1.0 | Old JAXB Core | com.sun.xml.bind:jaxb-core | 4.0.6 | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | Old JAXB Core | com.sun.xml.bind:jaxb-core | 4.0.9 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | Old JAXB Runtime | com.sun.xml.bind:jaxb-impl | 4.0.6 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | Jakarta SOAP Implementation | com.sun.xml.messaging.saaj:saaj-impl | 3.0.4 | https://projects.eclipse.org/projects/ee4j/metro-saaj/saaj-impl |
 | Apache License, Version 2.0 | config | com.typesafe:config | 1.4.5 | https://github.com/lightbend/config |
@@ -84,8 +84,8 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache Commons Logging | commons-logging:commons-logging | 1.3.6 | https://commons.apache.org/proper/commons-logging/ |
 | Apache License, Version 2.0 | PDFBox-Graphics2d | de.rototor.pdfbox:graphics2d | 3.0.1 | https://github.com/rototor/pdfbox-graphics2d/graphics2d |
 | The 3-Clause BSD License | dnsjava | dnsjava:dnsjava | 3.6.3 | https://github.com/dnsjava/dnsjava |
-| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-jakarta | eu.europa.ec.itb:gitb-types-jakarta | 1.29.4 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-jakarta |
-| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-specs | eu.europa.ec.itb:gitb-types-specs | 1.29.4 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-specs |
+| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-jakarta | eu.europa.ec.itb:gitb-types-jakarta | 1.29.5 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-jakarta |
+| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-specs | eu.europa.ec.itb:gitb-types-specs | 1.29.5 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-specs |
 | CUP Parser Generator Copyright Notice, License, and Disclaimer | cupv10k-runtime | eu.europa.ec.itb.xerces:cupv10k-runtime | 2.12.2-xsd11 | no url defined |
 | ICU License - ICU 1.8.1 and later | icu4j | eu.europa.ec.itb.xerces:icu4j | 2.12.2-xsd11 | no url defined |
 | Eclipse Public License - v1.0 | org.eclipse.wst.xml.xpath2.processor_1.2.1 | eu.europa.ec.itb.xerces:org.eclipse.wst.xml.xpath2.processor_1.2.1 | 2.12.2-xsd11 | no url defined |
@@ -94,8 +94,8 @@ Library licences are organised in three sections:
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf PDF Rendering (Apache PDF-BOX 3) | io.github.openhtmltopdf:openhtmltopdf-pdfbox | 1.1.37 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-pdfbox |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf slf4j Support | io.github.openhtmltopdf:openhtmltopdf-slf4j | 1.1.37 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-slf4j |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf SVG Support | io.github.openhtmltopdf:openhtmltopdf-svg-support | 1.1.37 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-svg-support |
-| Apache License, Version 2.0 | micrometer-commons | io.micrometer:micrometer-commons | 1.15.11 | https://github.com/micrometer-metrics/micrometer |
-| Apache License, Version 2.0 | micrometer-observation | io.micrometer:micrometer-observation | 1.15.11 | https://github.com/micrometer-metrics/micrometer |
+| Apache License, Version 2.0 | micrometer-commons | io.micrometer:micrometer-commons | 1.15.12 | https://github.com/micrometer-metrics/micrometer |
+| Apache License, Version 2.0 | micrometer-observation | io.micrometer:micrometer-observation | 1.15.12 | https://github.com/micrometer-metrics/micrometer |
 | Eclipse Distribution License - v1.0 | Jakarta Activation API | jakarta.activation:jakarta.activation-api | 2.1.2 | https://github.com/jakartaee/jaf-api |
 | Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Jakarta Annotations API | jakarta.annotation:jakarta.annotation-api | 2.1.1 | https://projects.eclipse.org/projects/ee4j.ca |
 | Eclipse Distribution License - v1.0 | Jakarta Web Services Metadata API | jakarta.jws:jakarta.jws-api | 3.0.0 | https://github.com/eclipse-ee4j/jws-api |
@@ -113,19 +113,19 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache Commons CSV | org.apache.commons:commons-csv | 1.12.0 | https://commons.apache.org/proper/commons-csv/ |
 | Apache License, Version 2.0 | Apache Commons Lang | org.apache.commons:commons-lang3 | 3.20.0 | https://commons.apache.org/proper/commons-lang/ |
 | Apache License, Version 2.0 | Apache Commons Text | org.apache.commons:commons-text | 1.15.0 | https://commons.apache.org/proper/commons-text |
-| Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime SOAP Binding | org.apache.cxf:cxf-rt-bindings-soap | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime XML Binding | org.apache.cxf:cxf-rt-bindings-xml | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime JAXB DataBinding | org.apache.cxf:cxf-rt-databinding-jaxb | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Metrics Feature | org.apache.cxf:cxf-rt-features-metrics | 4.2.1 | https://cxf.apache.org/cxf-rt-features-metrics |
-| Apache License, Version 2.0 | Apache CXF Runtime JAX-WS Frontend | org.apache.cxf:cxf-rt-frontend-jaxws | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime Simple Frontend | org.apache.cxf:cxf-rt-frontend-simple | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime HTTP Transport | org.apache.cxf:cxf-rt-transports-http | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime WS Addressing | org.apache.cxf:cxf-rt-ws-addr | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime WS Policy | org.apache.cxf:cxf-rt-ws-policy | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime Core for WSDL | org.apache.cxf:cxf-rt-wsdl | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Spring Boot Autoconfigure | org.apache.cxf:cxf-spring-boot-autoconfigure | 4.2.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Spring Boot Starter JAX-WS | org.apache.cxf:cxf-spring-boot-starter-jaxws | 4.2.1 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime SOAP Binding | org.apache.cxf:cxf-rt-bindings-soap | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime XML Binding | org.apache.cxf:cxf-rt-bindings-xml | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime JAXB DataBinding | org.apache.cxf:cxf-rt-databinding-jaxb | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Metrics Feature | org.apache.cxf:cxf-rt-features-metrics | 4.2.2 | https://cxf.apache.org/cxf-rt-features-metrics |
+| Apache License, Version 2.0 | Apache CXF Runtime JAX-WS Frontend | org.apache.cxf:cxf-rt-frontend-jaxws | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime Simple Frontend | org.apache.cxf:cxf-rt-frontend-simple | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime HTTP Transport | org.apache.cxf:cxf-rt-transports-http | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime WS Addressing | org.apache.cxf:cxf-rt-ws-addr | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime WS Policy | org.apache.cxf:cxf-rt-ws-policy | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime Core for WSDL | org.apache.cxf:cxf-rt-wsdl | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Spring Boot Autoconfigure | org.apache.cxf:cxf-spring-boot-autoconfigure | 4.2.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Spring Boot Starter JAX-WS | org.apache.cxf:cxf-spring-boot-starter-jaxws | 4.2.2 | https://cxf.apache.org |
 | Apache License, Version 2.0 | Apache HttpClient | org.apache.httpcomponents:httpclient | 4.5.14 | http://hc.apache.org/httpcomponents-client-ga |
 | Apache License, Version 2.0 | Apache HttpCore | org.apache.httpcomponents:httpcore | 4.4.16 | http://hc.apache.org/httpcomponents-core-ga |
 | Apache License, Version 2.0 | Apache HttpClient Mime | org.apache.httpcomponents:httpmime | 4.5.14 | http://hc.apache.org/httpcomponents-client-ga |
@@ -166,44 +166,44 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | org.apache.xmlgraphics:batik-util | org.apache.xmlgraphics:batik-util | 1.17 | http://xmlgraphics.apache.org/batik/batik-util/ |
 | Apache License, Version 2.0 | org.apache.xmlgraphics:batik-xml | org.apache.xmlgraphics:batik-xml | 1.17 | http://xmlgraphics.apache.org/batik/batik-xml/ |
 | Apache License, Version 2.0 | Apache XML Graphics Commons | org.apache.xmlgraphics:xmlgraphics-commons | 2.9 | http://xmlgraphics.apache.org/commons/ |
-| The 2-Clause BSD License | Stax2 API | org.codehaus.woodstox:stax2-api | 4.2.2 | http://github.com/FasterXML/stax2-api |
+| The 2-Clause BSD License | Stax2 API | org.codehaus.woodstox:stax2-api | 4.3.0 | http://github.com/FasterXML/stax2-api |
 | Eclipse Distribution License - v1.0 | Angus Activation Registries | org.eclipse.angus:angus-activation | 2.0.3 | https://github.com/eclipse-ee4j/angus-activation/angus-activation |
 | Eclipse Distribution License - v1.0, Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Angus Mail Provider | org.eclipse.angus:angus-mail | 2.0.5 | http://eclipse-ee4j.github.io/angus-mail/angus-mail |
 | Apache License, Version 2.0 | Apache FreeMarker | org.freemarker:freemarker | 2.3.34 | https://freemarker.apache.org/ |
 | Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | JSON-P Default Provider | org.glassfish:jakarta.json | 2.0.1 | https://github.com/eclipse-ee4j/jsonp |
-| Eclipse Distribution License - v1.0 | JAXB Core | org.glassfish.jaxb:jaxb-core | 4.0.6 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Eclipse Distribution License - v1.0 | JAXB Runtime | org.glassfish.jaxb:jaxb-runtime | 4.0.6 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Eclipse Distribution License - v1.0 | TXW2 Runtime | org.glassfish.jaxb:txw2 | 4.0.6 | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | JAXB Core | org.glassfish.jaxb:jaxb-core | 4.0.9 | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | JAXB Runtime | org.glassfish.jaxb:jaxb-runtime | 4.0.9 | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | TXW2 Runtime | org.glassfish.jaxb:txw2 | 4.0.9 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Apache License, Version 2.0 | Hibernate Validator Engine | org.hibernate.validator:hibernate-validator | 8.0.3.Final | https://hibernate.org/validator |
 | Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1, Mozilla Public License Version 1.1 | Javassist | org.javassist:javassist | 3.28.0-GA | http://www.javassist.org/ |
 | Apache License, Version 2.0 | JBoss Logging 3 | org.jboss.logging:jboss-logging | 3.6.3.Final | https://www.jboss.org |
 | MIT License | jsoup Java HTML Parser | org.jsoup:jsoup | 1.15.4 | https://jsoup.org/ |
 | Apache License, Version 2.0 | JSpecify annotations | org.jspecify:jspecify | 1.0.0 | http://jspecify.org/ |
 | Eclipse Distribution License - v1.0 | Extended StAX API | org.jvnet.staxex:stax-ex | 2.1.0 | https://projects.eclipse.org/projects/ee4j/stax-ex |
-| The 3-Clause BSD License | asm | org.ow2.asm:asm | 9.9.1 | http://asm.ow2.io/ |
+| The 3-Clause BSD License | asm | org.ow2.asm:asm | 9.10.1 | http://asm.ow2.io/ |
 | Apache License, Version 2.0, WTFPL | Reflections | org.reflections:reflections | 0.10.2 | http://github.com/ronmamo/reflections |
 | Apache License, Version 2.0 | org.roaringbitmap:RoaringBitmap | org.roaringbitmap:RoaringBitmap | 1.3.0 | https://github.com/RoaringBitmap/RoaringBitmap |
 | Apache License, Version 2.0 | Scala Library | org.scala-lang:scala-library | 2.13.16 | https://www.scala-lang.org/ |
 | Apache License, Version 2.0 | scala3-library-bootstrapped | org.scala-lang:scala3-library_3 | 3.3.7 | https://github.com/scala/scala3 |
-| Apache License, Version 2.0 | JCL 1.2 implemented over SLF4J | org.slf4j:jcl-over-slf4j | 2.0.17 | http://www.slf4j.org |
-| MIT License | JUL to SLF4J bridge | org.slf4j:jul-to-slf4j | 2.0.17 | http://www.slf4j.org |
-| MIT License | SLF4J API Module | org.slf4j:slf4j-api | 2.0.17 | http://www.slf4j.org |
-| Apache License, Version 2.0 | Spring AOP | org.springframework:spring-aop | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Beans | org.springframework:spring-beans | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Context | org.springframework:spring-context | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Core | org.springframework:spring-core | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Expression Language (SpEL) | org.springframework:spring-expression | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Commons Logging Bridge | org.springframework:spring-jcl | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Web | org.springframework:spring-web | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Web MVC | org.springframework:spring-webmvc | 6.2.18 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | spring-boot | org.springframework.boot:spring-boot | 3.5.14 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-autoconfigure | org.springframework.boot:spring-boot-autoconfigure | 3.5.14 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter | org.springframework.boot:spring-boot-starter | 3.5.14 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-json | org.springframework.boot:spring-boot-starter-json | 3.5.14 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-logging | org.springframework.boot:spring-boot-starter-logging | 3.5.14 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-tomcat | org.springframework.boot:spring-boot-starter-tomcat | 3.5.14 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-validation | org.springframework.boot:spring-boot-starter-validation | 3.5.14 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-web | org.springframework.boot:spring-boot-starter-web | 3.5.14 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | JCL 1.2 implemented over SLF4J | org.slf4j:jcl-over-slf4j | 2.0.18 | http://www.slf4j.org |
+| MIT License | JUL to SLF4J bridge | org.slf4j:jul-to-slf4j | 2.0.18 | http://www.slf4j.org |
+| MIT License | SLF4J API Module | org.slf4j:slf4j-api | 2.0.18 | http://www.slf4j.org |
+| Apache License, Version 2.0 | Spring AOP | org.springframework:spring-aop | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Beans | org.springframework:spring-beans | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Context | org.springframework:spring-context | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Core | org.springframework:spring-core | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Expression Language (SpEL) | org.springframework:spring-expression | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Commons Logging Bridge | org.springframework:spring-jcl | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Web | org.springframework:spring-web | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Web MVC | org.springframework:spring-webmvc | 6.2.19 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | spring-boot | org.springframework.boot:spring-boot | 3.5.15 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-autoconfigure | org.springframework.boot:spring-boot-autoconfigure | 3.5.15 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter | org.springframework.boot:spring-boot-starter | 3.5.15 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-json | org.springframework.boot:spring-boot-starter-json | 3.5.15 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-logging | org.springframework.boot:spring-boot-starter-logging | 3.5.15 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-tomcat | org.springframework.boot:spring-boot-starter-tomcat | 3.5.15 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-validation | org.springframework.boot:spring-boot-starter-validation | 3.5.15 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-web | org.springframework.boot:spring-boot-starter-web | 3.5.15 | https://spring.io/projects/spring-boot |
 | Apache License, Version 2.0 | TopBraid SHACL API | org.topbraid:shacl | 1.4.4 | http://topbraid.org/shacl/api |
 | Apache License, Version 2.0 | XML Resolver | org.xmlresolver:xmlresolver | 5.3.3 | https://github.com/xmlresolver/xmlresolver |
 | Apache License, Version 2.0 | org.xmlunit:xmlunit-core | org.xmlunit:xmlunit-core | 2.10.3 | https://www.xmlunit.org/ |
@@ -275,17 +275,17 @@ Library licences are organised in three sections:
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-configuration2 # 2.15.0](https://commons.apache.org/proper/commons-configuration/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-lang3 # 3.20.0](https://commons.apache.org/proper/commons-lang/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-text # 1.15.0](https://commons.apache.org/proper/commons-text) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-core # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-soap # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-xml # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-databinding-jaxb # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-jaxws # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-simple # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http-jetty # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-addr # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-policy # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-wsdl # 4.2.1](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-core # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-soap # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-xml # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-databinding-jaxb # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-jaxws # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-simple # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http-jetty # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-addr # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-policy # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-wsdl # 4.2.2](https://cxf.apache.org) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.neethi # neethi # 3.2.2](https://ws.apache.org/neethi/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.pdfbox # fontbox # 3.0.7](http://pdfbox.apache.org/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.apache.pdfbox # pdfbox # 3.0.7 | <notextile></notextile> |
@@ -303,13 +303,13 @@ Library licences are organised in three sections:
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.apache.pekko # pekko-stream_2.13 # 1.4.0](https://pekko.apache.org/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.tika # tika-core # 3.2.3](https://tika.apache.org/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.apache.ws.xmlschema # xmlschema-core # 2.3.2 | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-http # 12.1.8 | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-io # 12.1.8 | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-security # 12.1.8 | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-server # 12.1.8 | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-session # 12.1.8 | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-util # 12.1.8 | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty.ee11 # jetty-ee11-servlet # 12.1.8 | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-http # 12.1.10 | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-io # 12.1.10 | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-security # 12.1.10 | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-server # 12.1.10 | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-session # 12.1.10 | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty # jetty-util # 12.1.10 | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty.ee11 # jetty-ee11-servlet # 12.1.10 | <notextile></notextile> |
 | Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.parboiled # parboiled_2.13 # 2.5.0](http://parboiled.org) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # cachecontrol_2.13 # 3.0.1](https://github.com/playframework/cachecontrol) | <notextile></notextile> |
 | Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ahc-ws-standalone_2.13 # 3.0.10](https://github.com/playframework/play-ws/) | <notextile></notextile> |
@@ -343,7 +343,7 @@ Library licences are organised in three sections:
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.scala-lang.modules # scala-xml_2.13 # 2.2.0](http://www.scala-lang.org/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.slf4j # jcl-over-slf4j # 2.0.17](http://www.slf4j.org) | <notextile></notextile> |
 | Apache | [Apache-2.0](http://localhost) | [org.webjars # swagger-ui # 5.32.5](https://www.webjars.org) | <notextile></notextile> |
-| Apache | [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [com.fasterxml.woodstox # woodstox-core # 7.1.1](https://github.com/FasterXML/woodstox) | <notextile></notextile> |
+| Apache | [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [com.fasterxml.woodstox # woodstox-core # 7.2.0](https://github.com/FasterXML/woodstox) | <notextile></notextile> |
 | Apache | [The Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [com.hierynomus # asn-one # 0.6.0](https://github.com/hierynomus/asn-one) | <notextile></notextile> |
 | Apache | [The Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.agrona # agrona # 1.22.0](https://github.com/real-logic/agrona) | <notextile></notextile> |
 | Apache | [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.jspecify # jspecify # 1.0.0](http://jspecify.org/) | <notextile></notextile> |
@@ -401,7 +401,7 @@ Library licences are organised in three sections:
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [xml-apis # xml-apis-ext # 1.3.04](http://xml.apache.org/commons/components/external/) | <notextile></notextile> |
 | BSD | [BSD](https://opensource.org/license/bsd-3-clause) | com.thoughtworks.paranamer # paranamer # 2.8.3 | <notextile></notextile> |
 | BSD | [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause) | com.google.protobuf # protobuf-java # 4.33.0 | <notextile></notextile> |
-| BSD | [BSD-3-Clause](https://asm.ow2.io/license.html) | [org.ow2.asm # asm # 9.9.1](http://asm.ow2.io/) | <notextile></notextile> |
+| BSD | [BSD-3-Clause](https://asm.ow2.io/license.html) | [org.ow2.asm # asm # 9.10.1](http://asm.ow2.io/) | <notextile></notextile> |
 | BSD | [EDL 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [jakarta.activation # jakarta.activation-api # 2.1.4](https://github.com/jakartaee/jaf-api) | <notextile></notextile> |
 | BSD | [EDL 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | jakarta.mail # jakarta.mail-api # 2.1.5 | <notextile></notextile> |
 | BSD | [EDL 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | org.eclipse.angus # angus-activation # 2.0.3 | <notextile></notextile> |
@@ -414,11 +414,11 @@ Library licences are organised in three sections:
 | BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | jakarta.xml.bind # jakarta.xml.bind-api # 4.0.5 | <notextile></notextile> |
 | BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [jakarta.xml.soap # jakarta.xml.soap-api # 3.0.2](https://github.com/jakartaee/saaj-api) | <notextile></notextile> |
 | BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [jakarta.xml.ws # jakarta.xml.ws-api # 4.0.3](https://github.com/jakartaee/jax-ws-api) | <notextile></notextile> |
-| BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [org.glassfish.jaxb # jaxb-core # 4.0.8](https://eclipse-ee4j.github.io/jaxb-ri/) | <notextile></notextile> |
-| BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [org.glassfish.jaxb # jaxb-runtime # 4.0.8](https://eclipse-ee4j.github.io/jaxb-ri/) | <notextile></notextile> |
-| BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [org.glassfish.jaxb # txw2 # 4.0.8](https://eclipse-ee4j.github.io/jaxb-ri/) | <notextile></notextile> |
+| BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [org.glassfish.jaxb # jaxb-core # 4.0.9](https://eclipse-ee4j.github.io/jaxb-ri/) | <notextile></notextile> |
+| BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [org.glassfish.jaxb # jaxb-runtime # 4.0.9](https://eclipse-ee4j.github.io/jaxb-ri/) | <notextile></notextile> |
+| BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [org.glassfish.jaxb # txw2 # 4.0.9](https://eclipse-ee4j.github.io/jaxb-ri/) | <notextile></notextile> |
 | BSD | [Eclipse Distribution License - v 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | org.jvnet.staxex # stax-ex # 2.1.0 | <notextile></notextile> |
-| BSD | [The BSD 2-Clause License](http://www.opensource.org/licenses/bsd-license.php) | [org.codehaus.woodstox # stax2-api # 4.2.2](http://github.com/FasterXML/stax2-api) | <notextile></notextile> |
+| BSD | [The BSD 2-Clause License](http://www.opensource.org/licenses/bsd-license.php) | [org.codehaus.woodstox # stax2-api # 4.3.0](http://github.com/FasterXML/stax2-api) | <notextile></notextile> |
 | BSD | [Two-clause BSD-style license](https://github.com/slick/slick/blob/main/LICENSE.txt) | [com.typesafe.slick # slick-hikaricp_2.13 # 3.6.0](https://scala-slick.org) | <notextile></notextile> |
 | BSD | [Two-clause BSD-style license](https://github.com/slick/slick/blob/main/LICENSE.txt) | [com.typesafe.slick # slick_2.13 # 3.6.0](https://scala-slick.org) | <notextile></notextile> |
 | Bouncy Castle License | [Bouncy Castle Licence](https://www.bouncycastle.org/licence.html) | [org.bouncycastle # bcmail-jdk18on # 1.84](https://www.bouncycastle.org/download/bouncy-castle-java/) | <notextile></notextile> |
@@ -451,16 +451,16 @@ Library licences are organised in three sections:
 
 | License type                    | Name                              | Installed version | Link  |
 | :------------------------------ | :-------------------------------- | :---------------- | :---- |
-| MIT                             | @angular/localize                 | 21.2.14           | n/a   |
-| MIT                             | @angular/animations               | 21.2.14           | n/a   |
-| MIT                             | @angular/cdk                      | 21.2.12           | n/a   |
-| MIT                             | @angular/common                   | 21.2.14           | n/a   |
-| MIT                             | @angular/compiler                 | 21.2.14           | n/a   |
-| MIT                             | @angular/core                     | 21.2.14           | n/a   |
-| MIT                             | @angular/forms                    | 21.2.14           | n/a   |
-| MIT                             | @angular/platform-browser         | 21.2.14           | n/a   |
-| MIT                             | @angular/platform-browser-dynamic | 21.2.14           | n/a   |
-| MIT                             | @angular/router                   | 21.2.14           | n/a   |
+| MIT                             | @angular/localize                 | 21.2.17           | n/a   |
+| MIT                             | @angular/animations               | 21.2.17           | n/a   |
+| MIT                             | @angular/cdk                      | 21.2.14           | n/a   |
+| MIT                             | @angular/common                   | 21.2.17           | n/a   |
+| MIT                             | @angular/compiler                 | 21.2.17           | n/a   |
+| MIT                             | @angular/core                     | 21.2.17           | n/a   |
+| MIT                             | @angular/forms                    | 21.2.17           | n/a   |
+| MIT                             | @angular/platform-browser         | 21.2.17           | n/a   |
+| MIT                             | @angular/platform-browser-dynamic | 21.2.17           | n/a   |
+| MIT                             | @angular/router                   | 21.2.17           | n/a   |
 | MIT                             | @ctrl/ngx-codemirror              | 7.0.0             | n/a   |
 | (CC-BY-4.0 AND OFL-1.1 AND MIT) | @fortawesome/fontawesome-free     | 6.7.2             | n/a   |
 | MIT                             | @hugerte/hugerte-angular          | 1.0.3             | n/a   |
