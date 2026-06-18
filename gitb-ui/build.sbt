@@ -26,6 +26,9 @@ ThisBuild / libraryDependencySchemes ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 )
 
+javacOptions ++= Seq("--release", "21")
+scalacOptions ++= Seq("-release", "21")
+
 libraryDependencies ++= Seq(
   guice,
   ehcache,
