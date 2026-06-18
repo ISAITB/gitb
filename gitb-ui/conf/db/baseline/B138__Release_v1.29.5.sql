@@ -819,7 +819,7 @@ CREATE TABLE `systemconfigurations` (
 -- Dumping data for table `systemconfigurations`
 --
 
-INSERT INTO `systemconfigurations` VALUES ('session_alive_time','3600','session_alive_time');
+INSERT INTO `systemconfigurations` VALUES ('session_alive_time','{"enabled":true,"adminPendingTimeout":3600,"userPendingTimeout":3600,"otherTimeout":3600}','session_alive_time');
 -- In the case of migrations, force the startup wizard to be inactive.
 INSERT INTO `systemconfigurations`(name, parameter) VALUES ('startup_wizard', 'true');
 
@@ -1557,10 +1557,12 @@ INSERT INTO `schema_version` VALUES
 (130,'130','Health checks for test services','SQL','V130__Health_checks_for_test_services.sql',280954364,'gitb',CURRENT_TIMESTAMP(),1,1),
 (131,'131','Allow xml reports for users','SQL','V131__Allow_xml_reports_for_users.sql',-352609108,'gitb',CURRENT_TIMESTAMP(),1,1),
 (132,'132','Delete obsolete test interactions','SQL','V132__Delete_obsolete_test_interactions.sql',-758531209,'gitb',CURRENT_TIMESTAMP(),1,1),
-(133,'133','Session timeouts for interactive sessions','JDBC','db.migration.default.V133__Session_timeouts_for_interactive_sessions',NULL,CURRENT_TIMESTAMP(),1,1),
+(133,'133','Session timeouts for interactive sessions','JDBC','db.migration.default.V133__Session_timeouts_for_interactive_sessions', NULL,'gitb',CURRENT_TIMESTAMP(),1,1),
 (134,'134','Complete user preferences','SQL','V134__Complete_user_preferences.sql',-1561597957,'gitb',CURRENT_TIMESTAMP(),1,1),
 (135,'135','Add missing testcase group to snapshots','JDBC','db.migration.default.V135__Add_missing_testcase_group_to_snapshots',NULL,'gitb',CURRENT_TIMESTAMP(),1,1),
 (136,'136','User preference for home page','SQL','V136__User_preference_for_home_page.sql',-1773701542,'gitb',CURRENT_TIMESTAMP(),1,1),
 (137,'137','Community and domain tags','SQL','V137__Community_and_domain_tags.sql',-1218863229,'gitb',CURRENT_TIMESTAMP(),1,1),
-(138,'138','Community and domain tag flags','JDBC','db.migration.default.V138__Community_and_domain_tag_flags',NULL,'gitb',CURRENT_TIMESTAMP(),1,1);
+(138,'138','Community and domain tag flags','JDBC','db.migration.default.V138__Community_and_domain_tag_flags',NULL,'gitb',CURRENT_TIMESTAMP(),1,1),
+(139,'138.1','TPL storage and interactions as MEDIUMBLOB','SQL','V138_1__TPL_storage_and_interactions_as_MEDIUMBLOB.sql',NULL,'gitb',CURRENT_TIMESTAMP(),1,1);
+
 
