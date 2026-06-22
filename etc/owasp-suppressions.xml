@@ -441,4 +441,132 @@
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <vulnerabilityName>GHSA-x4vx-rjvf-j5p4</vulnerabilityName>
     </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-49458</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-49459</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-49978</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-76mc-f452-cxcm</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-cmwh-pvxp-8882</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-gvmj-g25r-r7wr</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-vxr8-fq34-vvx9</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-x4vx-rjvf-j5p4</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-49458</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-49459</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-49978</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-76mc-f452-cxcm</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-cmwh-pvxp-8882</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-gvmj-g25r-r7wr</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-vxr8-fq34-vvx9</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable CVE due to transitive dependency. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>GHSA-x4vx-rjvf-j5p4</vulnerabilityName>
+    </suppress>
 </suppressions>
