@@ -16,13 +16,11 @@
 package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
-
-import javax.inject.Inject
 import managers.AuthorizationManager
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{JsonUtil, MimeUtil}
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class TestResultService @Inject() (authorizedAction: AuthorizedAction,
@@ -34,7 +32,7 @@ class TestResultService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canGetBinaryFileMetadata(request).map { _ =>
       val data:String= ParameterExtractor.requiredBodyParameter(request, ParameterNames.DATA)
       val isBase64:Boolean = java.lang.Boolean.valueOf(ParameterExtractor.requiredBodyParameter(request, ParameterNames.IS_BASE64))
-      val mimeType = MimeUtil.getMimeType(data, !isBase64)
+      val mimeType = MimeUtil.getMimeType(data, !isBase64, true)
       val extension = MimeUtil.getExtensionFromMimeType(mimeType)
       val json = JsonUtil.jsBinaryMetadata(mimeType, extension).toString()
       ResponseConstructor.constructJsonResponse(json)

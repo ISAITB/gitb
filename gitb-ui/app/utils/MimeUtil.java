@@ -27,6 +27,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -120,20 +121,52 @@ public class MimeUtil {
         return extension;
     }
 
-    public static String getMimeType(String content, boolean notEncoded) {
+    public static String getMimeType(String content, boolean notEncoded, boolean refineTextPlain) {
+        String mimeType;
+        byte[] contentBytes = null;
         if (notEncoded) {
-            return getMimeType(content.getBytes());
+            mimeType = getMimeType(content.getBytes());
         } else {
+            // Base64 content
             if (isDataURL(content)) {
-                return getMimeTypeFromBase64(getBase64FromDataURL(content));
+                content = getBase64FromDataURL(content);
+            }
+            // Decoded base64 content
+            contentBytes = Base64.decodeBase64(content);
+            mimeType = getMimeType(contentBytes);
+        }
+        if (refineTextPlain && mimeType != null && mimeType.contains("text/plain")) {
+            if (contentBytes != null) {
+                mimeType = refineTextMimeType(new String(contentBytes, StandardCharsets.UTF_8));
             } else {
-                return getMimeTypeFromBase64(content);
+                mimeType = refineTextMimeType(content);
             }
         }
+        return mimeType;
     }
 
     public static String getMimeTypeFromDataURL(String dataURL) {
         return getMimeTypeFromBase64(getBase64FromDataURL(dataURL));
+    }
+
+    public static String refineTextMimeType(String content) {
+        String prefix = content.stripLeading();
+        if (prefix.length() > 256) prefix = prefix.substring(0, 256);
+        String lowerPrefix = prefix.toLowerCase(Locale.ROOT);
+        if (prefix.startsWith("{") || prefix.startsWith("[")) return "application/json";
+        if (lowerPrefix.startsWith("<!doctype html") || lowerPrefix.startsWith("<html")) return "text/html";
+        if (prefix.startsWith("<")) return "application/xml";
+        return "text/plain";
+    }
+
+    public static String refineTextMimeType(Path path) {
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            char[] buf = new char[256];
+            int n = reader.read(buf);
+            return refineTextMimeType(n > 0 ? new String(buf, 0, n) : "");
+        } catch (IOException e) {
+            return "text/plain";
+        }
     }
 
     public static String encryptString(String input) {

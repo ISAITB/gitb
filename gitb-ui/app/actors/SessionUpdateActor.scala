@@ -15,7 +15,7 @@
 
 package actors
 
-import actors.SessionUpdateActor.{InteractWithUsersRequestWrapper, SessionCompleted, TaskCompleted, TestStepStatusWrapper, isSessionEndMessage, isSessionLogMessage, isSessionStopMessage}
+import actors.SessionUpdateActor._
 import actors.events.sessions.TestSessionCompletedEvent
 import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
@@ -205,7 +205,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
           Files.createDirectories(sessionFolderPath)
           interactWithUsersRequest.getInteraction.getInstructionOrRequest.asScala.foreach {
             case instruction: Instruction if !StringUtils.isBlank(instruction.getValue) && StringUtils.isBlank(instruction.getName) => // Determine the file name from the BASE64 content.
-              val mimeType = MimeUtil.getMimeType(instruction.getValue, false)
+              val mimeType = MimeUtil.getMimeType(instruction.getValue, false, true)
               val extension = MimeUtil.getExtensionFromMimeType(mimeType)
               // Determine name.
               if (extension != null) {

@@ -120,13 +120,20 @@ export abstract class ReportSupport extends BaseComponent {
       modalInstance.documentName = name
       modalInstance.indicators = indicators
       modalInstance.lineNumber = lineNumber
+      let mimeTypeToUse = value.mimeType
+      if (mimeTypeToUse == undefined) {
+        mimeTypeToUse = this.dataService.refineTextMimeType(valueToUse)
+      }
+      if (mimeTypeToUse == undefined) {
+        mimeTypeToUse = 'application/xml'
+      }
       modalInstance.editorOptions = {
         value: valueToUse,
         readOnly: true,
         lineNumbers: true,
         smartIndent: false,
         electricChars: false,
-        mode: (value.mimeType == undefined) ? 'application/xml' : value.mimeType
+        mode: mimeTypeToUse
       }
     }
   }

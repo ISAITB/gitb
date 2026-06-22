@@ -632,6 +632,16 @@ export class DataService {
     return false
   }
 
+  refineTextMimeType(content: string): string|undefined {
+    let prefix = content.trimStart()
+    if (prefix.length > 256) prefix = prefix.substring(0, 256)
+    const lowerPrefix = prefix.toLowerCase()
+    if (prefix.startsWith('{') || prefix.startsWith('[')) return 'application/json'
+    if (lowerPrefix.startsWith('<!doctype html') || lowerPrefix.startsWith('<html')) return 'text/html'
+    if (prefix.startsWith('<')) return 'application/xml'
+    return undefined
+  }
+
   extensionFromMimeType(mimeTypeToCheck: string|undefined) {
     let result = ""
     if (mimeTypeToCheck != undefined) {
