@@ -75,7 +75,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.COMMENTS ],
     updatePending: false,
     updateDisabled: false
   }
@@ -231,6 +231,8 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
       searchCriteria.endTimeEndStr = filterData.endTimeEndStr
       searchCriteria.sessionId = filterData.sessionId
+      searchCriteria.hasComments = filterData.hasComments
+      searchCriteria.commentText = filterData.commentText
     } else if (this.sessionIdToShow != undefined || this.systemIdToShow != undefined || this.testCaseIdToShow != undefined) {
       if (this.sessionIdToShow != undefined) {
         searchCriteria.sessionId = this.sessionIdToShow

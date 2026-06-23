@@ -79,7 +79,7 @@
           }
         </div>
       }
-      @if (filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION)) {
+      @if (filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION) || filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
         <div class="filterRow">
           @if (filterDefined(Constants.FILTER_TYPE.SYSTEM)) {
             <div class="filterCell">
@@ -118,6 +118,14 @@
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SESSION]}}</span></div>
               <div class="filterValue">
                 <app-text-filter name="sessionFilter" [(ngModel)]="sessionId" (apply)="applyFilters()"></app-text-filter>
+              </div>
+            </div>
+          }
+          @if (filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+            <div class="filterCell">
+              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.COMMENTS]}}</span></div>
+              <div class="filterValue">
+                  <app-text-filter #commentFilter name="commentFilter" [(ngModel)]="commentText" (apply)="applyFilters()" [withToggle]="true" (toggle)="withComments = $event; applyFilters()"></app-text-filter>
               </div>
             </div>
           }
