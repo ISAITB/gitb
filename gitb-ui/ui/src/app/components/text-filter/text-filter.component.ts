@@ -16,6 +16,7 @@
 import {Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, Output, ViewChild} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {Constants} from 'src/app/common/constants';
+import {TextFilterComponentApi} from './text-filter-component-api';
 
 @Component({
     selector: 'app-text-filter',
@@ -30,15 +31,18 @@ import {Constants} from 'src/app/common/constants';
     ],
     standalone: false
 })
-export class TextFilterComponent implements ControlValueAccessor {
+export class TextFilterComponent implements ControlValueAccessor, TextFilterComponentApi {
 
   @Input() name!: string
   @Input() placeholder = ''
   @Input() width?: number
+  @Input() withToggle? = false
+  @Output() toggle = new EventEmitter<boolean>();
   @Output() apply = new EventEmitter<string|undefined>()
   @ViewChild('filterText') filterTextElement?: ElementRef
   @ViewChild('filterButtonSearch') filterButtonSearchElement?: ElementRef
   @ViewChild('filterButtonClear') filterButtonClearElement?: ElementRef
+  toggleValue = false
   Constants = Constants
   _filterValue?: string
   readonly = true
@@ -84,7 +88,7 @@ export class TextFilterComponent implements ControlValueAccessor {
   }
 
   filterClicked() {
-    if (this.readonly) {
+    if ((!this.withToggle || this.toggleValue) && this.readonly) {
       this.readonly = false
       if (this.value === undefined) {
         this.value = ''
@@ -102,6 +106,10 @@ export class TextFilterComponent implements ControlValueAccessor {
     this.submitOngoing = true
     this.applyFilter(false)
     this.submitOngoing = false
+  }
+
+  clearToggle() {
+    this.toggleValue = false
   }
 
   search() {
@@ -132,6 +140,13 @@ export class TextFilterComponent implements ControlValueAccessor {
       }
     }
     this.submitOngoing = false
+  }
+
+  toggleChanged() {
+    this.toggle.emit(this.toggleValue)
+    if (!this.toggleValue) {
+      this.value = undefined
+    }
   }
 
 }

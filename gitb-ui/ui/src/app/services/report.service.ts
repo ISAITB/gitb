@@ -173,6 +173,12 @@ export class ReportService {
       if (criteria.completedSortOrder !== undefined) {
         params.sort_order = criteria.completedSortOrder
       }
+      if (criteria.hasComments !== undefined) {
+        params.has_comments = criteria.hasComments
+      }
+      if (criteria.commentText !== undefined) {
+        params.comment_text = criteria.commentText
+      }
     }
     return params
   }

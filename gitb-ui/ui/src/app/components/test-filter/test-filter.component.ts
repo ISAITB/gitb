@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {FilterState} from 'src/app/types/filter-state';
@@ -47,6 +47,7 @@ import {FilterUpdate} from './filter-update';
 import {EntityWithId} from 'src/app/types/entity-with-id';
 import {Utils} from '../../common/utils';
 import {DateRange} from '../date-range/date-range';
+import {TextFilterComponentApi} from '../text-filter/text-filter-component-api';
 
 @Component({
     selector: 'app-test-filter',
@@ -80,6 +81,8 @@ export class TestFilterComponent implements OnInit {
 
   @Output() onApply = new EventEmitter<any>()
 
+  @ViewChild("commentFilter") commentFilterComponent?: TextFilterComponentApi
+
   Constants = Constants
   filterValues: { [key: string]: FilterValues<EntityWithId> } = {}
   organisationProperties: Array<CustomProperty> = []
@@ -96,6 +99,8 @@ export class TestFilterComponent implements OnInit {
 
   startDateModel?: DateRange
   endDateModel?: DateRange
+  withComments = false
+  commentText?: string
   addingOrganisationProperty = false
   addingSystemProperty = false
   loadingOrganisationProperties = false
@@ -129,6 +134,7 @@ export class TestFilterComponent implements OnInit {
     this.names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY] = this.dataService.labelOrganisation() + ' properties'
     this.names[Constants.FILTER_TYPE.RESULT] = 'Result'
     this.names[Constants.FILTER_TYPE.SESSION] = 'Session'
+    this.names[Constants.FILTER_TYPE.COMMENTS] = 'Comment'
     this.names[Constants.FILTER_TYPE.SPECIFICATION] = this.dataService.labelSpecification()
     this.names[Constants.FILTER_TYPE.SPECIFICATION_GROUP] = this.dataService.labelSpecificationGroup()
     this.names[Constants.FILTER_TYPE.START_TIME] = 'Start time'
@@ -528,6 +534,10 @@ export class TestFilterComponent implements OnInit {
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
       filters.sessionId = this.sessionId
     }
+    if (this.filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+      filters.hasComments = this.withComments
+      filters.commentText = (this.withComments && this.commentText) ? this.commentText : undefined
+    }
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)) {
       filters.organisationProperties = []
       for (let p of this.organisationProperties) {
@@ -645,6 +655,11 @@ export class TestFilterComponent implements OnInit {
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
       this.sessionId = undefined
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+      this.commentFilterComponent?.clearToggle()
+      this.withComments = false
+      this.commentText = undefined
     }
     this.organisationProperties = []
     this.systemProperties = []

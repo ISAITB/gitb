@@ -83,8 +83,10 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
       val sessionId = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SESSION_ID)
       val sortColumn = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SORT_COLUMN)
       val sortOrder = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SORT_ORDER)
+      val hasComments = ParameterExtractor.optionalBodyParameter(request, ParameterNames.HAS_COMMENTS).map(_.toBoolean)
+      val commentText = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMENT_TEXT)
 
-      testResultManager.getTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder).map { output =>
+      testResultManager.getTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder, hasComments, commentText).map { output =>
         val json = JsonUtil.jsSearchResult(output, JsonUtil.jsTestResultReports).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -158,7 +160,9 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
         val sortOrder = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SORT_ORDER)
         val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, ParameterNames.ORGANISATION_PARAMETERS))
         val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, ParameterNames.SYSTEM_PARAMETERS))
-        testResultManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
+        val hasComments = ParameterExtractor.optionalBodyParameter(request, ParameterNames.HAS_COMMENTS).map(_.toBoolean)
+        val commentText = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMENT_TEXT)
+        testResultManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder, hasComments, commentText)
       }
       parameterInfo <- {
         val forExport = ParameterExtractor.optionalBodyParameter(request, ParameterNames.EXPORT).getOrElse("false").toBoolean

@@ -32,6 +32,8 @@ export interface TestResultSearchCriteria {
   endTimeBeginStr?: string,
   endTimeEndStr?: string,
   sessionId?: string,
+  hasComments?: boolean,
+  commentText?: string,
   organisationProperties?: CustomProperty[],
   systemProperties?: CustomProperty[],
   activeSortColumn?: string,

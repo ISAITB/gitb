@@ -192,6 +192,8 @@ object ParameterNames {
   val TEST_ID    = "test_id"
   val SESSION_ID = "session_id"
   val SESSION_IDS= "session_ids"
+  val HAS_COMMENTS = "has_comments"
+  val COMMENT_TEXT = "comment_text"
   val CONFIG     = "config"
   val INPUTS     = "inputs"
   val VALUE     = "value"

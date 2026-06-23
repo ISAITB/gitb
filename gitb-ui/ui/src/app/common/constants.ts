@@ -180,6 +180,7 @@ export class Constants {
 		START_TIME: 'start_time',
 		END_TIME: 'end_time',
 		SESSION: 'session',
+		COMMENTS: 'comments',
 		ORGANISATION_PROPERTY: 'org_property',
 		SYSTEM_PROPERTY: 'sys_property',
 		SPECIFICATION_GROUP: 'specification_group',

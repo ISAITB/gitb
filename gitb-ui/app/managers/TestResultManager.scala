@@ -705,7 +705,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                        sortColumn: Option[String],
                                        sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
-      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting)
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, None, None, pendingAdministratorInteraction = false, skipSorting)
       DB.run(
         for {
           results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
@@ -732,10 +732,12 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                      endTimeEnd: Option[String],
                      sessionId: Option[String],
                      sortColumn: Option[String],
-                     sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
+                     sortOrder: Option[String],
+                     hasComments: Option[Boolean],
+                     commentText: Option[String]): Future[SearchResult[TestResult]] = {
 
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
-      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting)
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, hasComments, commentText, pendingAdministratorInteraction = false, skipSorting)
       DB.run(
         for {
           results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
@@ -771,7 +773,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
       val specIds = data._2
       val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds,
         memberIds.organisationIds, memberIds.systemIds, None,
-        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdminInteraction, skipSorting
+        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, None, None, pendingAdminInteraction, skipSorting
       )
       DB.run(
         for {
@@ -802,7 +804,9 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                              orgParameters: Option[Map[Long, Set[String]]],
                              sysParameters: Option[Map[Long, Set[String]]],
                              sortColumn: Option[String],
-                             sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
+                             sortOrder: Option[String],
+                             hasComments: Option[Boolean],
+                             commentText: Option[String]): Future[SearchResult[TestResult]] = {
     communityHelper.memberIdsToUse(organisationIds, systemIds, orgParameters, sysParameters).zip(
       getSpecIdsCriterionToUse(specIds, specGroupIds)
     ).flatMap { data =>
@@ -810,7 +814,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
       val specsIds = data._2
       val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specsIds,
         actorIds, testSuiteIds, testCaseIds, memberIds.organisationIds, memberIds.systemIds,
-        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting
+        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, hasComments, commentText, pendingAdministratorInteraction = false, skipSorting
       )
       DB.run(
         for {
@@ -822,7 +826,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
   }
 
   def getTestResult(sessionId: String): Future[Option[TestResult]] = {
-    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, pendingAdministratorInteraction = false, skipSorting = false)
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, None, None, pendingAdministratorInteraction = false, skipSorting = false)
     DB.run(query.result.headOption)
   }
 
@@ -869,47 +873,51 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                   completedStatus: Option[Boolean],
                                   sortColumn: Option[String],
                                   sortOrder: Option[String],
+                                  hasComments: Option[Boolean],
+                                  commentText: Option[String],
                                   pendingAdministratorInteraction: Boolean,
                                   skipSorting: Boolean) = {
-    var query = if (pendingAdministratorInteraction) {
+    // Phase 1: build base query by composing optional joins, always projecting back to TestResultsTable
+    var baseQuery = if (pendingAdministratorInteraction) {
       PersistenceSchema.testResults
         .join(PersistenceSchema.testInteractions).on(_.testSessionId === _.testSessionId)
         .filter(_._2.admin === true)
-        .filterOpt(communityIds)((table, ids) => table._1.communityId inSet ids)
-        .filterOpt(domainIds)((table, ids) => table._1.domainId inSet ids)
-        .filterOpt(specIds)((table, ids) => table._1.specificationId inSet ids)
-        .filterOpt(actorIds)((table, ids) => table._1.actorId inSet ids)
-        .filterOpt(testCaseIds)((table, ids) => table._1.testCaseId inSet ids)
-        .filterOpt(organizationIds)((table, ids) => table._1.organizationId inSet ids)
-        .filterOpt(systemIds)((table, ids) => table._1.sutId inSet ids)
-        .filterOpt(results)((table, results) => table._1.result inSet results)
-        .filterOpt(testSuiteIds)((table, ids) => table._1.testSuiteId inSet ids)
-        .filterOpt(startTimeBegin)((table, timeStr) => table._1.startTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(startTimeEnd)((table, timeStr) => table._1.startTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeBegin)((table, timeStr) => table._1.endTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeEnd)((table, timeStr) => table._1.endTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(sessionId)((table, id) => table._1.testSessionId === id)
-        .filterOpt(completedStatus)((table, completed) => if (completed) table._1.endTime.isDefined else table._1.endTime.isEmpty)
         .map(_._1)
-        .distinct
+        .distinct   // session can have multiple interactions
     } else {
-      PersistenceSchema.testResults
-        .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
-        .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
-        .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
-        .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
-        .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
-        .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
-        .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
-        .filterOpt(results)((table, results) => table.result inSet results)
-        .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
-        .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(sessionId)((table, id) => table.testSessionId === id)
-        .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+      PersistenceSchema.testResults: Query[PersistenceSchema.TestResultsTable, TestResult, Seq]
     }
+    val tokens = commentText.map(_.toLowerCase.split("\\s+").filter(_.nonEmpty).toList).getOrElse(Nil)
+    if (hasComments.contains(true) || tokens.nonEmpty) {
+      val likePattern = if (tokens.nonEmpty) Some(tokens.mkString("%", "%", "%")) else None
+      baseQuery = baseQuery
+        .join(PersistenceSchema.testResultComments).on(_.testSessionId === _.testSessionId)
+        .filter { case (_, c) =>
+          val present = c.userComment.isDefined || c.adminComment.isDefined
+          likePattern match {
+            case Some(p) => present && (c.userComment.getOrElse("").toLowerCase.like(p) || c.adminComment.getOrElse("").toLowerCase.like(p))
+            case None    => present
+          }
+        }
+        .map(_._1) // no distinct: testResultComments PK is testSessionId (1:1)
+    }
+    // Phase 2: apply all common filters once against the uniform base query
+    var query = baseQuery
+      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
+      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
+      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
+      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
+      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
+      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
+      .filterOpt(results)((table, results) => table.result inSet results)
+      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
+      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(sessionId)((table, id) => table.testSessionId === id)
+      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
     // Apply sorting
     if (!skipSorting && sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {
