@@ -19,10 +19,12 @@ import {
   EventEmitter,
   HostListener,
   Input,
+  OnChanges,
   OnInit,
   Output,
   QueryList,
   Renderer2,
+  SimpleChanges,
   ViewChild,
   ViewChildren
 } from '@angular/core';
@@ -53,7 +55,7 @@ import {TestSessionPresentationComponent} from '../diagram/test-session-presenta
     styleUrls: ['./session-table.component.less'],
     standalone: false
 })
-export class SessionTableComponent extends BaseTableComponent implements OnInit {
+export class SessionTableComponent extends BaseTableComponent implements OnInit, OnChanges {
 
   @Input() sessionTableId = 'session-table'
   @Input() expandedCounter?: { count: number }
@@ -119,6 +121,18 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // Precompute the row CSS class once per data load instead of evaluating it for every row on
+    // every change-detection pass (which is very expensive at large page sizes, especially during
+    // ngbCollapse animations that tick change detection at ~60fps).
+    if (changes['data'] && this.data) {
+      for (const row of this.data as TestResultForDisplay[]) {
+        row.rowClass = this.computeRowClass(row)
+        row.trackKey = row.session + '|' + row.result
+      }
+    }
+  }
+
   @HostListener('window:resize')
   onWindowResize() {
     this.updateSessionWidths();
@@ -148,24 +162,49 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
     test.diagramLoaded = true
     this.updateButtonBadges(test)
-    setTimeout(() => {
-      this.updateSessionWidths()
-      test.hideLoadingIcon = true
-      test.diagramExpanded = true
-    }, 200)
+    if (test.expansionPending) {
+      // The 'ready' event fires once the diagram data is loaded, but the diagram is only rendered into
+      // the DOM on the following change-detection cycle. Defer opening the row to a later task so the
+      // diagram is fully rendered first; ngbCollapse then measures the final height and the expand
+      // animation stays fluid (no mid-animation jump as the diagram appears).
+      test.expansionPending = false
+      setTimeout(() => {
+        this.updateSessionWidths()
+        test.expanded = true
+        if (this.expandedCounter !== undefined) {
+          this.expandedCounter.count = this.expandedCounter.count + 1
+        }
+      })
+    } else {
+      setTimeout(() => this.updateSessionWidths())
+    }
   }
 
   onExpand(data: TestResultForDisplay) {
-    data.expanded = data.expanded === undefined || !data.expanded
-    if (this.expandedCounter !== undefined) {
-      if (data.expanded) {
-        this.expandedCounter.count = this.expandedCounter.count + 1
-      } else {
+    if (data.expanded) {
+      // Collapse immediately.
+      data.expanded = false
+      if (this.expandedCounter !== undefined) {
         this.expandedCounter.count = this.expandedCounter.count - 1
       }
+    } else if (data.expansionPending) {
+      // Expansion already in progress - ignore further clicks until loading completes.
+      return
+    } else if (data.diagramLoaded) {
+      // The diagram was already loaded on a previous expansion: open immediately.
+      data.expanded = true
+      if (this.expandedCounter !== undefined) {
+        this.expandedCounter.count = this.expandedCounter.count + 1
+      }
+      this.loadSessionComments(data)
+    } else {
+      // First expansion: keep the row collapsed and show a spinner on the row's expand icon while the
+      // diagram loads. The diagram is rendered (gated on expansionPending in the template) so the load
+      // starts, but it stays hidden inside the collapsed row. diagramReady() opens the row, with the
+      // diagram already in place, once loading completes.
+      data.expansionPending = true
+      this.loadSessionComments(data)
     }
-    // Load comments eagerly to show indicator.
-    this.loadSessionComments(data)
   }
 
   public loadSessionComments(data: TestResultForDisplay) {
@@ -180,7 +219,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
-  rowClass(row: TestResultForDisplay) {
+  private computeRowClass(row: TestResultForDisplay) {
     let rowClass = ''
     if (this.rowStyle) {
       let customClass = this.rowStyle(row)
@@ -335,16 +374,21 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   toNavigationConfig(row: TestResultForDisplay): NavigationControlsConfig {
-    return {
-      systemId: row.systemId,
-      organisationId: row.organizationId,
-      communityId: row.communityId,
-      actorId: row.actorId,
-      specificationId: row.specificationId,
-      domainId: row.domainId,
-      testCaseId: row.testCaseId,
-      testSuiteId: row.testSuiteId,
+    // Cache the config on the row so the binding yields a stable object reference rather than
+    // allocating a new one (and re-triggering the navigation controls) on every change detection.
+    if (!row.navigationConfig) {
+      row.navigationConfig = {
+        systemId: row.systemId,
+        organisationId: row.organizationId,
+        communityId: row.communityId,
+        actorId: row.actorId,
+        specificationId: row.specificationId,
+        domainId: row.domainId,
+        testCaseId: row.testCaseId,
+        testSuiteId: row.testSuiteId,
+      }
     }
+    return row.navigationConfig
   }
 
   viewComments(row: TestResultForDisplay) {
@@ -364,6 +408,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       modalInstance.commentsEditable = !row.obsolete
       modalInstance.updateResult.subscribe((result) => {
         row.result = result.result;
+        row.trackKey = row.session + '|' + row.result
         this.testSessionPresentationComponents?.find((presentation => presentation.sessionId() === row.session))?.updateOutputMessage(result.outputMessage, result.result)
         this.tableRowComponents?.forEach((component) => component.refreshData())
       });

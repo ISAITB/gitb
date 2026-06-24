@@ -21,9 +21,8 @@ export interface SessionData {
     endTime?: string
     result: 'SUCCESS'|'FAILURE'|'UNDEFINED'
     diagramLoaded?: boolean
-    hideLoadingIcon?: boolean
-    diagramExpanded?: boolean
     expanded?: boolean
+    expansionPending?: boolean
     testSuite: string
     testCase: string
     diagramState?: SessionPresentationData
