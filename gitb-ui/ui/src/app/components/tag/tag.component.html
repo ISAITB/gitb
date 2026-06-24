@@ -1,35 +1,33 @@
 <div class="root-container" (click)="tagClicked($event)" [class.with-toggle]="toggleEnabled">
-    <div class="tag-container"
-        [class.pill]="pill"
-        [class.in-table]="inTable"
-        [class.in-form]="inForm"
-        [ngbTooltip]="tooltipText"
-        [disableTooltip]="tooltipText == undefined || tooltipText == ''"
-        [openDelay]="Constants.TOOLTIP_DELAY"
-        [ngClass]="styleClass == undefined ? '': styleClass"
-        [style.background]="background ? background : null"
-        [style.color]="foreground ? foreground : null"
-        [style.border]="(!isDefaultBorder()) ? ('1px solid '+background) : null"
-        [class.editable]="editable"
-    >
-        @if (label) {
-            <div class="tag-label">
-                @if (icon) {
-                    <span class="tag-label-icon"><i [ngClass]="label"></i></span>
-                } @else {
-                    <span class="tag-label-text">{{label}}</span>
-                }
-            </div>
-        }
-        @if (value) {
-            <div class="tag-value">{{value}}</div>
-        }
-        @if (toggleEnabled) {
-            <div class="form-switch ms-3">
-                <input name="toggle" class="form-check-input" type="checkbox" role="switch" aria-label="Toggle" [(ngModel)]="toggled">
-            </div>
-        }
-    </div>
+    @if (tooltipText) {
+        <div class="tag-container"
+            [class.pill]="pill"
+            [class.in-table]="inTable"
+            [class.in-form]="inForm"
+            [ngbTooltip]="tooltipText"
+            [openDelay]="Constants.TOOLTIP_DELAY"
+            [ngClass]="styleClass == undefined ? '': styleClass"
+            [style.background]="background ? background : null"
+            [style.color]="foreground ? foreground : null"
+            [style.border]="(!isDefaultBorder()) ? ('1px solid '+background) : null"
+            [class.editable]="editable"
+        >
+            <ng-container [ngTemplateOutlet]="tagBody"></ng-container>
+        </div>
+    } @else {
+        <div class="tag-container"
+            [class.pill]="pill"
+            [class.in-table]="inTable"
+            [class.in-form]="inForm"
+            [ngClass]="styleClass == undefined ? '': styleClass"
+            [style.background]="background ? background : null"
+            [style.color]="foreground ? foreground : null"
+            [style.border]="(!isDefaultBorder()) ? ('1px solid '+background) : null"
+            [class.editable]="editable"
+        >
+            <ng-container [ngTemplateOutlet]="tagBody"></ng-container>
+        </div>
+    }
     @if (editable) {
         <div class="tag-controls">
             <div class="btn-group">
@@ -39,3 +37,23 @@
         </div>
     }
 </div>
+
+<ng-template #tagBody>
+    @if (label) {
+        <div class="tag-label">
+            @if (icon) {
+                <span class="tag-label-icon"><i [ngClass]="label"></i></span>
+            } @else {
+                <span class="tag-label-text">{{label}}</span>
+            }
+        </div>
+    }
+    @if (value) {
+        <div class="tag-value">{{value}}</div>
+    }
+    @if (toggleEnabled) {
+        <div class="form-switch ms-3">
+            <input name="toggle" class="form-check-input" type="checkbox" role="switch" aria-label="Toggle" [(ngModel)]="toggled">
+        </div>
+    }
+</ng-template>

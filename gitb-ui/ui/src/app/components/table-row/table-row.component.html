@@ -8,14 +8,17 @@
 @if (expandableRowProperty != undefined) {
     <td class="td-min centered">
         <div class="cell-content row-control">
-            <app-collapsing-icon [padded]="false" [isCollapsed]="data[expandableRowProperty] == undefined || !data[expandableRowProperty]"></app-collapsing-icon>
+            @if (expandPendingProperty != undefined && data[expandPendingProperty]) {
+                <app-pending-block [icon]="true" [small]="true"></app-pending-block>
+            } @else {
+                <app-collapsing-icon [padded]="false" [isCollapsed]="data[expandableRowProperty] == undefined || !data[expandableRowProperty]"></app-collapsing-icon>
+            }
         </div>
     </td>
 }
 @for (item of columnDataItemsAtLeft; track i; let i = $index) {
-    <td class="{{item.class}}">
-        <app-table-column-content [item]="item" [column]="columns[i]"></app-table-column-content>
-    </td>
+    @let col = columns[i];
+    <ng-template [ngTemplateOutlet]="columnCell" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-template>
 }
 @if (showOptions) {
     <td class="td-min centered">
@@ -24,7 +27,7 @@
                                        label="Options"
                                        [icon]="Constants.BUTTON_ICON.ACTIONS"
                                        placement="left"
-                                       [optionProvider]="loadAvailableOptionsFactory()"
+                                       [optionProvider]="optionsFactory"
                                        [singleSelection]="true"
                                        [pending]="data[optionPendingProperty] || data[actionPendingProperty] || data[deletePendingProperty] || data[exportPendingProperty]"
                                        [smallButton]="true"
@@ -35,17 +38,17 @@
     <td class="td-min centered">
         <div class="cell-content">
             <div class="btn-toolbar">
-                @if (actionVisible && (!actionVisibleForRow || actionVisibleForRow(data))) {
+                @if (showActionButton) {
                     <button type="button" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-sm btn-secondary" (click)="action(); $event.stopPropagation();" container="body" tooltipClass="shortTooltip" [ngbTooltip]="actionTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                         <i [ngClass]="actionIcon"></i>
                     </button>
                 }
-                @if (operationsVisible && (!deleteVisibleForRow || deleteVisibleForRow(data))) {
+                @if (showDeleteButton) {
                     <button type="button" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-sm btn-secondary" (click)="delete(); $event.stopPropagation();" container="body" tooltipClass="shortTooltip" [ngbTooltip]="deleteTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                         <i [ngClass]="deleteIcon"></i>
                     </button>
                 }
-                @if (exportVisible && (!exportVisibleForRow || exportVisibleForRow(data))) {
+                @if (showExportButton) {
                     <button type="button" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-sm btn-secondary" (click)="export(); $event.stopPropagation();" container="body" tooltipClass="shortTooltip" [ngbTooltip]="exportTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                         <i [ngClass]="exportIcon"></i>
                     </button>
@@ -55,7 +58,38 @@
     </td>
 }
 @for (item of columnDataItemsAtRight; track i; let i = $index) {
-    <td class="{{item.class}}">
-        <app-table-column-content [item]="item" [column]="columns[columnDataItemsAtLeft.length + i]"></app-table-column-content>
-    </td>
+    @let col = columns[columnDataItemsAtLeft.length + i];
+    <ng-template [ngTemplateOutlet]="columnCell" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-template>
 }
+
+<ng-template #columnCell let-item let-col="col">
+    <td class="{{item.class}}">
+        <div class="cell-content">
+            @if (col.iconFn) {
+                <span class="d-flex">
+                @if (col.iconTooltipFn != undefined) {
+                    <i [ngClass]="col.iconFn!(item.data)" tooltipClass="shortTooltip" [ngbTooltip]="col.iconTooltipFn!(item.data)"></i>
+                } @else {
+                    <i [ngClass]="col.iconFn!(item.data)"></i>
+                }
+                </span>
+            } @else {
+                @if (item.boolean) {
+                    @if (item.isHiddenFlag) {
+                        @if (item.data) {
+                            <app-hidden-icon></app-hidden-icon>
+                        }
+                    } @else {
+                        <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
+                    }
+                } @else if (item.data != undefined && col.tag === true) {
+                    <app-tag [label]="col.tagIcon" [icon]="true" [tooltipText]="col.tagTooltip" [value]="item.data" [inTable]="true"></app-tag>
+                } @else if (item.data != undefined && col.tagData === true) {
+                    <app-tags-display [tags]="item.data"></app-tags-display>
+                } @else {
+                    {{item.data}}
+                }
+            }
+        </div>
+    </td>
+</ng-template>

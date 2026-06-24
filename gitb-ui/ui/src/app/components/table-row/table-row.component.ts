@@ -51,6 +51,7 @@ export class TableRowComponent implements OnInit, TableRowApi {
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
   @Input() expandableRowProperty?: string
+  @Input() expandPendingProperty?: string
   @Input() refresh?: EventEmitter<void>
 
   @Input() optionsVisible: boolean = false
@@ -71,6 +72,11 @@ export class TableRowComponent implements OnInit, TableRowApi {
   columnDataItemsAtLeft: TableColumnData[] = []
   columnDataItemsAtRight: TableColumnData[] = []
   showOptions = false
+  showActionButton = false
+  showDeleteButton = false
+  showExportButton = false
+  // Stable reference so the options panel's input doesn't churn on every change-detection pass.
+  optionsFactory: () => Observable<CheckboxOption[][]> = () => this.loadAvailableOptions()
 
   protected static EXPORT_OPTION = '0'
   protected static ACTION_OPTION = '1'
@@ -120,6 +126,11 @@ export class TableRowComponent implements OnInit, TableRowApi {
         || (this.actionVisible && (this.exportVisible || this.operationsVisible))
         || (this.exportVisible && (this.actionVisible || this.operationsVisible))
         || (this.operationsVisible && (this.actionVisible || this.exportVisible))
+    // Precompute the single-button visibility predicates so they are not re-evaluated for every
+    // row on every change-detection pass.
+    this.showActionButton = this.actionVisible && (!this.actionVisibleForRow || this.actionVisibleForRow(this.data))
+    this.showDeleteButton = this.operationsVisible && (!this.deleteVisibleForRow || this.deleteVisibleForRow(this.data))
+    this.showExportButton = this.exportVisible && (!this.exportVisibleForRow || this.exportVisibleForRow(this.data))
   }
 
   delete() {
@@ -147,10 +158,6 @@ export class TableRowComponent implements OnInit, TableRowApi {
     } else {
       return ''
     }
-  }
-
-  loadAvailableOptionsFactory() {
-    return () => this.loadAvailableOptions()
   }
 
   private loadAvailableOptions(): Observable<CheckboxOption[][]> {

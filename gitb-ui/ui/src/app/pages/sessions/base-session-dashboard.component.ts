@@ -345,9 +345,10 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     result.testSuiteId = testResult.testSuite?.id
     result.testCaseId = testResult.test?.id
     if (this.expandFirstSession) {
-      // We have been asked to open a session. Set it as expand and keep it once.
+      // We have been asked to open a session. Defer the expansion until the diagram has loaded (shows
+      // a spinner on the row and then animates open), matching a user-initiated expansion. Keep it once.
       this.expandFirstSession = false
-      result.expanded = true
+      result.expansionPending = true
       this.sessionIdToShow = undefined
       this.testCaseIdToShow = undefined
       this.systemIdToShow = undefined

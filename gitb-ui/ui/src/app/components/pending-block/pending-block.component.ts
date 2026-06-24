@@ -27,6 +27,7 @@ export class PendingBlockComponent {
   @Input() pending = true
   @Input() icon = false
   @Input() large = false
+  @Input() small = false
 
   constructor() { }
 

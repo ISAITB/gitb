@@ -15,6 +15,13 @@
 
 @import '../../../styles/less/_common.less';
 
+// Promote the table container to its own compositor layer. When it is shifted by a height animation
+// above it (expanding the filters/active panel) or by a row expanding, Chrome re-composites the
+// already-rasterised layer (cheap GPU move) instead of repainting the whole 100-row table each frame.
+.table-container {
+    transform: translateZ(0);
+}
+
 .test-case-session {
     border: 1px solid @gray-dark-1;
     border-radius: @border-radius;

@@ -58,11 +58,11 @@
                     </td>
                 </tr>
             }
-            @for (row of data; let i = $index; track row.session+'|'+row.result) {
+            @for (row of data; let i = $index; track row.trackKey) {
                 <tr table-row-directive #tableRowComponent
                     class="table-row-directive expandable-table-row-collapsed"
                     [class.disable-events]="contentRefreshing"
-                    [ngClass]="rowClass(row)"
+                    [ngClass]="row.rowClass"
                     (click)="onExpand(row)"
                     [data]="row"
                     [columns]="columns"
@@ -97,10 +97,12 @@
 
                     [checkboxEnabled]="checkboxEnabled"
                     (onCheck)="handleCheck($event)"
-                    [expandableRowProperty]="'expanded'"></tr>
+                    [expandableRowProperty]="'expanded'"
+                    [expandPendingProperty]="'expansionPending'"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
                         <div [ngbCollapse]="!row.expanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
+                          @if (row.expanded || row.diagramLoaded || row.expansionPending) {
                             <div class="p-2">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
@@ -189,27 +191,15 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div [ngbCollapse]="diagramCollapsed[row.session]" [animation]="true" (hidden)="toggleDiagramCollapsedFinished(row.session, true)" (shown)="toggleDiagramCollapsedFinished(row.session, false)">
-                                        <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
-                                            @if (!row.hideLoadingIcon) {
-                                                <div class="p-3">
-                                                    <app-pending-block></app-pending-block>
-                                                </div>
-                                            }
-                                            <div [ngbCollapse]="!row.diagramExpanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
-                                                @if (row.expanded || row.diagramLoaded) {
-                                                    <div>
-                                                        <app-test-session-presentation #testSessionPresentationComponent
-                                                            [session]="row"
-                                                            (ready)="diagramReady($event)">
-                                                        </app-test-session-presentation>
-                                                    </div>
-                                                }
-                                            </div>
-                                        </div>
+                                    <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
+                                        <app-test-session-presentation #testSessionPresentationComponent
+                                            [session]="row"
+                                            (ready)="diagramReady($event)">
+                                        </app-test-session-presentation>
                                     </div>
                                 </div>
                             </div>
+                          }
                         </div>
                     </td>
                 </tr>

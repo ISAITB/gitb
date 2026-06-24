@@ -14,6 +14,7 @@
  */
 
 import {SessionData} from 'src/app/components/diagram/test-session-presentation/session-data';
+import {NavigationControlsConfig} from 'src/app/components/navigation-controls/navigation-controls-config';
 
 export interface TestResultForDisplay extends SessionData {
 
@@ -41,5 +42,11 @@ export interface TestResultForDisplay extends SessionData {
     commentsPending?: boolean
     commentsLoaded?: boolean
     hasComments?: boolean
+
+    // Precomputed/cached display state (avoids per-change-detection work in the session table template).
+    rowClass?: string
+    navigationConfig?: NavigationControlsConfig
+    // Cached @for track key (session|result). Recomputed only when the result changes in-place.
+    trackKey?: string
 
 }
