@@ -19,7 +19,7 @@ import {
   EventEmitter,
   HostListener,
   Input,
-  OnChanges,
+  OnChanges, OnDestroy,
   OnInit,
   Output,
   QueryList,
@@ -35,7 +35,7 @@ import {TestResultForDisplay} from 'src/app/types/test-result-for-display';
 import {BaseTableComponent} from '../base-table/base-table.component';
 import {SessionData} from '../diagram/test-session-presentation/session-data';
 import {SessionLogModalComponent} from '../session-log-modal/session-log-modal.component';
-import {forkJoin, mergeMap, Observable, of} from 'rxjs';
+import {forkJoin, mergeMap, Observable, of, Subscription} from 'rxjs';
 import {ProvideInputModalComponent} from 'src/app/modals/provide-input-modal/provide-input-modal.component';
 import {TestService} from 'src/app/services/test.service';
 import {TestResultReport} from 'src/app/types/test-result-report';
@@ -55,7 +55,7 @@ import {TestSessionPresentationComponent} from '../diagram/test-session-presenta
     styleUrls: ['./session-table.component.less'],
     standalone: false
 })
-export class SessionTableComponent extends BaseTableComponent implements OnInit, OnChanges {
+export class SessionTableComponent extends BaseTableComponent implements OnInit, OnChanges, OnDestroy {
 
   @Input() sessionTableId = 'session-table'
   @Input() expandedCounter?: { count: number }
@@ -72,10 +72,11 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
 
   Constants = Constants
   columnCount = 0
-  diagramCollapsed: {[key: string]: boolean} = {}
   diagramCollapsedFinished: {[key: string]: boolean} = {}
   viewLogPending: {[key: string]: boolean} = {}
   sessionBeingRefreshed?: TestResultForDisplay
+  pageSizeChangeSubscription?: Subscription;
+  rowsAnimated = true
 
   constructor(
     private readonly reportService: ReportService,
@@ -119,6 +120,19 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
         }
       })
     }
+    this.setRowsAnimated()
+    this.pageSizeChangeSubscription = this.dataService.onPageSizeChange$.subscribe((newSize: number) => this.setRowsAnimated())
+  }
+
+  ngOnDestroy(): void {
+    if (this.pageSizeChangeSubscription) {
+      this.pageSizeChangeSubscription.unsubscribe();
+    }
+  }
+
+  private setRowsAnimated(): void {
+    // If we are showing 100 rows per table disable row animations as this results in choppy frame updates.
+    this.rowsAnimated = this.dataService.defaultPagingTableSize < 100
   }
 
   ngOnChanges(changes: SimpleChanges): void {

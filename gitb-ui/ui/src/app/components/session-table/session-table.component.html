@@ -101,7 +101,7 @@
                     [expandPendingProperty]="'expansionPending'"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                        <div [ngbCollapse]="!row.expanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
+                        <div [ngbCollapse]="!row.expanded" [animation]="rowsAnimated" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
                           @if (row.expanded || row.diagramLoaded || row.expansionPending) {
                             <div class="p-2">
                                 <div class="sessionControls">
