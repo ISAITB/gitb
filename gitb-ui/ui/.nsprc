@@ -110,5 +110,41 @@
     "1120138": {
         "active": true,
         "notes": "Non-exploitable vulnerability from transitive dependency."
+    },
+    "1120793": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1120800": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1120801": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1120802": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1120803": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1120805": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1120812": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1120813": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1121192": {
+        "active": true,
+        "notes": "Related to transitive dependency and is not exploitable."
     }
 }
