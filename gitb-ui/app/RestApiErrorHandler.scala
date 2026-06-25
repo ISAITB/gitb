@@ -23,10 +23,11 @@ import javax.inject.Singleton
 class RestApiErrorHandler {
 
   def onClientError(request: RequestHeader, statusCode: Int, message: String): Result = {
+    val detail = if (message != null && message.isBlank) None else Option(message)
     val description = if (message != null && message.toLowerCase.contains("json")) {
-      "Failed to parse provided payload as JSON"
+      detail.map(d => s"Failed to parse provided payload as JSON: $d").getOrElse("Failed to parse provided payload as JSON")
     } else {
-      "The received request was invalid."
+      detail.map(d => s"The received request was invalid: $d").getOrElse("The received request was invalid")
     }
     ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, description)
   }

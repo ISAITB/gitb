@@ -47,18 +47,24 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents,
   private val LOG = LoggerFactory.getLogger(classOf[BaseAutomationService])
 
   private def bodyToJson(request: Request[AnyContent]): Option[JsValue] = {
-    try {
-      var result: Option[JsValue] = request.body.asJson
-      if (result.isEmpty) {
-        val text = request.body.asText
-        if (text.isDefined) {
-          result = Some(Json.parse(text.get))
-        }
-      }
-      result
+    var result: Option[JsValue] = try {
+      request.body.asJson
     } catch {
       case _: Throwable => None
     }
+    if (result.isEmpty) {
+      val text = request.body.asText
+      if (text.isDefined) {
+        try {
+          result = Some(Json.parse(text.get))
+        } catch {
+          case e: Exception =>
+            val detail = if (e.getMessage != null && !e.getMessage.isBlank) s": ${e.getMessage}" else ""
+            throw AutomationApiException(ErrorCodes.INVALID_REQUEST, s"Failed to parse provided payload as JSON$detail")
+        }
+      }
+    }
+    result
   }
 
   protected def process(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, authorisationFn: () => Future[_], processFn: Any => Future[Result]): Future[Result] = {
