@@ -86,15 +86,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -132,15 +131,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -175,15 +173,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -234,15 +231,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -281,15 +277,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -335,15 +330,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -394,15 +388,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -449,15 +442,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -508,15 +500,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -555,15 +546,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -609,15 +599,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -677,15 +666,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -732,15 +720,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -791,15 +778,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -838,15 +824,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -892,15 +877,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -960,15 +944,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1028,15 +1011,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1083,15 +1065,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1142,15 +1123,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -1189,15 +1169,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -1243,15 +1222,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1311,15 +1289,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1366,15 +1343,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -1412,15 +1388,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1471,15 +1446,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -1518,15 +1492,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1566,15 +1539,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -1619,15 +1591,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1675,15 +1646,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -1732,15 +1702,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -1779,15 +1748,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1838,15 +1806,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1893,15 +1860,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1949,15 +1915,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -2006,15 +1971,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -2053,15 +2017,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2108,15 +2071,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2156,15 +2118,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -2202,15 +2163,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2251,15 +2211,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2309,15 +2268,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2375,7 +2333,11 @@
             "name": "serviceType",
             "schema": {
               "type": "string",
-              "enum": ["messaging", "validation", "processing"]
+              "enum": [
+                "messaging",
+                "validation",
+                "processing"
+              ]
             },
             "required": false,
             "description": "The service's type."
@@ -2385,7 +2347,10 @@
             "name": "apiType",
             "schema": {
               "type": "string",
-              "enum": ["soap", "rest"]
+              "enum": [
+                "soap",
+                "rest"
+              ]
             },
             "required": false,
             "description": "The service's API type."
@@ -2415,15 +2380,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -2461,15 +2425,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -2507,15 +2470,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2556,15 +2518,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2614,15 +2575,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2662,15 +2622,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -2708,15 +2667,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2757,15 +2715,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2805,15 +2762,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -2851,15 +2807,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2900,15 +2855,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -2959,15 +2913,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -3016,15 +2969,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3074,15 +3026,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3111,6 +3062,15 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3150,6 +3110,15 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3189,6 +3158,15 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3237,6 +3215,15 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3286,15 +3273,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -3342,15 +3328,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -3411,15 +3396,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3491,15 +3475,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3547,15 +3530,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3603,15 +3585,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3653,15 +3634,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3718,15 +3698,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3784,15 +3763,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3850,15 +3828,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3900,15 +3877,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -3950,15 +3926,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -4006,15 +3981,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -4056,15 +4030,14 @@
               }
             }
           },
-          "default": {
-            "description": "The received request was invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorInformation"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -5628,12 +5601,19 @@
           "serviceType": {
             "description": "The type of the service.",
             "type": "string",
-            "enum": ["messaging", "validation", "processing"]
+            "enum": [
+              "messaging",
+              "validation",
+              "processing"
+            ]
           },
           "apiType": {
             "description": "The API type of the service.",
             "type": "string",
-            "enum": ["soap", "rest"],
+            "enum": [
+              "soap",
+              "rest"
+            ],
             "default": "soap"
           },
           "authBasicUsername": {
@@ -5655,7 +5635,10 @@
           "authTokenPasswordType": {
             "description": "When the WS-Security UsernameToken profile is used, this is the type of password provision to use.",
             "type": "string",
-            "enum": ["digest", "text"]
+            "enum": [
+              "digest",
+              "text"
+            ]
           },
           "authHttpHeaderName": {
             "description": "When authentication via HTTP header is used, this is the name of the header.",
@@ -5708,12 +5691,19 @@
           "serviceType": {
             "description": "The type of the service. Skip this if no update should be made.",
             "type": "string",
-            "enum": ["messaging", "validation", "processing"]
+            "enum": [
+              "messaging",
+              "validation",
+              "processing"
+            ]
           },
           "apiType": {
             "description": "The API type of the service. Skip this if no update should be made.",
             "type": "string",
-            "enum": ["soap", "rest"],
+            "enum": [
+              "soap",
+              "rest"
+            ],
             "default": "soap"
           },
           "authBasicUsername": {
@@ -5735,7 +5725,10 @@
           "authTokenPasswordType": {
             "description": "When the WS-Security UsernameToken profile is used, this is the type of password provision to use. Skip this if no update should be made.",
             "type": "string",
-            "enum": ["digest", "text"]
+            "enum": [
+              "digest",
+              "text"
+            ]
           },
           "authHttpHeaderName": {
             "description": "When authentication via HTTP header is used, this is the name of the header. Skip this if no update should be made or set with an empty string to delete all header-based authentication information.",
@@ -5782,12 +5775,19 @@
           "serviceType": {
             "description": "The type of the service.",
             "type": "string",
-            "enum": ["messaging", "validation", "processing"]
+            "enum": [
+              "messaging",
+              "validation",
+              "processing"
+            ]
           },
           "apiType": {
             "description": "The API type of the service.",
             "type": "string",
-            "enum": ["soap", "rest"],
+            "enum": [
+              "soap",
+              "rest"
+            ],
             "default": "soap"
           },
           "description": {
@@ -6759,6 +6759,38 @@
         "type": "apiKey",
         "in": "header",
         "name": "ITB_API_KEY"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request was not valid and could not be processed. This may indicate a malformed or invalid JSON payload, a missing or invalid API key, missing required fields, or a business-level validation error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorInformation"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Access denied. The API key provided does not have the required permissions to perform this operation.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorInformation"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "An unexpected server error occurred. The error_id field in the response body (when present) can be used to correlate the error with server logs.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorInformation"
+            }
+          }
+        }
       }
     }
   }

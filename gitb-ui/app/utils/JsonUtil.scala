@@ -3856,10 +3856,10 @@ object JsonUtil {
       "error_code" -> code,
       "error_description" -> errorDescToUse
     )
-    if (errorIdentifier.isDefined) {
+    if (errorIdentifier.exists(!_.isBlank)) {
       obj = obj.+("error_id" -> JsString(errorIdentifier.get))
     }
-    if (errorHint.isDefined) {
+    if (errorHint.exists(!_.isBlank)) {
       obj = obj.+("error_hint" -> JsString(errorHint.get))
     }
     obj

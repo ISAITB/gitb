@@ -191,6 +191,8 @@ object Configurations {
   var PUBLIC_CONTEXT_ROOT_WITH_SLASH = ""
   var API_PREFIX = ""
   var API_ROOT = ""
+  var API_PUBLIC_ROOT = ""
+  var API_PUBLIC_PREFIX = ""
   var AUTOMATION_API_ENABLED = false
   var AUTOMATION_API_MASTER_KEY: Option[String] = None
   var BUILD_TIMESTAMP = ""
@@ -231,6 +233,8 @@ object Configurations {
       WEB_CONTEXT_ROOT_WITH_SLASH = Strings.CS.appendIfMissing(WEB_CONTEXT_ROOT, "/")
       API_PREFIX = conf.getString("apiPrefix")
       API_ROOT = WEB_CONTEXT_ROOT_WITH_SLASH + API_PREFIX
+      API_PUBLIC_PREFIX = API_PREFIX + "/rest"
+      API_PUBLIC_ROOT = API_ROOT + "/rest"
       PUBLIC_CONTEXT_ROOT = fromEnv("AUTHENTICATION_COOKIE_PATH", WEB_CONTEXT_ROOT)
       PUBLIC_CONTEXT_ROOT_WITH_SLASH = Strings.CS.appendIfMissing(PUBLIC_CONTEXT_ROOT, "/")
       // Context paths - end
@@ -478,7 +482,7 @@ object Configurations {
 
   def restApiJsonLink(): Option[String] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
-      Some(Configurations.API_PREFIX + "/rest")
+      Some(API_PUBLIC_PREFIX)
     } else {
       None
     }
