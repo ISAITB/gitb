@@ -85,9 +85,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
         }
     }
 
-    private ActorRef createChildActor(int reportedIndex, Object childStep) throws Exception {
-        ActorContext context = getContext();
-        ActorRef child;
+    private String internalStepId(int reportedIndex) {
         String childStepId;
         if (reportedIndex != -1) { // report the status
             childStepId = stepId.isEmpty()
@@ -96,6 +94,13 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
         } else {
             childStepId = "";
         }
+        return childStepId;
+    }
+
+    private ActorRef createChildActor(int reportedIndex, Object childStep) throws Exception {
+        ActorContext context = getContext();
+        ActorRef child;
+        String childStepId = internalStepId(reportedIndex);
         var stepContext = StepContext.from(step);
         child = switch (childStep) {
             case Send send -> SendStepProcessorActor.create(context, send, scope, childStepId, stepContext);
@@ -185,10 +190,13 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                 // If there are remaining steps these should be marked as skipped.
                 if ((completedStepIndex + 1) < childStepSpecs.size()) {
                     for (int i = completedStepIndex + 1; i < childStepSpecs.size(); i++) {
-                        var pendingStep = childStepSpecs.get(i).getRight();
-                        if (pendingStep instanceof TestConstruct && ((TestConstruct)pendingStep).getId() != null) {
-                            TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), getStepReportMap(), (TestConstruct) pendingStep, scope, StepStatus.SKIPPED);
-                            var pendingEvent = new TestStepStatusEvent(scope.getContext().getSessionId(), ((TestConstruct)pendingStep).getId(), StepStatus.SKIPPED, constructDefaultReport(TestResultType.UNDEFINED), self(), pendingStep, scope);
+                        var childStepSpec = childStepSpecs.get(i);
+                        var pendingStep = childStepSpec.getRight();
+                        var pendingStepIndex = childStepSpec.getLeft();
+                        if (pendingStep instanceof TestConstruct testConstruct) {
+                            TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), getStepReportMap(), testConstruct, scope, StepStatus.SKIPPED);
+                            String pendingStepInternalId = internalStepId(pendingStepIndex);
+                            var pendingEvent = new TestStepStatusEvent(scope.getContext().getSessionId(), pendingStepInternalId, StepStatus.SKIPPED, constructDefaultReport(TestResultType.UNDEFINED), self(), pendingStep, scope);
                             TestStepStatusEventBus.getInstance().publish(pendingEvent);
                         }
                     }
