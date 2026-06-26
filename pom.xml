@@ -104,6 +104,11 @@
         </license>
     </licenses>
 
+    <organization>
+        <name>European Commission, DIGIT, Interoperable Europe Unit</name>
+        <url>https://interoperable-europe.ec.europa.eu/</url>
+    </organization>
+
     <developers>
         <developer>
             <name>European Commission, DIGIT, Interoperable Europe Unit</name>
