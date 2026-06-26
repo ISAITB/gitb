@@ -13,6 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models.automation
+export interface ApiKeyStatementInfo {
 
-case class ApiKeySpecificationInfo(id: Long, name: String, actors: List[ApiKeyActorInfo]) {}
+  system: number
+  actors: string[]
+
+}

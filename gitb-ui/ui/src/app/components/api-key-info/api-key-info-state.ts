@@ -31,10 +31,13 @@ export interface ApiKeyInfoState extends LoadingStatus {
   apiInfo?: ApiKeyInfo
   conformanceSnapshots?: ConformanceSnapshot[]
   selectedSnapshot?: ConformanceSnapshot
-  selectedSpecification?: ApiKeySpecificationInfo
-  selectedActor?: ApiKeyActorInfo
-  selectedTestSuite?: ApiKeyTestSuiteInfo
-  selectedTestCase?: ApiKeyTestCaseInfo
   selectedSystem?: ApiKeySystemInfo
+
+  selectedAssignedSpecification?: ApiKeySpecificationInfo
+  selectedAssignedActor?: ApiKeyActorInfo
+  selectedAssignedTestSuite?: ApiKeyTestSuiteInfo
+  selectedAssignedTestCase?: ApiKeyTestCaseInfo
+
+  assignedSpecifications?: ApiKeySpecificationInfo[]
 
 }

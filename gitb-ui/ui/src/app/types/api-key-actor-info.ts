@@ -13,10 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {ApiKeyTestSuiteInfo} from './api-key-test-suite-info';
+
 export interface ApiKeyActorInfo {
 
     id: number,
     name: string,
-    key: string
+    key: string,
+    testSuites: ApiKeyTestSuiteInfo[]
 
 }

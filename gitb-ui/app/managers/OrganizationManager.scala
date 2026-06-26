@@ -17,7 +17,7 @@ package managers
 
 import actors.events.OrganisationUpdatedEvent
 import exceptions.{AutomationApiException, ErrorCodes}
-import managers.OrganizationManager.{SpecificationApiKeyInfo, TestSuiteApiKeyInfo}
+import managers.OrganizationManager.{ActorApiKeyInfo, SpecificationApiKeyInfo, TestSuiteApiKeyInfo}
 import managers.triggers.TriggerHelper
 import models.Enums.{OrganizationType, UserRole}
 import models._
@@ -33,8 +33,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object OrganizationManager {
 
-  case class TestSuiteApiKeyInfo(testSuiteInfo: ApiKeyTestSuiteInfo, testCaseInfo: mutable.TreeMap[String, ApiKeyTestCaseInfo])
-  case class SpecificationApiKeyInfo(specificationName: String, actorInfo: mutable.TreeMap[String, ApiKeyActorInfo], testSuiteInfo: mutable.TreeMap[String, TestSuiteApiKeyInfo], specificationGroupName: Option[String])
+  case class SpecificationApiKeyInfo(specificationId: Long, specificationName: String, actorInfo: mutable.TreeMap[String, ActorApiKeyInfo], specificationGroupName: Option[String])
+  case class ActorApiKeyInfo(actorId: Long, actorKey: String, actorName: String, testSuiteInfo: mutable.TreeMap[String, TestSuiteApiKeyInfo])
+  case class TestSuiteApiKeyInfo(testSuiteId: Long, testSuiteKey: String, testSuiteName: String, testCaseInfo: mutable.TreeMap[String, ApiKeyTestCaseInfo])
 
 }
 
@@ -851,7 +852,8 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                 x._2.map(_.shortname), // Specification group name [9]
                 x._1._1._1._2.id, // Actor ID [10]
                 x._1._1._2.id, // Test suite ID [11]
-                x._1._2.id // Test case ID [12]
+                x._1._2.id, // Test case ID [12]
+                x._1._1._1._1._1.sut // SUT ID [13]
               ))
           } else {
             PersistenceSchema.conformanceSnapshotResults
@@ -873,7 +875,8 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                 x._2.map(_.shortname) ,// Specification group name [9]
                 x._1._1._1._2.id, // Actor ID [10]
                 x._1._1._2.id, // Test suite ID [11]
-                x._1._2.id // Test case ID [12]
+                x._1._2.id, // Test case ID [12]
+                x._1._1._1._1._1.systemId // SUT ID [13]
               ))
           }
           query.distinct.sortBy(x => (x._9.asc, x._1.asc, x._2.asc, x._4.asc, x._6.asc)).result
@@ -885,19 +888,22 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       // Process results from DB
       // Organise results into a tree hierarchy
       val specificationMap = new mutable.LinkedHashMap[Long, SpecificationApiKeyInfo]()
+      val statementMap = new mutable.HashMap[Long, mutable.HashSet[String]]()
       results._3.foreach { result =>
+        // Actor API key.
+        val actorKey = result._3
         // Spec info.
-        val spec = specificationMap.getOrElseUpdate(result._8, SpecificationApiKeyInfo(result._1, new mutable.TreeMap(), new mutable.TreeMap(), result._9))
+        val spec = specificationMap.getOrElseUpdate(result._8, SpecificationApiKeyInfo(result._8, result._1, new mutable.TreeMap(), result._9))
         // Actor info.
-        if (!spec.actorInfo.contains(result._3)) {
-          spec.actorInfo += (result._3 -> ApiKeyActorInfo(result._10, result._2, result._3))
-        }
+        val actor = spec.actorInfo.getOrElseUpdate(actorKey, ActorApiKeyInfo(result._10, actorKey, result._2, new mutable.TreeMap()))
         // Test suite info.
-        val testSuite = spec.testSuiteInfo.getOrElseUpdate(result._5, TestSuiteApiKeyInfo(ApiKeyTestSuiteInfo(result._11, result._4, result._5, List()), new mutable.TreeMap()))
+        val testSuite = actor.testSuiteInfo.getOrElseUpdate(result._5, TestSuiteApiKeyInfo(result._11, result._5, result._4, new mutable.TreeMap()))
         // Test case info.
-        if (!testSuite.testCaseInfo.contains(result._7)) {
-          testSuite.testCaseInfo += (result._7 -> ApiKeyTestCaseInfo(result._12, result._6, result._7))
-        }
+        testSuite.testCaseInfo += (result._7 -> ApiKeyTestCaseInfo(result._12, result._6, result._7))
+        // Statement mapping.
+        val systemId = result._13
+        val systemActorKeys = statementMap.getOrElseUpdate(systemId, new mutable.HashSet[String]())
+        systemActorKeys += actorKey
       }
       // Map the tree hierarchies to the types to return.
       val specifications = specificationMap.map { spec =>
@@ -909,10 +915,21 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         ApiKeySpecificationInfo(
           spec._1,
           specName,
-          spec._2.actorInfo.values.toList,
-          spec._2.testSuiteInfo.map { testSuite =>
-            testSuite._2.testSuiteInfo.copy(testcases = testSuite._2.testCaseInfo.values.toList)
-          }.toList
+          spec._2.actorInfo.view.mapValues { actorInfo =>
+            ApiKeyActorInfo(
+              actorInfo.actorId,
+              actorInfo.actorName,
+              actorInfo.actorKey,
+              actorInfo.testSuiteInfo.view.mapValues { testSuiteInfo =>
+                ApiKeyTestSuiteInfo(
+                  testSuiteInfo.testSuiteId,
+                  testSuiteInfo.testSuiteName,
+                  testSuiteInfo.testSuiteKey,
+                  testSuiteInfo.testCaseInfo.values.toList
+                )
+              }.values.toList
+            )
+          }.values.toList
         )
       }.toList
       // Return final aggregate object.
@@ -924,7 +941,8 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
           val apiKey = system._3
           ApiKeySystemInfo(id, name, apiKey)
         }.toList,
-        specifications
+        specifications,
+        statementMap.view.mapValues(_.toSet).toMap
       )
     }
   }

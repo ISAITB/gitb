@@ -39,7 +39,7 @@
                     @if (state.apiInfo.systems.length == 1) {
                         <input type="text" name="selectedSystem" [(ngModel)]="state.selectedSystem.name" readonly="readonly" class="form-control"/>
                     } @else {
-                        <app-multi-select-filter [(ngModel)]="state.selectedSystem" [config]="systemSelectionConfig"></app-multi-select-filter>
+                        <app-multi-select-filter [(ngModel)]="state.selectedSystem" [config]="systemSelectionConfig" (apply)="systemChanged()"></app-multi-select-filter>
                     }
                 </div>
                 <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
@@ -53,59 +53,59 @@
                                       (create)="newSystemKey(state.selectedSystem!.id)"
                                       (update)="updateSystemKey(state.selectedSystem!.id)"></app-api-key-text>
                 </div>
-                @if (state.apiInfo.specifications.length > 0) {
+                @if (state.assignedSpecifications != undefined && state.assignedSpecifications.length > 0) {
                     <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelSpecification()}}</div>
                     <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                        @if (state.apiInfo.specifications.length == 1) {
-                            <input type="text" name="selectedSpecification" [(ngModel)]="state.selectedSpecification!.name" readonly="readonly" class="form-control"/>
+                        @if (state.assignedSpecifications.length == 1) {
+                            <input type="text" name="selectedAssignedSpecification" [(ngModel)]="state.selectedAssignedSpecification!.name" readonly="readonly" class="form-control"/>
                         } @else {
-                            <app-multi-select-filter [(ngModel)]="state.selectedSpecification" [config]="specificationSelectionConfig" (apply)="specificationChanged()"></app-multi-select-filter>
+                            <app-multi-select-filter [(ngModel)]="state.selectedAssignedSpecification" [config]="assignedSpecificationSelectionConfig" (apply)="assignedSpecificationChanged()"></app-multi-select-filter>
                         }
                     </div>
                     <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                        @if (state.apiInfo.specifications.length == 1) {
+                        @if (state.assignedSpecifications.length == 1) {
                             <div app-tooltip class="col-auto" [tbTooltip]="'The following '+dataService.labelActorLower()+', test suite and test case API keys are relevant to this '+dataService.labelSpecificationLower()+'.'"></div>
                         } @else {
                             <div app-tooltip class="col-auto" [tbTooltip]="'Select the '+dataService.labelSpecificationLower()+' to view the API keys for its '+dataService.labelActorsLower()+', test suites and test cases.'"></div>
                         }
                     </div>
-                    @if (state.selectedSpecification && state.selectedActor) {
+                    @if (state.selectedAssignedSpecification && state.selectedAssignedActor) {
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelActor()}}</div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            @if (state.selectedSpecification.actors.length == 1) {
-                                <input type="text" name="selectedActor" [(ngModel)]="state.selectedActor.name" readonly="readonly" class="form-control"/>
+                            @if (state.selectedAssignedSpecification.actors.length == 1) {
+                                <input type="text" name="selectedAssignedActor" [(ngModel)]="state.selectedAssignedActor.name" readonly="readonly" class="form-control"/>
                             } @else {
-                                <app-multi-select-filter [(ngModel)]="state.selectedActor" [config]="actorSelectionConfig"></app-multi-select-filter>
+                                <app-multi-select-filter [(ngModel)]="state.selectedAssignedActor" [config]="assignedActorSelectionConfig" (apply)="assignedActorChanged()"></app-multi-select-filter>
                             }
                         </div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            <app-api-key-text [key]="state.selectedActor.key" idName="actor" name="actor"></app-api-key-text>
+                            <app-api-key-text [key]="state.selectedAssignedActor.key" idName="assignedActor" name="assignedActor"></app-api-key-text>
                         </div>
                     }
-                    @if (state.selectedSpecification && state.selectedTestSuite) {
+                    @if (state.selectedAssignedActor && state.selectedAssignedTestSuite) {
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">Test suite</div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            @if (state.selectedSpecification.testSuites.length == 1) {
-                                <input type="text" name="selectedTestSuite" [(ngModel)]="state.selectedTestSuite.name" readonly="readonly" class="form-control"/>
+                            @if (state.selectedAssignedActor.testSuites.length == 1) {
+                                <input type="text" name="selectedAssignedTestSuite" [(ngModel)]="state.selectedAssignedTestSuite.name" readonly="readonly" class="form-control"/>
                             } @else {
-                                <app-multi-select-filter [(ngModel)]="state.selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="testSuiteChanged()"></app-multi-select-filter>
+                                <app-multi-select-filter [(ngModel)]="state.selectedAssignedTestSuite" [config]="assignedTestSuiteSelectionConfig" (apply)="assignedTestSuiteChanged()"></app-multi-select-filter>
                             }
                         </div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            <app-api-key-text [key]="state.selectedTestSuite.key" idName="testSuite" name="testSuite"></app-api-key-text>
+                            <app-api-key-text [key]="state.selectedAssignedTestSuite.key" idName="assignedTestSuite" name="assignedTestSuite"></app-api-key-text>
                         </div>
                     }
-                    @if (state.selectedTestSuite && state.selectedTestCase) {
+                    @if (state.selectedAssignedTestSuite && state.selectedAssignedTestCase) {
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">Test case</div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            @if (state.selectedTestSuite.testCases.length == 1) {
-                                <input type="text" name="selectedTestCase" [(ngModel)]="state.selectedTestCase.name" readonly="readonly" class="form-control"/>
+                            @if (state.selectedAssignedTestSuite.testCases.length == 1) {
+                                <input type="text" name="selectedTestCase" [(ngModel)]="state.selectedAssignedTestCase.name" readonly="readonly" class="form-control"/>
                             } @else {
-                                <app-multi-select-filter [(ngModel)]="state.selectedTestCase" [config]="testCaseSelectionConfig"></app-multi-select-filter>
+                                <app-multi-select-filter [(ngModel)]="state.selectedAssignedTestCase" [config]="assignedTestCaseSelectionConfig"></app-multi-select-filter>
                             }
                         </div>
                         <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                            <app-api-key-text [key]="state.selectedTestCase.key" idName="testCase" name="testCase"></app-api-key-text>
+                            <app-api-key-text [key]="state.selectedAssignedTestCase.key" idName="assignedTestCase" name="assignedTestCase"></app-api-key-text>
                         </div>
                     }
                 }

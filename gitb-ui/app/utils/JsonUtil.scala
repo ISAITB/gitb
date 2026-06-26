@@ -144,8 +144,20 @@ object JsonUtil {
     val json = Json.obj(
       "organisation" -> (if (apiKeyInfo.organisation.isDefined) apiKeyInfo.organisation.get else JsNull),
       "systems" -> jsApiKeySystemInfo(apiKeyInfo.systems),
-      "specifications" -> jsApiKeySpecificationsInfo(apiKeyInfo.specifications)
+      "specifications" -> jsApiKeySpecificationsInfo(apiKeyInfo.specifications),
+      "statements" -> jsApiKeyStatementInfo(apiKeyInfo.statements)
     )
+    json
+  }
+
+  private def jsApiKeyStatementInfo(statementMap: Map[Long, Set[String]]): JsArray = {
+    var json = Json.arr()
+    statementMap.foreach { entry =>
+      json = json.append(Json.obj(
+        "system" -> entry._1,
+        "actors" -> Json.toJson(entry._2)
+      ))
+    }
     json
   }
 
@@ -167,8 +179,7 @@ object JsonUtil {
       json = json.append(Json.obj(
         "id" -> specification.id,
         "name" -> specification.name,
-        "actors" -> jsApiKeyActorsInfo(specification.actors),
-        "testSuites" -> jsApiKeyTestSuiteInfo(specification.testSuites)
+        "actors" -> jsApiKeyActorsInfo(specification.actors)
       ))
     }
     json
@@ -180,7 +191,8 @@ object JsonUtil {
       json = json.append(Json.obj(
         "id" -> actor.id,
         "name" -> actor.name,
-        "key" -> actor.key
+        "key" -> actor.key,
+        "testSuites" -> jsApiKeyTestSuiteInfo(actor.testSuites)
       ))
     }
     json
@@ -193,7 +205,7 @@ object JsonUtil {
         "id" -> testSuite.id,
         "name" -> testSuite.name,
         "key" -> testSuite.key,
-        "testCases" -> jsApiKeyTestCaseInfo(testSuite.testcases)
+        "testCases" -> jsApiKeyTestCaseInfo(testSuite.testCases)
       ))
     }
     json

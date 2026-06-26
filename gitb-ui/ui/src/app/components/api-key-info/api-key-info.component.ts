@@ -32,6 +32,7 @@ import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
 import {ConformanceSnapshotList} from 'src/app/types/conformance-snapshot-list';
 import {MultiSelectConfig} from '../multi-select-filter/multi-select-config';
 import {ApiKeyInfoState} from './api-key-info-state';
+import {ApiKeySpecificationInfo} from '../../types/api-key-specification-info';
 
 @Component({
     selector: 'app-api-key-info',
@@ -54,10 +55,10 @@ export class ApiKeyInfoComponent implements OnInit, AfterViewInit {
 
   snapshotSelectionConfig!: MultiSelectConfig<ConformanceSnapshot>
   systemSelectionConfig!: MultiSelectConfig<ApiKeySystemInfo>
-  specificationSelectionConfig!: MultiSelectConfig<ApiKeySystemInfo>
-  actorSelectionConfig!: MultiSelectConfig<ApiKeyActorInfo>
-  testSuiteSelectionConfig!: MultiSelectConfig<ApiKeyTestSuiteInfo>
-  testCaseSelectionConfig!: MultiSelectConfig<ApiKeyTestCaseInfo>
+  assignedSpecificationSelectionConfig!: MultiSelectConfig<ApiKeySystemInfo>
+  assignedActorSelectionConfig!: MultiSelectConfig<ApiKeyActorInfo>
+  assignedTestSuiteSelectionConfig!: MultiSelectConfig<ApiKeyTestSuiteInfo>
+  assignedTestCaseSelectionConfig!: MultiSelectConfig<ApiKeyTestCaseInfo>
 
   constructor(
     private readonly organisationService: OrganisationService,
@@ -88,41 +89,41 @@ export class ApiKeyInfoComponent implements OnInit, AfterViewInit {
       textField: "name",
       loader: () => of(this.state.apiInfo?.systems!)
     }
-    this.specificationSelectionConfig = {
-      name: "selectedSpecification",
+    this.assignedSpecificationSelectionConfig = {
+      name: "selectedAssignedSpecification",
       singleSelection: true,
       singleSelectionPersistent: true,
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationLower()}...`,
       textField: "name",
-      loader: () => of(this.state.apiInfo?.specifications!)
+      loader: () => of(this.state.assignedSpecifications!)
     }
-    this.actorSelectionConfig = {
-      name: "selectedActor",
+    this.assignedActorSelectionConfig = {
+      name: "selectedAssignedActor",
       singleSelection: true,
       singleSelectionPersistent: true,
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelActorLower()}...`,
       textField: "name",
-      loader: () => of(this.state.selectedSpecification!.actors)
+      loader: () => of(this.state.selectedAssignedSpecification!.actors)
     }
-    this.testSuiteSelectionConfig = {
-      name: "selectedTestSuite",
+    this.assignedTestSuiteSelectionConfig = {
+      name: "selectedAssignedTestSuite",
       singleSelection: true,
       singleSelectionPersistent: true,
       showAsFormControl: true,
       filterLabel: `Select test suite...`,
       textField: "name",
-      loader: () => of(this.state.selectedSpecification!.testSuites)
+      loader: () => of(this.state.selectedAssignedActor!.testSuites)
     }
-    this.testCaseSelectionConfig = {
-      name: "selectedTestCase",
+    this.assignedTestCaseSelectionConfig = {
+      name: "selectedAssignedTestCase",
       singleSelection: true,
       singleSelectionPersistent: true,
       showAsFormControl: true,
       filterLabel: `Select test case...`,
       textField: "name",
-      loader: () => of(this.state.selectedTestSuite!.testCases)
+      loader: () => of(this.state.selectedAssignedTestSuite!.testCases)
     }
     this.canUpdate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
   }
@@ -149,25 +150,58 @@ export class ApiKeyInfoComponent implements OnInit, AfterViewInit {
     })
   }
 
-  specificationChanged():void {
-    this.state.selectedActor = undefined
-    this.state.selectedTestSuite = undefined
-    if (this.state.selectedSpecification) {
-      if (this.state.selectedSpecification.actors.length > 0) {
-        this.state.selectedActor = this.state.selectedSpecification.actors[0]
-      }
-      if (this.state.selectedSpecification.testSuites.length > 0) {
-        this.state.selectedTestSuite = this.state.selectedSpecification.testSuites[0]
-        this.testSuiteChanged()
-      }
+  systemChanged():void {
+    this.state.selectedAssignedSpecification = undefined
+    this.state.assignedSpecifications = []
+    const assignedActorKeys = new Set<string>()
+    if (this.state.apiInfo?.statements) {
+      this.state.apiInfo.statements
+        .filter(statement => statement.system === this.state.selectedSystem?.id)
+        .flatMap(statement => statement.actors)
+        .forEach((key) => assignedActorKeys.add(key))
     }
+    if (this.state.apiInfo?.specifications) {
+      this.state.apiInfo.specifications.forEach(spec => {
+        const assignedSpecEntry: ApiKeySpecificationInfo = { id: spec.id, name: spec.name, actors: [] }
+        if (spec.actors) {
+          spec.actors.forEach(actor => {
+            if (assignedActorKeys.has(actor.key)) {
+              assignedSpecEntry.actors.push(actor)
+            }
+          })
+        }
+        if (assignedSpecEntry.actors.length > 0) this.state.assignedSpecifications!.push(assignedSpecEntry)
+      })
+    }
+    if (this.state.assignedSpecifications.length > 0) this.state.selectedAssignedSpecification = this.state.assignedSpecifications[0]
+    this.assignedSpecificationChanged()
   }
 
-  testSuiteChanged():void {
-    this.state.selectedTestCase = undefined
-    if (this.state.selectedTestSuite) {
-      if (this.state.selectedTestSuite.testCases.length > 0) {
-        this.state.selectedTestCase = this.state.selectedTestSuite.testCases[0]
+  assignedSpecificationChanged():void {
+    this.state.selectedAssignedActor = undefined
+    if (this.state.selectedAssignedSpecification) {
+      if (this.state.selectedAssignedSpecification.actors.length > 0) {
+        this.state.selectedAssignedActor = this.state.selectedAssignedSpecification.actors[0]
+      }
+    }
+    this.assignedActorChanged()
+  }
+
+  assignedActorChanged():void {
+    this.state.selectedAssignedTestSuite = undefined
+    if (this.state.selectedAssignedActor) {
+      if (this.state.selectedAssignedActor.testSuites.length > 0) {
+        this.state.selectedAssignedTestSuite = this.state.selectedAssignedActor.testSuites[0]
+      }
+    }
+    this.assignedTestSuiteChanged()
+  }
+
+  assignedTestSuiteChanged():void {
+    this.state.selectedAssignedTestCase = undefined
+    if (this.state.selectedAssignedTestSuite) {
+      if (this.state.selectedAssignedTestSuite.testCases.length > 0) {
+        this.state.selectedAssignedTestCase = this.state.selectedAssignedTestSuite.testCases[0]
       }
     }
   }
@@ -254,17 +288,14 @@ export class ApiKeyInfoComponent implements OnInit, AfterViewInit {
   private apiInfoLoaded(apiKeyInfo: ApiKeyInfo) {
     this.state.apiInfo = apiKeyInfo
     this.state.selectedSystem = undefined
-    this.state.selectedSpecification = undefined
-    this.state.selectedActor = undefined
-    this.state.selectedTestSuite = undefined
-    this.state.selectedTestCase = undefined
-    if (this.state.apiInfo.specifications.length > 0) {
-      this.state.selectedSpecification = this.state.apiInfo.specifications[0]
-      this.specificationChanged()
-    }
+    this.state.selectedAssignedSpecification = undefined
+    this.state.selectedAssignedActor = undefined
+    this.state.selectedAssignedTestSuite = undefined
+    this.state.selectedAssignedTestCase = undefined
     if (this.state.apiInfo.systems.length > 0) {
       this.state.selectedSystem = this.state.apiInfo.systems[0]
     }
+    this.systemChanged()
   }
 
 }
