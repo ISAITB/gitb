@@ -168,9 +168,15 @@ public class TestCaseConverter {
                     String childId = childIdPrefix + index++;
                     addToSequence(sequence, convertWhileStep(testCaseId, childId, whileStep));
                 }
-                case com.gitb.tdl.FlowStep flowStep -> {
+                case com.gitb.tdl.FlowStep flow -> {
                     String childId = childIdPrefix + index++;
-                    addToSequence(sequence, convertFlowStep(testCaseId, childId, flowStep));
+                    var flowStep = convertFlowStep(testCaseId, childId, flow);
+                    if (flowStep.isHiddenContainer() && !flowStep.isHidden()) {
+                        // Skip the flow step itself and add its children directly.
+                        flowStep.getThread().forEach(thread -> thread.getSteps().forEach(childStep -> addToSequence(sequence, childStep)));
+                    } else {
+                        addToSequence(sequence, flowStep);
+                    }
                 }
                 case CallStep callStep -> {
                     String childId = childIdPrefix + index++;
@@ -384,6 +390,7 @@ public class TestCaseConverter {
         flow.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         flow.setHidden(hiddenValueToUse(description.getHidden(), false));
         flow.setCollapsed(description.isCollapsed());
+        flow.setHiddenContainer(fixedOrVariableValueAsBoolean(description.getHiddenContainer(), false));
         for (int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);
             if (!hiddenValueToUse(thread.getHidden(), false)) {
