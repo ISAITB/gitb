@@ -4,7 +4,7 @@ resolvers += Resolver.url(
        Resolver.ivyStylePatterns)
 
 // The Play plugin
-addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.10")
+addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.11")
 
 // web plugins
 
