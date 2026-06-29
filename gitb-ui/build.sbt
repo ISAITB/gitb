@@ -2,8 +2,9 @@ import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
 val pekkoVersion = "1.6.0"
-val jacksonVersion = "3.1.4"
-val jacksonAnnotationsVersion = "2.21"
+val jacksonVersion = "3.2.0"
+val jackson2Version = "2.22.0"
+val jacksonAnnotationsVersion = "2.22"
 val cxfVersion = "4.2.2"
 val gitbCommonsVersion = "1.30.0-SNAPSHOT"
 val gitbTypesVersion = "1.30.0-SNAPSHOT"
@@ -65,6 +66,8 @@ libraryDependencies ++= Seq(
   "tools.jackson.core" % "jackson-core" % jacksonVersion,
   "tools.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationsVersion,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson2Version,
+  "com.fasterxml.jackson.core" % "jackson-databind" % jackson2Version,
   "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.

@@ -86,9 +86,9 @@
         <version.topbraid>1.5.0</version.topbraid>
         <version.json-schema-validator>3.0.4</version.json-schema-validator>
         <version.jayway>3.0.0</version.jayway>
-        <version.jackson>3.1.4</version.jackson>
-        <version.jackson2>2.21.5</version.jackson2> <!-- Used for libraries that have not upgraded to Jackson 3 (the package is different so no conflicts) -->
-        <version.jacksonAnnotations>2.21</version.jacksonAnnotations>
+        <version.jackson>3.2.0</version.jackson>
+        <version.jackson2>2.22.0</version.jackson2> <!-- Used for libraries that have not upgraded to Jackson 3 (the package is different so no conflicts) -->
+        <version.jacksonAnnotations>2.22</version.jacksonAnnotations>
         <version.pdfbox>3.0.7</version.pdfbox>
         <version.swaggerUi>5.32.5</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
         <version.owaspHtmlSanitizer>20260313.1</version.owaspHtmlSanitizer>
