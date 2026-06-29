@@ -15,7 +15,7 @@
         </div>
     </button>
     @if (formVisible) {
-        <div #filterForm [style.top.px]="formTop" [style.width.px]="formWidth" class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}" [class.multiSelection]="!config.singleSelection">
+        <div #filterForm [style.top.px]="formTop" [style.width.px]="formWidth" [style.visibility]="formPositioned ? 'visible' : 'hidden'" class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}" [class.multiSelection]="!config.singleSelection">
             @if (typeahead && availableItems.length > 0) {
                 <div class="formSearch">
                     <div class="inputDiv" [class.withClear]="showClearIcon"><input #filterText type="text" class="form-control" [placeholder]="searchPlaceholder" [(ngModel)]="textValue" (ngModelChange)="searchApplied()" (focus)="filterTextFocused()"/></div>

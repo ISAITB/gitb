@@ -57,6 +57,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   selectedAvailableItems: ItemMap<T> = {}
   selectedSelectedItems: ItemMap<T> = {}
   formVisible = false
+  formPositioned = false
   hasCheckedSelectedItem = false
   showClearIcon = false
   defaultFilterLabel = 'All'
@@ -74,6 +75,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   replaceItemsSubscription?: Subscription
   replaceSelectedItemsSubscription?: Subscription
   clearItemsSubscription?: Subscription
+  private resizeTimer?: ReturnType<typeof setTimeout>
 
   focusedSelectedItemIndex?: number
   focusedAvailableItemIndex?: number
@@ -252,12 +254,17 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.replaceItemsSubscription) this.replaceItemsSubscription.unsubscribe()
     if (this.replaceSelectedItemsSubscription) this.replaceSelectedItemsSubscription.unsubscribe()
     if (this.clearItemsSubscription) this.clearItemsSubscription.unsubscribe()
+    clearTimeout(this.resizeTimer)
   }
 
   @HostListener('window:resize')
   onWindowResize() {
     if (this.formVisible) {
-      this.calculateSizeAndPosition()
+      clearTimeout(this.resizeTimer)
+      this.resizeTimer = setTimeout(() => {
+        this.resizeTimer = undefined
+        this.calculateSizeAndPosition()
+      }, 100)
     }
   }
 
@@ -439,23 +446,32 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.close()
     } else {
       this.formVisible = true
-      this.calculateSizeAndPosition()
+      this.formPositioned = false
       this.updateCheckFlag()
       this.updateSingleSelectionClearFlag()
-      this.loadData().subscribe(() => {
+      const load$ = this.loadData()
+      if (this.loadPending) {
+        // Async loader in flight: reveal the pending-spinner popup immediately (it is fine
+        // to show this below; only the loaded popup must appear in its final position directly)
         this.calculateSizeAndPosition()
-        if (this.typeahead) {
-          setTimeout(() => {
-            if (this.filterTextElement) {
-              this.filterTextElement.nativeElement.focus()
-            }
-          })
-        }
+      }
+      load$.subscribe(() => {
+        // Hide while re-measuring with the fully loaded content, then reveal in final position
+        this.formPositioned = false
+        this.calculateSizeAndPosition(() => {
+          if (this.typeahead) {
+            setTimeout(() => {
+              if (this.filterTextElement) {
+                this.filterTextElement.nativeElement.focus()
+              }
+            })
+          }
+        })
       })
     }
   }
 
-  private calculateSizeAndPosition() {
+  private calculateSizeAndPosition(onPositioned?: () => void) {
     this.openToLeft = this.shouldOpenToLeft()
     const buffer = 20;
     const minWidth = 400;
@@ -481,10 +497,10 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     } else {
       this.formWidth = minWidth;
     }
-    this.adjustHeight(300)
+    this.adjustHeight(300, onPositioned)
   }
 
-  private adjustHeight(minHeight: number) {
+  private adjustHeight(minHeight: number, onPositioned?: () => void) {
     this.availableItemsHeight = minHeight;
     setTimeout(() => {
       if (this.filterFormElement && this.filterControlElement) {
@@ -516,14 +532,27 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
         fitsTop = formTop > 0
         if (fitsBottom) {
           this.formTop = controlHeight
+          this.formPositioned = true
+          onPositioned?.()
         } else if (fitsTop) {
           this.formTop = formHeight * -1
+          this.formPositioned = true
+          onPositioned?.()
         } else {
           if (minHeight > 80) {
             this.availableItemsHeight = minHeight - 20
-            this.adjustHeight(minHeight - 20)
+            this.adjustHeight(minHeight - 20, onPositioned)
+          } else {
+            // Cannot shrink further; display below and allow the viewport to scroll
+            this.formTop = controlHeight
+            this.formPositioned = true
+            onPositioned?.()
           }
         }
+      } else {
+        // Cannot measure element refs; reveal anyway so the popup is never stuck hidden
+        this.formPositioned = true
+        onPositioned?.()
       }
     })
   }
