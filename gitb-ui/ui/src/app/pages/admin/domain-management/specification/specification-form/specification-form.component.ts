@@ -16,6 +16,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {Specification} from 'src/app/types/specification';
+
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {SpecificationGroup} from '../../../../../types/specification-group';
 import {of} from 'rxjs';
@@ -30,6 +31,7 @@ import {FilterUpdate} from '../../../../../components/test-filter/filter-update'
 export class SpecificationFormComponent implements OnInit {
 
   @Input() specification!: Partial<Specification>
+  @Input() communityId?: number
 
   groupSelectionConfig!: MultiSelectConfig<SpecificationGroup>
 

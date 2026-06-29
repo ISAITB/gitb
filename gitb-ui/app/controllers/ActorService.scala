@@ -20,7 +20,7 @@ import managers.{ActorManager, AuthorizationManager, CommunityLabelManager}
 import models.BadgeInfo
 import models.Enums.{LabelType, TestResultStatus}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import utils.RepositoryUtils
+import utils.{HtmlUtil, RepositoryUtils}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -60,7 +60,8 @@ class ActorService @Inject() (authorizedAction: AuthorizedAction,
             if (badgeInfoForReport._2.nonEmpty) {
               Future.successful(badgeInfoForReport._2.get)
             } else {
-              actorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.reportMetadata, actor.default, actor.hidden, actor.displayOrder, specificationId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
+              val documentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeEditorContent)
+              actorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.reportMetadata, actor.default, actor.hidden, actor.displayOrder, specificationId, documentation, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
                 ResponseConstructor.constructEmptyResponse
               }
             }

@@ -51,27 +51,11 @@
                     </div>
                 }
 				<app-specification-reference-form [reference]="testSuite"></app-specification-reference-form>
-				<app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
-					<div class="row py-3">
-						<div class="offset-1 col-10">
-                            <div class="mb-3">
-                                <app-placeholder-selector [resources]="communityId != undefined" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
-                            </div>
-							<div class="editorContainer">
-								<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
-								<div app-tooltip class="col-auto" tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources." [withMargin]="true"></div>
-							</div>
-						</div>
-					</div>
-					<div class="row form-group">
-						<div class="offset-1 col-10">
-							<div class="btn-toolbar">
-								<button (click)="previewDocumentation()" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
-								<button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
-							</div>
-						</div>
-					</div>
-				</app-form-section>
+				<app-documentation-form [(documentation)]="testSuite.documentation"
+                                        [communityId]="communityId"
+                                        [showPreviewAndCopy]="true"
+                                        previewTitle="Test suite documentation"
+                                        tooltipText="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources."></app-documentation-form>
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">

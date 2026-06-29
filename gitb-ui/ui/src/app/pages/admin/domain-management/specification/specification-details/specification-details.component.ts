@@ -55,6 +55,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   sharedTestSuites: TestSuite[] = []
   availableSharedTestSuitesLoaded = false
   domainId!: number
+  communityId?: number
   specificationId!: number
   actorStatus = {status: Constants.STATUS.NONE}
   testSuiteStatus = {status: Constants.STATUS.NONE}
@@ -111,6 +112,11 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+    }
     this.linkSharedSelectionConfig = {
       name: 'sharedTestSuitesAvailable',
       textField: 'identifier',
@@ -422,7 +428,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 	saveSpecificationChanges() {
     if (!this.saveDisabled()) {
       this.savePending = true
-      this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
+      this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.documentation, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
         .subscribe(() => {
           this.popupService.success(this.dataService.labelSpecification()+' updated.')
           this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})

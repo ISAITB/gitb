@@ -29,7 +29,7 @@
                                     <div class="content-value" [class.with-name]="withName"
                                          [class.break-texts]="breakValueText">{{ value }}</div>
                                 } @else if (value != undefined) {
-                                    <div class="content-value" [class.with-name]="withName"
+                                    <div class="content-value no-margin-on-last-p" [class.with-name]="withName"
                                          [class.break-texts]="breakValueText" [innerHtml]="value | sanitizeHtml"></div>
                                 }
                             } @else if (!withName) {

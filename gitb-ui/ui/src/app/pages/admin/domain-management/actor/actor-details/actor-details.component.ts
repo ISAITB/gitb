@@ -43,6 +43,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   endpointRepresentations: EndpointRepresentation[] = []
   dataStatus = {status: Constants.STATUS.PENDING}
   parameterStatus = {status: Constants.STATUS.NONE}
+  communityId?: number
   domainId!: number
   specificationId!: number
   actorId!: number
@@ -77,6 +78,11 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+    }
     this.conformanceService.getActor(this.actorId, this.specificationId).subscribe((data) => {
       this.actor = data
       if (this.actor.badges) {
@@ -144,7 +150,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   saveChanges() {
     if (!this.saveDisabled()) {
       this.savePending = true
-      this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
+      this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.documentation, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
         .subscribe(() => {
           this.popupService.success(this.dataService.labelActor()+' updated.')
           this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})

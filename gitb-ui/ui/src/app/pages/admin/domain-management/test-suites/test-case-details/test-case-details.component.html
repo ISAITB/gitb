@@ -75,49 +75,13 @@
                     </div>
                 }
                 <app-specification-reference-form [reference]="testCase"></app-specification-reference-form>
-                <app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
-                    <div class="row py-3">
-                        <div class="offset-1 col-10">
-                            <div class="mb-3">
-                                <app-placeholder-selector [resources]="communityId != undefined"
-                                                          [systemResources]="dataService.isSystemAdmin"
-                                                          [community]="communityId"></app-placeholder-selector>
-                            </div>
-                            <div class="editorContainer">
-                                <app-editor id="documentation" name="documentation"
-                                            [(ngModel)]="testCase.documentation"></app-editor>
-                                <div app-tooltip class="col-auto"
-                                     tbTooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources."
-                                     [withMargin]="true"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="offset-1 col-10">
-                            <div class="btn-toolbar">
-                                <div class="btn-group" ngbDropdown>
-                                    <button type="button"
-                                            [labelIcon]="Constants.BUTTON_ICON.PREVIEW"
-                                            [disable]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0"
-                                            [pending]="previewPending" id="button-preview" class="btn btn-secondary"
-                                            (click)="previewDocumentationPopup()">Preview documentation
-                                    </button>
-                                    <button id="button-preview-pdf" type="button"
-                                            [disabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0"
-                                            ngbDropdownToggle
-                                            class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                        <span class="caret"></span>
-                                        <span class="sr-only visually-hidden">Preview documentation in PDF report</span>
-                                    </button>
-                                    <div id="dropdown-preview-pdf" ngbDropdownMenu aria-labelledby="button-preview-pdf">
-                                        <button ngbDropdownItem type="button" (click)="previewDocumentationPdf()">Preview documentation in PDF report</button>
-                                    </div>
-                                </div>
-                                <button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" type="button" class="btn btn-secondary" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
-                            </div>
-                        </div>
-                    </div>
-                </app-form-section>
+                <app-documentation-form [(documentation)]="testCase.documentation"
+                                        [communityId]="communityId"
+                                        [showPreviewAndCopy]="true"
+                                        [showPdfPreview]="true"
+                                        previewTitle="Test case documentation"
+                                        tooltipText="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources."
+                                        (previewPdf)="previewDocumentationPdf()"></app-documentation-form>
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">

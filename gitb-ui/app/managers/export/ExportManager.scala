@@ -471,6 +471,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedSpecification.setFullName(specification.fullname)
               exportedSpecification.setDescription(specification.description.orNull)
               exportedSpecification.setReportMetadata(specification.reportMetadata.orNull)
+              exportedSpecification.setDocumentation(data.specificationDocumentation.flatMap(_.get(specification.id)).orNull)
               exportedSpecification.setApiKey(specification.apiKey)
               exportedSpecification.setHidden(specification.hidden)
               exportedSpecification.setDisplayOrder(specification.displayOrder)
@@ -502,6 +503,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                   exportedActor.setApiKey(actor.apiKey)
                   exportedActor.setDescription(actor.description.orNull)
                   exportedActor.setReportMetadata(actor.reportMetadata.orNull)
+                  exportedActor.setDocumentation(data.actorDocumentation.flatMap(_.get(actor.id)).orNull)
                   if (actor.default.isDefined) {
                     exportedActor.setDefault(actor.default.get)
                   } else {
@@ -1179,6 +1181,16 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                           loadIfApplicable(exportSettings.domainParameters && exportSettings.testServices,
                             () => domainParameterManager.getTestServices(domainId)
                           )
+                        ).zip(
+                          // Specification documentation
+                          loadIfApplicable(exportSettings.specifications,
+                            () => loadSpecificationDocumentationMap(domainId)
+                          )
+                        ).zip(
+                          // Actor documentation
+                          loadIfApplicable(exportSettings.specifications && exportSettings.actors,
+                            () => loadActorDocumentationMap(domainId)
+                          )
                         )
                       )
                     )
@@ -1201,9 +1213,11 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         testSuiteActorMap =         results._2._2._2._2._2._2._2._1,
         testSuiteTestCaseGroupMap = results._2._2._2._2._2._2._2._2._1,
         testSuiteTestCaseMap =      results._2._2._2._2._2._2._2._2._2._1,
-        specificationTestSuiteMap = results._2._2._2._2._2._2._2._2._2._2._1._1,
-        domainParameters =          results._2._2._2._2._2._2._2._2._2._2._1._2,
-        testServices =              results._2._2._2._2._2._2._2._2._2._2._2
+        specificationTestSuiteMap = results._2._2._2._2._2._2._2._2._2._2._1._1._1._1,
+        domainParameters =          results._2._2._2._2._2._2._2._2._2._2._1._1._1._2,
+        testServices =              results._2._2._2._2._2._2._2._2._2._2._1._1._2,
+        specificationDocumentation = results._2._2._2._2._2._2._2._2._2._2._1._2,
+        actorDocumentation =         results._2._2._2._2._2._2._2._2._2._2._2
       )
     }
   }
@@ -1318,6 +1332,26 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       testSuiteActorMap.view.mapValues(_.toList).toMap
     }
+  }
+
+  private def loadSpecificationDocumentationMap(domainId: Long): Future[Map[Long, String]] = {
+    DB.run(
+      PersistenceSchema.specificationDocumentation
+        .join(PersistenceSchema.specifications).on(_.id === _.id)
+        .filter(_._2.domain === domainId)
+        .map(_._1)
+        .result
+    ).map(_.map(d => d.id -> d.documentation).toMap)
+  }
+
+  private def loadActorDocumentationMap(domainId: Long): Future[Map[Long, String]] = {
+    DB.run(
+      PersistenceSchema.actorDocumentation
+        .join(PersistenceSchema.actors).on(_.id === _.id)
+        .filter(_._2.domain === domainId)
+        .map(_._1)
+        .result
+    ).map(_.map(d => d.id -> d.documentation).toMap)
   }
 
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): Future[com.gitb.xml.export.Export] = {

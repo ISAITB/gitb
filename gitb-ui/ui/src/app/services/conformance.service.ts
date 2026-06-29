@@ -613,7 +613,7 @@ export class ConformanceService {
     })
   }
 
-  createSpecification(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
+  createSpecification(shortName: string, fullName: string, description: string|undefined, documentation: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -625,6 +625,9 @@ export class ConformanceService {
     }
     if (description != undefined) {
       params.description = description
+    }
+    if (documentation != undefined) {
+      params.documentation = documentation
     }
     if (reportMetadata != undefined) {
       params.metadata = reportMetadata
@@ -701,7 +704,7 @@ export class ConformanceService {
     })
   }
 
-  createActor(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined,defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
+  createActor(shortName: string, fullName: string, description: string|undefined, documentation: string|undefined, reportMetadata: string|undefined,defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
     if (hiddenActor == undefined) {
       hiddenActor = false
     }
@@ -712,6 +715,7 @@ export class ConformanceService {
         actor_id: shortName,
         name: fullName,
         description: description,
+        documentation: documentation,
         metadata: reportMetadata,
         default: defaultActor,
         hidden: hiddenActor,

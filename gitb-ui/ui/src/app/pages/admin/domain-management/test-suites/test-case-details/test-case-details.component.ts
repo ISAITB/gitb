@@ -19,9 +19,7 @@ import {map, mergeMap, Observable, share} from 'rxjs';
 import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
 import {StepData} from 'src/app/components/diagram/step-data';
 import {BaseComponent} from 'src/app/pages/base-component.component';
-import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
-import {HtmlService} from 'src/app/services/html.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {ReportService} from 'src/app/services/report.service';
 import {RoutingService} from 'src/app/services/routing.service';
@@ -60,8 +58,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     private readonly routingService: RoutingService,
     private readonly route: ActivatedRoute,
     private readonly popupService: PopupService,
-    private readonly htmlService: HtmlService,
-    private readonly conformanceService: ConformanceService,
     private readonly testService: TestService,
     private readonly reportService: ReportService
   ) { super() }
@@ -96,16 +92,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     })
   }
 
-	previewDocumentationPopup() {
-    this.previewPending = true
-		this.conformanceService.getDocumentationForPreview(this.testCase.documentation!)
-    .subscribe((html) => {
-      this.htmlService.showHtml('Test case documentation', html)
-    }).add(() => {
-      this.previewPending = false
-    })
-  }
-
 	previewDocumentationPdf() {
     this.previewPending = true
 		this.reportService.exportTestCaseDocumentationPreviewReport(this.testCase.documentation!)
@@ -114,12 +100,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
       saveAs(blobData, "report_preview.pdf");
     }).add(() => {
       this.previewPending = false
-    })
-  }
-
-  copyDocumentation() {
-    this.dataService.copyToClipboard(this.testCase.documentation!).subscribe(() => {
-      this.popupService.success('HTML source copied to clipboard.')
     })
   }
 

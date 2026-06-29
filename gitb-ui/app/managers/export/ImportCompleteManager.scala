@@ -1767,6 +1767,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                     specificationManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true,
+                      Option(data.getDocumentation),
                       BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx)), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
@@ -1777,6 +1778,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                     specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId, Some(data.getDisplayOrder),
+                      Some(Option(data.getDocumentation)),
                       Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
@@ -1816,6 +1818,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       val domainId = getDomainIdFromParentItem(item)
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       actorManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Option(data.getReportMetadata), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true,
+                        Option(data.getDocumentation),
                         Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
@@ -1832,6 +1835,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       }
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Option(data.getReportMetadata), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true,
+                        Some(Option(data.getDocumentation)),
                         Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {

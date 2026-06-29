@@ -22,6 +22,7 @@ export interface Specification extends EntityWithId {
     sname: string
     fname: string
     description?: string
+    documentation?: string
     reportMetadata?: string
     hidden: boolean
     domain: number

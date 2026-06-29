@@ -1085,6 +1085,58 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		}
 	}
 
+	/**
+	 * Return the resolved HTML documentation for a conformance statement page.
+	 * Actor documentation takes precedence; if absent, specification documentation is used.
+	 * Queries live tables or snapshot tables depending on whether snapshotId is defined.
+	 */
+	def getConformanceStatementDocumentation(actorId: Long, snapshotId: Option[Long]): Future[Option[String]] = {
+		DB.run(
+			if (snapshotId.isDefined) {
+				for {
+					actorDoc <- PersistenceSchema.conformanceSnapshotActorDocumentation
+						.filter(d => d.id === actorId && d.snapshotId === snapshotId.get)
+						.map(_.documentation).result.headOption
+					result <- {
+						if (actorDoc.isDefined) {
+							DBIO.successful(actorDoc)
+						} else {
+							// Fall back to specification documentation from the snapshot.
+							PersistenceSchema.conformanceSnapshotResults
+								.filter(r => r.actorId === actorId && r.snapshotId === snapshotId.get)
+								.map(_.specificationId)
+								.result.headOption
+								.flatMap {
+									case Some(specId) =>
+										PersistenceSchema.conformanceSnapshotSpecificationDocumentation
+											.filter(d => d.id === specId && d.snapshotId === snapshotId.get)
+											.map(_.documentation).result.headOption
+									case None => DBIO.successful(None)
+								}
+						}
+					}
+				} yield result
+			} else {
+				for {
+					actorDoc <- PersistenceSchema.actorDocumentation.filter(_.id === actorId).map(_.documentation).result.headOption
+					result <- {
+						if (actorDoc.isDefined) {
+							DBIO.successful(actorDoc)
+						} else {
+							// Fall back to specification documentation.
+							PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.headOption
+								.flatMap {
+									case Some(specId) =>
+										PersistenceSchema.specificationDocumentation.filter(_.id === specId).map(_.documentation).result.headOption
+									case None => DBIO.successful(None)
+								}
+						}
+					}
+				} yield result
+			}
+		)
+	}
+
 	def getActorIdsToDisplayInStatementsWrapper(statements: Iterable[ConformanceStatement], snapshotId: Option[Long]): Future[Set[Long]] = {
 		DB.run(getActorIdsToDisplayInStatements(statements, snapshotId))
 	}
@@ -1570,6 +1622,23 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				}
 				toDBIO(dbActions)
 			}
+			// Copy specification and actor documentation to snapshot.
+			_ <- {
+				val specIds = communityResults.map(_._5._1).toSet
+				val actorIds = communityResults.map(_._4._1).toSet
+				for {
+					specDocs <- PersistenceSchema.specificationDocumentation.filter(_.id inSet specIds).result
+					_ <- DBIO.seq(specDocs.map(doc =>
+						PersistenceSchema.conformanceSnapshotSpecificationDocumentation +=
+							models.snapshot.ConformanceSnapshotSpecificationDocumentation(doc.id, snapshotId, doc.documentation)
+					): _*)
+					actorDocs <- PersistenceSchema.actorDocumentation.filter(_.id inSet actorIds).result
+					_ <- DBIO.seq(actorDocs.map(doc =>
+						PersistenceSchema.conformanceSnapshotActorDocumentation +=
+							models.snapshot.ConformanceSnapshotActorDocumentation(doc.id, snapshotId, doc.documentation)
+					): _*)
+				} yield ()
+			}
 			// Copy conformance and conformance overview certificate settings
 			_ <- copyConformanceCertificateSettingsToSnapshot(snapshotId, communityId)
 			// Copy badges
@@ -1743,7 +1812,9 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			_ <- PersistenceSchema.conformanceSnapshotTestCases.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotTestSuites.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotActors.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotActorDocumentation.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotSpecifications.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotSpecificationDocumentation.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotSpecificationGroups.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotDomains.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotSystems.filter(_.snapshotId === snapshot).delete

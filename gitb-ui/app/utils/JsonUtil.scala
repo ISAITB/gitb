@@ -1044,7 +1044,7 @@ object JsonUtil {
    * @param spec Specification object to be converted
    * @return JsObject
    */
-  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
+  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None, documentation: Option[String] = None) : JsObject = {
     var json = Json.obj(
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
@@ -1061,6 +1061,9 @@ object JsonUtil {
     }
     if (badgeStatus.isDefined) {
       json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
+    }
+    if (documentation.isDefined) {
+      json = json.+("documentation" -> JsString(documentation.get))
     }
     json
   }
@@ -1189,7 +1192,7 @@ object JsonUtil {
     json
   }
 
-  def jsActor(actor:Actor, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
+  def jsActor(actor:Actor, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None, documentation: Option[String] = None) : JsObject = {
     var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
@@ -1207,6 +1210,9 @@ object JsonUtil {
     }
     if (badgeStatus.isDefined) {
       json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
+    }
+    if (documentation.isDefined) {
+      json = json.+("documentation" -> JsString(documentation.get))
     }
     json
   }
@@ -3326,13 +3332,17 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatement(statement: ConformanceStatementItem, results: SearchResult[models.ConformanceStatus], systemInfo: models.System): JsObject = {
-    Json.obj(
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: SearchResult[models.ConformanceStatus], systemInfo: models.System, documentation: Option[String] = None): JsObject = {
+    var json = Json.obj(
       "statement" -> jsConformanceStatementItem(statement),
       "results" -> jsSearchResult(results, jsConformanceStatusForPaging),
       "system" -> jsSystem(systemInfo.toCaseObject),
       "organisation" -> jsOrganization(systemInfo.owner.get) // This is always present.
     )
+    if (documentation.isDefined && documentation.get.nonEmpty) {
+      json = json + ("documentation" -> JsString(documentation.get))
+    }
+    json
   }
 
   def jsConformanceStatusForPaging(list: Iterable[ConformanceStatus]): JsArray = {

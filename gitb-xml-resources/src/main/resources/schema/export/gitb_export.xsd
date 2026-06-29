@@ -602,6 +602,7 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="documentation" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="actors" type="Actors" minOccurs="0"/>
@@ -647,6 +648,7 @@
                     <xsd:element name="actorId" type="xsd:string"/>
                     <xsd:element name="name" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="documentation" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="endpoints" type="Endpoints" minOccurs="0"/>

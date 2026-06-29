@@ -241,7 +241,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getSpecification(specificationId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecification(request, specificationId).flatMap { _ =>
-      specificationManager.getSpecificationById(specificationId).map { result =>
+      for {
+        result <- specificationManager.getSpecificationById(specificationId)
+        documentation <- specificationManager.getSpecificationDocumentation(specificationId)
+      } yield {
         val successBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = false)
         val otherBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true, forReport = false)
         val failureBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.FAILURE.toString, exactMatch = true, forReport = false)
@@ -258,7 +261,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
           failureBadgeForReport.map(nameForBadge(_, "failure.report")),
           otherBadgeForReport.map(nameForBadge(_, "other.report"))
         )
-        val json = JsonUtil.jsSpecification(result, withApiKeys = true, Some((badgeStatus, badgeStatusForReport))).toString()
+        val json = JsonUtil.jsSpecification(result, withApiKeys = true, Some((badgeStatus, badgeStatusForReport)), documentation).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -281,7 +284,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getActor(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageActor(request, actorId).flatMap { _ =>
       val specificationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SPEC).toLong
-      actorManager.getActorsWithSpecificationId(Some(List(actorId)), Some(List(specificationId))).map { results =>
+      for {
+        results <- actorManager.getActorsWithSpecificationId(Some(List(actorId)), Some(List(specificationId)))
+        documentation <- actorManager.getActorDocumentation(actorId)
+      } yield {
         val result = results.headOption
         if (result.isDefined) {
           val successBadge = repositoryUtils.getConformanceBadge(specificationId, Some(result.get.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = false)
@@ -300,7 +306,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
             failureBadgeForReport.map(nameForBadge(_, "failure.report")),
             otherBadgeForReport.map(nameForBadge(_, "other.report"))
           )
-          val json = JsonUtil.jsActor(result.get, Some((badgeStatus, badgeStatusForReport))).toString()
+          val json = JsonUtil.jsActor(result.get, Some((badgeStatus, badgeStatusForReport)), documentation).toString()
           ResponseConstructor.constructJsonResponse(json)
         } else {
           ResponseConstructor.constructEmptyResponse
@@ -499,7 +505,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
               Future.successful(badgeInfoForReport._2.get)
             } else {
               val domainId = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.DOMAIN_ID).toLong
-              actorManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
+              val actorDocumentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeEditorContent)
+              actorManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId, actorDocumentation, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
                 ResponseConstructor.constructEmptyResponse
               }
             }
@@ -564,7 +571,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         if (badgeInfoForReport._2.nonEmpty) {
           Future.successful(badgeInfoForReport._2.get)
         } else {
-          specificationManager.createSpecifications(specification, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
+          val specDocumentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeEditorContent)
+          specificationManager.createSpecifications(specification, specDocumentation, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
         }
@@ -1599,9 +1607,11 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
               } else {
                 throw new IllegalStateException("The conformance statement's system could not be found.")
               }
-              systemInfoTask.map { systemInfo =>
-                val json = JsonUtil.jsConformanceStatement(conformanceStatement.get, results.get, systemInfo).toString()
-                ResponseConstructor.constructJsonResponse(json)
+              systemInfoTask.flatMap { systemInfo =>
+                conformanceManager.getConformanceStatementDocumentation(actorId, snapshotId).map { documentation =>
+                  val json = JsonUtil.jsConformanceStatement(conformanceStatement.get, results.get, systemInfo, documentation).toString()
+                  ResponseConstructor.constructJsonResponse(json)
+                }
               }
             } else {
               Future.successful {

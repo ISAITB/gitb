@@ -19,7 +19,6 @@ import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
-import {HtmlService} from 'src/app/services/html.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {TestSuiteService} from 'src/app/services/test-suite.service';
@@ -98,7 +97,6 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     private readonly routingService: RoutingService,
     private readonly testSuiteService: TestSuiteService,
     private readonly popupService: PopupService,
-    private readonly htmlService: HtmlService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: NgbModal,
@@ -233,19 +231,6 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     }).add(() => {
       this.specificationsRefreshing = false
       this.specificationStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
-	previewDocumentation() {
-		this.conformanceService.getDocumentationForPreview(this.testSuite.documentation!)
-    .subscribe((html) => {
-      this.htmlService.showHtml('Test suite documentation', html)
-    })
-  }
-
-  copyDocumentation() {
-    this.dataService.copyToClipboard(this.testSuite.documentation!).subscribe(() => {
-      this.popupService.success('HTML source copied to clipboard.')
     })
   }
 

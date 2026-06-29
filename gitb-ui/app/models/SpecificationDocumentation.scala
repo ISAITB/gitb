@@ -13,23 +13,6 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
-import {DataService} from 'src/app/services/data.service';
-import {Actor} from 'src/app/types/actor';
+package models
 
-@Component({
-    selector: 'app-actor-form',
-    templateUrl: './actor-form.component.html',
-    styles: [],
-    standalone: false
-})
-export class ActorFormComponent {
-
-  @Input() actor!: Partial<Actor>
-  @Input() communityId?: number
-
-  constructor(
-    public readonly dataService: DataService
-  ) { }
-
-}
+case class SpecificationDocumentation(id: Long, documentation: String)

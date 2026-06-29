@@ -136,6 +136,12 @@
                                                                  [filtering]="false"
                                                                  [withCheck]="false"
                                                                  [withResults]="false"></app-conformance-statement-items-display>
+						@if (statementDocumentation) {
+							<div class="statementDocumentation">
+                                <div class="statementDocumentationLabel">Documentation</div>
+								<div [innerHtml]="statementDocumentation | sanitizeHtml" class="no-margin-on-last-p"></div>
+							</div>
+						}
 						@if (statusCounters && conformanceStatus) {
 							<div class="statementStatus" [class.wrapped]="resultsWrapped">
                                 <div #statusInfoContainer class="statusInfoContainer">

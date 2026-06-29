@@ -32,6 +32,7 @@ import { Actor } from 'src/app/types/actor';
 export class CreateActorComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   domainId!: number
+  communityId?: number
   specificationId!:number
   actor: Partial<Actor> = {}
   savePending = false
@@ -51,6 +52,11 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+    }
     this.actor.badges = {
       enabled: false,
       initiallyEnabled: false,
@@ -79,7 +85,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
 	createActor() {
 		if (!this.saveDisabled()) {
       this.savePending = true
-      this.conformanceService.createActor(this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
+      this.conformanceService.createActor(this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.documentation, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
       .subscribe(() => {
         this.cancel()
         this.popupService.success(this.dataService.labelActor()+' created.')

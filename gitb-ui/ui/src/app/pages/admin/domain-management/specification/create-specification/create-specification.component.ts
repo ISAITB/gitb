@@ -34,6 +34,7 @@ import { SpecificationGroup } from 'src/app/types/specification-group';
 export class CreateSpecificationComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   domainId!: number
+  communityId?: number
   specification: Partial<Specification> = {}
   pending = false
   groups?: SpecificationGroup[]
@@ -53,6 +54,11 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+    }
     const groupId = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SPECIFICATION_GROUP_ID)
     if (groupId) {
       this.specification.group = Number(groupId)
@@ -91,7 +97,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 	createSpecification() {
 		if (!this.saveDisabled()) {
       this.pending = true
-      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.domainId, this.specification.group, this.specification.badges!)
+      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.documentation, this.specification.reportMetadata, this.specification.hidden, this.domainId, this.specification.group, this.specification.badges!)
       .subscribe(() => {
         this.routingService.toDomain(this.domainId)
         this.popupService.success(this.dataService.labelSpecification()+' created.')

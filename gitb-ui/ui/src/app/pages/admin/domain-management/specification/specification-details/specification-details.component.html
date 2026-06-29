@@ -6,7 +6,7 @@
 		</div>
 		<form (ngSubmit)="saveSpecificationChanges()">
 			<div class="card-body" [pending]="!loaded" focus="shortName">
-				<app-specification-form [specification]="specification"></app-specification-form>
+				<app-specification-form [specification]="specification" [communityId]="communityId"></app-specification-form>
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">

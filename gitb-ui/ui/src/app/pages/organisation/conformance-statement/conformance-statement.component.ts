@@ -161,6 +161,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   executionModeButton = this.executionModeLabelInteractive
 
   statement?: ConformanceStatementItem
+  statementDocumentation?: string
   systemName?: string
   organisationName?: string
   snapshotLabel?: string
@@ -304,9 +305,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
             this.communityIdOfStatement = communityIdForActor
           }
         }
+        this.dataService.setImplicitCommunity(this.communityIdOfStatement)
         // Statement definition.
         this.prepareStatement(statementData.statement)
         this.statement = statementData.statement
+        this.statementDocumentation = statementData.documentation
         this.statementLabel = this.breadcrumbLabel()
         this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.statementLabel, this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
         // IDs.

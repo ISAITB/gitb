@@ -21,6 +21,7 @@ export interface Actor extends EntityWithId {
     actorId: string
     name: string
     description?:string
+    documentation?: string
     reportMetadata?: string
     hidden: boolean
     default: boolean

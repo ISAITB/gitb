@@ -148,6 +148,13 @@ object PersistenceSchema {
   val specifications = TableQuery[SpecificationsTable]
   val insertSpecification = specifications returning specifications.map(_.id)
 
+  class SpecificationDocumentationTable(tag: Tag) extends Table[SpecificationDocumentation](tag, "specificationdocumentation") {
+    def id = column[Long]("id", O.PrimaryKey)
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id, documentation) <> (SpecificationDocumentation.tupled, SpecificationDocumentation.unapply)
+  }
+  val specificationDocumentation = TableQuery[SpecificationDocumentationTable]
+
   class ActorsTable(tag: Tag) extends Table[Actors](tag, "Actors") {
     def id      = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def actorId = column[String]("actorId")
@@ -163,6 +170,13 @@ object PersistenceSchema {
   }
   val actors = TableQuery[ActorsTable]
   val insertActor = actors returning actors.map(_.id)
+
+  class ActorDocumentationTable(tag: Tag) extends Table[ActorDocumentation](tag, "actordocumentation") {
+    def id = column[Long]("id", O.PrimaryKey)
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id, documentation) <> (ActorDocumentation.tupled, ActorDocumentation.unapply)
+  }
+  val actorDocumentation = TableQuery[ActorDocumentationTable]
 
   class EndpointsTable(tag: Tag) extends Table[Endpoints](tag, "Endpoints") {
 	  def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -943,6 +957,22 @@ object PersistenceSchema {
     def * = (id :: message :: messageType:: domainId :: groupId :: specificationId:: actorId :: snapshotId :: HNil).mapTo[ConformanceSnapshotOverviewCertificateMessage]
   }
   val conformanceSnapshotOverviewCertificateMessages = TableQuery[ConformanceSnapshotOverviewCertificateMessageTable]
+
+  class ConformanceSnapshotSpecificationDocumentationTable(tag: Tag) extends Table[ConformanceSnapshotSpecificationDocumentation](tag, "conformancesnapshotspecificationdocumentation") {
+    def id = column[Long]("id")
+    def snapshotId = column[Long]("snapshot_id")
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id :: snapshotId :: documentation :: HNil).mapTo[ConformanceSnapshotSpecificationDocumentation]
+  }
+  val conformanceSnapshotSpecificationDocumentation = TableQuery[ConformanceSnapshotSpecificationDocumentationTable]
+
+  class ConformanceSnapshotActorDocumentationTable(tag: Tag) extends Table[ConformanceSnapshotActorDocumentation](tag, "conformancesnapshotactordocumentation") {
+    def id = column[Long]("id")
+    def snapshotId = column[Long]("snapshot_id")
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id :: snapshotId :: documentation :: HNil).mapTo[ConformanceSnapshotActorDocumentation]
+  }
+  val conformanceSnapshotActorDocumentation = TableQuery[ConformanceSnapshotActorDocumentationTable]
 
   class ThemesTable(tag: Tag) extends Table[Theme](tag, "Themes") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
