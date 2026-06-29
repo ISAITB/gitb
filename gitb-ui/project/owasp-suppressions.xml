@@ -823,4 +823,20 @@
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <vulnerabilityName>GHSA-x4vx-rjvf-j5p4</vulnerabilityName>
     </suppress>
+    <suppress>
+        <!-- CVE not applicable as exploit preconditions are not met. -->
+        <notes><![CDATA[
+    file name: jackson-databind-2.21.4.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-54515</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- CVE not applicable as exploit preconditions are not met. -->
+        <notes><![CDATA[
+    file name: logback-core-1.5.34.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-13006</vulnerabilityName>
+    </suppress>
 </suppressions>
