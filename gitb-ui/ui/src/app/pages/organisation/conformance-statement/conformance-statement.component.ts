@@ -305,7 +305,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
             this.communityIdOfStatement = communityIdForActor
           }
         }
-        this.dataService.setImplicitCommunity(this.communityIdOfStatement)
         // Statement definition.
         this.prepareStatement(statementData.statement)
         this.statement = statementData.statement
