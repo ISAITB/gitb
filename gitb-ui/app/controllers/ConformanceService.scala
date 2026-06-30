@@ -21,7 +21,7 @@ import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.ConformanceService.{KeystoreInfo, TestSuiteUploadInfo}
 import controllers.util._
-import exceptions.{ErrorCodes, NotFoundException}
+import exceptions.{ErrorCodes, NotFoundException, UnacceptableUriException}
 import managers._
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
 import models.Enums.{Result => _, _}
@@ -87,7 +87,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
                                     authorizationManager: AuthorizationManager,
                                     communityLabelManager: CommunityLabelManager,
                                     actorSystem: ActorSystem,
-                                    repositoryUtils: RepositoryUtils)
+                                    repositoryUtils: RepositoryUtils,
+                                    remoteArchiveFetcher: RemoteArchiveFetcher)
                                    (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
@@ -725,40 +726,52 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
           authorizationManager.canManageDomain(request, domainId)
         }
       }
-      response <- {
-        var response:Result = null
-        val testSuiteFileName = "ts_"+RandomStringUtils.secure().next(10, false, true)+".zip"
+      archiveOrError <- {
+        val testSuiteUri = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.TEST_SUITE_URI)
         ParameterExtractor.extractFiles(request).get(ParameterNames.FILE) match {
           case Some(testSuite) =>
-            if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-              val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-              val scanResult = virusScanner.scan(testSuite.file)
-              if (!ClamAVClient.isCleanReply(scanResult)) {
-                response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
-              }
-            }
-            if (response == null) {
-              val file = Paths.get(
-                repositoryUtils.getTempFolder().getAbsolutePath,
-                RandomStringUtils.secure().next(10, false, true),
-                testSuiteFileName
-              ).toFile
-              file.getParentFile.mkdirs()
-              Files.move(testSuite.file.toPath, file.toPath, StandardCopyOption.REPLACE_EXISTING)
-              val contentType = testSuite.contentType
-              logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
-              testSuiteManager.deployTestSuiteFromZipFile(domainId, specIds, sharedTestSuite, file).map { result =>
-                val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
-                ResponseConstructor.constructJsonResponse(json)
-              }
-            } else {
-              Future.successful(response)
-            }
+            val testSuiteFileName = "ts_"+RandomStringUtils.secure().next(10, false, true)+".zip"
+            val file = Paths.get(
+              repositoryUtils.getTempFolder().getAbsolutePath,
+              RandomStringUtils.secure().next(10, false, true),
+              testSuiteFileName
+            ).toFile
+            file.getParentFile.mkdirs()
+            Files.move(testSuite.file.toPath, file.toPath, StandardCopyOption.REPLACE_EXISTING)
+            logger.debug("Test suite file uploaded - filename: [{}] content type: [{}]", testSuiteFileName, testSuite.contentType)
+            Future.successful(Right(file): Either[Result, File])
           case None =>
-            Future.successful {
-              ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")
+            testSuiteUri match {
+              case Some(uri) =>
+                remoteArchiveFetcher.fetchToTempFile(uri)
+                  .map(Right(_): Either[Result, File])
+                  .recover {
+                    case e: UnacceptableUriException =>
+                      Left(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, e.getMessage, Some(ParameterNames.TEST_SUITE_URI)))
+                  }
+              case None =>
+                Future.successful(Left(ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")))
             }
         }
+      }
+      response <- archiveOrError match {
+        case Left(errorResponse) => Future.successful(errorResponse)
+        case Right(file) =>
+          var virusCheckResponse: Result = null
+          if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+            val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+            val scanResult = virusScanner.scan(file)
+            if (!ClamAVClient.isCleanReply(scanResult)) {
+              virusCheckResponse = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
+            }
+          }
+          if (virusCheckResponse == null) {
+            testSuiteManager.deployTestSuiteFromZipFile(domainId, specIds, sharedTestSuite, file).map { result =>
+              ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteUploadResult(result).toString())
+            }
+          } else {
+            Future.successful(virusCheckResponse)
+          }
       }
     } yield response
     action.andThen { _ =>

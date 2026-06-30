@@ -35,6 +35,7 @@ import {BaseComponent} from 'src/app/pages/base-component.component';
 import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
 import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-test-suite-upload-modal',
@@ -60,6 +61,9 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   step = 'initial'
   file?: FileData
   uploadResult?: TestSuiteUploadResult
+  sourceChoice = Constants.TEST_SUITE_SOURCE.DISK
+  uri?: string
+  validation = new ValidationState()
   report?: ValidationReport
   results?: SpecificationResult[]
   specificationChoices?: SpecificationChoice[]
@@ -107,7 +111,10 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   }
 
   proceedDisabled() {
-    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(this.file != undefined && (this.specifications.length > 0 || this.sharedTestSuite)) || (this.step == 'replace' && (this.specificationChoices != undefined && this.specificationChoices.length > 0 && !this.hasChoicesToComplete))
+    const archiveProvided = (this.sourceChoice === Constants.TEST_SUITE_SOURCE.DISK)
+      ? this.file != undefined
+      : (this.uri != undefined && this.uri.trim().length > 0)
+    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(archiveProvided && (this.specifications.length > 0 || this.sharedTestSuite)) || (this.step == 'replace' && (this.specificationChoices != undefined && this.specificationChoices.length > 0 && !this.hasChoicesToComplete))
   }
 
   parseValidationReport() {
@@ -256,8 +263,17 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
     this.actionPending = true
     this.actionProceedPending = true
     this.clearAlerts()
-    this.conformanceService.deployTestSuite(this.domainId, this.specificationIds(), this.sharedTestSuite, this.file!.file!)
+    this.validation.clearErrors()
+    const file = (this.sourceChoice === Constants.TEST_SUITE_SOURCE.DISK) ? this.file?.file : undefined
+    const uri = (this.sourceChoice === Constants.TEST_SUITE_SOURCE.URI) ? this.uri : undefined
+    this.conformanceService.deployTestSuite(this.domainId, this.specificationIds(), this.sharedTestSuite, file, uri)
     .subscribe((result) => {
+      if (this.isErrorDescription(result)) {
+        if (!this.validation.applyError(result)) {
+          this.showErrorMessage(result.error_description)
+        }
+        return
+      }
       this.uploadResult = result
       if (this.uploadResult.validationReport) {
         this.parseValidationReport()
@@ -281,9 +297,11 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
     })
   }
 
-  showErrorMessage() {
+  showErrorMessage(overrideMessage?: string) {
     let msg: string
-    if (this.uploadResult != undefined) {
+    if (overrideMessage !== undefined) {
+      msg = overrideMessage
+    } else if (this.uploadResult != undefined) {
       if (this.uploadResult.errorInformation != undefined) {
         msg = 'An error occurred while processing the test suite: '+this.uploadResult.errorInformation
       } else {
@@ -443,6 +461,12 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
 
   selectArchive(file: FileData) {
     this.file = file
+  }
+
+  sourceChoiceChanged() {
+    this.file = undefined
+    this.uri = undefined
+    this.validation.clearErrors()
   }
 
   choiceUpdate(hasPendingChoices: boolean) {

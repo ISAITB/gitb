@@ -583,15 +583,20 @@ export class ConformanceService {
   }
 
 
-  deployTestSuite(domainId: number, specificationIds: number[], sharedTestSuite: boolean, file: File) {
-    return this.restService.post<TestSuiteUploadResult>({
+  deployTestSuite(domainId: number, specificationIds: number[], sharedTestSuite: boolean, file: File|undefined, uri?: string) {
+    const data: any = {
+      specification_ids: specificationIds.join(','),
+      domain_id: domainId,
+      shared: sharedTestSuite
+    }
+    if (uri !== undefined) {
+      data.testSuiteUri = uri
+    }
+    const files: FileParam[]|undefined = (file !== undefined) ? [{param: 'file', data: file}] : undefined
+    return this.restService.post<TestSuiteUploadResult|ErrorDescription>({
       path: ROUTES.controllers.ConformanceService.deployTestSuiteToSpecifications().url,
-      data: {
-        specification_ids: specificationIds.join(','),
-        domain_id: domainId,
-        shared: sharedTestSuite
-      },
-      files: [{param: 'file', data: file}],
+      data: data,
+      files: files,
       authenticate: true
     })
   }

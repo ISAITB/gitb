@@ -18,7 +18,7 @@ package controllers.rest
 import config.Configurations
 import controllers.rest.BaseAutomationService.EndpointSignature
 import controllers.util.{ParameterExtractor, RequestWithAttributes, ResponseConstructor}
-import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException, UnauthorizedAccessException}
+import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException, UnacceptableUriException, UnauthorizedAccessException}
 import managers.ratelimit.RateLimitManager
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsResultException, JsValue, Json}
@@ -119,6 +119,9 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents,
       case e: AutomationApiException =>
         LOG.warn("Failure while processing automation API call: " + e.getMessage)
         ResponseConstructor.constructBadRequestResponse(e.getCode, e.getMessage)
+      case e: UnacceptableUriException =>
+        LOG.warn("Unacceptable URI in automation API call: " + e.getMessage)
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, e.getMessage)
       case e: UnauthorizedAccessException =>
         ResponseConstructor.constructAccessDeniedResponse(403, e.msg)
       case e: Throwable =>

@@ -1333,13 +1333,22 @@ object JsonUtil {
     TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential, waitForCompletion, maximumWaitTime, executionDelay)
   }
 
-  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, String) = {
+  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, models.automation.TestSuiteArchiveSource) = {
     val specification = if (sharedTestSuite) {
       None
     } else {
       Some((jsonConfig \ "specification").as[String])
     }
-    val testSuite = (jsonConfig \ "testSuite").as[String]
+    val testSuiteBase64 = (jsonConfig \ "testSuite").asOpt[String]
+    val testSuiteUri = (jsonConfig \ "testSuiteUri").asOpt[String]
+    val archiveSource: models.automation.TestSuiteArchiveSource = (testSuiteBase64, testSuiteUri) match {
+      case (Some(base64), None) => models.automation.Base64ArchiveSource(base64)
+      case (None, Some(uri))   => models.automation.UriArchiveSource(uri)
+      case (None, None) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Either 'testSuite' (base64) or 'testSuiteUri' must be provided.")
+      case (Some(_), Some(_)) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Only one of 'testSuite' (base64) or 'testSuiteUri' may be provided, not both.")
+    }
     val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
     val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean]
     val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean]
@@ -1358,7 +1367,7 @@ object JsonUtil {
       testCaseMap.put(action.identifier, action)
     }
     val showIdentifiers = (jsonConfig \ "showIdentifiers").asOpt[Boolean].getOrElse(true)
-    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite, showIdentifiers), testSuite)
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite, showIdentifiers), archiveSource)
   }
 
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): TestSuiteUndeployRequest = {

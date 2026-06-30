@@ -4382,7 +4382,7 @@
         ]
       },
       "TestSuiteDeployViaBase64Request": {
-        "description": "Information on the test suite to deploy when the call is made as JSON.",
+        "description": "Information on the test suite to deploy when the call is made as JSON. Exactly one of 'testSuite' (base64-encoded archive) or 'testSuiteUri' (remote URI) must be provided.",
         "allOf": [
           {
             "$ref": "#/components/schemas/BaseTestSuiteDeployRequest"
@@ -4391,9 +4391,14 @@
             "type": "object",
             "properties": {
               "testSuite": {
-                "description": "The test suite archive to deploy provided as a Base64-encoded string.",
+                "description": "The test suite archive to deploy provided as a Base64-encoded string. Mutually exclusive with 'testSuiteUri'.",
                 "type": "string",
                 "format": "base64"
+              },
+              "testSuiteUri": {
+                "description": "The URI from which to read the test suite archive. The server will fetch the archive from this address. Mutually exclusive with 'testSuite'.",
+                "type": "string",
+                "format": "uri"
               },
               "testCases": {
                 "description": "Update choices for specific test cases.",
@@ -4402,15 +4407,12 @@
                   "$ref": "#/components/schemas/TestCaseDeploymentAction"
                 }
               }
-            },
-            "required": [
-              "testSuite"
-            ]
+            }
           }
         ]
       },
       "SharedTestSuiteDeployViaBase64Request": {
-        "description": "Information on the shared test suite to deploy when the call is made as JSON.",
+        "description": "Information on the shared test suite to deploy when the call is made as JSON. Exactly one of 'testSuite' (base64-encoded archive) or 'testSuiteUri' (remote URI) must be provided.",
         "allOf": [
           {
             "$ref": "#/components/schemas/BaseSharedTestSuiteDeployRequest"
@@ -4419,9 +4421,14 @@
             "type": "object",
             "properties": {
               "testSuite": {
-                "description": "The shared test suite archive to deploy provided as a Base64-encoded string.",
+                "description": "The shared test suite archive to deploy provided as a Base64-encoded string. Mutually exclusive with 'testSuiteUri'.",
                 "type": "string",
                 "format": "base64"
+              },
+              "testSuiteUri": {
+                "description": "The URI from which to read the shared test suite archive. The server will fetch the archive from this address. Mutually exclusive with 'testSuite'.",
+                "type": "string",
+                "format": "uri"
               },
               "testCases": {
                 "description": "Update choices for specific test cases.",
@@ -4430,10 +4437,7 @@
                   "$ref": "#/components/schemas/TestCaseDeploymentAction"
                 }
               }
-            },
-            "required": [
-              "testSuite"
-            ]
+            }
           }
         ]
       },

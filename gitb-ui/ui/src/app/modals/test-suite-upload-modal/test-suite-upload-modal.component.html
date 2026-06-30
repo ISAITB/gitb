@@ -8,7 +8,7 @@
 			<div>
 				@if (!sharedTestSuite) {
 					<div class="row mb-3">
-						<label class="col-3 col-form-label text-end" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
+						<label class="col-3 col-form-label text-end" for="specification">{{ (availableSpecifications.length == 1)?'':'* ' }}Target {{dataService.labelSpecificationLower()}}:</label>
 						<div class="col-8">
 							@if (availableSpecifications.length == 1) {
 								<input class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
@@ -21,18 +21,45 @@
 				} @else {
                     <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
                 }
-				<div class="row">
-					<label class="col-3 col-form-label text-end">* Test suite:</label>
+				<div class="row mb-2">
+					<legend class="col-3 col-form-label text-end pt-0">Test suite source:</legend>
 					<div class="col-8">
-						<app-file-select placeholder="Drop or browse for test suite archive ..."
-							[fileName]="file?.name"
-							[accepts]="['application/zip']"
-							(onUpload)="selectArchive($event)"
-							[maxSize]="-1">
-						</app-file-select>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" id="source_disk" name="source_disk" [(ngModel)]="sourceChoice" [value]="Constants.TEST_SUITE_SOURCE.DISK" (change)="sourceChoiceChanged()">
+							<label class="form-check-label" for="source_disk">Upload from disk
+								<div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Upload the test suite archive from your local filesystem."></div>
+							</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" id="source_uri" name="source_uri" [(ngModel)]="sourceChoice" [value]="Constants.TEST_SUITE_SOURCE.URI" (change)="sourceChoiceChanged()">
+							<label class="form-check-label" for="source_uri">Read from URI
+								<div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Read the test suite archive from a remote location."></div>
+							</label>
+						</div>
 					</div>
-					<div app-tooltip class="col-auto" tbTooltip="The test suite archive to upload."></div>
 				</div>
+				@if (sourceChoice === Constants.TEST_SUITE_SOURCE.DISK) {
+					<div class="row">
+						<label class="col-3 col-form-label text-end">* Test suite archive:</label>
+						<div class="col-8">
+							<app-file-select placeholder="Drop or browse for test suite archive ..."
+								[fileName]="file?.name"
+								[accepts]="['application/zip']"
+								(onUpload)="selectArchive($event)"
+								[maxSize]="-1">
+							</app-file-select>
+						</div>
+						<div app-tooltip class="col-auto" tbTooltip="The test suite archive to upload."></div>
+					</div>
+				} @else {
+					<div class="row">
+						<label class="col-3 col-form-label text-end" for="test_suite_uri">* Test suite location:</label>
+						<div class="col-8">
+							<input class="form-control" id="test_suite_uri" name="test_suite_uri" [(ngModel)]="uri" [invalid]="validation.get('testSuiteUri')"/>
+						</div>
+						<div app-tooltip class="col-auto" tbTooltip="The address from which to read the test suite archive."></div>
+					</div>
+				}
 			</div>
 		} @else if (step == 'validation') {
 			<div>

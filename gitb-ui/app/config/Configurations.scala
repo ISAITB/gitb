@@ -197,6 +197,9 @@ object Configurations {
   var AUTOMATION_API_MASTER_KEY: Option[String] = None
   var BUILD_TIMESTAMP = ""
 
+  val TESTSUITE_DEPLOY_ALLOWED_URIS_NAME = "TESTSUITE_DEPLOY_ALLOWED_URIS"
+  var TESTSUITE_DEPLOY_ALLOWED_URIS: Set[String] = Set.empty
+
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
   val WELCOME_TITLE_DEFAULT = "Welcome to the Interoperability Test Bed"
@@ -464,6 +467,10 @@ object Configurations {
       SOFTWARE_VERSION_CHECK_INFO_URL = fromEnv("SOFTWARE_VERSION_CHECK_INFO_URL", conf.getString("softwareVersionCheck.statusUrl"))
       SOFTWARE_VERSION_CHECK_JWKS_URL = fromEnv("SOFTWARE_VERSION_CHECK_JWKS_URL", conf.getString("softwareVersionCheck.jwksUrl"))
       // Software version check - END
+      // Test suite deploy from URI - allowed base URIs whitelist (overrides the SSRF blacklist for internal hosts)
+      TESTSUITE_DEPLOY_ALLOWED_URIS = Option(fromEnv(TESTSUITE_DEPLOY_ALLOWED_URIS_NAME, null))
+        .map(_.split(",").map(_.trim).filter(_.nonEmpty).toSet)
+        .getOrElse(Set.empty)
       _IS_LOADED = true
     }
   }

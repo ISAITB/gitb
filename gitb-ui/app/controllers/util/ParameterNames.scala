@@ -217,6 +217,7 @@ object ParameterNames {
   val DEFAULT_VALUE = "defaultValue"
 
   val FILE       = "file"
+  val TEST_SUITE_URI = "testSuiteUri"
 	val LIMIT      = "limit"
 	val PAGE       = "page"
   val EXPORT     = "export"

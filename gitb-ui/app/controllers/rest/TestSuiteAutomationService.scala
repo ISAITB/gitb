@@ -20,9 +20,9 @@ import controllers.rest.BaseAutomationService.{EndpointSignature, PostEndpoint}
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.ratelimit.RateLimitManager
-import managers.{AuthorizationManager, SpecificationManager, TestSuiteManager}
+import managers.{AuthorizationManager, RemoteArchiveFetcher, SpecificationManager, TestSuiteManager}
 import models.TestCaseDeploymentAction
-import models.automation.TestSuiteDeployRequest
+import models.automation.{Base64ArchiveSource, TestSuiteDeployRequest, UriArchiveSource}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import play.api.mvc._
@@ -43,7 +43,8 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                             repositoryUtils: RepositoryUtils,
                                             specificationManager: SpecificationManager,
                                             rateLimitManager: RateLimitManager,
-                                            testSuiteManager: TestSuiteManager)
+                                            testSuiteManager: TestSuiteManager,
+                                            remoteArchiveFetcher: RemoteArchiveFetcher)
                                            (implicit ec: ExecutionContext) extends BaseAutomationService(cc, rateLimitManager) {
 
   private def deployInternal(input: TestSuiteDeployRequest, testSuiteArchive: File, request: Request[AnyContent]): Future[Result] = {
@@ -151,16 +152,23 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   private def handleDeployJson(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, sharedTestSuite: Boolean) = {
     processAsJson(request, signature, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
-      val input = JsonUtil.parseJsTestSuiteDeployRequest(body, sharedTestSuite)
-      val testSuiteFileName = "ts_" + RandomStringUtils.secure.next(10, false, true) + ".zip"
-      val testSuiteFile = Paths.get(
-        repositoryUtils.getTempFolder().getAbsolutePath,
-        RandomStringUtils.secure.next(10, false, true),
-        testSuiteFileName
-      )
-      testSuiteFile.toFile.getParentFile.mkdirs()
-      Files.write(testSuiteFile, Base64.getDecoder.decode(input._2))
-      deployInternal(input._1, testSuiteFile.toFile, request)
+      val (deployRequest, archiveSource) = JsonUtil.parseJsTestSuiteDeployRequest(body, sharedTestSuite)
+      archiveSource match {
+        case Base64ArchiveSource(base64) =>
+          val testSuiteFileName = "ts_" + RandomStringUtils.secure.next(10, false, true) + ".zip"
+          val testSuiteFile = Paths.get(
+            repositoryUtils.getTempFolder().getAbsolutePath,
+            RandomStringUtils.secure.next(10, false, true),
+            testSuiteFileName
+          )
+          testSuiteFile.toFile.getParentFile.mkdirs()
+          Files.write(testSuiteFile, Base64.getDecoder.decode(base64))
+          deployInternal(deployRequest, testSuiteFile.toFile, request)
+        case UriArchiveSource(uri) =>
+          remoteArchiveFetcher.fetchToTempFile(uri).flatMap { tempFile =>
+            deployInternal(deployRequest, tempFile, request)
+          }
+      }
     })
   }
 

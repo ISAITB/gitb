@@ -502,6 +502,11 @@ export class Constants {
 		IN_ARCHIVE_AND_DB : 3
 	}
 
+	public static readonly TEST_SUITE_SOURCE = {
+		DISK: 1,
+		URI: 2
+	}
+
 	public static readonly CONFORMANCE_STATEMENT_ITEM_TYPE = {
 		DOMAIN: 1,
 		SPECIFICATION_GROUP: 2,
