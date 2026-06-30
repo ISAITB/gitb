@@ -57,3 +57,5 @@ test/resources/repository
 /.worktrees/
 /.screenshots/
 .worktreeinclude
+/deps.txt
+/gitb-ui/deps.txt
