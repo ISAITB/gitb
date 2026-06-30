@@ -671,4 +671,12 @@
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson-databind@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-54515</vulnerabilityName>
     </suppress>
+    <suppress>
+        <!-- Relates to transitive dependency and is non-exploitable. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41855</cve>
+    </suppress>
 </suppressions>
