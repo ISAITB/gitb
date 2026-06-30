@@ -54,3 +54,4 @@ test/resources/repository
 /gitb-ui/project/project/
 /CLAUDE.md
 /.claude/
+/.worktrees/
