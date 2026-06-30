@@ -55,4 +55,5 @@ test/resources/repository
 /CLAUDE.md
 /.claude/
 /.worktrees/
+/.screenshots/
 .worktreeinclude
