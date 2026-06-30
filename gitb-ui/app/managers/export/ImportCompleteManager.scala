@@ -497,7 +497,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelUserPreferenceDefaults(community: com.gitb.xml.export.Community, communityId: Long): Option[UserPreferenceDefaults] = {
-    Option(community.getDefaultUserPreferences).map(x => UserPreferenceDefaults(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), communityId))
+    Option(community.getDefaultUserPreferences).map(x => UserPreferenceDefaults(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), Option(x.getOwnSessions).getOrElse(""), Option(x.getAllSessions).getOrElse(""), communityId))
   }
 
   private def toModelConformanceOverCertificateSettingsWithMessages(exportedSettings: com.gitb.xml.export.ConformanceOverviewCertificateSettings, communityId: Long, ctx: ImportContext): ConformanceOverviewCertificateWithMessages = {
@@ -859,7 +859,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def toModelUserPreferences(data: com.gitb.xml.export.User): Option[models.UserPreferences] = {
     Option(data.getPreferences).map(x => {
-      models.UserPreferences(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), 0L)
+      models.UserPreferences(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), Option(x.getOwnSessions).getOrElse(""), Option(x.getAllSessions).getOrElse(""), 0L)
     })
   }
 

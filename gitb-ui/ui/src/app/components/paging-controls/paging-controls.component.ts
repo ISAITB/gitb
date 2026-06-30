@@ -36,6 +36,8 @@ export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit
   @ViewChild("pagingContainer") pagingContainer?: ElementRef
   @ViewChild("lastButton") lastButton?: ElementRef
   @ViewChild("pageControlsContainer") pageControlsContainer?: ElementRef
+  @ViewChild("pageSizeContainer") pageSizeContainer?: ElementRef
+  @ViewChild("summaryContainer") summaryContainer?: ElementRef
 
   status!: PagingStatus
   summaryMessage?: string
@@ -43,6 +45,13 @@ export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit
   resizeObserver!: ResizeObserver
   controlsWrapped = false
   wrapWidth?: number
+  // Whether the page-size/columns group, the paging links, and the summary label no longer fit on a
+  // single line: instead of letting the browser wrap them across an arbitrary (and visually messy)
+  // number of lines, groups-stacked CSS forces exactly two rows once this is set (paging links on
+  // their own row, page-size/columns + summary sharing the other). Uses the same wrap/un-wrap
+  // hysteresis as controlsWrapped/wrapWidth above, to avoid oscillating right at the boundary width.
+  groupsStacked = false
+  groupsWrapWidth?: number
   numberFormat = new Intl.NumberFormat('en-GB')
   protected readonly PagingPlacement = PagingPlacement;
   pageSizeChangeSubscription?: Subscription;
@@ -60,8 +69,16 @@ export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit
 
   ngAfterViewInit(): void {
     this.resizeObserver = new ResizeObserver(() => {
+      // Run in two separate zone.run calls rather than one: calculateWrapping() may flip
+      // controlsWrapped, which only takes effect in the DOM once Angular's change detection has run
+      // (i.e. once this zone.run call returns). Measuring calculateGroupStacking() in the same
+      // zone.run would read the paging-controls box before that DOM update (still showing the numeric
+      // page links), producing a stacking decision based on stale (wider) content.
       this.zone.run(() => {
         this.calculateWrapping()
+      })
+      this.zone.run(() => {
+        this.calculateGroupStacking()
       })
     })
     if (this.pagingContainer) {
@@ -201,6 +218,36 @@ export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit
         if (this.wrapWidth != undefined && this.pagingContainer!.nativeElement.getBoundingClientRect().right > this.wrapWidth) {
           this.wrapWidth = undefined
           this.controlsWrapped = false
+        }
+      }
+    }
+  }
+
+  protected calculateGroupStacking() {
+    // Only relevant when the paging links group is actually visible: with a single page it drops out
+    // of the flex flow entirely, leaving just the page-size and summary groups which the browser's
+    // default wrap already handles fine on their own.
+    if (this.status.totalCount <= this.status.pageSize) {
+      return
+    }
+    if (this.pagingContainer && this.pageSizeContainer && this.pageControlsContainer && this.summaryContainer) {
+      if (!this.groupsStacked) {
+        // Compare vertical centers rather than tops: with align-items:center, differently-sized
+        // siblings (buttons vs. plain text) share the same line center when on the same flex line,
+        // but their tops differ even then - so comparing tops would (almost) always look "wrapped".
+        const centerY = (rect: DOMRect) => rect.top + rect.height / 2
+        const pageSizeCenter = centerY(this.pageSizeContainer.nativeElement.getBoundingClientRect())
+        const controlsCenter = centerY(this.pageControlsContainer.nativeElement.getBoundingClientRect())
+        const summaryCenter = centerY(this.summaryContainer.nativeElement.getBoundingClientRect())
+        const tolerance = 1
+        if (Math.abs(pageSizeCenter - controlsCenter) > tolerance || Math.abs(controlsCenter - summaryCenter) > tolerance) {
+          this.groupsWrapWidth = this.pagingContainer.nativeElement.getBoundingClientRect().right
+          this.groupsStacked = true
+        }
+      } else {
+        if (this.groupsWrapWidth != undefined && this.pagingContainer.nativeElement.getBoundingClientRect().right > this.groupsWrapWidth) {
+          this.groupsWrapWidth = undefined
+          this.groupsStacked = false
         }
       }
     }

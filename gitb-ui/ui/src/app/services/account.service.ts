@@ -52,6 +52,11 @@ export class AccountService {
         this.updatePreferenceForPageSize(pageSize).subscribe(() => {})
       }
     })
+    this.dataService.onSessionColumnsChange$.subscribe(({ key, value }) => {
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForSessionColumns(key, value).subscribe(() => {})
+      }
+    })
   }
 
   updateVendorProfile(vendorFname: string|undefined, vendorSname: string|undefined, processProperties: boolean, properties: CustomProperty[], landingPageId: number|undefined) {
@@ -152,7 +157,9 @@ export class AccountService {
       menu_collapsed: preferences.menuCollapsed,
       statements_collapsed: preferences.statementsCollapsed,
       page_size: preferences.pageSize,
-      home_page_type: preferences.homePageType
+      home_page_type: preferences.homePageType,
+      own_sessions: preferences.ownSessions,
+      all_sessions: preferences.allSessions,
     }
     if (name != undefined) {
       data.user_name = name
@@ -188,6 +195,17 @@ export class AccountService {
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.updatePreferenceForPageSize().url,
       data: {
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForSessionColumns(key: string, value: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForSessionColumns().url,
+      data: {
+        key: key,
         value: value
       },
       authenticate: true

@@ -48,6 +48,9 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {UserInteractionInput} from '../../types/user-interaction-input';
 import {TestResultCommentsModalComponent} from '../../modals/test-result-comments-modal/test-result-comments-modal.component';
 import {TestSessionPresentationComponent} from '../diagram/test-session-presentation/test-session-presentation.component';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {CheckboxOptionPanelComponent} from '../checkbox-option-panel/checkbox-option-panel.component';
 
 @Component({
     selector: '[app-session-table]',
@@ -64,8 +67,12 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
   @Input() copyForOtherRoleOption = false
   @Input() showCheckbox?: EventEmitter<boolean>
   @Input() showNavigationControls = true
+  @Input() columnChooserOptions?: CheckboxOption[][]
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
+  @Output() columnChooserUpdated = new EventEmitter<CheckboxOptionState>()
+  @Output() columnChooserClosed = new EventEmitter<void>()
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChild("columnChooserPanel") columnChooserPanel?: CheckboxOptionPanelComponent
   @ViewChild("tableContainer") tableContainer?: ElementRef
   @ViewChildren("sessionContainer") sessionContainers?: QueryList<ElementRef>
   @ViewChildren("testSessionPresentationComponent") testSessionPresentationComponents?: QueryList<TestSessionPresentationComponent>
@@ -88,18 +95,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
   ) { super() }
 
   ngOnInit(): void {
-    for (let column of this.columns) {
-      if (column.headerClass == undefined) {
-        column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
-      }
-      if (column.sortable) {
-        column.headerClass = column.headerClass + ' sortable'
-      }
-    }
-    this.splitColumns()
-    this.columnCount = this.columns.length + 1 // PLus one for expandable.
-    if (this.checkboxEnabled) this.columnCount += 1
-    if (this.actionVisible || this.operationsVisible || this.exportVisible || this.optionsVisible) this.columnCount += 1
+    this.processColumns()
     if (this.refreshComplete) {
       this.refreshComplete.subscribe((report) => {
         this.refreshTestSession(report)
@@ -135,7 +131,51 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
     this.rowsAnimated = this.dataService.defaultPagingTableSize < 100
   }
 
+  /** Refresh the column chooser panel options (e.g. to update disabled flags after a toggle). */
+  refreshColumnChooser(newOptions: CheckboxOption[][]): void {
+    this.columnChooserPanel?.refresh(newOptions)
+  }
+
+  // The column chooser panel is a single instance owned directly by this component (unlike the
+  // per-row option panels forwarded to via tableRowComponents), so it needs to be included in the
+  // same top-level document listener forwarding chain rather than adding its own listeners.
+  override clickRegistered(event: Event) {
+    super.clickRegistered(event)
+    this.columnChooserPanel?.documentClick(event)
+  }
+
+  override escapeRegistered() {
+    super.escapeRegistered()
+    this.columnChooserPanel?.documentEscape()
+  }
+
+  /**
+   * (Re)derive the header classes, the left/right column split, and the column count from the
+   * current `columns` input. Called on init and whenever the columns input is replaced (e.g. as a
+   * result of the user toggling visible columns via the column chooser), so headers, cell data and
+   * column count all stay in sync with what is actually displayed.
+   */
+  private processColumns(): void {
+    for (let column of this.columns) {
+      if (column.headerClass == undefined) {
+        column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
+      }
+      if (column.sortable) {
+        column.headerClass = column.headerClass + ' sortable'
+      }
+    }
+    this.columnsLeft = []
+    this.columnsRight = []
+    this.splitColumns()
+    this.columnCount = this.columns.length + 1 // Plus one for expandable.
+    if (this.checkboxEnabled) this.columnCount += 1
+    if (this.actionVisible || this.operationsVisible || this.exportVisible || this.optionsVisible) this.columnCount += 1
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['columns'] && !changes['columns'].firstChange) {
+      this.processColumns()
+    }
     // Precompute the row CSS class once per data load instead of evaluating it for every row on
     // every change-detection pass (which is very expensive at large page sizes, especially during
     // ngbCollapse animations that tick change detection at ~60fps).

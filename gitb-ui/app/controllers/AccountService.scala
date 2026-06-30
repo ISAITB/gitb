@@ -210,6 +210,17 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def updatePreferenceForSessionColumns(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val key = ParameterExtractor.requiredBodyParameter(request, ParameterNames.KEY)
+      val value = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE)
+      userPreferenceManager.updatePreferenceForSessionColumns(userId, key, value).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
   def getConfiguration: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewConfiguration(request).flatMap { _ =>
       legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map { legalNotice =>

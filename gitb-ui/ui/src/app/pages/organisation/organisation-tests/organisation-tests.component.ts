@@ -23,7 +23,6 @@ import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {ReportService} from 'src/app/services/report.service';
 import {TestService} from 'src/app/services/test.service';
-import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {TestResultReport} from 'src/app/types/test-result-report';
 import {TestResultSearchCriteria} from 'src/app/types/test-result-search-criteria';
 import {Observable} from 'rxjs';
@@ -32,6 +31,7 @@ import {FieldInfo} from 'src/app/types/field-info';
 import {BaseSessionDashboardComponent} from '../../sessions/base-session-dashboard.component';
 import {TestResultData} from '../../../types/test-result-data';
 import {TestResultForExport} from '../../admin/session-dashboard/test-result-for-export';
+import {SessionColumnCase, SessionColumnsService} from 'src/app/services/session-columns.service';
 
 @Component({
     selector: 'app-organisation-tests',
@@ -52,8 +52,9 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
     testService: TestService,
     popupService: PopupService,
     diagramLoaderService: DiagramLoaderService,
-    routingService: RoutingService
-  ) { super(dataService, conformanceService, reportService, confirmationDialogService, testService, popupService, route, diagramLoaderService, routingService) }
+    routingService: RoutingService,
+    sessionColumnsService: SessionColumnsService
+  ) { super(dataService, conformanceService, reportService, confirmationDialogService, testService, popupService, route, diagramLoaderService, routingService, sessionColumnsService) }
 
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
@@ -66,34 +67,16 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
     super.ngOnInit()
   }
 
+  protected getColumnCase(): SessionColumnCase {
+    return SessionColumnCase.Own
+  }
+
   protected includeCustomPropertyFilters(): boolean {
     return false
   }
 
   protected includeOrganisationFilter(): boolean {
     return false
-  }
-
-  protected getActiveTestsColumns(): TableColumnDefinition[] {
-    return [
-      { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
-      { field: 'actor', title: this.dataService.labelActor(), sortable: true },
-      { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' }
-    ]
-  }
-
-  protected getCompletedTestsColumns(): TableColumnDefinition[] {
-    return [
-      { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
-      { field: 'actor', title: this.dataService.labelActor(), sortable: true },
-      { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
-      { field: 'endTime', title: 'End time', sortable: true, order: 'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
-    ]
   }
 
   protected setBreadcrumbs() {

@@ -86,6 +86,7 @@ export class DataService {
   public menuVisibility: boolean = false
   public conformanceStatementDetailVisibility: boolean = false
   public homePageType: number = Constants.HOME_PAGE_TYPE.LANDING_PAGE
+  public sessionColumnPrefs: {[key: string]: string} = {}
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
 
   private onBannerChangeSource = new Subject<string>()
@@ -108,6 +109,8 @@ export class DataService {
   public onMenuVisibilityChange$ = this.menuVisibilityChangeSource.asObservable()
   private conformanceStatementDetailVisibilityChangeSource = new Subject<boolean>()
   public onConformanceStatementDetailVisibilityChange$ = this.conformanceStatementDetailVisibilityChangeSource.asObservable()
+  private sessionColumnsChangeSource = new Subject<{key: string, value: string}>()
+  public onSessionColumnsChange$ = this.sessionColumnsChangeSource.asObservable()
   private preparingForShutdownSource = new ReplaySubject<boolean>(1)
   public onPreparingForShutdown$ = this.preparingForShutdownSource.asObservable()
 
@@ -216,6 +219,10 @@ export class DataService {
     this.menuVisibility = user.preferences?.menuCollapsed === false // Collapsed by default
     this.conformanceStatementDetailVisibility = user.preferences?.statementsCollapsed !== true // Not collapsed by default
     this.homePageType = user.preferences?.homePageType??Constants.HOME_PAGE_TYPE.LANDING_PAGE
+    this.sessionColumnPrefs = {
+      own_sessions: user.preferences?.ownSessions ?? '',
+      all_sessions: user.preferences?.allSessions ?? '',
+    }
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
@@ -1993,6 +2000,17 @@ export class DataService {
       this.defaultPagingTableSize = pageSize
       this.onPageSizeChangeSource.next(pageSize)
     }
+  }
+
+  setSessionColumnPreference(key: string, value: string) {
+    if (this.sessionColumnPrefs[key] !== value) {
+      this.sessionColumnPrefs[key] = value
+      this.sessionColumnsChangeSource.next({ key, value })
+    }
+  }
+
+  getSessionColumnPreference(key: string): string {
+    return this.sessionColumnPrefs[key] ?? ''
   }
 
   setMenuVisibility(visible: boolean) {

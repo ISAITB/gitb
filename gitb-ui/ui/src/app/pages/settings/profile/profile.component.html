@@ -1,4 +1,4 @@
-<div class="page settings">
+﻿<div class="page settings">
 	<div class="card mb-0">
 		<div class="card-header">
 			<div class="card-title">Profile</div>
@@ -14,9 +14,9 @@
                             <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
                         }
                     </div>
-                    @if (!dataService.configuration.ssoEnabled) {
-                        <div app-tooltip class="col-auto" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
-                    }
+                @if (!dataService.configuration.ssoEnabled) {
+                    <div app-tooltip class="col-auto" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
+                }
                 </div>
                 <div class="row pt-3">
                     <legend class="col-3 col-form-label text-end">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</legend>
@@ -75,6 +75,20 @@
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="The number of items to display by default in each page, when items are presented in lists or tables. Note that this setting is also automatically updated whenever you change the displayed items in a list or table."></div>
                 </div>
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end pt-0">{{ownSessionsLabel}}:</legend>
+                    <div class="col-9">
+                        <app-session-column-preferences [columnCase]="SessionColumnCase.Own" [isSystemAdmin]="dataService.isSystemAdmin" [tooltip]="ownSessionsTooltip" [(value)]="data.preferences.ownSessions!" (validityChange)="ownSessionsValid = $event"></app-session-column-preferences>
+                    </div>
+                </div>
+                @if (showAllSessionsPref) {
+                    <div class="row pt-3">
+                        <legend class="col-3 col-form-label text-end pt-0">{{allSessionsLabel}}:</legend>
+                        <div class="col-9">
+                            <app-session-column-preferences [columnCase]="SessionColumnCase.All" [isSystemAdmin]="dataService.isSystemAdmin" [tooltip]="allSessionsTooltip" [(value)]="data.preferences.allSessions!" (validityChange)="allSessionsValid = $event"></app-session-column-preferences>
+                        </div>
+                    </div>
+                }
                 @if (!dataService.configuration.ssoEnabled) {
                     <div class="row pt-3">
                         <div class="col-10 offset-1">

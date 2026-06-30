@@ -189,6 +189,7 @@ import {PlaceholderSelectorComponent} from './components/placeholder-selector/pl
 import {TestResultRatioComponent} from './components/test-result-ratio/test-result-ratio.component';
 import {PrescriptionLevelComponent} from './components/prescription-level/prescription-level.component';
 import {CheckboxOptionPanelComponent} from './components/checkbox-option-panel/checkbox-option-panel.component';
+import {SessionColumnPreferencesComponent} from './components/session-column-preferences/session-column-preferences.component';
 import {MenuItemComponent} from './pages/index/menu-item/menu-item.component';
 import {MenuGroupComponent} from './pages/index/menu-group/menu-group.component';
 import {CreateSystemComponent} from './pages/admin/user-management/system/create-system/create-system.component';
@@ -428,6 +429,7 @@ import { TestResultCommentsModalComponent } from './modals/test-result-comments-
     TestResultRatioComponent,
     PrescriptionLevelComponent,
     CheckboxOptionPanelComponent,
+    SessionColumnPreferencesComponent,
     MenuItemComponent,
     MenuGroupComponent,
     CreateSystemComponent,

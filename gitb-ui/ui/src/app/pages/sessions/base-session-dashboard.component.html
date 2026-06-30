@@ -1,4 +1,4 @@
-<div class="page dashboard">
+﻿<div class="page dashboard">
     <app-test-filter [filterState]="filterState"
                      [communityId]="communityId"
                      [organisationId]="organisationId"
@@ -50,7 +50,10 @@
                      [refreshComplete]="sessionRefreshCompleteEmitter"
                      [contentRefreshing]="refreshActivePending"
                      [copyForOtherRoleOption]="copyForOtherRoleOption"
-                     [showNavigationControls]="showSessionNavigationControls">
+                     [showNavigationControls]="showSessionNavigationControls"
+                     [columnChooserOptions]="columnChooserOptions"
+                     (columnChooserUpdated)="onColumnChooserUpdated($event)"
+                     (columnChooserClosed)="onColumnChooserClosed()">
                 </div>
             </div>
         </div>
@@ -103,7 +106,10 @@
                  [showCheckbox]="completedTestsCheckboxEmitter"
                  [contentRefreshing]="refreshCompletedPending"
                  [copyForOtherRoleOption]="copyForOtherRoleOption"
-                 [showNavigationControls]="showSessionNavigationControls">
+                 [showNavigationControls]="showSessionNavigationControls"
+                 [columnChooserOptions]="columnChooserOptions"
+                 (columnChooserUpdated)="onColumnChooserUpdated($event)"
+                 (columnChooserClosed)="onColumnChooserClosed()">
             </div>
         </div>
     </div>

@@ -27,6 +27,7 @@ import {ValidationState} from 'src/app/types/validation-state';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {UserPreferences} from '../../../types/user-preferences';
 import {Subscription} from 'rxjs';
+import {SessionColumnCase} from 'src/app/services/session-columns.service';
 
 @Component({
     selector: 'app-profile',
@@ -36,6 +37,7 @@ import {Subscription} from 'rxjs';
 })
 export class ProfileComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {
 
+  protected readonly SessionColumnCase = SessionColumnCase
   spinner = false
   edit = false
   data: {
@@ -48,11 +50,40 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
       menuCollapsed: !this.dataService.menuVisibility,
       statementsCollapsed: !this.dataService.conformanceStatementDetailVisibility,
       pageSize: this.dataService.defaultPagingTableSize,
-      homePageType: this.dataService.homePageType
+      homePageType: this.dataService.homePageType,
+      ownSessions: this.dataService.getSessionColumnPreference('own_sessions'),
+      allSessions: this.dataService.getSessionColumnPreference('all_sessions'),
     }
   }
   menuVisibilitySubscription?: Subscription
   validation = new ValidationState()
+  ownSessionsValid = true
+  allSessionsValid = true
+
+  private static readonly OWN_SESSIONS_TOOLTIP = 'The columns to display in tables listing your own test sessions. These columns are in addition to the session time and result. Note that these can also be adapted directly from test session tables.'
+  private static readonly ALL_SESSIONS_DASHBOARD_TOOLTIP = 'The columns to display in tables listing test sessions in the session dashboard. These columns are in addition to the session time and result. Note that these can also be adapted directly from test session tables.'
+  private static readonly ALL_SESSIONS_COMMUNITY_TOOLTIP = 'The columns to display in the table listing test sessions in the community test session screen. These columns are in addition to the session time and result. Note that these can also be adapted directly from test session tables.'
+
+  /** Whether the user has access to an "all sessions" table (session dashboard or community test sessions) at all. */
+  get showAllSessionsPref(): boolean {
+    return this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowCommunityView === true
+  }
+
+  get ownSessionsLabel(): string {
+    return this.showAllSessionsPref ? 'Session table columns (own)' : 'Session table columns'
+  }
+
+  get allSessionsLabel(): string {
+    return (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) ? 'Session table columns (dashboard)' : 'Session table columns (community)'
+  }
+
+  get ownSessionsTooltip(): string {
+    return ProfileComponent.OWN_SESSIONS_TOOLTIP
+  }
+
+  get allSessionsTooltip(): string {
+    return (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) ? ProfileComponent.ALL_SESSIONS_DASHBOARD_TOOLTIP : ProfileComponent.ALL_SESSIONS_COMMUNITY_TOOLTIP
+  }
 
   constructor(
     public readonly dataService: DataService,
@@ -130,7 +161,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	saveDisabled() {
-    return this.spinner || !this.textProvided(this.data!.name)
+    return this.spinner || !this.textProvided(this.data!.name) || !this.ownSessionsValid || (this.showAllSessionsPref && !this.allSessionsValid)
   }
 
 	updateProfile() {
@@ -152,6 +183,8 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
         if (this.data.preferences.homePageType != this.dataService.homePageType) {
           this.dataService.setHomePageType(this.data.preferences.homePageType)
         }
+        this.dataService.setSessionColumnPreference('own_sessions', this.data.preferences.ownSessions ?? '')
+        this.dataService.setSessionColumnPreference('all_sessions', this.data.preferences.allSessions ?? '')
         this.popupService.success("Your profile has been updated.")
       }).add(() => {
         this.spinner = false
@@ -166,6 +199,12 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
 		if (this.dataService.configuration.ssoEnabled && !this.textProvided(this.data!.name)) {
       this.validation.invalid('name', 'Your name cannot be empty.')
 			this.data!.name = this.dataService.user!.name
+      valid = false
+    }
+    // The column preference editors already surface an inline validation message (highlighting the
+    // affected checkboxes) when a required column group is emptied, and saveDisabled() already keeps
+    // the Save button disabled in that case - this is just the final gate before submission.
+    if (!this.ownSessionsValid || (this.showAllSessionsPref && !this.allSessionsValid)) {
       valid = false
     }
     return valid

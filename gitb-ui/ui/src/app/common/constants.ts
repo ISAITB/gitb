@@ -57,6 +57,7 @@ export class Constants {
     CANCEL: 'fa-solid fa-xmark',
     CLIPBOARD: 'fa-solid fa-clipboard',
     COLLAPSE: 'fa-solid fa-angles-up',
+    COLUMNS: 'fa-solid fa-table-columns',
     COMMENT: 'fa-solid fa-comment',
     COMMUNITY: 'fa-solid fa-people-group',
     COMMUNITY_MANAGEMENT: 'fa-solid fa-people-group',

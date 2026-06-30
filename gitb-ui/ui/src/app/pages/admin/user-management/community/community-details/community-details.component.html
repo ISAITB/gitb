@@ -20,6 +20,7 @@
                                     [domains]="domains"
                                     [validation]="validation"
                                     [animationsEnabled]="loaded"
+                                    (validityChange)="communityFormValid = $event"
                 ></app-community-form>
             </div>
             <div class="card-footer button-container">

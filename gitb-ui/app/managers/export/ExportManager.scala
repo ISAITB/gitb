@@ -960,6 +960,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       exportedUser.getPreferences.setStatementsCollapsed(prefs.statementsCollapsed)
       exportedUser.getPreferences.setPageSize(BigInteger.valueOf(prefs.pageSize))
       exportedUser.getPreferences.setHomePageType(toExportedHomePageType(prefs.homePageType))
+      exportedUser.getPreferences.setOwnSessions(prefs.ownSessions)
+      exportedUser.getPreferences.setAllSessions(prefs.allSessions)
     }
   }
 
@@ -1323,6 +1325,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.getDefaultUserPreferences.setStatementsCollapsed(data.userPreferences.statementsCollapsed)
         communityData.getDefaultUserPreferences.setPageSize(BigInteger.valueOf(data.userPreferences.pageSize))
         communityData.getDefaultUserPreferences.setHomePageType(toExportedHomePageType(data.userPreferences.homePageType))
+        communityData.getDefaultUserPreferences.setOwnSessions(data.userPreferences.ownSessions)
+        communityData.getDefaultUserPreferences.setAllSessions(data.userPreferences.allSessions)
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
         SelfRegistrationType.apply(community.get.selfRegType) match {

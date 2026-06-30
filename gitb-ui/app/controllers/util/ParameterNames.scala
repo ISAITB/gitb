@@ -303,6 +303,8 @@ object ParameterNames {
   val PAGE_SIZE = "page_size"
   val STATEMENTS_COLLAPSED = "statements_collapsed"
   val HOME_PAGE_TYPE = "home_page_type"
+  val OWN_SESSIONS = "own_sessions"
+  val ALL_SESSIONS = "all_sessions"
   val PREFERENCES = "preferences"
   val FORCE_PREFERENCES = "force_preferences"
   val MONITOR = "monitor"

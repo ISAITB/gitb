@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {DataService} from 'src/app/services/data.service';
@@ -27,6 +27,7 @@ import {FilterUpdate} from '../../../../../components/test-filter/filter-update'
 import {Organisation} from '../../../../../types/organisation.type';
 import {OrganisationService} from '../../../../../services/organisation.service';
 import {ConfirmationDialogService} from '../../../../../services/confirmation-dialog.service';
+import {SessionColumnCase} from 'src/app/services/session-columns.service';
 
 @Component({
     selector: 'app-community-form',
@@ -41,13 +42,20 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   @Input() admin = false
   @Input() validation!: ValidationState
   @Input() animationsEnabled = true
+  @Output() validityChange = new EventEmitter<boolean>()
+  protected readonly SessionColumnCase = SessionColumnCase
   selfRegEnabled = false
   ssoEnabled = false
   emailEnabled = false
   selfRegOptionsCollapsed = false
   userPermissionsCollapsed = false
   userPreferencesCollapsed = false
+  ownSessionsValid = true
+  allSessionsValid = true
   selfRegDefaultOrganisationSelectionConfig!: MultiSelectConfig<Organisation>
+
+  protected readonly OWN_SESSIONS_TOOLTIP = 'The columns to display in tables listing your own test sessions. These columns are in addition to the session time and result. Note that these can also be adapted directly from test session tables.'
+  protected readonly ALL_SESSIONS_TOOLTIP = 'The columns to display in tables listing test sessions in the session dashboard and the community test session screen (if enabled). These columns are in addition to the session time and result. Note that these can also be adapted directly from test session tables.'
 
   domainSelectionConfig: MultiSelectConfig<Domain> = {
     name: "domainChoice",
@@ -203,6 +211,16 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   tagAdded(): void {
     this.community.tagForCommunityAdmin = true
     this.community.tagForTestBedAdmin = true
+  }
+
+  onOwnSessionsValidityChange(valid: boolean): void {
+    this.ownSessionsValid = valid
+    this.validityChange.emit(this.ownSessionsValid && this.allSessionsValid)
+  }
+
+  onAllSessionsValidityChange(valid: boolean): void {
+    this.allSessionsValid = valid
+    this.validityChange.emit(this.ownSessionsValid && this.allSessionsValid)
   }
 
 }

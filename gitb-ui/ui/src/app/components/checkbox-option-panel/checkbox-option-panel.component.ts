@@ -95,6 +95,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     }
     window.removeEventListener('scroll', this.updatePosition);
     window.removeEventListener('resize', this.updatePosition);
+    window.removeEventListener('keydown', this.onPopupKeyDown);
     this.closed.emit()
   }
 
@@ -160,8 +161,31 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
       }, 0)
       window.addEventListener('scroll', this.updatePosition);
       window.addEventListener('resize', this.updatePosition);
+      window.addEventListener('keydown', this.onPopupKeyDown);
       this.dataService.signalButtonPopup(this)
     }
+  }
+
+  /**
+   * Roving keyboard navigation within the open popup, mirroring native listbox/dropdown behaviour
+   * (and matching the page-size dropdown): arrow keys move focus between the enabled checkboxes,
+   * starting at the first one if none is focused yet. Space/Enter then toggle the focused checkbox
+   * natively - no extra handling needed for that part.
+   */
+  private onPopupKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      this.moveFocus(event.key === 'ArrowDown' ? 1 : -1)
+    }
+  };
+
+  private moveFocus(direction: number): void {
+    if (!this.containerDiv) return;
+    const inputs = Array.from(this.containerDiv.querySelectorAll('input[type="checkbox"]:not(:disabled)')) as HTMLInputElement[];
+    if (inputs.length === 0) return;
+    const currentIndex = inputs.indexOf(document.activeElement as HTMLInputElement);
+    const nextIndex = currentIndex === -1 ? 0 : Math.min(inputs.length - 1, Math.max(0, currentIndex + direction));
+    inputs[nextIndex].focus();
   }
 
   private updatePosition = () => {
@@ -184,7 +208,20 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
       popup.style.top = `${top}px`;
       popup.style.left = `${btnRect.left + scrollX - popup.offsetWidth}px`;
     } else {
-      popup.style.top = `${btnRect.bottom + scrollY}px`;
+      // Same flip-if-no-room approach as the 'left' placement above, but along the vertical axis:
+      // open below the button by default, flipping to open above it if there isn't enough room
+      // below (and there is room above). The 2px gap matches ng-bootstrap's dropdown (e.g. the
+      // page-size selector), which uses a default Popper offset of 2px between button and menu.
+      const gap = 2;
+      const popupHeight = popup.offsetHeight;
+      let top = btnRect.bottom + scrollY + gap;
+      if (btnRect.bottom + gap + popupHeight > window.innerHeight) {
+        const flippedTop = btnRect.top + scrollY - popupHeight - gap;
+        if (flippedTop >= scrollY) {
+          top = flippedTop;
+        }
+      }
+      popup.style.top = `${top}px`;
       popup.style.left = `${btnRect.left + scrollX}px`;
     }
   };
@@ -196,7 +233,9 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   }
 
   documentClick(event: Event): void {
-    if (!this.eRef.nativeElement.contains(event.target) && this.open) {
+    if (this.open &&
+        !this.eRef.nativeElement.contains(event.target as Node) &&
+        !this.containerDiv?.contains(event.target as Node)) {
       this.close()
     }
   }

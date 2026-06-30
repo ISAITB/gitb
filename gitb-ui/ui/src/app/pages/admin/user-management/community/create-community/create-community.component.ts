@@ -51,13 +51,16 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
       menuCollapsed: true,
       statementsCollapsed: false,
       pageSize: Constants.TABLE_PAGE_SIZE,
-      homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE
+      homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE,
+      ownSessions: '',
+      allSessions: '',
     },
     tags: []
   }
   domains: Domain[] = []
   savePending = false
   loaded = false
+  communityFormValid = true
   validation = new ValidationState()
 
   constructor(
@@ -78,7 +81,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   }
 
   saveDisabled() {
-    return this.savePending || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+    return this.savePending || !this.communityFormValid || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled ||
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (

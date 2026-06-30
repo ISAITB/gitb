@@ -1025,8 +1025,10 @@ object PersistenceSchema {
     def statementsCollapsed = column[Boolean]("statements_collapsed")
     def pageSize = column[Short]("page_size")
     def homePageType = column[Short]("home_page_type")
+    def ownSessions = column[String]("own_sessions")
+    def allSessions = column[String]("all_sessions")
     def user = column[Long] ("user")
-    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: user :: HNil).mapTo[UserPreferences]
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: user :: HNil).mapTo[UserPreferences]
   }
   val userPreferences = TableQuery[UserPreferencesTable]
 
@@ -1036,8 +1038,10 @@ object PersistenceSchema {
     def statementsCollapsed = column[Boolean]("statements_collapsed")
     def pageSize = column[Short]("page_size")
     def homePageType = column[Short]("home_page_type")
+    def ownSessions = column[String]("own_sessions")
+    def allSessions = column[String]("all_sessions")
     def community = column[Long] ("community")
-    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: community :: HNil).mapTo[UserPreferenceDefaults]
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: community :: HNil).mapTo[UserPreferenceDefaults]
   }
   val userPreferenceDefaults = TableQuery[UserPreferenceDefaultsTable]
 

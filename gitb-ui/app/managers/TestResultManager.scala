@@ -923,28 +923,34 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
       if (sortOrder.get == "asc") {
         query = sortColumn.get match {
           case "specification" => query.sortBy(_.specification)
-          case "session" => query.sortBy(_.testSessionId)
-          case "startTime" => query.sortBy(_.startTime)
-          case "endTime" => query.sortBy(_.endTime)
-          case "organization" => query.sortBy(_.organization)
-          case "system" => query.sortBy(_.sut)
-          case "result" => query.sortBy(_.result)
-          case "testCase" => query.sortBy(_.testCase)
-          case "actor" => query.sortBy(_.actor)
+          case "session"       => query.sortBy(_.testSessionId)
+          case "startTime"     => query.sortBy(_.startTime)
+          case "endTime"       => query.sortBy(_.endTime)
+          case "organization"  => query.sortBy(_.organization)
+          case "system"        => query.sortBy(_.sut)
+          case "result"        => query.sortBy(_.result)
+          case "testCase"      => query.sortBy(_.testCase)
+          case "actor"         => query.sortBy(_.actor)
+          case "domain"        => query.sortBy(_.domain)
+          case "testSuite"     => query.sortBy(_.testSuite)
+          case "community"     => query.sortBy(_.community)
           case _ => query
         }
       }
       if (sortOrder.get == "desc") {
         query = sortColumn.get match {
           case "specification" => query.sortBy(_.specification.desc)
-          case "session" => query.sortBy(_.testSessionId.desc)
-          case "startTime" => query.sortBy(_.startTime.desc)
-          case "endTime" => query.sortBy(_.endTime.desc)
-          case "organization" => query.sortBy(_.organization.desc)
-          case "system" => query.sortBy(_.sut.desc)
-          case "result" => query.sortBy(_.result.desc)
-          case "testCase" => query.sortBy(_.testCase.desc)
-          case "actor" => query.sortBy(_.actor.desc)
+          case "session"       => query.sortBy(_.testSessionId.desc)
+          case "startTime"     => query.sortBy(_.startTime.desc)
+          case "endTime"       => query.sortBy(_.endTime.desc)
+          case "organization"  => query.sortBy(_.organization.desc)
+          case "system"        => query.sortBy(_.sut.desc)
+          case "result"        => query.sortBy(_.result.desc)
+          case "testCase"      => query.sortBy(_.testCase.desc)
+          case "actor"         => query.sortBy(_.actor.desc)
+          case "domain"        => query.sortBy(_.domain.desc)
+          case "testSuite"     => query.sortBy(_.testSuite.desc)
+          case "community"     => query.sortBy(_.community.desc)
           case _ => query
         }
       }

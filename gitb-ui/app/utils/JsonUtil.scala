@@ -754,7 +754,9 @@ object JsonUtil {
       "menuCollapsed"       -> preferences.menuCollapsed,
       "statementsCollapsed" -> preferences.statementsCollapsed,
       "pageSize"            -> preferences.pageSize,
-      "homePageType"        -> preferences.homePageType
+      "homePageType"        -> preferences.homePageType,
+      "ownSessions"         -> preferences.ownSessions,
+      "allSessions"         -> preferences.allSessions
     )
   }
 
@@ -2470,6 +2472,12 @@ object JsonUtil {
           "sname" -> (if (result.organization.isDefined) result.organization.get else JsNull),
           "community" -> (if (result.communityId.isDefined) result.communityId.get else JsNull),
           "parameters" -> (if (result.organizationId.isDefined && parameterInfo.isDefined) jsOrgParameterValuesForExport(result.organizationId.get, parameterInfo.get.orgDefinitions, parameterInfo.get.orgValues) else JsNull)
+        )
+      },
+      "community" -> {
+        Json.obj(
+          "id"    -> (if (result.communityId.isDefined) result.communityId.get else JsNull),
+          "sname" -> (if (result.community.isDefined) result.community.get else JsNull)
         )
       },
       "system" -> {

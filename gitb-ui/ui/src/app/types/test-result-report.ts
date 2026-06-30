@@ -54,6 +54,10 @@ export interface TestResultReport {
         sname?: string,
         specification?: number
     },
+    community?: {
+        id?: number,
+        sname?: string
+    },
     logs?: string[]
     interactions?: TestInteractionData[]
 

@@ -69,6 +69,8 @@ object ParameterExtractor {
       statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
       pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
       homePageType = extractHomePageType(request),
+      ownSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OWN_SESSIONS).getOrElse(""),
+      allSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALL_SESSIONS).getOrElse(""),
       0L
     )
   }
@@ -80,6 +82,8 @@ object ParameterExtractor {
       statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
       pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
       homePageType = extractHomePageType(request),
+      ownSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OWN_SESSIONS).getOrElse(""),
+      allSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALL_SESSIONS).getOrElse(""),
       0L
     )
   }

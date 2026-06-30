@@ -76,6 +76,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   loaded = false
   savePending = false
   deletePending = false
+  communityFormValid = true
   communityId!: number
   originalDomainId?: number
   adminColumns: TableColumnDefinition[] = []
@@ -435,7 +436,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   }
 
   saveDisabled() {
-    return !this.loaded || this.deletePending || this.savePending || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+    return !this.loaded || this.deletePending || this.savePending || !this.communityFormValid || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled ||
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
@@ -518,7 +519,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       if (!notificationValid) {
         this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
       }
-      if (emailValid && notificationValid) {
+      // The column preference editors already surface an inline validation message (highlighting the
+      // affected checkboxes) when a required column group is emptied, and saveDisabled() already keeps
+      // the Save button disabled in that case (communityFormValid) - this is just the final gate.
+      if (emailValid && notificationValid && this.communityFormValid) {
         let descriptionToUse: string|undefined
         if (!this.community.sameDescriptionAsDomain) {
           descriptionToUse = this.community.activeDescription
@@ -832,7 +836,9 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     return this.community.preferences?.menuCollapsed != this.initialUserPreferences.menuCollapsed ||
       this.community.preferences?.statementsCollapsed != this.initialUserPreferences.statementsCollapsed ||
       this.community.preferences?.pageSize != this.initialUserPreferences.pageSize ||
-      this.community.preferences?.homePageType != this.initialUserPreferences.homePageType
+      this.community.preferences?.homePageType != this.initialUserPreferences.homePageType ||
+      this.community.preferences?.ownSessions != this.initialUserPreferences.ownSessions ||
+      this.community.preferences?.allSessions != this.initialUserPreferences.allSessions
   }
 
   protected readonly Constants = Constants;

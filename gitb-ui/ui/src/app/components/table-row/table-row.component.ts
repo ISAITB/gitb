@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {TableColumnData} from 'src/app/types/table-column-data.type';
 import {Constants} from 'src/app/common/constants';
@@ -29,7 +29,7 @@ import {TableRowApi} from './table-row-api';
     styles: ['div.btn-toolbar {display: flex; flex-wrap: nowrap; justify-content: right;}'],
     standalone: false
 })
-export class TableRowComponent implements OnInit, TableRowApi {
+export class TableRowComponent implements OnInit, OnChanges, TableRowApi {
 
   @Input() data?: any
   @Input() columns: TableColumnDefinition[] = []
@@ -90,6 +90,15 @@ export class TableRowComponent implements OnInit, TableRowApi {
       this.refresh.subscribe(() => {
         this.refreshData()
       })
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Rebuild the column data items when the columns themselves change (e.g. as a result of the
+    // user toggling visible columns via the column chooser). Skip the first change as ngOnInit
+    // already handles the initial build.
+    if (changes['columns'] && !changes['columns'].firstChange) {
+      this.refreshData()
     }
   }
 

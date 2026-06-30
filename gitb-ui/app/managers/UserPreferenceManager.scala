@@ -81,8 +81,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
   def updatePreferencesInternal(userId: Long, preferences: UserPreferenceBase): DBIO[Unit] = {
     PersistenceSchema.userPreferences.filter(_.user === userId)
-      .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType))
-      .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType))
+      .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions))
+      .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions))
       .map(_ => ())
   }
 
@@ -101,12 +101,22 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
     DB.run(dbAction.transactionally).map(_ => ())
   }
 
+  def updatePreferenceForSessionColumns(userId: Long, key: String, value: String): Future[Unit] = {
+    import controllers.util.ParameterNames
+    val dbAction = key match {
+      case ParameterNames.OWN_SESSIONS => PersistenceSchema.userPreferences.filter(_.user === userId).map(_.ownSessions).update(value)
+      case ParameterNames.ALL_SESSIONS => PersistenceSchema.userPreferences.filter(_.user === userId).map(_.allSessions).update(value)
+      case _                            => DBIO.failed(new IllegalArgumentException(s"Unknown session column preference key: $key"))
+    }
+    DB.run(dbAction.transactionally).map(_ => ())
+  }
+
   def updateUserPreferenceDefaults(communityId: Long, preferences: UserPreferenceBase, overrideExistingUserPreferences: Boolean): DBIO[Unit] = {
     for {
       _ <- PersistenceSchema.userPreferenceDefaults
         .filter(_.community === communityId)
-        .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType))
-        .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType))
+        .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions))
+        .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions))
       _ <- {
         if (overrideExistingUserPreferences) {
           for {
@@ -120,8 +130,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
             // Make the update.
             _ <- PersistenceSchema.userPreferences
               .filter(_.id inSet preferenceIds)
-              .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType))
-              .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType))
+              .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions))
+              .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions))
           } yield ()
         } else {
           DBIO.successful(())

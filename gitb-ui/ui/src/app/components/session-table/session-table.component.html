@@ -1,4 +1,4 @@
-<div #tableContainer class="table-container rounded">
+﻿<div #tableContainer class="table-container rounded">
     <table [attr.id]="sessionTableId" class="table table-directive expandable-table">
         @if (tableCaptionVisible) {
             <caption>{{tableCaption}}</caption>
@@ -206,5 +206,16 @@
             }
         </tbody>
     </table>
-    <app-paging-controls #pagingControls (navigation)="doPageNavigation($event)" [refreshing]="contentRefreshing"></app-paging-controls>
+    <app-paging-controls #pagingControls (navigation)="doPageNavigation($event)" [refreshing]="contentRefreshing">
+        @if (columnChooserOptions && columnChooserOptions.length > 0) {
+            <app-checkbox-option-panel #columnChooserPanel pagingExtra
+                label="Columns"
+                [labelIcon]="Constants.BUTTON_ICON.COLUMNS"
+                [smallButton]="true"
+                [options]="columnChooserOptions"
+                (updated)="columnChooserUpdated.emit($event)"
+                (closed)="columnChooserClosed.emit()">
+            </app-checkbox-option-panel>
+        }
+    </app-paging-controls>
 </div>

@@ -21,5 +21,7 @@ trait UserPreferenceBase {
   def statementsCollapsed: Boolean
   def pageSize: Short
   def homePageType: Short
+  def ownSessions: String
+  def allSessions: String
 
 }

@@ -20,9 +20,9 @@ import models.Enums.HomePageType
 object UserPreferenceDefaults {
 
   def createDefault(communityId: Long): UserPreferenceDefaults = {
-    UserPreferenceDefaults(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, HomePageType.LANDING_PAGE.id.toShort, communityId)
+    UserPreferenceDefaults(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, HomePageType.LANDING_PAGE.id.toShort, "", "", communityId)
   }
 
 }
 
-case class UserPreferenceDefaults(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, homePageType: Short, community: Long) extends UserPreferenceBase
+case class UserPreferenceDefaults(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, homePageType: Short, ownSessions: String, allSessions: String, community: Long) extends UserPreferenceBase

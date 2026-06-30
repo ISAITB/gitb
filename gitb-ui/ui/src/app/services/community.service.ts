@@ -190,6 +190,8 @@ export class CommunityService {
       statements_collapsed: userPreferences.statementsCollapsed,
       page_size: userPreferences.pageSize,
       home_page_type: userPreferences.homePageType,
+      own_sessions: userPreferences.ownSessions,
+      all_sessions: userPreferences.allSessions,
       tags: tags
     }
     if (this.dataService.configuration.registrationEnabled) {
@@ -255,6 +257,8 @@ export class CommunityService {
       statements_collapsed: userPreferences.statementsCollapsed,
       page_size: userPreferences.pageSize,
       home_page_type: userPreferences.homePageType,
+      own_sessions: userPreferences.ownSessions,
+      all_sessions: userPreferences.allSessions,
       force_preferences: forceUserPreferenceUpdate,
       tags: tags
     }

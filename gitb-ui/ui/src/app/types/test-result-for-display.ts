@@ -28,6 +28,7 @@ export interface TestResultForDisplay extends SessionData {
     organizationId?: number,
     system?: string,
     systemId?: number,
+    community?: string,
     startTime: string,
     obsolete: boolean,
     testSuiteId?: number,

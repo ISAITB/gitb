@@ -36,8 +36,9 @@ import {FieldInfo} from '../../types/field-info';
 import {TestResultData} from '../../types/test-result-data';
 import {SessionTableComponent} from '../../components/session-table/session-table.component';
 import {PagingEvent} from '../../components/paging-controls/paging-event';
-import {TestResult} from '../../types/test-result';
 import {CheckboxOption} from '../../components/checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from '../../components/checkbox-option-panel/checkbox-option-state';
+import {SessionColumnCase, SessionColumnsService} from '../../services/session-columns.service';
 
 @Component({
   template: '',
@@ -100,6 +101,9 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   @ViewChild("completedSessions") completedSessionsTable?: SessionTableComponent
   @ViewChild("activeSessions") activeSessionsTable?: SessionTableComponent
 
+  columnChooserOptions?: CheckboxOption[][]
+  private currentColumnIds: string[] = []
+
   constructor(
     public readonly dataService: DataService,
     protected readonly conformanceService: ConformanceService,
@@ -109,7 +113,8 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     private readonly popupService: PopupService,
     protected readonly route: ActivatedRoute,
     private readonly diagramLoaderService: DiagramLoaderService,
-    protected readonly routingService: RoutingService
+    protected readonly routingService: RoutingService,
+    protected readonly sessionColumnsService: SessionColumnsService
   ) { }
 
   ngOnInit(): void {
@@ -136,6 +141,8 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     }
     this.activeTestsColumns = this.getActiveTestsColumns()
     this.completedTestsColumns = this.getCompletedTestsColumns()
+    this.currentColumnIds = this.sessionColumnsService.activeIds(this.dataService.getSessionColumnPreference(this.getColumnCase()), this.getColumnCase(), this.dataService.isSystemAdmin)
+    this.columnChooserOptions = this.buildColumnChooserOptions()
     if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined)) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
     }
@@ -175,28 +182,56 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     return true
   }
 
+  /** Column case shared by the active and completed session tables. Override in subclasses for own-sessions views. */
+  protected getColumnCase(): SessionColumnCase {
+    return SessionColumnCase.All
+  }
+
   protected getActiveTestsColumns(): TableColumnDefinition[] {
-    return [
-      { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
-      { field: 'actor', title: this.dataService.labelActor(), sortable: true },
-      { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' }
-    ]
+    const cc = this.getColumnCase()
+    return this.sessionColumnsService.buildTableColumns(cc, this.dataService.getSessionColumnPreference(cc), this.dataService.isSystemAdmin, false)
   }
 
   protected getCompletedTestsColumns(): TableColumnDefinition[] {
-    return [
-      { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
-      { field: 'actor', title: this.dataService.labelActor(), sortable: true },
-      { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
-      { field: 'endTime', title: 'End time', sortable: true, order: 'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
-    ]
+    const cc = this.getColumnCase()
+    return this.sessionColumnsService.buildTableColumns(cc, this.dataService.getSessionColumnPreference(cc), this.dataService.isSystemAdmin, true)
+  }
+
+  protected buildColumnChooserOptions(): CheckboxOption[][] {
+    const cc = this.getColumnCase()
+    return this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin)
+  }
+
+  /** Handles a live toggle in the column chooser - applies the new column set to both the active and completed tables. */
+  onColumnChooserUpdated(state: CheckboxOptionState): void {
+    const cc = this.getColumnCase()
+    this.currentColumnIds = Object.keys(state).filter(k => state[k])
+    const serialized = this.sessionColumnsService.serialize(this.currentColumnIds)
+    this.activeTestsColumns = this.sessionColumnsService.buildTableColumns(cc, serialized, this.dataService.isSystemAdmin, false)
+    this.completedTestsColumns = this.sessionColumnsService.buildTableColumns(cc, serialized, this.dataService.isSystemAdmin, true)
+    // Reset sort (and refetch) if the currently sorted column is no longer visible.
+    if (this.showActiveSessions && !this.activeTestsColumns.some(c => c.field === this.activeSortColumn)) {
+      this.activeSortColumn = 'startTime'
+      this.activeSortOrder = 'asc'
+      this.activeTestsColumns = this.activeTestsColumns.map(c => ({...c, order: c.field === 'startTime' ? 'asc' : null})) as TableColumnDefinition[]
+      this.getActiveTests(this.currentActivePagingInfo())
+    }
+    if (!this.completedTestsColumns.some(c => c.field === this.completedSortColumn)) {
+      this.completedSortColumn = 'endTime'
+      this.completedSortOrder = 'desc'
+      this.completedTestsColumns = this.completedTestsColumns.map(c => ({...c, order: c.field === 'endTime' ? 'desc' : null})) as TableColumnDefinition[]
+      this.getCompletedTests(this.currentCompletedPagingInfo())
+    }
+    // Refresh both tables' chooser popups to update disabled flags.
+    const refreshed = this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin)
+    this.columnChooserOptions = refreshed
+    this.activeSessionsTable?.refreshColumnChooser(refreshed)
+    this.completedSessionsTable?.refreshColumnChooser(refreshed)
+  }
+
+  onColumnChooserClosed(): void {
+    const cc = this.getColumnCase()
+    this.dataService.setSessionColumnPreference(cc, this.sessionColumnsService.serialize(this.currentColumnIds))
   }
 
   protected setBreadcrumbs() {
@@ -327,6 +362,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       testCase: testResult.test?.sname,
       organization: testResult.organization?.sname,
       system: testResult.system?.sname,
+      community: testResult.community?.sname,
       startTime: testResult.result.startTime,
       specificationId: testResult.specification?.id,
       actorId: testResult.actor?.id,

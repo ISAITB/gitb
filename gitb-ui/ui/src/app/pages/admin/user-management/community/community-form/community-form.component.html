@@ -1,4 +1,4 @@
-<div class="row">
+﻿<div class="row">
     <label class="col-3 col-form-label text-end" for="sname">* Short name:</label>
     <div class="col-8 col-md-6"><input id="sname" name="sname" [(ngModel)]="community.sname" class="form-control" type="text"></div>
      <div class="col-auto" app-tooltip tbTooltip="A short name used to refer to the community in selection lists and tabular displays where space is limited. If self-registration is enabled this is also displayed as the community's name along with its description."></div>
@@ -388,6 +388,18 @@
             </select>
         </div>
         <div app-tooltip class="col-auto" tbTooltip="The number of items to display by default in each page, when items are presented in lists or tables."></div>
+    </div>
+    <div class="row pt-3">
+        <legend class="col-3 col-form-label text-end pt-0">Session table columns (own):</legend>
+        <div class="col-9">
+            <app-session-column-preferences [columnCase]="SessionColumnCase.Own" [isSystemAdmin]="false" [tooltip]="OWN_SESSIONS_TOOLTIP" [(value)]="community.preferences!.ownSessions!" (validityChange)="onOwnSessionsValidityChange($event)"></app-session-column-preferences>
+        </div>
+    </div>
+    <div class="row pt-3">
+        <legend class="col-3 col-form-label text-end pt-0">Session table columns (dashboard):</legend>
+        <div class="col-9">
+            <app-session-column-preferences [columnCase]="SessionColumnCase.All" [isSystemAdmin]="false" [tooltip]="ALL_SESSIONS_TOOLTIP" [(value)]="community.preferences!.allSessions!" (validityChange)="onAllSessionsValidityChange($event)"></app-session-column-preferences>
+        </div>
     </div>
 </app-form-section>
 @if (!admin) {

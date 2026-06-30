@@ -19,5 +19,6 @@ export interface CheckboxOption {
     label: string
     default: boolean
     iconClass?: string
+    disabled?: boolean
 
 }
