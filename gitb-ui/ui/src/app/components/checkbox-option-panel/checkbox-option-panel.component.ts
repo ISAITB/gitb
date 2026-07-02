@@ -196,6 +196,9 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     const popup = this.containerDiv.firstElementChild as HTMLElement;
     if (!popup) return;
     if (this.placement == 'left') {
+      // The 2px gap matches ng-bootstrap's dropdown default Popper offset, kept consistent with
+      // the 'bottom' placement's gap below.
+      const gap = 2;
       const popupHeight = popup.offsetHeight;
       let top = btnRect.top + scrollY;
       if (btnRect.top + popupHeight > window.innerHeight) {
@@ -206,7 +209,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
         }
       }
       popup.style.top = `${top}px`;
-      popup.style.left = `${btnRect.left + scrollX - popup.offsetWidth}px`;
+      popup.style.left = `${btnRect.left + scrollX - popup.offsetWidth - gap}px`;
     } else {
       // Same flip-if-no-room approach as the 'left' placement above, but along the vertical axis:
       // open below the button by default, flipping to open above it if there isn't enough room

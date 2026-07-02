@@ -75,6 +75,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   replaceItemsSubscription?: Subscription
   replaceSelectedItemsSubscription?: Subscription
   clearItemsSubscription?: Subscription
+  popupSubscription?: Subscription
   private resizeTimer?: ReturnType<typeof setTimeout>
 
   focusedSelectedItemIndex?: number
@@ -137,6 +138,11 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.config.initialValues != undefined) {
       this.replaceSelectedItems(this.config.initialValues)
     }
+    this.popupSubscription = this.dataService.onButtonPopupOpen$.subscribe((source => {
+      if (source !== this && this.formVisible) {
+        this.close()
+      }
+    }))
     this.ready.emit(this.config.name)
   }
 
@@ -254,6 +260,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.replaceItemsSubscription) this.replaceItemsSubscription.unsubscribe()
     if (this.replaceSelectedItemsSubscription) this.replaceSelectedItemsSubscription.unsubscribe()
     if (this.clearItemsSubscription) this.clearItemsSubscription.unsubscribe()
+    if (this.popupSubscription) this.popupSubscription.unsubscribe()
     clearTimeout(this.resizeTimer)
   }
 
@@ -445,6 +452,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.formVisible) {
       this.close()
     } else {
+      this.dataService.signalButtonPopup(this)
       this.formVisible = true
       this.formPositioned = false
       this.updateCheckFlag()
@@ -501,6 +509,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   private adjustHeight(minHeight: number, onPositioned?: () => void) {
+    // The 2px gap matches ng-bootstrap's dropdown default Popper offset, and the same gap used
+    // by the checkbox-option-panel component's popup positioning.
+    const gap = 2;
     this.availableItemsHeight = minHeight;
     setTimeout(() => {
       if (this.filterFormElement && this.filterControlElement) {
@@ -526,16 +537,16 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
           controlTop = 0
         }
         const maxHeight = window.innerHeight
-        const formBottom = controlBottom + formHeight
-        const formTop = controlTop - formHeight
+        const formBottom = (controlBottom??0) + gap + formHeight
+        const formTop = controlTop - gap - formHeight
         fitsBottom = formBottom <= maxHeight
         fitsTop = formTop > 0
         if (fitsBottom) {
-          this.formTop = controlHeight
+          this.formTop = controlHeight + gap
           this.formPositioned = true
           onPositioned?.()
         } else if (fitsTop) {
-          this.formTop = formHeight * -1
+          this.formTop = (formHeight + gap) * -1
           this.formPositioned = true
           onPositioned?.()
         } else {
