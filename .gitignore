@@ -59,4 +59,4 @@ test/resources/repository
 .worktreeinclude
 /deps.txt
 /gitb-ui/deps.txt
-/.playwright-cli/
+.playwright-cli/
