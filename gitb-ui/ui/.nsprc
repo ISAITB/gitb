@@ -146,5 +146,9 @@
     "1121192": {
         "active": true,
         "notes": "Related to transitive dependency and is not exploitable."
+    },
+    "1122162": {
+        "active": true,
+        "notes": "Related to transitive dependency that is not exploitable."
     }
 }
