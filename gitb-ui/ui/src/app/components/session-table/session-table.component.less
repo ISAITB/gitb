@@ -38,6 +38,54 @@
     }
 }
 
+.session-table-title {
+	padding: 0 15px;
+	display: flex;
+	// .session-execution-info (this element's flex parent) has a single child, this one, which
+	// otherwise stays at its shrink-to-fit content width rather than filling the available row -
+	// which would leave the (right-pinned) more-info button short of the panel's actual right edge.
+	width: 100%;
+	.session-table-title-parts-clip {
+		// A flex container (not just a block) so its single child below can be a flex item and
+		// benefit from this element's default align-items: stretch - keeping it exactly as tall as
+		// the more-info button (a sibling of this element, stretched the same way by their shared
+		// parent) rather than leaving a gap underneath a shorter, top-anchored block child.
+		display: flex;
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow: hidden;
+	}
+	.session-table-title-parts {
+		display: flex;
+		flex: 1 1 auto;
+		flex-wrap: wrap;
+		row-gap: 4px;
+		// Shifts the whole row left by exactly one divider's width (1px border + 10px padding) so
+		// that whichever part starts a line - the first one, or one that wrapped there - has that
+		// leading divider pushed into the sliver clipped away by the parent's overflow: hidden.
+		// flex-wrap always resets every new line back to this same x=0 start, so this hides the
+		// divider identically for any line without needing to detect wrapping in JS. margin-right
+		// cancels the margin-left out (net 0) so the row still fills the full available width.
+		margin: 0 11px 0 -11px;
+	}
+	.session-table-title-part {
+		display: inline-flex;
+		border-left: 1px solid @gray-dark-1;
+        padding: 10px;
+		.session-table-title-label {
+			display: inline-flex;
+			font-weight: bold;
+			padding-right: 10px;
+			align-items: center;
+			white-space: nowrap
+		}
+		.session-table-title-value {
+			display: inline-flex;
+			align-items: center;
+		}
+	}
+}
+
 .sessionControls {
     margin-bottom: 10px;
     display: flex;

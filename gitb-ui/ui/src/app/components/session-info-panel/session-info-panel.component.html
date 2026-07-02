@@ -1,0 +1,34 @@
+<button #button type="button" class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.DOCUMENTATION" (click)="toggle(); $event.stopPropagation()">More</button>
+<ng-template #popupTemplate>
+    <div class="session-info-panel">
+        <div class="session-info-panel-close" (click)="close(); $event.stopPropagation()"><span><i [class]="Constants.BUTTON_ICON.CANCEL"></i></span></div>
+        <div class="session-info-panel-section">
+            <div class="session-info-panel-row">
+                <span class="session-info-panel-label">{{dataService.labelDomain()}}</span>
+                <span class="session-info-panel-value">{{row.domain}}</span>
+            </div>
+            <div class="session-info-panel-row">
+                <span class="session-info-panel-label">{{dataService.labelSpecification()}}</span>
+                <span class="session-info-panel-value">{{row.specification}}</span>
+            </div>
+            <div class="session-info-panel-row">
+                <span class="session-info-panel-label">{{dataService.labelActor()}}</span>
+                <span class="session-info-panel-value">{{row.actor}}</span>
+            </div>
+        </div>
+        <div class="session-info-panel-section">
+            <div class="session-info-panel-row">
+                <span class="session-info-panel-label">Community</span>
+                <span class="session-info-panel-value">{{row.community}}</span>
+            </div>
+            <div class="session-info-panel-row">
+                <span class="session-info-panel-label">{{dataService.labelOrganisation()}}</span>
+                <span class="session-info-panel-value">{{row.organization}}</span>
+            </div>
+            <div class="session-info-panel-row">
+                <span class="session-info-panel-label">{{dataService.labelSystem()}}</span>
+                <span class="session-info-panel-value">{{row.system}}</span>
+            </div>
+        </div>
+    </div>
+</ng-template>

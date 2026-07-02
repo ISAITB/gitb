@@ -177,18 +177,23 @@
                                 <div #sessionContainer class="test-case-session">
                                     <div class="session-execution-info">
                                         <div class="session-table-title">
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Test suite</div>
-                                                <div class="session-table-title-value">{{row.testSuite}}</div>
+                                            <div class="session-table-title-parts-clip">
+                                                <div class="session-table-title-parts">
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Test suite</div>
+                                                        <div class="session-table-title-value">{{row.testSuite}}</div>
+                                                    </div>
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Test case</div>
+                                                        <div class="session-table-title-value">{{row.testCase}}</div>
+                                                    </div>
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Session</div>
+                                                        <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Test case</div>
-                                                <div class="session-table-title-value">{{row.testCase}}</div>
-                                            </div>
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Session</div>
-                                                <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
-                                            </div>
+                                            <app-session-info-panel #sessionInfoPanel [row]="row"></app-session-info-panel>
                                         </div>
                                     </div>
                                     <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">

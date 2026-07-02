@@ -1,0 +1,82 @@
+/*
+ * Copyright (C) 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+@import '../../../styles/less/_common.less';
+
+:host {
+    display: flex;
+    flex: 0 0 auto;
+    margin-left: auto;
+    align-self: flex-start;
+    padding: 10px 0 10px 10px;
+}
+
+.session-info-panel {
+    position: absolute;
+    // +14px vs. a plain 280/460px, matching the +14px of extra horizontal padding below (60px vs.
+    // the 46px it would otherwise be), so the actual content area keeps the same size range.
+    min-width: 294px;
+    max-width: 574px;
+    border-radius: @border-radius;
+    border: 1px solid rgba(0,0,0,.15);
+    background-color: @white;
+    background-clip: padding-box;
+    z-index: 1100;
+    box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
+    padding: 20px 30px;
+}
+
+.session-info-panel-close {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    display: flex;
+    justify-content: center;
+    color: @gray;
+    cursor: pointer;
+    &:hover {
+        color: @gray-dark;
+    }
+}
+
+.session-info-panel-section + .session-info-panel-section {
+    border-top: 1px solid @gray-light;
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.session-info-panel-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 6px 0;
+}
+
+.session-info-panel-label {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.session-info-panel-value {
+    text-align: right;
+    // A value with no whitespace to break at (e.g. a technical identifier) has no valid wrap point,
+    // so without this it would refuse to shrink below its own full width (flex items don't shrink
+    // past their content's min-content size by default) and escape the popup's bounds. min-width: 0
+    // lets it actually shrink to the row's available width, and overflow: hidden then clips whatever
+    // still doesn't fit on that single line - rather than forcing an arbitrary character-level break
+    // (which would still need to wrap normal, breakable values like a specification name normally).
+    min-width: 0;
+    overflow: hidden;
+}

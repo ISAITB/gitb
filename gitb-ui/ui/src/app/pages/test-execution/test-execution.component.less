@@ -15,6 +15,35 @@
 
 @import '../../../styles/less/_common.less';
 
+// Scoped copy of the session-panel header styling (formerly a global .session-table-title rule
+// shared with app-session-table, which now has its own independent scoped copy tailored to its
+// more-info button and wrapping behaviour - this page has no such button and keeps the original,
+// simpler layout).
+.session-table-title {
+	padding: 0 15px;
+	display: flex;
+	.session-table-title-part {
+		display: inline-flex;
+		border-left: 1px solid @gray-dark-1;
+        padding: 10px;
+        &:first-child {
+			border-left: 0;
+			padding-left: 0;
+		}
+		.session-table-title-label {
+			display: inline-flex;
+			font-weight: bold;
+			padding-right: 10px;
+			align-items: center;
+			white-space: nowrap
+		}
+		.session-table-title-value {
+			display: inline-flex;
+			align-items: center;
+		}
+	}
+}
+
 .test-case-list-table{
     .testCaseName {
         display: flex;

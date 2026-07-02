@@ -51,6 +51,7 @@ import {TestSessionPresentationComponent} from '../diagram/test-session-presenta
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {CheckboxOptionPanelComponent} from '../checkbox-option-panel/checkbox-option-panel.component';
+import {SessionInfoPanelApi} from '../session-info-panel/session-info-panel-api';
 
 @Component({
     selector: '[app-session-table]',
@@ -76,6 +77,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
   @ViewChild("tableContainer") tableContainer?: ElementRef
   @ViewChildren("sessionContainer") sessionContainers?: QueryList<ElementRef>
   @ViewChildren("testSessionPresentationComponent") testSessionPresentationComponents?: QueryList<TestSessionPresentationComponent>
+  @ViewChildren("sessionInfoPanel") sessionInfoPanels?: QueryList<SessionInfoPanelApi>
 
   Constants = Constants
   columnCount = 0
@@ -138,15 +140,19 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
 
   // The column chooser panel is a single instance owned directly by this component (unlike the
   // per-row option panels forwarded to via tableRowComponents), so it needs to be included in the
-  // same top-level document listener forwarding chain rather than adding its own listeners.
+  // same top-level document listener forwarding chain rather than adding its own listeners. The
+  // per-row session info panels are likewise forwarded to here rather than each registering its own
+  // document-level listener, which would not scale well with page sizes of ~100 rows.
   override clickRegistered(event: Event) {
     super.clickRegistered(event)
     this.columnChooserPanel?.documentClick(event)
+    this.sessionInfoPanels?.forEach(panel => panel.documentClick(event))
   }
 
   override escapeRegistered() {
     super.escapeRegistered()
     this.columnChooserPanel?.documentEscape()
+    this.sessionInfoPanels?.forEach(panel => panel.documentEscape())
   }
 
   /**
