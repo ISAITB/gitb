@@ -33,6 +33,9 @@
                                 <div class="d-flex">
                                     <input class="form-check-input" type="checkbox" tabIndex="-1" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="selectedItemCheckFocused($event)">
                                     <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+$index">
+                                        @if (config.iconField && item[config.iconField]) {
+                                            <i class="optionIcon" [ngClass]="item[config.iconField]"></i>
+                                        }
                                         {{ item[config.textField] }}
                                         @if (config.textDecorator) {
                                             <span class="item-text-decoration">{{ config.textDecorator(item) }}</span>
@@ -54,11 +57,19 @@
                         @for (item of visibleAvailableItems; track item.id) {
                             <div class="itemContainer" [class]="'available-item-'+$index" [class.focused]="$index == focusedAvailableItemIndex" (click)="availableItemClicked(item)">
                                 @if (config.singleSelection) {
-                                    <div>{{ item[config.textField] }}</div>
+                                    <div>
+                                        @if (config.iconField && item[config.iconField]) {
+                                            <i class="optionIcon" [ngClass]="item[config.iconField]"></i>
+                                        }
+                                        {{ item[config.textField] }}
+                                    </div>
                                 } @else {
                                     <div class="d-flex">
                                         <input class="form-check-input" tabIndex="-1" [attr.id]="'a_item-'+$index" [attr.name]="'a_item-'+$index" type="checkbox" [(ngModel)]="selectedAvailableItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="availableItemCheckFocused($event)">
                                         <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+$index">
+                                            @if (config.iconField && item[config.iconField]) {
+                                                <i class="optionIcon" [ngClass]="item[config.iconField]"></i>
+                                            }
                                             {{ item[config.textField] }}
                                             @if (config.textDecorator) {
                                                 <span class="item-text-decoration">{{ config.textDecorator(item) }}</span>

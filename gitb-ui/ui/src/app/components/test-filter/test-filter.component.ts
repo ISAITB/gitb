@@ -164,7 +164,7 @@ export class TestFilterComponent implements OnInit {
     this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
     this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
+    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', iconField: 'icon', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
     if (this.commands) {
       this.commands.subscribe((command) => {
         this.handleCommand(command)
@@ -669,9 +669,9 @@ export class TestFilterComponent implements OnInit {
 
   private loadTestResults(): Observable<IdLabel[]> {
     return of([
-      { id: 0, label: "Success" },
-      { id: 1, label: "Failure" },
-      { id: 2, label: "Incomplete" }
+      { id: 0, label: "Success", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS) },
+      { id: 1, label: "Failure", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE) },
+      { id: 2, label: "Incomplete", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED) }
     ])
   }
 

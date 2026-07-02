@@ -40,5 +40,6 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   squashItemsWithSameText?: boolean
   enableSelectAll?: boolean
   textDecorator?: (item: T) => string
+  iconField?: string
 
 }
