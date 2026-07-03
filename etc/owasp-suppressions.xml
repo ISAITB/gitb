@@ -633,4 +633,52 @@
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
         <cve>CVE-2026-54516</cve>
     </suppress>
+    <suppress>
+        <!-- Related to features and Tomcat configuration that is not used and cannot be exploited. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-11.0.22.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-53434</cve>
+    </suppress>
+    <suppress>
+        <!-- Related to features and Tomcat configuration that is not used and cannot be exploited. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-11.0.22.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-55276</cve>
+    </suppress>
+    <suppress>
+        <!-- Related to features and Tomcat configuration that is not used and cannot be exploited. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-11.0.22.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-53404</cve>
+    </suppress>
+    <suppress>
+        <!-- Related to features and Tomcat configuration that is not used and cannot be exploited. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-11.0.22.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-55955</cve>
+    </suppress>
+    <suppress>
+        <!-- Related to features and Tomcat configuration that is not used and cannot be exploited. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-11.0.22.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-55956</cve>
+    </suppress>
+    <suppress>
+        <!-- Related to features and Tomcat configuration that is not used and cannot be exploited. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-11.0.22.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-50229</cve>
+    </suppress>
 </suppressions>
