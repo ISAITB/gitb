@@ -180,12 +180,14 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
 
   viewDomain() {
     if (this.community.domain?.id != undefined) {
+      this.routingService.recordViewReturnTarget()
       this.routingService.toDomain(this.community.domain.id)
     }
   }
 
   viewSelfRegDefaultOrganisation() {
     if (this.community.id != undefined && this.community.selfRegDefaultOrganisation != undefined) {
+      this.routingService.recordViewReturnTarget()
       this.routingService.toOrganisationDetails(this.community.id, this.community.selfRegDefaultOrganisation.id)
     }
   }
