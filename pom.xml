@@ -26,13 +26,13 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>12.2.2</version.plugin.dependency-check-maven>
-        <version.plugin.maven-deploy-plugin>3.1.4</version.plugin.maven-deploy-plugin>
-        <version.plugin.maven-compiler-plugin>3.15.0</version.plugin.maven-compiler-plugin>
-        <version.plugin.jaxb2-maven-plugin>4.1.0</version.plugin.jaxb2-maven-plugin>
-        <version.plugin.license-maven-plugin>2.7.1</version.plugin.license-maven-plugin>
-        <version.plugin.antrun-plugin>3.2.0</version.plugin.antrun-plugin>
-        <version.plugin.versions-maven-plugin>2.21.0</version.plugin.versions-maven-plugin>
+        <version.plugin.dependencyCheckMaven>12.2.2</version.plugin.dependencyCheckMaven>
+        <version.plugin.mavenDeployPlugin>3.1.4</version.plugin.mavenDeployPlugin>
+        <version.plugin.mavenCompilerPlugin>3.15.0</version.plugin.mavenCompilerPlugin>
+        <version.plugin.jaxb2MavenPlugin>4.1.0</version.plugin.jaxb2MavenPlugin>
+        <version.plugin.licenseMavenPlugin>2.7.1</version.plugin.licenseMavenPlugin>
+        <version.plugin.antrunPlugin>3.2.0</version.plugin.antrunPlugin>
+        <version.plugin.versionsMavenPlugin>2.21.0</version.plugin.versionsMavenPlugin>
         <version.plugin.mavenSitePlugin>3.22.0</version.plugin.mavenSitePlugin>
         <version.plugin.projectInfoReports>3.9.0</version.plugin.projectInfoReports>
         <!-- Dependency versions -->
@@ -136,6 +136,10 @@
     </repositories>
 
     <distributionManagement>
+        <site>
+            <id>local-staging</id>
+            <url>file://${maven.multiModuleProjectDirectory}/target/staging</url>
+        </site>
         <repository>
             <id>itbRepoWrite</id>
             <!-- Property set in profile settings that is used in development. Not needed if gitb-types-* dependencies are non-snapshot or if these are installed locally. -->
@@ -154,7 +158,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${version.plugin.maven-compiler-plugin}</version>
+                    <version>${version.plugin.mavenCompilerPlugin}</version>
                     <configuration>
                         <release>21</release>
                         <forceLegacyJavacApi>true</forceLegacyJavacApi>
@@ -163,7 +167,7 @@
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>${version.plugin.dependency-check-maven}</version>
+                    <version>${version.plugin.dependencyCheckMaven}</version>
                     <configuration>
                         <nvdApiServerId>nvdApi</nvdApiServerId>
                         <ossIndexUsername>${ossIndexUsername}</ossIndexUsername>
@@ -185,17 +189,22 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${version.plugin.maven-deploy-plugin}</version>
+                    <version>${version.plugin.mavenDeployPlugin}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${version.plugin.mavenSitePlugin}</version>
+                </plugin>                
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>jaxb2-maven-plugin</artifactId>
-                    <version>${version.plugin.jaxb2-maven-plugin}</version>
+                    <version>${version.plugin.jaxb2MavenPlugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>${version.plugin.license-maven-plugin}</version>
+                    <version>${version.plugin.licenseMavenPlugin}</version>
                     <configuration>
                         <fileTemplate>${project.basedir}/etc/licence/third-party-licence-template.ftl</fileTemplate>
                         <outputDirectory>${project.build.directory}/generated-sources/license/temp</outputDirectory>
@@ -247,7 +256,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${version.plugin.antrun-plugin}</version>
+                    <version>${version.plugin.antrunPlugin}</version>
                     <executions>
                         <execution>
                             <!-- Generate licence report -->
@@ -284,7 +293,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
-                    <version>${version.plugin.versions-maven-plugin}</version>
+                    <version>${version.plugin.versionsMavenPlugin}</version>
                     <configuration>
                         <generateBackupPoms>false</generateBackupPoms>
                     </configuration>
@@ -680,6 +689,9 @@
 
     <reporting>
         <plugins>
+            <!--
+                Generate project reports with `mvn install site site:stage`.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
@@ -687,7 +699,8 @@
                 <reportSets>
                     <reportSet>
                         <reports>
-                            <!-- empty = suppress all default reports -->
+                            <!-- index only = suppress all default reports -->
+                            <report>index</report>
                         </reports>
                     </reportSet>
                 </reportSets>
@@ -695,11 +708,30 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>${version.plugin.versions-maven-plugin}</version>
+                <version>${version.plugin.versionsMavenPlugin}</version>
                 <reportSets>
+                    <!-- Aggregate report: root only -->
                     <reportSet>
+                        <id>aggregate</id>
+                        <inherited>false</inherited>
+                        <configuration>
+                            <onlyProjectDependencies>true</onlyProjectDependencies>
+                            <processDependencyManagement>true</processDependencyManagement>
+                        </configuration>
                         <reports>
+                            <report>dependency-updates-aggregate-report</report>
                             <report>plugin-updates-report</report>
+                        </reports>
+                    </reportSet>
+                    <!-- Per-module reports: run in each module -->
+                    <reportSet>
+                        <id>modules</id>
+                        <configuration>
+                            <onlyProjectDependencies>true</onlyProjectDependencies>
+                            <processDependencyManagement>true</processDependencyManagement>
+                        </configuration>
+                        <reports>
+                            <report>dependency-updates-report</report>
                         </reports>
                     </reportSet>
                 </reportSets>
