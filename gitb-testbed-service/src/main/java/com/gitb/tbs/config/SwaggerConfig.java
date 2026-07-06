@@ -27,8 +27,8 @@ public class SwaggerConfig implements WebMvcConfigurer {
         // Serve Swagger UI static resources - version is auto-detected
         registry.addResourceHandler("/gitb/swagger-ui/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/swagger-ui/5.32.8/");
-        // Serve custom HTML page
-        registry.addResourceHandler("/gitb/swagger-ui.html")
-                .addResourceLocations("classpath:/static/");
+        // The custom HTML page (classpath:/static/gitb/swagger-ui.html) is served by Spring Boot's
+        // default static resource handler - no explicit registration needed (and an exact-pattern
+        // handler mapped to a directory location here would 404 while also shadowing the default).
     }
 }
