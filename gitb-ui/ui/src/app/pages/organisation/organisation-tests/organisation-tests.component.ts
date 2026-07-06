@@ -14,7 +14,7 @@
  */
 
 import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {DiagramLoaderService} from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -53,8 +53,9 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
     popupService: PopupService,
     diagramLoaderService: DiagramLoaderService,
     routingService: RoutingService,
-    sessionColumnsService: SessionColumnsService
-  ) { super(dataService, conformanceService, reportService, confirmationDialogService, testService, popupService, route, diagramLoaderService, routingService, sessionColumnsService) }
+    sessionColumnsService: SessionColumnsService,
+    router: Router
+  ) { super(dataService, conformanceService, reportService, confirmationDialogService, testService, popupService, route, diagramLoaderService, routingService, sessionColumnsService, router) }
 
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
@@ -81,6 +82,10 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
 
   protected setBreadcrumbs() {
     this.routingService.testHistoryBreadcrumbs(this.organisationId!)
+  }
+
+  protected override stateKey(): string {
+    return Constants.DISPLAY_STATE_KEY.ORGANISATION_TESTS + '|' + this.organisationId
   }
 
   protected showCopyForOtherRoleOption(): boolean {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {FilterState} from 'src/app/types/filter-state';
@@ -55,7 +55,7 @@ import {TextFilterComponentApi} from '../text-filter/text-filter-component-api';
     styleUrls: ['./test-filter.component.less'],
     standalone: false
 })
-export class TestFilterComponent implements OnInit {
+export class TestFilterComponent implements OnInit, AfterViewInit {
 
   @Input() filterState!: FilterState
   @Input() communityId?: number
@@ -66,6 +66,9 @@ export class TestFilterComponent implements OnInit {
   @Input() initialTestCaseId?: number
   @Input() initialSystemId?: number
   @Input() snapshotId?: number
+  /** The result of a previous currentFilters() call (e.g. saved when leaving this page), used to
+   * fully restore the filter selections - including custom properties and dates - on arrival. */
+  @Input() initialFilters?: {[key: string]: any}
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -179,6 +182,83 @@ export class TestFilterComponent implements OnInit {
     if (this.initialSystemId != undefined) {
       const initialSystem: System = { id: this.initialSystemId, identifier: '', sname: '', fname: '', apiKey: '', owner: -1 } // This will be replaced on load
       this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM].initialValues = [ initialSystem ]
+    }
+    if (this.initialFilters != undefined) {
+      this.restoreFromInitialFilters(this.initialFilters)
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.initialFilters?.hasComments === true) {
+      // The comment toggle's checked state is local UI state on the child component - sync it
+      // explicitly (the comment text itself is restored via the [(ngModel)] binding to commentText).
+      this.commentFilterComponent?.setToggleValue(true)
+    }
+  }
+
+  /** Restores every applicable filter selection (dropdown ids, dates, session id, comments, custom
+   * properties) from a previously captured currentFilters() object - each dropdown's placeholder
+   * initial values get replaced with the full entity once its loader runs, matching the existing
+   * initialTestCaseId/initialSystemId pattern above. */
+  private restoreFromInitialFilters(filters: {[key: string]: any}) {
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.DOMAIN, filters[Constants.FILTER_TYPE.DOMAIN])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.SPECIFICATION_GROUP, filters[Constants.FILTER_TYPE.SPECIFICATION_GROUP])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.SPECIFICATION, filters[Constants.FILTER_TYPE.SPECIFICATION])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.ACTOR, filters[Constants.FILTER_TYPE.ACTOR])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.TEST_SUITE, filters[Constants.FILTER_TYPE.TEST_SUITE])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.TEST_CASE, filters[Constants.FILTER_TYPE.TEST_CASE])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.COMMUNITY, filters[Constants.FILTER_TYPE.COMMUNITY])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.ORGANISATION, filters[Constants.FILTER_TYPE.ORGANISATION])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.SYSTEM, filters[Constants.FILTER_TYPE.SYSTEM])
+    if (this.filterDefined(Constants.FILTER_TYPE.RESULT) && filters[Constants.FILTER_TYPE.RESULT] != undefined) {
+      // Result values are stored as result codes (SUCCESS/FAILURE/UNDEFINED) - map back to the 0/1/2
+      // ids used by loadTestResults().
+      const resultIds = (filters[Constants.FILTER_TYPE.RESULT] as string[]).map((code) => {
+        if (code == Constants.TEST_CASE_RESULT.SUCCESS) return 0
+        else if (code == Constants.TEST_CASE_RESULT.FAILURE) return 1
+        else return 2
+      })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.RESULT].initialValues = resultIds.map((id) => ({ id: id, label: '' }) as IdLabel)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.START_TIME) && (filters.startTimeBegin != undefined || filters.startTimeEnd != undefined)) {
+      this.startDateModel = {
+        start: filters.startTimeBegin != undefined ? new Date(filters.startTimeBegin) : undefined,
+        end: filters.startTimeEnd != undefined ? new Date(filters.startTimeEnd) : undefined
+      }
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.END_TIME) && (filters.endTimeBegin != undefined || filters.endTimeEnd != undefined)) {
+      this.endDateModel = {
+        start: filters.endTimeBegin != undefined ? new Date(filters.endTimeBegin) : undefined,
+        end: filters.endTimeEnd != undefined ? new Date(filters.endTimeEnd) : undefined
+      }
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.SESSION) && filters.sessionId != undefined) {
+      this.sessionId = filters.sessionId
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+      this.withComments = filters.hasComments === true
+      this.commentText = filters.commentText
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY) && filters.organisationProperties?.length > 0) {
+      this.organisationProperties = (filters.organisationProperties as {id: number, value: string}[]).map((p) => {
+        this.uuidCounter += 1
+        return { id: p.id, value: p.value, uuid: this.uuidCounter }
+      })
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY) && filters.systemProperties?.length > 0) {
+      this.systemProperties = (filters.systemProperties as {id: number, value: string}[]).map((p) => {
+        this.uuidCounter += 1
+        return { id: p.id, value: p.value, uuid: this.uuidCounter }
+      })
+    }
+  }
+
+  private setInitialValuesForIds(filterType: string, ids: number[]|undefined) {
+    if (this.filterDefined(filterType) && ids != undefined && ids.length > 0) {
+      // The text field must be set to '' (rather than left undefined) so that isSelected() in
+      // MultiSelectFilterComponent recognises this as a placeholder to replace once real data loads.
+      const textField = this.filterDropdownSettings[filterType].textField
+      this.filterDropdownSettings[filterType].initialValues = ids.map((id) => ({ id: id, [textField]: '' }) as EntityWithId)
     }
   }
 
@@ -459,7 +539,9 @@ export class TestFilterComponent implements OnInit {
 
   resultsChanged(update: FilterUpdate<IdLabel>) {
     this.filterValues[Constants.FILTER_TYPE.RESULT] = update.values
-    this.applyFilters()
+    if (update.applyFilters) {
+      this.applyFilters()
+    }
   }
 
   private resetApplicableCommunityId() {
@@ -630,6 +712,11 @@ export class TestFilterComponent implements OnInit {
         mergeMap((data) => {
           this.showOrganisationProperties = data[0].length > 0
           this.showSystemProperties = data[1].length > 0
+          // Populate the available property definitions up front (rather than only on "Add") so that
+          // any already-applied property filters (e.g. restored from a saved state) can immediately
+          // resolve their display labels.
+          this.availableOrganisationProperties = data[0]
+          this.availableSystemProperties = data[1]
           return of(true)
         })
       )

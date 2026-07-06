@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {CommunityService} from 'src/app/services/community.service';
@@ -49,6 +49,16 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 import {ResourceState} from '../../../../../components/resource-management-tab/resource-state';
 import {UserPreferences} from '../../../../../types/user-preferences';
 import {TagData} from '../../../../../types/tag-data';
+import {DisplayState} from '../../../../../types/display-state';
+
+/** Persisted search/sort/paging state for the Organisations tab - restored when returning here
+ * (e.g. via Back from an organisation's detail page) so the list looks the same as when left. */
+interface CommunityOrganisationsListState {
+  filter?: string
+  sortColumn: string
+  sortOrder: string
+  sortByCreationOrder: string
+}
 
 @Component({
     selector: 'app-community-details',
@@ -56,7 +66,7 @@ import {TagData} from '../../../../../types/tag-data';
     styleUrls: ['./community-details.component.less'],
     standalone: false
 })
-export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
+export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild("organisationTable") organisationTable?: TableApi
   @ViewChild("adminsTable") adminsTable?: TableApi
@@ -163,6 +173,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   resourceActions!: ResourceActions
   validation = new ValidationState()
   initialUserPreferences!: UserPreferences
+  showBackButton = false
+  private viewReturnTarget?: string
 
   constructor(
     public readonly dataService: DataService,
@@ -194,6 +206,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.tags = []
     }
     this.communityId = this.community.id
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
+    this.showBackButton = this.dataService.isSystemAdmin || this.viewReturnTarget != undefined
     this.copyTags(this.community.tags)
     this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
@@ -228,6 +242,22 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
+  ngOnDestroy(): void {
+    if (this.organisationStatus.status != Constants.STATUS.NONE) {
+      const state: DisplayState<CommunityOrganisationsListState> = {
+        key: String(this.communityId),
+        state: {
+          filter: this.organisationFilter,
+          sortColumn: this.organisationSortColumn,
+          sortOrder: this.organisationSortOrder,
+          sortByCreationOrder: this.sortByCreationOrder
+        },
+        paging: this.organisationTable?.getPagingControls()?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.COMMUNITY_ORGANISATIONS, state)
+    }
+  }
+
   loadTab(tabIndex: number) {
     if (tabIndex == Constants.TAB.COMMUNITY.ORGANISATIONS) {
       this.showOrganisations()
@@ -252,9 +282,46 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
-      this.refreshOrganisations()
+      let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+      const existingState = this.getDisplayState<CommunityOrganisationsListState>(Constants.DISPLAY_STATE_KEY.COMMUNITY_ORGANISATIONS, true)
+      if (existingState && existingState.key == String(this.communityId)) {
+        if (existingState.state) {
+          this.organisationFilter = existingState.state.filter
+          this.organisationSortColumn = existingState.state.sortColumn
+          this.organisationSortOrder = existingState.state.sortOrder
+          this.sortByCreationOrder = existingState.state.sortByCreationOrder
+          this.sortByCreationOrderLabel = this.labelForCreationOrderSort(this.sortByCreationOrder)
+          this.applyOrganisationColumnSortState()
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+      this.queryOrganisations(targetPaging)
     } else {
       this.updateOrganisationPagination(this.organizationsPage, this.organizationsTotal)
+    }
+  }
+
+  private labelForCreationOrderSort(type: string): string {
+    if (type == this.sortByCreationOrderAsc) return this.sortByCreationOrderLabelAsc
+    if (type == this.sortByCreationOrderDesc) return this.sortByCreationOrderLabelDesc
+    return this.sortByCreationOrderLabelNone
+  }
+
+  private applyOrganisationColumnSortState() {
+    if (this.sortByCreationOrder == this.sortByCreationOrderNone) {
+      const fieldForSortColumn: {[key: string]: string} = { shortname: 'sname', fullname: 'fname', template: 'templateName' }
+      const matchingField = fieldForSortColumn[this.organisationSortColumn]
+      for (let column of this.organizationColumns) {
+        column.sortable = true
+        column.order = (column.field == matchingField) ? (this.organisationSortOrder as 'asc'|'desc') : null
+      }
+    } else {
+      for (let column of this.organizationColumns) {
+        column.sortable = false
+        column.order = undefined
+      }
     }
   }
 
@@ -613,7 +680,9 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   }
 
   cancelCommunityDetail() {
-    this.routingService.toUserManagement()
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      this.routingService.toUserManagement()
+    })
   }
 
   updateReportSettings() {

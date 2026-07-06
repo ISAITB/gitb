@@ -76,6 +76,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     } else {
       this.communityIdForSnapshots = this.dataService.vendor!.community
     }
+    this.restoreListViewState()
     let snapshotId: number|undefined
     if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID)) {
       snapshotId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID))
@@ -200,6 +201,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {
+    this.routingService.recordViewReturnTarget()
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {
@@ -208,6 +210,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
+    this.routingService.recordViewReturnTarget()
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {
@@ -313,7 +316,15 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   protected displayStateDataKey(): string {
-    return `${this.system?.id}|${this.activeConformanceSnapshot?.id}`
+    return `${this.organisationId}|${this.system?.id}|${this.activeConformanceSnapshot?.id}`
+  }
+
+  protected listViewDisplayStateKey(): string {
+    return Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS_LIST
+  }
+
+  protected listViewDisplayStateDataKey(): string {
+    return `${this.organisationId}`
   }
 
 }

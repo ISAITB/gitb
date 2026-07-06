@@ -112,6 +112,10 @@ export class TextFilterComponent implements ControlValueAccessor, TextFilterComp
     this.toggleValue = false
   }
 
+  setToggleValue(value: boolean): void {
+    this.toggleValue = value
+  }
+
   search() {
     this.submitOngoing = true
     this.applyFilter(true)

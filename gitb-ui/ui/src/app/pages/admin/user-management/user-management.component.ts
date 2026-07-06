@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
@@ -24,6 +24,14 @@ import {TableApi} from '../../../components/table/table-api';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {CommunityLimited} from '../../../types/community-limited';
 import {UsageTipService} from '../../../services/usage-tip.service';
+import {BaseComponent} from '../../base-component.component';
+import {DisplayState} from '../../../types/display-state';
+
+/** Persisted search/paging state for the Communities list - restored when returning here (e.g. via
+ * Back from a community's detail page). */
+interface UserManagementListState {
+  filter?: string
+}
 
 @Component({
     selector: 'app-user-management',
@@ -31,7 +39,7 @@ import {UsageTipService} from '../../../services/usage-tip.service';
     styles: [],
     standalone: false
 })
-export class UserManagementComponent implements OnInit, AfterViewInit {
+export class UserManagementComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild("communityTable") communityTable?: TableApi
 
@@ -50,14 +58,33 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
     private readonly communityService: CommunityService,
     private readonly routingService: RoutingService,
     private readonly usageTipService: UsageTipService
-  ) { }
+  ) { super() }
 
   ngOnInit(): void {
     if (!this.dataService.isSystemAdmin) {
       this.routingService.toHome()
     }
-    this.refreshCommunities()
+    let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+    const existingState = this.getDisplayState<UserManagementListState>(Constants.DISPLAY_STATE_KEY.COMMUNITIES, true)
+    if (existingState) {
+      if (existingState.state) {
+        this.communityFilter = existingState.state.filter
+      }
+      if (existingState.paging) {
+        targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+      }
+    }
+    this.loadCommunities(targetPaging)
     this.routingService.communitiesBreadcrumbs()
+  }
+
+  ngOnDestroy(): void {
+    const state: DisplayState<UserManagementListState> = {
+      key: Constants.DISPLAY_STATE_KEY.COMMUNITIES,
+      state: { filter: this.communityFilter },
+      paging: this.communityTable?.getPagingControls()?.getCurrentStatus()
+    }
+    this.saveDisplayState(Constants.DISPLAY_STATE_KEY.COMMUNITIES, state)
   }
 
   ngAfterViewInit(): void {

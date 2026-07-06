@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
@@ -37,12 +37,17 @@ import {TestStatusBase} from '../test-status-base/test-status-base';
   templateUrl: './conformance-statement-table.component.html',
   styleUrl: './conformance-statement-table.component.less'
 })
-export class ConformanceStatementTableComponent extends BaseComponent implements OnInit, ConformanceStatementTableApi {
+export class ConformanceStatementTableComponent extends BaseComponent implements OnInit, AfterViewInit, ConformanceStatementTableApi {
 
   @Input() communityId?: number
   @Input() organisationId?: number
   @Input() snapshotId?: number
   @Input() statementLoader!: (searchCriteria: TestResultSearchCriteria, pagingInfo: PagingEvent, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string) => Observable<ConformanceResultFullList>;
+  /** Restored filter selections (as previously captured via getCurrentState()), applied on first load. */
+  @Input() initialFilters?: {[key: string]: any}
+  @Input() initialSortColumn?: string
+  @Input() initialSortOrder?: string
+  @Input() initialPaging?: PagingEvent
   @Output() exportChange = new EventEmitter<boolean>()
   @Output() searchChange = new EventEmitter<boolean>()
   @Output() communityChange = new EventEmitter<number|undefined>()
@@ -116,11 +121,37 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
         }
       }
     }
-    this.getConformanceStatements()
+    if (this.initialSortColumn != undefined) {
+      this.sortColumn = this.initialSortColumn
+    }
+    if (this.initialSortOrder != undefined) {
+      this.sortOrder = this.initialSortOrder
+    }
+  }
+
+  ngAfterViewInit(): void {
+    // Deferred to ngAfterViewInit (rather than ngOnInit) so that the child app-test-filter (and its
+    // own multi-select children) have already run their ngOnInit - this is what populates
+    // filterState.filterData with any restored initialFilters selections, so the very first query
+    // already reflects them instead of firing filter-less and never being retriggered. The setTimeout
+    // avoids mutating filterState/dataStatus (read by this same view) within the initial CD cycle.
+    setTimeout(() => {
+      this.selectPage(this.initialPaging ?? { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    })
   }
 
   getConformanceStatements() {
     this.selectPage({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+  }
+
+  /** The table's current filters, sort and paging - used to persist/restore this view's state. */
+  getCurrentState() {
+    return {
+      filters: this.filterState?.filterData ? this.filterState.filterData() : undefined,
+      sortColumn: this.sortColumn,
+      sortOrder: this.sortOrder,
+      paging: this.pagingControls?.getCurrentStatus()
+    }
   }
 
   doPageNavigation(event: PagingEvent) {

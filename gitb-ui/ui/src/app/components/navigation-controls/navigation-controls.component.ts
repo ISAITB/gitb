@@ -50,39 +50,39 @@ export class NavigationControlsComponent implements OnInit {
     this.processConfig()
     // Statement
     if (this.statementNavigable) {
-      this.extraNavigationItems.push({ label: "View statement", action: () => this.toStatement() })
+      this.extraNavigationItems.push({ label: "View statement", action: () => this.viewNavigate(() => this.toStatement()) })
     }
     // Party information
     if (this.systemNavigable) {
-      this.extraNavigationItems.push({ label: `View ${this.dataService.labelSystemLower()}`, action: () => this.toSystem() })
+      this.extraNavigationItems.push({ label: `View ${this.dataService.labelSystemLower()}`, action: () => this.viewNavigate(() => this.toSystem()) })
     }
     if (this.organisationNavigable) {
-      this.extraNavigationItems.push({ label: `View ${this.dataService.labelOrganisationLower()}`, action: () => this.toOrganisation() })
+      this.extraNavigationItems.push({ label: `View ${this.dataService.labelOrganisationLower()}`, action: () => this.viewNavigate(() => this.toOrganisation()) })
     }
     if (this.communityNavigable) {
-      this.extraNavigationItems.push({ label: "View community", action: () => this.toCommunity() })
+      this.extraNavigationItems.push({ label: "View community", action: () => this.viewNavigate(() => this.toCommunity()) })
     }
     // Specification information
     if (this.domainNavigable || this.specificationNavigable || this.actorNavigable) {
       this.addSeparatorIfNeeded()
       if (this.actorNavigable) {
-        this.extraNavigationItems.push({ label: `View ${this.dataService.labelActorLower()}`, action: () => this.toActor() })
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelActorLower()}`, action: () => this.viewNavigate(() => this.toActor()) })
       }
       if (this.specificationNavigable) {
-        this.extraNavigationItems.push({ label: `View ${this.dataService.labelSpecificationLower()}`, action: () => this.toSpecification() })
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelSpecificationLower()}`, action: () => this.viewNavigate(() => this.toSpecification()) })
       }
       if (this.domainNavigable) {
-        this.extraNavigationItems.push({ label: `View ${this.dataService.labelDomainLower()}`, action: () => this.toDomain() })
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelDomainLower()}`, action: () => this.viewNavigate(() => this.toDomain()) })
       }
     }
     // Test case information
     if (this.testSuiteNavigable || this.testCaseNavigable) {
       this.addSeparatorIfNeeded()
       if (this.testCaseNavigable) {
-        this.extraNavigationItems.push({ label: "View test case", action: () => this.toTestCase() })
+        this.extraNavigationItems.push({ label: "View test case", action: () => this.viewNavigate(() => this.toTestCase()) })
       }
       if (this.testSuiteNavigable) {
-        this.extraNavigationItems.push({ label: "View test suite", action: () => this.toTestSuite() })
+        this.extraNavigationItems.push({ label: "View test suite", action: () => this.viewNavigate(() => this.toTestSuite()) })
       }
     }
     // Keep the first item as the main one.
@@ -91,6 +91,13 @@ export class NavigationControlsComponent implements OnInit {
     if (this.extraNavigationItems.length > 0 && this.extraNavigationItems[0].label == undefined) {
       this.extraNavigationItems.shift()
     }
+  }
+
+  /** Records the current page as the "return target" before navigating, so that the target page's
+   * Back/Cancel control can bring the user back here (with its state restored). */
+  private viewNavigate(navigate: () => void) {
+    this.routingService.recordViewReturnTarget()
+    navigate()
   }
 
   private addSeparatorIfNeeded() {

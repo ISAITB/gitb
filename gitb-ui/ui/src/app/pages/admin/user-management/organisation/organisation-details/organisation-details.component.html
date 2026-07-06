@@ -31,7 +31,7 @@
                             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
                         }
                         <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS" type="button" (click)="manageOrganisationTests()">Manage tests</button>
-                        @if (showAdminInfo) {
+                        @if (showBackButton) {
                             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancelDetailOrganisation()">Back</button>
                         }
                     </div>

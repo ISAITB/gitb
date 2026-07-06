@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {finalize, forkJoin, map, mergeMap, Observable, of, share, Subject, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -37,13 +37,20 @@ import {MultiSelectConfig} from '../../../../../components/multi-select-filter/m
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../../../components/table/table-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {DisplayState} from '../../../../../types/display-state';
+
+/** Persisted search/paging state for the Test suites tab - restored when returning here (e.g. via
+ * Back from a test suite's detail page). */
+interface SpecificationListState {
+  filter?: string
+}
 
 @Component({
     selector: 'app-specification-details',
     templateUrl: './specification-details.component.html',
     standalone: false
 })
-export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit {
+export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   @ViewChild("testSuiteTable") testSuiteTable?: TableApi
   @ViewChild("actorTable") actorTable?: TableApi
@@ -88,6 +95,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
   linkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
   unlinkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
+  private viewReturnTarget?: string
 
   constructor(
     public readonly dataService: DataService,
@@ -109,7 +117,19 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.testSuiteStatus.status != Constants.STATUS.NONE) {
+      const state: DisplayState<SpecificationListState> = {
+        key: String(this.specificationId),
+        state: { filter: this.testSuiteFilter },
+        paging: this.testSuiteTable?.getPagingControls()?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.SPECIFICATION_TEST_SUITES, state)
+    }
+  }
+
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     if (this.dataService.isCommunityAdmin) {
@@ -195,21 +215,36 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
   loadTestSuites(forceLoad?: boolean) {
-    if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+    if (this.testSuiteStatus.status == Constants.STATUS.NONE) {
       this.linkSharedSelectionConfig.clearItems?.emit()
       this.unlinkSharedSelectionConfig.clearItems?.emit()
-      this.loadTestSuitesInternal(forceLoad).subscribe(() => {
+      let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+      const existingState = this.getDisplayState<SpecificationListState>(Constants.DISPLAY_STATE_KEY.SPECIFICATION_TEST_SUITES, true)
+      if (existingState && existingState.key == String(this.specificationId)) {
+        if (existingState.state) {
+          this.testSuiteFilter = existingState.state.filter
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+      this.loadTestSuitesInternal(targetPaging).subscribe(() => {
+      })
+    } else if (forceLoad) {
+      this.linkSharedSelectionConfig.clearItems?.emit()
+      this.unlinkSharedSelectionConfig.clearItems?.emit()
+      this.loadTestSuitesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, true).subscribe(() => {
       })
     } else {
       this.updateTestSuitePaging(this.testSuitePage, this.testSuiteTotal)
     }
   }
 
-  loadTestSuitesInternal(forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
+  loadTestSuitesInternal(pagingInfo?: PagingEvent, forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
     if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
       this.testSuites = []
       this.sharedTestSuites = []
-      const specTestSuites$ = this.refreshTestSuites()
+      const specTestSuites$ = this.loadSpecificationTestSuites(pagingInfo ?? { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
       const sharedTestSuites$ = this.conformanceService.getSpecSharedTestSuites(this.specificationId)
       return forkJoin([specTestSuites$, sharedTestSuites$]).pipe(
         mergeMap((data) => {
@@ -447,11 +482,13 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	back() {
-    if (this.sharedTestSuiteId) {
-      this.routingService.toSharedTestSuite(this.domainId, this.sharedTestSuiteId)
-    } else {
-      this.routingService.toDomain(this.domainId)
-    }
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.sharedTestSuiteId) {
+        this.routingService.toSharedTestSuite(this.domainId, this.sharedTestSuiteId)
+      } else {
+        this.routingService.toDomain(this.domainId)
+      }
+    })
   }
 
 }

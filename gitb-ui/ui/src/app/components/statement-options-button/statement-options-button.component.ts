@@ -151,16 +151,22 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     } else if (event[StatementOptionsButtonComponent.EXPORT_PDF]) {
       this.export.emit({ item: this.item, format: 'pdf' })
     } else if (event[StatementOptionsButtonComponent.VIEW_COMMUNITY]) {
+      this.routingService.recordViewReturnTarget()
       this.toCommunity()
     } else if (event[StatementOptionsButtonComponent.VIEW_ORGANISATION]) {
+      this.routingService.recordViewReturnTarget()
       this.toOrganisation()
     } else if (event[StatementOptionsButtonComponent.VIEW_SYSTEM]) {
+      this.routingService.recordViewReturnTarget()
       this.toSystem()
     } else if (event[StatementOptionsButtonComponent.VIEW_DOMAIN]) {
+      this.routingService.recordViewReturnTarget()
       this.toDomain()
     } else if (event[StatementOptionsButtonComponent.VIEW_SPECIFICATION]) {
+      this.routingService.recordViewReturnTarget()
       this.toSpecification()
     } else if (event[StatementOptionsButtonComponent.VIEW_ACTOR]) {
+      this.routingService.recordViewReturnTarget()
       this.toActor()
     } else if (event[StatementOptionsButtonComponent.COPY_BADGE_URL]) {
       this.pending = true

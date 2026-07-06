@@ -231,6 +231,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
       setTimeout(() => {
         this.updateSessionWidths()
         test.expanded = true
+        test.expandedOrder = Date.now()
         if (this.expandedCounter !== undefined) {
           this.expandedCounter.count = this.expandedCounter.count + 1
         }
@@ -253,6 +254,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
     } else if (data.diagramLoaded) {
       // The diagram was already loaded on a previous expansion: open immediately.
       data.expanded = true
+      data.expandedOrder = Date.now()
       if (this.expandedCounter !== undefined) {
         this.expandedCounter.count = this.expandedCounter.count + 1
       }

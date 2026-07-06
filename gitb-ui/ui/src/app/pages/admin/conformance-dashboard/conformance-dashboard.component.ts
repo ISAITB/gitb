@@ -99,6 +99,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
       this.selectedSystemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
     }
+    this.restoreListViewState()
     // Tree view selection configs - start
     if (this.dataService.isSystemAdmin) {
       this.communitySelectConfig = {
@@ -147,7 +148,15 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.viewTypeToggled(true)
+    if (this.listView) {
+      // List view was already restored (see restoreListViewState(), called from ngOnInit): skip the
+      // usual "entering list view" reset (it clears the organisation/system selection and forces the
+      // latest snapshot) so the restored snapshot/selection and the table's own initial* inputs apply
+      // instead. Still set this field, needed to enable the snapshot dropdown.
+      this.selectedCommunityId = this.communityId
+    } else {
+      this.viewTypeToggled(true)
+    }
   }
 
   private countTestCases(item: ConformanceStatementItem): number {
@@ -477,12 +486,12 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {
-    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.routingService.recordViewReturnTarget()
     this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
   onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
-    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.routingService.recordViewReturnTarget()
     this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
@@ -491,7 +500,15 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   protected displayStateDataKey(): string {
-    return `${this.selectedSystemId}|${this.snapshotIdToUse()}`
+    return `${this.communityId}|${this.selectedOrganisationId}|${this.selectedSystemId}|${this.snapshotIdToUse()}`
+  }
+
+  protected listViewDisplayStateKey(): string {
+    return Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD_LIST
+  }
+
+  protected listViewDisplayStateDataKey(): string {
+    return `${this.communityId}`
   }
 
 }

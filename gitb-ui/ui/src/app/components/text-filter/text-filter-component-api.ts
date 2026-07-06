@@ -17,4 +17,6 @@ export interface TextFilterComponentApi {
 
   clearToggle(): void;
 
+  setToggleValue(value: boolean): void;
+
 }

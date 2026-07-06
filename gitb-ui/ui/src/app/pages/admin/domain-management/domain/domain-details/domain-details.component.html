@@ -17,7 +17,7 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE"  class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)) {
+                    @if (showBackButton) {
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" (click)="back()" class="btn btn-secondary">Back</button>
                     }
                 </div>

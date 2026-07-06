@@ -41,6 +41,15 @@ import {PagingStatus} from '../paging-controls/paging-status';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 
+/** Persisted display state for the list view - kept separate from the tree view's DisplayState since
+ * its data key (see listViewDisplayStateDataKey()) must be available synchronously on arrival (so
+ * "is this list view active" can be decided before any async system/snapshot resolution completes). */
+interface ConformanceListViewDisplayState {
+  filters?: {[key: string]: any}
+  sortColumn?: string
+  sortOrder?: string
+}
+
 @Component({
     template: '',
     standalone: false
@@ -85,6 +94,10 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   communityId?: number
   listView = false
   initialPagingStatus?: PagingStatus
+  restoredListViewFilters?: {[key: string]: any}
+  restoredListViewSortColumn?: string
+  restoredListViewSortOrder?: string
+  restoredListViewPaging?: PagingEvent
 
   protected constructor(
     public readonly dataService: DataService,
@@ -216,6 +229,8 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     this.resetConformanceItemTree()
   }
 
+  /** Restores tree-view search criteria/paging. Called once system/snapshot context is resolved
+   * (their ids are part of the data key), so this only ever applies to the tree view. */
   protected restoreState() {
     if (!this.listView) {
       const existingDisplayState = this.getDisplayState<ConformanceStatementSearchCriteria>(this.displayStateKey(), true)
@@ -228,8 +243,32 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     }
   }
 
+  /** Restores list-view mode itself plus its filters/sort/paging - called early (synchronously in
+   * ngOnInit, before any async system/snapshot resolution), which is why its data key must rely only
+   * on values already known at that point (see listViewDisplayStateDataKey()). */
+  protected restoreListViewState() {
+    const existingListViewState = this.getDisplayState<ConformanceListViewDisplayState>(this.listViewDisplayStateKey(), true)
+    if (existingListViewState && existingListViewState.key == this.listViewDisplayStateDataKey()) {
+      this.listView = true
+      this.restoredListViewFilters = existingListViewState.state?.filters
+      this.restoredListViewSortColumn = existingListViewState.state?.sortColumn
+      this.restoredListViewSortOrder = existingListViewState.state?.sortOrder
+      if (existingListViewState.paging) {
+        this.restoredListViewPaging = { targetPage: existingListViewState.paging.currentPage, targetPageSize: existingListViewState.paging.pageSize }
+      }
+    }
+  }
+
   protected saveState() {
-    if (!this.listView) {
+    if (this.listView) {
+      const tableState = this.listViewTable?.getCurrentState()
+      const state: DisplayState<ConformanceListViewDisplayState> = {
+        key: this.listViewDisplayStateDataKey(),
+        state: { filters: tableState?.filters, sortColumn: tableState?.sortColumn, sortOrder: tableState?.sortOrder },
+        paging: tableState?.paging
+      }
+      this.saveDisplayState(this.listViewDisplayStateKey(), state)
+    } else {
       const activeFiltering = !this.searchCriteria.failed
         || !this.searchCriteria.succeeded
         || !this.searchCriteria.incomplete
@@ -267,5 +306,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
 
   protected abstract displayStateKey(): string
   protected abstract displayStateDataKey(): string
+  protected abstract listViewDisplayStateKey(): string
+  protected abstract listViewDisplayStateDataKey(): string
 
 }

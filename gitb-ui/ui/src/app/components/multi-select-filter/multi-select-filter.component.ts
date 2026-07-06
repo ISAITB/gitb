@@ -137,6 +137,10 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
     if (this.config.initialValues != undefined) {
       this.replaceSelectedItems(this.config.initialValues)
+      // Resolve the real item data (and squash same-named duplicates - see
+      // squashSelectedItemsWithSameText()) immediately, rather than waiting for the user to open the
+      // dropdown, so the summary label/count is correct as soon as the page loads.
+      this.loadData().subscribe()
     }
     this.popupSubscription = this.dataService.onButtonPopupOpen$.subscribe((source => {
       if (source !== this && this.formVisible) {
@@ -670,12 +674,44 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
             }
           }
         }
+        if (this.config.singleSelection != true) {
+          // Restoring several ids individually (e.g. via initialValues) does not go through the
+          // squashing above, since each restored id already counts as "selected" before its real data
+          // is known - so two ids that turn out to share the same display text can end up as two
+          // separate selected entries. Reconcile that here, now that real data has been loaded.
+          this.squashSelectedItemsWithSameText()
+        }
         this.selectedAvailableItems = newSelectedAvailableItems
         this.availableItems = newAvailableItems
         this.visibleAvailableItems = this.availableItems
       }),
       share()
     )
+  }
+
+  private squashSelectedItemsWithSameText() {
+    if (this.config.squashItemsWithSameText != undefined && !this.config.squashItemsWithSameText) {
+      return
+    }
+    const seenByText: {[text: string]: T} = {}
+    const idsToRemove: number[] = []
+    for (let item of this.selectedItems) {
+      const text = item[this.config.textField] as unknown as string
+      const existingItem = seenByText[text]
+      if (existingItem == undefined) {
+        seenByText[text] = item
+      } else {
+        this.recordItemWithSameTextValue(existingItem, item)
+        delete this.selectedSelectedItems[item.id]
+        idsToRemove.push(item.id)
+      }
+    }
+    if (idsToRemove.length > 0) {
+      this.selectedItems = this.selectedItems.filter((item) => !idsToRemove.includes(item.id))
+      this.selectedItemIds = this.selectedItems.map((item) => item.id)
+      this.updateLabel()
+      this.updateCheckFlag()
+    }
   }
 
   searchApplied() {
@@ -731,7 +767,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   private sortItems(items: T[]) {
-    return items.sort((a, b) => { return (<string>a[this.config.textField]).localeCompare(<string>b[this.config.textField])})
+    // Placeholder items (e.g. restored via initialValues, before their loader resolves) may have an
+    // undefined text field - fall back to '' rather than letting localeCompare throw on undefined.
+    return items.sort((a, b) => { return (<string>(a[this.config.textField] ?? '')).localeCompare(<string>(b[this.config.textField] ?? ''))})
   }
 
   private getItemsToSignalForItem(item: T): T[] {

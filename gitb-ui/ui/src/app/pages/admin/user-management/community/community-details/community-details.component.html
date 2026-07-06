@@ -29,7 +29,7 @@
                     <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.REPORT">Manage report settings</button>
                     <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES">Manage configuration properties</button>
                     <button class="btn btn-secondary" type="button" (click)="editLabels()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.LABELS">Manage labels</button>
-                    @if (dataService.isSystemAdmin) {
+                    @if (showBackButton) {
                         <button class="btn btn-secondary" type="button" (click)="cancelCommunityDetail()" [labelIcon]="Constants.BUTTON_ICON.BACK">Back</button>
                     }
                 </div>

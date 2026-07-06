@@ -40,7 +40,7 @@ export class Constants {
 
 	public static readonly LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
   public static readonly SESSION_DATA = {
-    FROM_DASHBOARD: 'dashboard',
+    VIEW_RETURN: 'viewReturn',
     CACHED_TAGS_DOMAIN_ID: 'cachedTagsDomainId',
     CACHED_TAGS_DOMAIN_VALUE: 'cachedTagsDomainValue',
     CACHED_TAGS_COMMUNITY_ID: 'cachedTagsCommunityId',
@@ -280,7 +280,18 @@ export class Constants {
   public static readonly DISPLAY_STATE_KEY = {
     CONFORMANCE_STATEMENT: "ConformanceStatement",
     CONFORMANCE_STATEMENTS: "ConformanceStatements",
-    CONFORMANCE_DASHBOARD: "ConformanceDashboard"
+    CONFORMANCE_STATEMENTS_LIST: "ConformanceStatementsList",
+    CONFORMANCE_DASHBOARD: "ConformanceDashboard",
+    CONFORMANCE_DASHBOARD_LIST: "ConformanceDashboardList",
+    SESSION_DASHBOARD: "SessionDashboard",
+    ORGANISATION_TESTS: "OrganisationTests",
+    COMMUNITY_ORGANISATIONS: "CommunityOrganisations",
+    DOMAIN_SPECIFICATIONS: "DomainSpecifications",
+    DOMAIN_SHARED_TEST_SUITES: "DomainSharedTestSuites",
+    SPECIFICATION_TEST_SUITES: "SpecificationTestSuites",
+    TEST_SUITE_TEST_CASES: "TestSuiteTestCases",
+    DOMAINS: "Domains",
+    COMMUNITIES: "Communities"
   }
 
 	public static readonly PLACEHOLDER__ERROR_DESCRIPTION = "$ERROR_DESCRIPTION"

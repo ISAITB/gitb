@@ -50,6 +50,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   readonly!: boolean
   showDelete!: boolean
   loaded = false
+  private viewReturnTarget?: string
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -61,6 +62,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.readonly = this.dataService.isVendorUser || (this.dataService.isVendorAdmin && !this.route.snapshot.data.canEditOwnSystem)
     this.showDelete = !this.readonly && (!this.dataService.isVendorAdmin || this.dataService.community!.allowSystemManagement)
     this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
@@ -138,10 +140,12 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   }
 
   cancel() {
-    if (this.fromCommunityManagement) {
-      this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
-    } else {
-      this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
-    }
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.fromCommunityManagement) {
+        this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
+      } else {
+        this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
+      }
+    })
   }
 }

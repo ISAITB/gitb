@@ -4,6 +4,7 @@
                  [communityId]="communityId"
                  [organisationId]="organisationId"
                  [snapshotId]="snapshotId"
+                 [initialFilters]="initialFilters"
                  (onApply)="getConformanceStatements()"></app-test-filter>
 <div class="table-container rounded">
     <table class="table table-directive">
@@ -95,8 +96,8 @@
                                                                   [inTable]="true"
                                                                   [item]="statement"
                                                                   [snapshotId]="snapshotId"
-                                                                  [communityId]="communityId"
-                                                                  [organisationId]="organisationId"
+                                                                  [communityId]="communityId ?? statement.communityId"
+                                                                  [organisationId]="organisationId ?? statement.organizationId"
                                                                   [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
                                                                   (export)="onExportConformanceStatement($event.item, $event.format)"></app-statement-options-button>
                                 </div>

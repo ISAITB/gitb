@@ -150,6 +150,10 @@
                                              [organisationId]="organisationId"
                                              [statementLoader]="loadConformanceStatementsForListViewFactory()"
                                              [snapshotId]="activeConformanceSnapshot?.id"
+                                             [initialFilters]="restoredListViewFilters"
+                                             [initialSortColumn]="restoredListViewSortColumn"
+                                             [initialSortOrder]="restoredListViewSortOrder"
+                                             [initialPaging]="restoredListViewPaging"
                                              (searchChange)="listViewSearching($event)"
                                              (exportChange)="listViewExportChange($event)"
                                              (select)="onStatementSelectFromListView($event)"></app-conformance-statement-table>

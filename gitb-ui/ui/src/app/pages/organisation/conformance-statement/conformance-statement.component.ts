@@ -87,6 +87,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   domainId?: number
   specId?: number
   actorId!: number
+  private viewReturnTarget?: string
   updatingTests = true
   loadingTests: LoadingStatus = {status: Constants.STATUS.NONE}
   loadingConfiguration: LoadingStatus = {status: Constants.STATUS.NONE}
@@ -226,6 +227,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
@@ -236,11 +238,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       this.snapshotId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID))
     }
     this.isReadonly = this.snapshotId != undefined
-    // Remember where 'back' needs to take us
-    if (sessionStorage) {
-      const fromDashboard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
-      if (!fromDashboard) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "false")
-    }
     this.toggleOverviewVisibility(this.dataService.conformanceStatementDetailVisibility, true)
     this.conformanceStatementDetailVisibilitySubscription = this.dataService.onConformanceStatementDetailVisibilityChange$.subscribe((visible) => {
       this.toggleOverviewVisibility(visible)
@@ -789,6 +786,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   toTestCaseHistory(testCase: ConformanceTestCase) {
+    this.routingService.recordViewReturnTarget()
     if (this.organisationId == this.dataService.vendor?.id) {
       this.routingService.toTestHistory(this.organisationId, undefined, this.systemId,  testCase.id)
     } else {
@@ -821,24 +819,15 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   back() {
-    if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
-    } else {
-      let fromDashBoard = false
-      if (sessionStorage) {
-        fromDashBoard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
-        sessionStorage.removeItem(Constants.SESSION_DATA.FROM_DASHBOARD)
-      }
-      if (fromDashBoard) {
-        let communityId: number|undefined
-        if (this.dataService.isSystemAdmin) {
-          communityId = this.communityId
-        }
-        this.routingService.toConformanceDashboard(communityId, this.organisationId, this.systemId, this.snapshotId)
+    // If we were brought here via a "View XYZ"/"View statement" navigation, return there instead of
+    // following the default hierarchical navigation below.
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.communityId == undefined) {
+        this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
       } else {
         this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
       }
-    }
+    })
   }
 
   protected calculateWrapping() {
@@ -919,6 +908,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   viewSystem() {
+    this.routingService.recordViewReturnTarget()
     if (this.organisationId == this.dataService.vendor?.id) {
       // This is the user's own organisation
       this.routingService.toOwnSystemDetails(this.systemId!)
@@ -928,6 +918,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   viewOrganisation() {
+    this.routingService.recordViewReturnTarget()
     if (this.organisationId == this.dataService.vendor?.id) {
       // This is the user's own organisation
       this.routingService.toOwnOrganisationDetails()
@@ -938,18 +929,22 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   viewCommunity() {
+    this.routingService.recordViewReturnTarget()
     this.routingService.toCommunity(this.communityIdOfStatement!)
   }
 
   viewActor() {
+    this.routingService.recordViewReturnTarget()
     this.routingService.toActor(this.domainId!, this.specId!, this.actorId!)
   }
 
   viewSpecification() {
+    this.routingService.recordViewReturnTarget()
     this.routingService.toSpecification(this.domainId!, this.specId!)
   }
 
   viewDomain() {
+    this.routingService.recordViewReturnTarget()
     this.routingService.toDomain(this.domainId!)
   }
 

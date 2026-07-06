@@ -87,6 +87,8 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   deletePending = false
   @ViewChild('form') form?: OrganisationFormComponent
   showAdminInfo!: boolean
+  showBackButton!: boolean
+  private viewReturnTarget?: string
   showLandingPage!: boolean
   showCreateUser!: boolean
   showCreateSystem!: boolean
@@ -189,6 +191,8 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     this.organisation.id = this.orgId
     this.communityId = this.getCommunityId()
     this.showAdminInfo = this.isShowAdminInfo()
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
+    this.showBackButton = this.showAdminInfo || this.viewReturnTarget != undefined
     this.showLandingPage = this.isShowLandingPage()
     this.readonly = this.isReadonly()
     this.showCreateUser = this.isShowCreateUser()
@@ -388,7 +392,9 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   }
 
   cancelDetailOrganisation() {
-    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
+    })
   }
 
   manageOrganisationTests() {

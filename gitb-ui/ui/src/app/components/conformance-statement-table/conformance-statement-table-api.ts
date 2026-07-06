@@ -14,6 +14,14 @@
  */
 
 import {Observable} from 'rxjs';
+import {PagingStatus} from '../paging-controls/paging-status';
+
+export interface ConformanceStatementTableState {
+  filters?: {[key: string]: any}
+  sortColumn: string
+  sortOrder: string
+  paging?: PagingStatus
+}
 
 export interface ConformanceStatementTableApi {
 
@@ -23,5 +31,6 @@ export interface ConformanceStatementTableApi {
   exportAsCsv: () => Observable<void>
   reloadData: () => void
   snapshotChanged: () => void
+  getCurrentState: () => ConformanceStatementTableState
 
 }

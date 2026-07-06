@@ -51,6 +51,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   testEvents: {[key: number]: DiagramEvents} = {}
   previewPending = false
   communityId?: number
+  private viewReturnTarget?: string
 
   constructor(
     public readonly dataService: DataService,
@@ -63,6 +64,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     const specificationIdParam = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID)
     if (specificationIdParam) {
@@ -116,12 +118,14 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   }
 
 	back() {
-    if (this.specificationId != undefined) {
-      this.routingService.toTestSuite(this.domainId, this.specificationId, this.testSuiteId)
-    } else {
-      // Shared test suite.
-      this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
-    }
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.specificationId != undefined) {
+        this.routingService.toTestSuite(this.domainId, this.specificationId, this.testSuiteId)
+      } else {
+        // Shared test suite.
+        this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
+      }
+    })
   }
 
 	saveDisabled() {

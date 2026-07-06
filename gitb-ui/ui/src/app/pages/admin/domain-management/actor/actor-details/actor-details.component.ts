@@ -56,6 +56,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   savePending = false
   deletePending = false
   parametersLoaded = new EventEmitter<EndpointParameter[]|undefined>()
+  private viewReturnTarget?: string
 
   constructor(
     private readonly conformanceService: ConformanceService,
@@ -75,6 +76,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
@@ -161,7 +163,9 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   back() {
-    this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
+    })
   }
 
   saveDisabled() {

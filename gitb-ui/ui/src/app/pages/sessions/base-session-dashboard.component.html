@@ -5,6 +5,7 @@
                      [initialSessionId]="sessionIdToShow"
                      [initialTestCaseId]="testCaseIdToShow"
                      [initialSystemId]="systemIdToShow"
+                     [initialFilters]="restoredFilters"
                      (onApply)="filterControlApplied()"></app-test-filter>
     @if (showActiveSessions) {
         <div class="card">

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -41,6 +41,13 @@ import {share} from 'rxjs/operators';
 import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TableApi} from '../../../../../components/table/table-api';
+import {DisplayState} from '../../../../../types/display-state';
+
+/** Persisted search/paging state for the Test cases tab - restored when returning here (e.g. via
+ * Back from a test case's detail page). */
+interface TestSuiteListState {
+  filter?: string
+}
 
 @Component({
     selector: 'app-test-suite-details',
@@ -48,7 +55,7 @@ import {TableApi} from '../../../../../components/table/table-api';
     styleUrls: ['./test-suite-details.component.less'],
     standalone: false
 })
-export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit {
+export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
   @ViewChild("linkedSpecificationsTable") linkedSpecificationsTable?: TableApi
@@ -91,6 +98,8 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 
   testCaseFilter?: string
   protected readonly PagingPlacement = PagingPlacement;
+  private viewReturnTarget?: string
+  private testCasesInitialLoadDone = false
 
   constructor(
     public readonly dataService: DataService,
@@ -105,6 +114,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   ) { super(router, route) }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     const specIdParameter = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID)
     if (specIdParameter) {
@@ -137,6 +147,17 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.testCasesInitialLoadDone) {
+      const state: DisplayState<TestSuiteListState> = {
+        key: String(this.testSuiteId),
+        state: { filter: this.testCaseFilter },
+        paging: this.pagingControls?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.TEST_SUITE_TEST_CASES, state)
+    }
+  }
+
   doTestCasePaging(event: PagingEvent) {
     this.loadTestCasesInternal(event)
     if (event.pageSizeChanged) {
@@ -162,7 +183,20 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
   private loadTestCases(): Observable<any> {
-    return this.loadTestCasesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+    if (!this.testCasesInitialLoadDone) {
+      this.testCasesInitialLoadDone = true
+      const existingState = this.getDisplayState<TestSuiteListState>(Constants.DISPLAY_STATE_KEY.TEST_SUITE_TEST_CASES, true)
+      if (existingState && existingState.key == String(this.testSuiteId)) {
+        if (existingState.state) {
+          this.testCaseFilter = existingState.state.filter
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+    }
+    return this.loadTestCasesInternal(targetPaging)
   }
 
   private loadTestCasesInternal(pagingInfo: PagingEvent): Observable<any> {
@@ -282,11 +316,13 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
 	back() {
-    if (this.specificationId) {
-      this.routingService.toSpecification(this.domainId, this.specificationId!, Constants.TAB.SPECIFICATION.TEST_SUITES)
-    } else {
-      this.routingService.toDomain(this.domainId, Constants.TAB.DOMAIN.TEST_SUITES)
-    }
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.specificationId) {
+        this.routingService.toSpecification(this.domainId, this.specificationId!, Constants.TAB.SPECIFICATION.TEST_SUITES)
+      } else {
+        this.routingService.toDomain(this.domainId, Constants.TAB.DOMAIN.TEST_SUITES)
+      }
+    })
   }
 
 	saveDisabled() {

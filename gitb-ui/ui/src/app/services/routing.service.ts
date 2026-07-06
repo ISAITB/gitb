@@ -95,12 +95,55 @@ export class RoutingService {
     }
   }
 
-  toURL(url: string): Promise<boolean> {
+  toURL(url: string, extras?: NavigationExtras): Promise<boolean> {
     this.changePageForURL(url)
-    return this.router.navigateByUrl(url).catch((error) => {
+    return this.router.navigateByUrl(url, extras).catch((error) => {
       console.error("Unable to restore view at: "+url, error.stack)
       return this.toStartPage()
     })
+  }
+
+  /**
+   * Records the current URL as the "return target" for a subsequent "View XYZ" navigation, so that
+   * the target screen's Back/Cancel control can return here (via returnToSource()) instead of
+   * following its default hierarchical navigation.
+   */
+  recordViewReturnTarget() {
+    if (sessionStorage) {
+      sessionStorage.setItem(Constants.SESSION_DATA.VIEW_RETURN, this.router.url)
+    }
+  }
+
+  /**
+   * Consumes (reads and clears) a previously recorded "View XYZ" return target. Meant to be called
+   * once, on arrival at the target screen (typically in ngOnInit, caching the result on the
+   * component), so the record only ever applies to this single navigation hop - a later Back click,
+   * or navigating away some other way (e.g. via the menu), can never pick up a stale record left over
+   * from an earlier, unrelated "View XYZ" action.
+   */
+  consumeViewReturnTarget(): string|undefined {
+    if (sessionStorage) {
+      const target = sessionStorage.getItem(Constants.SESSION_DATA.VIEW_RETURN)
+      if (target != undefined) {
+        sessionStorage.removeItem(Constants.SESSION_DATA.VIEW_RETURN)
+        return target
+      }
+    }
+    return undefined
+  }
+
+  /**
+   * Used by a target screen's Back/Cancel control together with a target previously obtained via
+   * consumeViewReturnTarget() (cached on the component from ngOnInit). Navigates back there if set,
+   * flagging the navigation (via transient router state) to let the destination restore its own
+   * saved display state, if any. Otherwise falls back to the provided default navigation.
+   */
+  returnToSource(target: string|undefined, defaultNavigation: () => void) {
+    if (target != undefined) {
+      this.toURL(target, { state: { restore: true } })
+    } else {
+      defaultNavigation()
+    }
   }
 
   toHome() {
