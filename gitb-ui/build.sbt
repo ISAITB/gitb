@@ -14,7 +14,7 @@ val mySqlConnectorVersion = "9.7.0"
 val pac4jVersion = "6.5.4"
 val nettyVersion = "4.2.15.Final"
 val pdfBoxVersion = "3.0.7"
-val jaxbVersion = "4.0.8"
+val jaxbVersion = "4.0.9"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -75,10 +75,10 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "3.3.0",
-  "org.webjars" % "jquery" % "3.7.1",
+  "org.apache.tika" % "tika-core" % "3.3.1",
+  "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.32.5",
+  "org.webjars" % "swagger-ui" % "5.32.8",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
   "org.glassfish.jaxb"  % "jaxb-runtime" % jaxbVersion,
@@ -88,18 +88,18 @@ libraryDependencies ++= Seq(
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.3",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.5", // Needed for SOAP exchanges
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.6", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
   "org.apache.pdfbox" % "pdfbox" % pdfBoxVersion,
   "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "12.6.1",
+  "org.flywaydb" % "flyway-mysql" % "12.10.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260313.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.6",
-  "com.nimbusds" % "nimbus-jose-jwt" % "10.9",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.9.1",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
-  "com.bucket4j" % "bucket4j_jdk17-core" % "8.18.0",
+  "com.bucket4j" % "bucket4j_jdk17-core" % "8.19.0",
   "com.github.ben-manes.caffeine" % "caffeine" % "3.2.4"
 )
 
