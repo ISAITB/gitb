@@ -5,7 +5,8 @@
                  [organisationId]="organisationId"
                  [snapshotId]="snapshotId"
                  [initialFilters]="initialFilters"
-                 (onApply)="getConformanceStatements()"></app-test-filter>
+                 (onApply)="getConformanceStatements()"
+                 (loadingStatus)="filterLoading.emit($event)"></app-test-filter>
 <div class="table-container rounded">
     <table class="table table-directive">
         <thead>

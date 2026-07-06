@@ -51,6 +51,10 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   @Output() exportChange = new EventEmitter<boolean>()
   @Output() searchChange = new EventEmitter<boolean>()
   @Output() communityChange = new EventEmitter<number|undefined>()
+  /** Forwards the embedded test-filter's custom-property loading status, so the external
+   * "Filter..." button can show loading feedback (the embedded filter's own header/pending
+   * icon is not rendered). */
+  @Output() filterLoading = new EventEmitter<boolean>()
   @Output() select = new EventEmitter<ConformanceResultFullWithTestSuites>
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
   @ViewChildren("testStatusDisplay") testStatusDisplay?: QueryList<TestStatusBaseApi>

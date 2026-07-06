@@ -4,7 +4,7 @@
             <div class="card-title">Conformance statements</div>
             <div class="btn-toolbar allStatementControls">
                 @if (listView) {
-                    <app-filter-control #filterControl (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
+                    <app-filter-control #filterControl [pending]="filterLoading" (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
                     @if (showExport) {
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_CSV" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
                     }
@@ -175,6 +175,7 @@
                                              (communityChange)="listViewCommunityChange($event)"
                                              (searchChange)="listViewSearching($event)"
                                              (exportChange)="listViewExportChange($event)"
+                                             (filterLoading)="onFilterLoading($event)"
                                              (select)="onStatementSelectFromListView($event)"></app-conformance-statement-table>
         }
     </div>

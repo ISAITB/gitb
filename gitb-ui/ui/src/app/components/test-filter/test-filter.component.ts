@@ -83,6 +83,11 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
   @Input() loadSystemPropertiesFn?: (_: number) => Observable<SystemParameter[]>
 
   @Output() onApply = new EventEmitter<any>()
+  /** Emitted while the organisation/system custom properties (needed before the panel can
+   * expand) are being loaded - lets an embedding parent (e.g. the conformance dashboard's
+   * external "Filter..." button) show its own loading feedback, given that in embedded mode
+   * this component's own header (and pending icon) isn't rendered. */
+  @Output() loadingStatus = new EventEmitter<boolean>()
 
   @ViewChild("commentFilter") commentFilterComponent?: TextFilterComponentApi
 
@@ -509,8 +514,9 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
     } else {
       this.applicableCommunityId = undefined
     }
+    this.loadingStatus.emit(true)
     this.resetCustomProperties().subscribe(() => {
-      this.initialised = true
+      this.completeInitialisation()
     })
     if (update.applyFilters) {
       this.applyFilters()
@@ -694,14 +700,39 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
 
   clickedHeader() {
     this.showFiltering = !this.showFiltering
-    if (this.showFiltering) {
+    if (this.showFiltering && this.initialised) {
+      // Already loaded - the panel expands right away, so drop the header's "collapsed"
+      // (rounded-corner) styling in step with it. If not yet initialised, this is instead
+      // done from completeInitialisation() once the panel is actually about to expand -
+      // see the comment there for why this must not happen earlier.
       this.toggleFilterCollapsedFinished(false)
     }
     if (!this.initialised) {
+      this.loadingStatus.emit(true)
       this.resetCustomProperties().subscribe(() => {
-        this.initialised = true
+        this.completeInitialisation()
       })
     }
+  }
+
+  /** Marks the panel as ready to expand, deferred to a follow-up macrotask so that the
+   * organisation/system property fields (whose visibility is set by resetCustomProperties(),
+   * just completed) have already rendered into the still-collapsed panel on this tick.
+   * Flipping "initialised" (and so [ngbCollapse]) in the same cycle as their first render
+   * makes ngbCollapse measure a stale (too short) target height, so the fields pop in
+   * mid-animation instead of the panel expanding in one smooth motion. The header's
+   * "collapsed" styling (filterCollapsedFinished) must flip in this same step rather than
+   * immediately on click - otherwise the header's rounded corners change well before the
+   * panel actually starts expanding, which is its own visible pop disconnected from the
+   * expand animation. */
+  private completeInitialisation() {
+    setTimeout(() => {
+      this.initialised = true
+      this.loadingStatus.emit(false)
+      if (this.showFiltering) {
+        this.toggleFilterCollapsedFinished(false)
+      }
+    })
   }
 
   private resetCustomProperties(): Observable<boolean> {

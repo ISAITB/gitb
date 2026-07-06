@@ -26,6 +26,10 @@ export class FilterControlComponent implements FilterControlApi {
 
   @Input() showRefresh = true
   @Input() showClear = true
+  /** Whether the filter data backing the panel (e.g. custom properties) is still loading -
+   * shows a spinner in place of the filter icon on the main toggle button, matching other
+   * buttons' [pending] behaviour. */
+  @Input() pending = false
   @Output() toggle = new EventEmitter<boolean>();
   @Output() refresh = new EventEmitter<void>();
   @Output() clear = new EventEmitter<void>();

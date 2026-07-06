@@ -90,6 +90,10 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   showExport = false
   updatePending = false
   exportPending = false
+  /** Whether the list view's embedded filter is still loading its organisation/system custom
+   * properties - bound to the external "Filter..." button's [pending] so the filter icon
+   * turns into a spinner (the embedded filter's own header/pending icon isn't rendered). */
+  filterLoading = false
   organisationId?: number
   communityId?: number
   listView = false
@@ -199,6 +203,12 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   listViewSearching(pending: boolean) {
     setTimeout(() => {
       this.updatePending = pending
+    })
+  }
+
+  onFilterLoading(pending: boolean) {
+    setTimeout(() => {
+      this.filterLoading = pending
     })
   }
 
