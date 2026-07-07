@@ -151,6 +151,7 @@ GET     /api/testcases/:id/documentation        @controllers.ConformanceService.
 GET     /api/testsuites/:id/documentation       @controllers.ConformanceService.getTestSuiteDocumentation(id : Long)
 POST    /api/testdocumentation/                 @controllers.ConformanceService.getDocumentationForPreview()
 POST    /api/testdocumentation/previewreport    @controllers.TestSuiteService.previewTestCaseDocumentationInReports()
+POST    /api/testdocumentation/previewreport/testsuite @controllers.TestSuiteService.previewTestSuiteDocumentationInReports()
 GET     /api/actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
 POST    /api/endpoints                          @controllers.ConformanceService.createEndpoint()
 DELETE  /api/endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)
@@ -395,6 +396,8 @@ DELETE  /api/community/:community_id/keystore             @controllers.Conforman
 
 # Repository file serving and management API
 GET     /api/repository/tests/:test_id/definition                @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
+GET     /api/repository/testcase/:test_case_id/documentation/report   @controllers.RepositoryService.exportTestCaseDocumentationReport(test_case_id: Long)
+GET     /api/repository/testsuite/:test_suite_id/documentation/report @controllers.RepositoryService.exportTestSuiteDocumentationReport(test_suite_id: Long)
 GET     /api/repository/reports/teststep/:session_id/*file       @controllers.RepositoryService.getTestStepReport(session_id: String, file)
 GET     /api/repository/reports/testdata/:session_id/:data_id    @controllers.RepositoryService.getTestStepReportData(session_id: String, data_id: String)
 GET     /api/repository/reports/testdataurl/:session_id/:data_id @controllers.RepositoryService.getTestStepReportDataAsDataUrl(session_id: String, data_id: String)

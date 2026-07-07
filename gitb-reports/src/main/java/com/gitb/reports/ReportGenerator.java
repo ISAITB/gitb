@@ -492,11 +492,12 @@ public class ReportGenerator {
         }
     }
 
-    public void writeTestCaseDocumentationPreviewReport(String documentation, OutputStream outputStream, ReportSpecs specs) {
+    public void writeHtmlReport(String documentation, String title, OutputStream outputStream, ReportSpecs specs) {
         try {
             Map<String, Object> parameters = new HashMap<>();
+            parameters.put("title", title);
             parameters.put("documentation", documentation);
-            writeClasspathReport("reports/TestCaseDocumentationPreview.ftl", parameters, outputStream, specs);
+            writeClasspathReport("reports/HtmlReport.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

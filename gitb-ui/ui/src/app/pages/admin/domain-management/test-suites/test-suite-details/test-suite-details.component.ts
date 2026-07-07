@@ -20,6 +20,7 @@ import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.se
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {TestSuiteService} from 'src/app/services/test-suite.service';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
@@ -75,6 +76,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   savePending = false
   deletePending = false
   downloadPending = false
+  previewPending = false
   selectingForUnlink = false
   unlinkPending = false
   linkPending = false
@@ -106,6 +108,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     private readonly routingService: RoutingService,
     private readonly testSuiteService: TestSuiteService,
     private readonly popupService: PopupService,
+    private readonly reportService: ReportService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: NgbModal,
@@ -277,6 +280,17 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 			saveAs(blobData, "test_suite.zip")
     }).add(() => {
       this.downloadPending = false
+    })
+  }
+
+	previewDocumentationPdf() {
+    this.previewPending = true
+		this.reportService.exportTestSuiteDocumentationPreviewReport(this.testSuite.documentation!)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/pdf'});
+      saveAs(blobData, "report_preview.pdf");
+    }).add(() => {
+      this.previewPending = false
     })
   }
 

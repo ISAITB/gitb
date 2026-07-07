@@ -877,11 +877,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     finalPdfPath
   }
 
-  def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+  private def generateHtmlDocumentationReport(reportPath: Path, communityId: Long, documentation: String, title: String): Path = {
     Files.createDirectories(reportPath.getParent)
     val fos = Files.newOutputStream(reportPath)
     try {
-      ReportGenerator.getInstance().writeTestCaseDocumentationPreviewReport(documentation, fos, reportHelper.createReportSpecs(Some(communityId)))
+      ReportGenerator.getInstance().writeHtmlReport(documentation, title, fos, reportHelper.createReportSpecs(Some(communityId)))
       fos.flush()
     } catch {
       case e: Exception =>
@@ -890,6 +890,22 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       if (fos != null) fos.close()
     }
     reportPath
+  }
+
+  def generateTestCaseDocumentationReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test case documentation")
+  }
+
+  def generateTestSuiteDocumentationReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test suite documentation")
+  }
+
+  def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    generateTestCaseDocumentationReport(reportPath, communityId, documentation)
+  }
+
+  def generateTestSuiteDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    generateTestSuiteDocumentationReport(reportPath, communityId, documentation)
   }
 
   private def getConformanceDataForOverviewReport(conformanceInfoBuilder: ConformanceStatusBuilder[ConformanceStatementFull], reportLevel: OverviewLevelType, communityId: Long, actorIdsToDisplay: Option[Set[Long]], snapshotId: Option[Long]): Future[ConformanceData] = {

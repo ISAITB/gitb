@@ -54,8 +54,10 @@
 				<app-documentation-form [(documentation)]="testSuite.documentation"
                                         [communityId]="communityId"
                                         [showPreviewAndCopy]="true"
+                                        [showPdfPreview]="true"
                                         previewTitle="Test suite documentation"
-                                        tooltipText="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources."></app-documentation-form>
+                                        tooltipText="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources."
+                                        (previewPdf)="previewDocumentationPdf()"></app-documentation-form>
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">

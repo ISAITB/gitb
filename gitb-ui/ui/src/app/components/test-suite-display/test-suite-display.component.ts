@@ -14,12 +14,15 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {tap} from 'rxjs';
+import {saveAs} from 'file-saver';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestSuite} from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
 import {HtmlService} from 'src/app/services/html.service';
+import {ReportService} from 'src/app/services/report.service';
 import {TestSuiteDisplayComponentApi} from './test-suite-display-component-api';
 import {TestCaseDisplayComponentApi} from '../test-case-display/test-case-display-component-api';
 
@@ -56,6 +59,7 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
   constructor(
     private readonly conformanceService: ConformanceService,
     private readonly htmlService: HtmlService,
+    private readonly reportService: ReportService,
     public readonly dataService: DataService
   ) { }
 
@@ -133,7 +137,14 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
     this.dataService.setImplicitCommunity(this.communityId)
     this.conformanceService.getTestSuiteDocumentation(testSuite.id)
     .subscribe((data) => {
-      this.htmlService.showHtml("Test suite documentation", data)
+      this.htmlService.showHtml("Test suite documentation", data, undefined, () => {
+        return this.reportService.exportTestSuiteDocumentationReport(testSuite.id).pipe(
+          tap((pdfData) => {
+            const blobData = new Blob([pdfData], {type: 'application/pdf'});
+            saveAs(blobData, "test_suite_documentation.pdf");
+          })
+        )
+      })
     }).add(() => {
       this.viewDocumentationPending[testSuite.id] = false
     })

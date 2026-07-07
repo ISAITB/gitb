@@ -14,7 +14,7 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {of} from 'rxjs';
+import {of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
 import {ReportService} from 'src/app/services/report.service';
@@ -176,7 +176,14 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     this.dataService.setImplicitCommunity(this.communityId)
     this.conformanceService.getTestCaseDocumentation(testCase.id)
     .subscribe((data) => {
-      this.htmlService.showHtml("Test case documentation", data)
+      this.htmlService.showHtml("Test case documentation", data, undefined, () => {
+        return this.reportService.exportTestCaseDocumentationReport(testCase.id).pipe(
+          tap((pdfData) => {
+            const blobData = new Blob([pdfData], {type: 'application/pdf'});
+            saveAs(blobData, "test_case_documentation.pdf");
+          })
+        )
+      })
     }).add(() => {
       this.viewDocumentationPending[testCase.id] = false
     })

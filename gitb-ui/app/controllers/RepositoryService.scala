@@ -1084,6 +1084,64 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     }
 	}
 
+  def exportTestCaseDocumentationReport(testCaseId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestCase(request, testCaseId.toString).flatMap { _ =>
+      testCaseManager.getTestCaseDocumentation(testCaseId).flatMap { documentation =>
+        if (documentation.isDefined) {
+          val userId = ParameterExtractor.extractUserId(request)
+          communityManager.getUserCommunityId(userId).map { communityId =>
+            val reportPath = getReportTempFile(".pdf")
+            try {
+              reportManager.generateTestCaseDocumentationReport(reportPath, communityId, documentation.get)
+              Ok.sendFile(
+                content = reportPath.toFile,
+                fileName = _ => Some("documentation.pdf"),
+                onClose = () => {
+                  FileUtils.deleteQuietly(reportPath.toFile)
+                }
+              )
+            } catch {
+              case e: Exception =>
+                FileUtils.deleteQuietly(reportPath.toFile)
+                throw e
+            }
+          }
+        } else {
+          Future.successful(NotFound)
+        }
+      }
+    }
+  }
+
+  def exportTestSuiteDocumentationReport(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestSuite(request, testSuiteId).flatMap { _ =>
+      testSuiteManager.getTestSuiteDocumentation(testSuiteId).flatMap { documentation =>
+        if (documentation.isDefined) {
+          val userId = ParameterExtractor.extractUserId(request)
+          communityManager.getUserCommunityId(userId).map { communityId =>
+            val reportPath = getReportTempFile(".pdf")
+            try {
+              reportManager.generateTestSuiteDocumentationReport(reportPath, communityId, documentation.get)
+              Ok.sendFile(
+                content = reportPath.toFile,
+                fileName = _ => Some("documentation.pdf"),
+                onClose = () => {
+                  FileUtils.deleteQuietly(reportPath.toFile)
+                }
+              )
+            } catch {
+              case e: Exception =>
+                FileUtils.deleteQuietly(reportPath.toFile)
+                throw e
+            }
+          }
+        } else {
+          Future.successful(NotFound)
+        }
+      }
+    }
+  }
+
   def searchTestCases(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewAllTestCases(request).flatMap { _ =>
       val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.DOMAIN_IDS)

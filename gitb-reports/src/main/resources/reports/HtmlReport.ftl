@@ -6,7 +6,7 @@
 	    </style>
     </head>
     <body>
-        <div class="title">Test case documentation</div>
+        <div class="title">${title}</div>
         <div class="documentation-content">
             ${documentation}
         </div>

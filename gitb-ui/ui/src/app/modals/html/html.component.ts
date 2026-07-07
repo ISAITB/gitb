@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, EventEmitter, Output} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
@@ -27,6 +27,9 @@ export class HtmlComponent {
 
   headerText?: string
   html: string = ''
+  showDownload = false
+  downloadPending = false
+  @Output() download = new EventEmitter<void>()
 
   constructor(
     public readonly modalRef: NgbActiveModal

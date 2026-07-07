@@ -631,6 +631,33 @@ export class ReportService {
     }))
   }
 
+  exportTestSuiteDocumentationPreviewReport(documentation: string) {
+    return this.restService.post<ArrayBuffer>(({
+      path: ROUTES.controllers.TestSuiteService.previewTestSuiteDocumentationInReports().url,
+      data: {
+        documentation: documentation
+      },
+      authenticate: true,
+      arrayBuffer: true
+    }))
+  }
+
+  exportTestCaseDocumentationReport(testCaseId: number) {
+    return this.restService.get<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportTestCaseDocumentationReport(testCaseId).url,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportTestSuiteDocumentationReport(testSuiteId: number) {
+    return this.restService.get<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportTestSuiteDocumentationReport(testSuiteId).url,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
   exportConformanceOverviewReportInXML(communityId: number, systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, snapshotId: number|undefined) {
     let data:any = {
       community_id: communityId,
