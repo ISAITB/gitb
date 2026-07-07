@@ -862,6 +862,12 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
+  toggleTestCaseExpand(expand: boolean) {
+    this.testSuiteDisplayComponents?.forEach((component) => {
+      component.expandAll(expand)
+    })
+  }
+
   headerClicked() {
     if (this.clickableDetails) {
       this.dataService.setConformanceStatementDetailVisibility(this.collapsedDetails)

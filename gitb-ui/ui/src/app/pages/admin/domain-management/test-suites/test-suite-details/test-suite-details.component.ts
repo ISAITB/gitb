@@ -478,6 +478,12 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     this.loadTestCases()
   }
 
+  toggleTestCaseExpand(expand: boolean) {
+    this.testCaseDisplayComponents?.forEach((component) => {
+      component.expandAll(expand)
+    })
+  }
+
   @HostListener('document:click', ['$event'])
   clickRegistered(event: Event) {
     this.testCaseDisplayComponents?.forEach((item) => item.documentClick(event))

@@ -99,6 +99,23 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
     this.toggleExpand.emit(testSuite.expanded)
   }
 
+  expandAll(expand: boolean) {
+    this.animated = false
+    setTimeout(() => {
+      if (expand && this.testSuites) {
+        for (let testSuite of this.testSuites) {
+          testSuite.expanded = true
+        }
+      }
+      this.testCaseDisplayComponents?.forEach((testCaseDisplayComponent) => {
+        testCaseDisplayComponent.expandAll(expand)
+      })
+      setTimeout(() => {
+        this.animated = true
+      })
+    })
+  }
+
   propagateViewTestSessions(testCase: ConformanceTestCase) {
     this.viewTestSessions.emit(testCase)
   }

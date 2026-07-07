@@ -240,6 +240,16 @@
                                 }
                                 <app-test-case-filter #testCaseResultFilter [options]="testCaseSearchCriteria.testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
                                 <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search tests...'" [(ngModel)]="testCaseSearchCriteria.testCaseFilterText" (apply)="applySearchFilters()"></app-text-filter>
+                                <div class="btn-group collapse-group" ngbDropdown>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPAND" [disable]="displayedTestSuites.length == 0" class="btn btn-secondary" (click)="toggleTestCaseExpand(true)">Expand tests</button>
+                                    <button id="button-expand-tests" type="button" [disabled]="displayedTestSuites.length == 0" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                        <span class="caret"></span>
+                                        <span class="sr-only visually-hidden">Expand tests</span>
+                                    </button>
+                                    <div id="dropdown-expand-tests" ngbDropdownMenu aria-labelledby="button-expand-tests">
+                                        <button ngbDropdownItem type="button" (click)="toggleTestCaseExpand(false)">Collapse tests</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         @if (!isReadonly) {

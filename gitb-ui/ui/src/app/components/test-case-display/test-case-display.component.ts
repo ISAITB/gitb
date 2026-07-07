@@ -248,6 +248,21 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     this.statusCloseEmitter.emit({})
   }
 
+  expandAll(expand: boolean) {
+    this.animated = false
+    setTimeout(() => {
+      for (let testCase of this.testCases) {
+        if (this.hasDescription[testCase.id]) {
+          this.descriptionVisible[testCase.id] = expand
+        }
+      }
+      this.statusCloseEmitter.emit({})
+      setTimeout(() => {
+        this.animated = true
+      })
+    })
+  }
+
   statusPopupOpened(openedTestCaseId: number) {
     this.statusCloseEmitter.emit({idToSkip: openedTestCaseId})
   }

@@ -90,6 +90,16 @@
                             <div class="tabControls">
                                 <div class="btn-toolbar">
                                     <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilter()"></app-text-filter>
+                                    <div class="btn-group collapse-group" ngbDropdown>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPAND" [disable]="!testCasesToShow || testCasesToShow.length == 0" class="btn btn-secondary" (click)="toggleTestCaseExpand(true)">Expand tests</button>
+                                        <button id="button-expand-tests" type="button" [disabled]="!testCasesToShow || testCasesToShow.length == 0" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Expand tests</span>
+                                        </button>
+                                        <div id="dropdown-expand-tests" ngbDropdownMenu aria-labelledby="button-expand-tests">
+                                            <button ngbDropdownItem type="button" (click)="toggleTestCaseExpand(false)">Collapse tests</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             @if (testCasesToShow && testCasesToShow.length > 0) {
