@@ -681,4 +681,20 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
         <cve>CVE-2026-50229</cve>
     </suppress>
+    <suppress>
+        <!-- Used only in deprecated HTTP messaging handler. Needs to be used in admin-included test cases. -->
+        <notes><![CDATA[
+    file name: httpcore-4.4.16.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.httpcomponents/.*@.*$</packageUrl>
+        <cve>CVE-2026-54399</cve>
+    </suppress>
+    <suppress>
+        <!-- Used only in deprecated HTTP messaging handler. Needs to be used in admin-included test cases. -->
+        <notes><![CDATA[
+    file name: httpcore-4.4.16.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.httpcomponents/.*@.*$</packageUrl>
+        <cve>CVE-2026-54428</cve>
+    </suppress>
 </suppressions>
