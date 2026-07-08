@@ -891,11 +891,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   }
 
   def generateTestCaseDocumentationReport(reportPath: Path, communityId: Long, documentation: String): Path = {
-    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test case documentation")
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Case Documentation")
   }
 
   def generateTestSuiteDocumentationReport(reportPath: Path, communityId: Long, documentation: String): Path = {
-    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test suite documentation")
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Suite Documentation")
   }
 
   def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
