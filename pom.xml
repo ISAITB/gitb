@@ -86,7 +86,7 @@
         <version.json-schema-validator>3.0.6</version.json-schema-validator>
         <version.jayway>3.0.0</version.jayway>
         <version.jackson>3.2.0</version.jackson>
-        <version.jackson2>2.22.0</version.jackson2> <!-- Used for libraries that have not upgraded to Jackson 3 (the package is different so no conflicts) -->
+        <version.jackson2>2.22.1</version.jackson2> <!-- Used for libraries that have not upgraded to Jackson 3 (the package is different so no conflicts) -->
         <version.jacksonAnnotations>2.22</version.jacksonAnnotations>
         <version.pdfbox>3.0.7</version.pdfbox>
         <version.swaggerUi>5.32.8</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
