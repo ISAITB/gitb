@@ -43,7 +43,6 @@
         <version.helgerSchematron>9.2.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.2.2</version.cxf>
-        <version.httpComponents>4.5.14</version.httpComponents>
         <version.commonsCodec>1.22.0</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.22.0</version.commonsIo>
@@ -399,16 +398,6 @@
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-frontend-jaxws</artifactId>
                 <version>${version.cxf}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${version.httpComponents}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpmime</artifactId>
-                <version>${version.httpComponents}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>

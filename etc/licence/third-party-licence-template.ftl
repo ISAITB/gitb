@@ -5414,32 +5414,6 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 ```
 
-### Apache HttpClient (org.apache.httpcomponents.client5.*)
-
-```
-Apache HttpComponents Client
-Copyright 1999-2025 The Apache Software Foundation
-
-This product includes software developed at
-The Apache Software Foundation (http://www.apache.org/).
-
-This product includes a copy of in https://publicsuffix.org/list/effective_tld_names.dat
-in httpclient5/src/test/resources/org/publicsuffix/list/effective_tld_names.dat
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
-```
-
-### Apache HttpCore / Apache HttpComponents Core (org.apache.httpcomponents.*)
-
-```
-Apache HttpComponents Core
-Copyright 2005-2024 The Apache Software Foundation
-
-This product includes software developed at
-The Apache Software Foundation (http://www.apache.org/).
-```
-
 ### Apache Jena (org.apache.jena.*)
 
 ```
