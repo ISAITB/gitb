@@ -897,7 +897,15 @@ object JsonUtil {
     json
   }
 
-  def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
+  def jsCommunityInfoForLogin(communityInfo: CommunityInfoForLogin): JsObject = {
+    var json = serializeCommunity(communityInfo.community, Some(communityInfo.labels), includeAdminInfo = false)
+    if (communityInfo.statementDocumentationReportEnabled) {
+      json = json.+("statementDocumentationReportEnabled" -> JsBoolean(communityInfo.statementDocumentationReportEnabled))
+    }
+    json
+  }
+
+  def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean): JsObject = {
     var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo, community.defaultSelfRegOrganisation)
     if (community.domain.isDefined){
       jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false, withTags = false))
@@ -910,7 +918,7 @@ object JsonUtil {
     if (labels.isDefined) {
       jCommunity = jCommunity ++ Json.obj("labels" -> jsCommunityLabels(labels.get))
     }
-    jCommunity.toString
+    jCommunity
   }
 
   /**
@@ -2992,6 +3000,33 @@ object JsonUtil {
     var jErrorTemplate: JsObject = jsExists(errorTemplate.isDefined)
     errorTemplate.foreach(x => jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(x.toErrorTemplate()))
     jErrorTemplate.toString
+  }
+
+  def jsConformanceStatementDocumentationReportSettings(settings: ConformanceStatementDocumentationReportSettings): JsObject = {
+    Json.obj(
+      "enabled" -> settings.enabled,
+      "includeOverview" -> settings.includeOverview,
+      "includeStatementDocumentation" -> settings.includeStatementDocumentation,
+      "includeTestCaseListing" -> settings.includeTestCaseListing,
+      "includeTestSuiteDocumentation" -> settings.includeTestSuiteDocumentation,
+      "includeTestCaseDocumentation" -> settings.includeTestCaseDocumentation,
+      "includeSignature" -> settings.includeSignature
+    )
+  }
+
+  def parseJsConformanceStatementDocumentationReportSettings(json: String, communityId: Long): ConformanceStatementDocumentationReportSettings = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceStatementDocumentationReportSettings(
+      0L,
+      (jsonConfig \ "enabled").as[Boolean],
+      (jsonConfig \ "includeOverview").as[Boolean],
+      (jsonConfig \ "includeStatementDocumentation").as[Boolean],
+      (jsonConfig \ "includeTestCaseListing").as[Boolean],
+      (jsonConfig \ "includeTestSuiteDocumentation").as[Boolean],
+      (jsonConfig \ "includeTestCaseDocumentation").as[Boolean],
+      (jsonConfig \ "includeSignature").as[Boolean],
+      communityId
+    )
   }
 
   def jsReportSettings(settings: CommunityReportSettings, stylesheetExists: Boolean): JsObject = {

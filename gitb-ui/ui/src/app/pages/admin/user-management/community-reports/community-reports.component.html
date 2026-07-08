@@ -70,6 +70,22 @@
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
+                <!-- Conformance statement documentation report -->
+                <app-configuration-entry
+                    configTitle="Conformance statement documentation"
+                    configDescription="Report summarising all documentation linked to a specific conformance statement."
+                    [(status)]="conformanceStatementDocumentationReportSettings.status"
+                    (beforeExpand)="conformanceStatementDocumentationReportSettings.setExpanding()"
+                    (afterExpand)="conformanceStatementDocumentationReportSettings.setExpanded()">
+                    <app-conformance-statement-documentation-report-form
+                        [communityId]="communityId"
+                        [selected]="conformanceStatementDocumentationReportSettings.expanding"
+                        [expanded]="conformanceStatementDocumentationReportSettings.expanded"
+                        (loaded)="conformanceStatementDocumentationReportSettings.setLoaded()"
+                        (collapse)="conformanceStatementDocumentationReportSettings.setCollapsed()"></app-conformance-statement-documentation-report-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
                 <!-- Test case report -->
                 <app-configuration-entry
                     configTitle="Test case report"

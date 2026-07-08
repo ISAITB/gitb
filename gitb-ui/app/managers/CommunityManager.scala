@@ -322,19 +322,31 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   /**
-    * Gets the user community
+    * Gets the user community information for login
     */
-  def getUserCommunity(userId: Long): Future[Community] = {
-    DB.run(PersistenceSchema.users
-      .join(PersistenceSchema.organizations).on(_.organization === _.id)
-      .join(PersistenceSchema.communities).on(_._2.community === _.id)
-      .joinLeft(PersistenceSchema.domains).on(_._2.domain === _.id)
-      .filter(_._1._1._1.id === userId)
-      .map(x => (x._2, x._1._2))
-      .result
-      .head
-    ).map { result =>
-      new Community(result._2, result._1, None)
+  def getCommunityInfoForLogin(userId: Long): Future[CommunityInfoForLogin] = {
+    DB.run {
+      for {
+        // Community and domain
+        community <- PersistenceSchema.users
+          .join(PersistenceSchema.organizations).on(_.organization === _.id)
+          .join(PersistenceSchema.communities).on(_._2.community === _.id)
+          .joinLeft(PersistenceSchema.domains).on(_._2.domain === _.id)
+          .filter(_._1._1._1.id === userId)
+          .map(x => (x._2, x._1._2))
+          .result
+          .head
+          .map(result => new Community(result._2, result._1, None))
+        // Labels
+        labels <- getCommunityLabelsInternal(community.id).map(_.toList)
+        // Report settings
+        statementDocumentationReportEnabled <- PersistenceSchema.conformanceStatementDocumentationReportSettings
+          .filter(_.community === community.id)
+          .map(_.enabled)
+          .result
+          .headOption
+          .map(_.getOrElse(false))
+      } yield CommunityInfoForLogin(community, labels, statementDocumentationReportEnabled)
     }
   }
 
@@ -779,11 +791,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- testResultManager.updateForDeletedCommunity(communityId)
       _ <- deleteConformanceCertificateSettings(communityId)
       _ <- deleteConformanceOverviewCertificateSettings(communityId)
+      _ <- deleteConformanceStatementDocumentationReportSettings(communityId)
       _ <- deleteOrganisationParametersByCommunity(communityId)
       _ <- deleteSystemParametersByCommunity(communityId)
       _ <- communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls)
       _ <- deleteCommunityKeystoreInternal(communityId)
       _ <- deleteCommunityReportStylesheets(communityId, onSuccessCalls)
+      _ <- PersistenceSchema.communityReportSettings.filter(_.community === communityId).delete
       _ <- PersistenceSchema.communityLabels.filter(_.community === communityId).delete
       _ <- PersistenceSchema.userPreferenceDefaults.filter(_.community === communityId).delete
       _ <- PersistenceSchema.communities.filter(_.id === communityId).delete
@@ -1580,6 +1594,34 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def deleteConformanceCertificateSettings(communityId: Long): DBIO[_] = {
     PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
+  }
+
+  def conformanceStatementDocumentationReportEnabled(communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.conformanceStatementDocumentationReportSettings
+        .filter(_.community === communityId)
+        .map(_.enabled)
+        .result
+        .headOption
+    ).map(_.getOrElse(false))
+  }
+
+  def getConformanceStatementDocumentationReportSettingsWrapper(communityId: Long, defaultIfMissing: Boolean): Future[Option[ConformanceStatementDocumentationReportSettings]] = {
+    DB.run(PersistenceSchema.conformanceStatementDocumentationReportSettings.filter(_.community === communityId).result.headOption).map { settings =>
+      if (settings.isEmpty && defaultIfMissing) {
+        Some(ConformanceStatementDocumentationReportSettings(
+          id = 0L, enabled = false, includeOverview = true, includeStatementDocumentation = true,
+          includeTestCaseListing = true, includeTestSuiteDocumentation = true, includeTestCaseDocumentation = true,
+          includeSignature = false, community = communityId
+        ))
+      } else {
+        settings
+      }
+    }
+  }
+
+  def deleteConformanceStatementDocumentationReportSettings(communityId: Long): DBIO[_] = {
+    PersistenceSchema.conformanceStatementDocumentationReportSettings.filter(_.community === communityId).delete
   }
 
   def deleteConformanceOverviewCertificateSettings(communityId: Long): DBIO[_] = {

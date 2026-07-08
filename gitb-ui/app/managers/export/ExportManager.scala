@@ -993,6 +993,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           () => communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false, None))
         val fOverviewCertificateSettings = loadIfApplicable(exportSettings.certificateSettings,
           () => communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = false, None, None, None))
+        val fStatementDocumentationReportSettings = loadIfApplicable(exportSettings.certificateSettings,
+          () => communityManager.getConformanceStatementDocumentationReportSettingsWrapper(communityId, defaultIfMissing = false))
         val fKeystore = loadIfApplicable(exportSettings.certificateSettings,
           () => communityManager.getCommunityKeystore(communityId, decryptKeys = false))
         val fReportSettings = loadIfApplicable(exportSettings.certificateSettings,
@@ -1036,6 +1038,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           administrators                <- fAdministrators
           statementCertificateSettings  <- fStatementCertificateSettings
           overviewCertificateSettings   <- fOverviewCertificateSettings
+          statementDocumentationReportSettings <- fStatementDocumentationReportSettings
           keystore                      <- fKeystore
           reportSettings                <- fReportSettings
           organisationProperties        <- fOrganisationProperties
@@ -1062,6 +1065,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           administrators                = administrators,
           statementCertificateSettings  = statementCertificateSettings,
           overviewCertificateSettings   = overviewCertificateSettings,
+          statementDocumentationReportSettings = statementDocumentationReportSettings,
           keystore                      = keystore,
           reportSettings                = reportSettings,
           organisationProperties        = organisationProperties,
@@ -1398,7 +1402,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             communityData.getConformanceOverviewCertificateSettings.setTitle(certificateOverviewSettings.get.settings.title.orNull)
             // Messages.
             if (certificateOverviewSettings.get.messages.nonEmpty) {
-              communityData.getConformanceOverviewCertificateSettings.setMessages(new ConformanceOverviewCertificateMessages)
+              val messages = new ConformanceOverviewCertificateMessages
               certificateOverviewSettings.get.messages.foreach { message =>
                 val exportedMessage = new com.gitb.xml.export.ConformanceOverviewCertificateMessage
                 exportedMessage.setMessage(message.message)
@@ -1439,10 +1443,25 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                     }
                 }
                 if (includeInExport) {
-                  communityData.getConformanceOverviewCertificateSettings.getMessages.getMessage.add(exportedMessage)
+                  messages.getMessage.add(exportedMessage)
                 }
               }
+              if (!messages.getMessage.isEmpty) {
+                communityData.getConformanceOverviewCertificateSettings.setMessages(new ConformanceOverviewCertificateMessages)
+              }
             }
+          }
+          // Conformance statement documentation report.
+          val statementDocumentationReportSettings = data.statementDocumentationReportSettings.get
+          if (statementDocumentationReportSettings.isDefined) {
+            communityData.setConformanceStatementDocumentationReportSettings(new com.gitb.xml.export.ConformanceStatementDocumentationReportSettings)
+            communityData.getConformanceStatementDocumentationReportSettings.setEnabled(statementDocumentationReportSettings.get.enabled)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddOverview(statementDocumentationReportSettings.get.includeOverview)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddStatementDocumentation(statementDocumentationReportSettings.get.includeStatementDocumentation)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddTestCaseListing(statementDocumentationReportSettings.get.includeTestCaseListing)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddTestSuiteDocumentation(statementDocumentationReportSettings.get.includeTestSuiteDocumentation)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddTestCaseDocumentation(statementDocumentationReportSettings.get.includeTestCaseDocumentation)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddSignature(statementDocumentationReportSettings.get.includeSignature)
           }
           // Signature settings.
           val keystore = data.keystore.get
@@ -1467,6 +1486,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceStatementReport, communityData.getReportStylesheets)
             addCommunityStylesheetToExport(communityId, models.Enums.ReportType.TestCaseReport, communityData.getReportStylesheets)
             addCommunityStylesheetToExport(communityId, models.Enums.ReportType.TestStepReport, communityData.getReportStylesheets)
+            addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceStatementDocumentationReport, communityData.getReportStylesheets)
           }
           // Report settings.
           val reportSettings = data.reportSettings.get
@@ -1877,6 +1897,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       case models.Enums.ReportType.TestStepReport => com.gitb.xml.export.ReportType.TEST_STEP
       case models.Enums.ReportType.ConformanceOverviewCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE
       case models.Enums.ReportType.ConformanceStatementCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_CERTIFICATE
+      case models.Enums.ReportType.ConformanceStatementDocumentationReport => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_DOCUMENTATION
       case _ => throw new IllegalArgumentException("Unknown report type %s".formatted(reportType.id))
     }
   }

@@ -37,6 +37,12 @@
                                         <div class="option-label">Download conformance certificate</div>
                                     </button>
                                 }
+                                @if (documentationReportEnabled) {
+                                    <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceStatementDocumentation()">
+                                        <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.REPORT_PDF"></i></span></div>
+                                        <div class="option-label">Download documentation report</div>
+                                    </button>
+                                }
                                 @if (hasBadge) {
                                     <div class="divider dropdown-divider"></div>
                                     <button ngbDropdownItem class="option-button" type="button" (click)="copyBadgeURL()">
@@ -179,7 +185,7 @@
 			</div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
+                    @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true || (allTestsSuccessful && dataService.community!.allowCertificateDownload) || documentationReportEnabled) {
                         <div class="btn-group" ngbDropdown>
                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
                             <button id="button-export" type="button" [disabled]="exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
@@ -192,6 +198,9 @@
                                 }
                                 @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
                                     <button ngbDropdownItem type="button" (click)="onExportConformanceCertificate()">Download conformance certificate</button>
+                                }
+                                @if (documentationReportEnabled) {
+                                    <button ngbDropdownItem type="button" (click)="onExportConformanceStatementDocumentation()">Download documentation report</button>
                                 }
                             </div>
                         </div>

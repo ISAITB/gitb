@@ -55,7 +55,6 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
                                    testSuiteManager: TestSuiteManager,
                                    reportManager: ReportManager,
                                    testResultManager: TestResultManager,
-                                   testExecutionManager: TestExecutionManager,
                                    conformanceManager: ConformanceManager,
                                    authorizationManager: AuthorizationManager,
                                    communityLabelManager: CommunityLabelManager,
@@ -596,6 +595,29 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     } yield result
   }
 
+  def exportConformanceStatementDocumentationReport(): Action[AnyContent] = authorizedAction.async { request =>
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
+    authorizationManager.canViewConformanceStatementReport(request, systemId).flatMap { _ =>
+      systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
+        val reportPath = getReportTempFile(".pdf")
+        reportManager.generateConformanceStatementDocumentationReport(reportPath, actorId, systemId, communityId).map { _ =>
+          Ok.sendFile(
+            content = reportPath.toFile,
+            fileName = _ => Some("conformance_statement_documentation.pdf"),
+            onClose = () => {
+              FileUtils.deleteQuietly(reportPath.toFile)
+            }
+          )
+        }.recover {
+          case e: Exception =>
+            FileUtils.deleteQuietly(reportPath.toFile)
+            throw e
+        }
+      }
+    }
+  }
+
   private def exportConformanceCertificateInternal(settings: Option[ConformanceCertificateInfo], communityId: Long, systemId: Long, actorId: Long, snapshotId: Option[Long]): Future[Result] = {
     val reportPath = getReportTempFile(".pdf")
     reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId, communityId, snapshotId).map { _ =>
@@ -815,6 +837,23 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     })
   }
 
+  def exportDemoConformanceStatementDocumentationReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoReport(request, communityId, "conformance_statement_documentation.pdf", ReportType.ConformanceStatementDocumentationReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+      val reportSettings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
+      val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SETTINGS)
+      val settings = JsonUtil.parseJsConformanceStatementDocumentationReportSettings(jsSettings, communityId)
+      reportManager.generateDemoConformanceStatementDocumentationReport(reportPath, reportSettings, xsltPath, settings, communityId).map(_ => ())
+    })
+  }
+
+  def exportDemoConformanceStatementDocumentationReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoReportInXML(request, communityId, "conformance_statement_documentation.xml", ReportType.ConformanceStatementDocumentationReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+      val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SETTINGS)
+      val settings = JsonUtil.parseJsConformanceStatementDocumentationReportSettings(jsSettings, communityId)
+      reportManager.generateDemoConformanceStatementDocumentationReportInXML(reportPath, xsltPath, settings, communityId).map(_ => ())
+    })
+  }
+
   private def exportDemoReport(request: RequestWithAttributes[AnyContent], communityId: Long, reportName: String, reportType: ReportType, handler: (Path, Option[Path], Option[Map[String, Seq[String]]]) => Future[Unit]): Future[Result] = {
     val reportPath = getReportTempFile(".pdf")
     val task = for {
@@ -977,6 +1016,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     handleUpdateCertificateSettings(communityId, request, (reportSettings, stylesheet, jsSettings) => {
       val certificateSettings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
       reportManager.updateConformanceOverviewCertificateSettings(certificateSettings, reportSettings, stylesheet)
+    })
+  }
+
+  def updateConformanceStatementDocumentationReportSettings(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    handleUpdateCertificateSettings(communityId, request, (reportSettings, stylesheet, jsSettings) => {
+      val settings = JsonUtil.parseJsConformanceStatementDocumentationReportSettings(jsSettings, communityId)
+      reportManager.updateConformanceStatementDocumentationReportSettings(settings, reportSettings, stylesheet)
     })
   }
 

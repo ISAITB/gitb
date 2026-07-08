@@ -20,6 +20,7 @@ import {TestSuiteUploadResult} from '../modals/test-suite-upload-modal/test-suit
 import {ExportSettings} from '../types/export-settings';
 import {Actor} from '../types/actor';
 import {ConformanceCertificateSettings} from '../types/conformance-certificate-settings';
+import {ConformanceStatementDocumentationReportSettings} from '../types/conformance-statement-documentation-report-settings';
 import {ConformanceResultFullList} from '../types/conformance-result-full-list';
 import {Domain} from '../types/domain';
 import {Endpoint} from '../types/endpoint';
@@ -503,6 +504,20 @@ export class ConformanceService {
       params: {
         level: reportLevel
       }
+    })
+  }
+
+  getConformanceStatementDocumentationReportSettings(communityId: number) {
+    return this.restService.get<ConformanceStatementDocumentationReportSettings|undefined>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementDocumentationReportSettings(communityId).url,
+      authenticate: true
+    })
+  }
+
+  conformanceStatementDocumentationReportEnabled(communityId: number) {
+    return this.restService.get<{exists: boolean}>({
+      path: ROUTES.controllers.ConformanceService.conformanceStatementDocumentationReportEnabled(communityId).url,
+      authenticate: true
     })
   }
 

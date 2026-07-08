@@ -103,6 +103,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 				report = getCommunityReportStylesheet(communityId, ReportType.TestCaseReport)
 				if (report.isEmpty) {
 					report = getCommunityReportStylesheet(communityId, ReportType.TestStepReport)
+					if (report.isEmpty) {
+						report = getCommunityReportStylesheet(communityId, ReportType.ConformanceStatementDocumentationReport)
+					}
 				}
 			}
 		}
@@ -123,6 +126,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 			case ReportType.TestStepReport => "test_step.xslt"
 			case ReportType.ConformanceStatementCertificate => "conformance_statement_certificate.xslt"
 			case ReportType.ConformanceOverviewCertificate => "conformance_overview_certificate.xslt"
+			case ReportType.ConformanceStatementDocumentationReport => "conformance_statement_documentation.xslt"
 			case _ => throw new IllegalArgumentException("Unsupported report type %s".formatted(reportType.id))
 		}
 	}

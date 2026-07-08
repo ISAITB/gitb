@@ -1,0 +1,139 @@
+@if (settings && reportSettings) {
+    <form>
+        <div class="row pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Report enabled?</legend>
+            <div class="col-9">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="statementDocumentationEnabled" name="statementDocumentationEnabled" [(ngModel)]="settings.enabled">
+                    <label class="form-check-label" for="statementDocumentationEnabled">Enabled
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Enable the option to download the report in the conformance statement detail screen."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div [ngbCollapse]="!settings.enabled" [animation]="animated">
+            <div class="row pt-3">
+                <legend class="col-3 col-form-label text-end pt-0">Report configuration:</legend>
+                <div class="col-8">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="reportSettings.customPdfs" name="choice_statement_documentation" id="choice_default_statement_documentation" [value]="false" (change)="reportConfigurationTypeChanged()">
+                        <label class="form-check-label" for="choice_default_statement_documentation">Configure default report
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Use the default PDF report format and customise the information to include."></div>
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="reportSettings.customPdfs" name="choice_statement_documentation" id="choice_custom_statement_documentation" [value]="true" (change)="reportConfigurationTypeChanged()">
+                        <label class="form-check-label" for="choice_custom_statement_documentation">Use external service
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Configure a service to handle the PDF report generation based on the conformance statement documentation XML report."></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div [ngbCollapse]="!reportSettings.customPdfs" [animation]="false">
+                <div class="row pt-3">
+                    <label class="col-3 col-form-label text-end" for="customPdfServiceStatementDocumentation">* Service address:</label>
+                    <div class="col-8 col-md-6">
+                        <input #serviceField type="text" id="customPdfServiceStatementDocumentation" name="customPdfServiceStatementDocumentation" [(ngModel)]="reportSettings.customPdfService" class="form-control"/>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="The full address of the service that will be called to generate PDF reports. When generating a report, this service will receive a POST call with the XML conformance statement documentation report as its payload, and is expected to respond with the produced PDF report."></div>
+                </div>
+                <div class="row pt-3">
+                    <div class="col-8 offset-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="signStatementDocumentation" name="signStatementDocumentation" [(ngModel)]="reportSettings.signPdfs">
+                            <label class="form-check-label" for="signStatementDocumentation">Add signature to report
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Add a digital signature and timestamp to the PDF report as proof of authenticity."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="useCustomStatementDocumentationXml" name="useCustomStatementDocumentationXml" [(ngModel)]="reportSettings.customPdfsWithCustomXml">
+                            <label class="form-check-label" for="useCustomStatementDocumentationXml">Apply stylesheet before calling service
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Use the configured XSLT stylesheet to produce the XML report, before this is sent to the PDF report generation service."></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div [ngbCollapse]="!reportSettings.customPdfsWithCustomXml" [animation]="true">
+                    <div class="row pt-3">
+                        <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
+                        <div class="col-8 col-md-6">
+                            <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings.stylesheetExists">
+                                @if (reportSettings.stylesheetExists) {
+                                    <button type="button" class="btn btn-secondary" (click)="viewStylesheet(Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT)" tooltipClass="shortTooltip" ngbTooltip="View" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i [class]="Constants.BUTTON_ICON.VIEW"></i></button>
+                                }
+                            </app-file-select>
+                        </div>
+                        <div app-tooltip class="col-auto" tbTooltip="The XSLT stylesheet to apply to the default XML report."></div>
+                    </div>
+                </div>
+            </div>
+            <div [ngbCollapse]="reportSettings.customPdfs" [animation]="false">
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end pt-0">Included documentation:</legend>
+                    <div class="col-9">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeStatementDocumentationStatementDocumentation" name="includeStatementDocumentationStatementDocumentation" [(ngModel)]="settings.includeStatementDocumentation" [class.is-invalid]="!settings.includeStatementDocumentation && !settings.includeTestSuiteDocumentation && !settings.includeTestCaseDocumentation">
+                            <label class="form-check-label" for="includeStatementDocumentationStatementDocumentation">Statement documentation
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Include the documentation relevant to the actor or specification related to the conformance statement."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeTestSuiteDocumentationStatementDocumentation" name="includeTestSuiteDocumentationStatementDocumentation" [(ngModel)]="settings.includeTestSuiteDocumentation" [class.is-invalid]="!settings.includeStatementDocumentation && !settings.includeTestSuiteDocumentation && !settings.includeTestCaseDocumentation">
+                            <label class="form-check-label" for="includeTestSuiteDocumentationStatementDocumentation">Test suite documentation
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Include the documentation for test suites."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeTestCaseDocumentationStatementDocumentation" name="includeTestCaseDocumentationStatementDocumentation" [(ngModel)]="settings.includeTestCaseDocumentation" [class.is-invalid]="!settings.includeStatementDocumentation && !settings.includeTestSuiteDocumentation && !settings.includeTestCaseDocumentation">
+                            <label class="form-check-label" for="includeTestCaseDocumentationStatementDocumentation">Test case documentation
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Include the documentation for test cases."></div>
+                            </label>
+                        </div>
+                        @if (!settings.includeStatementDocumentation && !settings.includeTestSuiteDocumentation && !settings.includeTestCaseDocumentation) {
+                            <div class="invalid-feedback d-block">At least one type of documentation must be included in the report.</div>
+                        }
+                    </div>
+                </div>
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end pt-0">Additional information:</legend>
+                    <div class="col-9">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeOverviewStatementDocumentation" name="includeOverviewStatementDocumentation" [(ngModel)]="settings.includeOverview">
+                            <label class="form-check-label" for="includeOverviewStatementDocumentation">Overview
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Include the summary of the domain, specification group, specification and actor the conformance statement relates to. This is included as presented in the conformance statement detail page."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeTestCaseListingStatementDocumentation" name="includeTestCaseListingStatementDocumentation" [(ngModel)]="settings.includeTestCaseListing">
+                            <label class="form-check-label" for="includeTestCaseListingStatementDocumentation">Test case listing
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Include the listing of test suites and test cases, acting as an index to their respective documentation pages."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeSignatureStatementDocumentation" name="includeSignatureStatementDocumentation" [(ngModel)]="settings.includeSignature">
+                            <label class="form-check-label" for="includeSignatureStatementDocumentation">Signature
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="btn-toolbar pt-3">
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="update()" [disable]="previewPending || !previewEnabled()" [pending]="updatePending">Update</button>
+            <div class="btn-group" ngbDropdown>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" [disable]="updatePending || !previewEnabled() || !settings.enabled" [pending]="previewPending" class="btn btn-secondary" (click)="previewPdf()">Generate preview</button>
+                <button id="button-preview-statement-documentation" type="button" [disabled]="updatePending || !previewEnabled() || !settings.enabled || previewPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                    <span class="caret"></span>
+                    <span class="sr-only visually-hidden">XML report</span>
+                </button>
+                <div ngbDropdownMenu aria-labelledby="button-preview-statement-documentation">
+                    <button ngbDropdownItem type="button" (click)="previewXml()">XML report
+                        <div app-tooltip class="d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Users can only generate this report in PDF format. The XML report preview is provided to facilitate development when delegating to a custom report generation service (if enabled)."></div>
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SIGNATURE" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+        </div>
+    </form>
+}

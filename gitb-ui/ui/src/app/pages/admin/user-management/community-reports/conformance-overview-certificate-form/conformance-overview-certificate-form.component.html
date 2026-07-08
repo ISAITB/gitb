@@ -33,7 +33,7 @@
         </div>
         <div [ngbCollapse]="!anyLevelEnabled" [animation]="levelAnimated" (shown)="levelBlockExpanded()">
             <div class="row mt-3 pt-1">
-                <legend class="col-3 col-form-label text-end pt-0">* Report configuration:</legend>
+                <legend class="col-3 col-form-label text-end pt-0">Report configuration:</legend>
                 <div class="col-8">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" [(ngModel)]="reportSettings!.customPdfs" name="choice_overview" id="choice_default_overview" [value]="false" (change)="reportConfigurationTypeChanged()">
@@ -49,7 +49,7 @@
                     </div>
                 </div>
             </div>
-            <div [ngbCollapse]="!reportSettings!.customPdfs">
+            <div [ngbCollapse]="!reportSettings!.customPdfs" [animation]="false">
                 <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="customPdfServiceOverview">* Service address:</label>
                     <div class="col-8 col-md-6">
@@ -87,7 +87,7 @@
                     </div>
                 </div>
             </div>
-            <div [ngbCollapse]="reportSettings!.customPdfs">
+            <div [ngbCollapse]="reportSettings!.customPdfs" [animation]="false">
                 <div class="row pt-3">
                     <label class="col-3 col-form-label text-end">Title:</label>
                     <div class="col-8 col-md-6">

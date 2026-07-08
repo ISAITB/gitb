@@ -119,6 +119,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   animatedDetails = false
   clickableDetails = false
   statementLabel: string = ''
+  documentationReportEnabled = false
 
   testSuiteSelectionConfig: MultiSelectConfig<TestSuiteMinimalInfo> = {
     name: "testSuiteChoice",
@@ -307,6 +308,17 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         this.statement = statementData.statement
         this.statementDocumentation = statementData.documentation
         this.statementLabel = this.breadcrumbLabel()
+        if (this.snapshotId == undefined) {
+          if (this.dataService.isSystemAdmin) {
+            if (this.communityIdOfStatement != Constants.DEFAULT_COMMUNITY_ID) {
+              this.conformanceService.conformanceStatementDocumentationReportEnabled(this.communityIdOfStatement).subscribe((result) => {
+                this.documentationReportEnabled = result.exists
+              })
+            }
+          } else {
+            this.documentationReportEnabled = this.dataService.community?.statementDocumentationReportEnabled === true
+          }
+        }
         this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.statementLabel, this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
         // IDs.
         this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
@@ -780,6 +792,17 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     .subscribe((data) => {
       const blobData = new Blob([data], {type: 'application/pdf'});
       saveAs(blobData, "conformance_certificate.pdf");
+    }).add(() => {
+      this.exportPending = false
+    })
+  }
+
+  onExportConformanceStatementDocumentation() {
+    this.exportPending = true
+    this.reportService.exportConformanceStatementDocumentationReport(this.actorId, this.systemId)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/pdf'});
+      saveAs(blobData, "conformance_statement_documentation.pdf");
     }).add(() => {
       this.exportPending = false
     })

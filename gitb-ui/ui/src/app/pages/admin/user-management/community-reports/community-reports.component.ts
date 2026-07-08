@@ -33,6 +33,7 @@ export class CommunityReportsComponent implements OnInit {
   conformanceStatementReportSettings = new ReportSettings()
   conformanceOverviewCertificateSettings = new ReportSettings()
   conformanceOverviewReportSettings = new ReportSettings()
+  conformanceStatementDocumentationReportSettings = new ReportSettings()
   testCaseReportSettings = new ReportSettings()
   testStepReportSettings = new ReportSettings()
 

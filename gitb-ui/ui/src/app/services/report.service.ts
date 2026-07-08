@@ -33,6 +33,7 @@ import { Constants } from '../common/constants';
 import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
 import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 import { CommunityReportSettings } from '../types/community-report-settings';
+import { ConformanceStatementDocumentationReportSettings } from '../types/conformance-statement-documentation-report-settings';
 
 @Injectable({
   providedIn: 'root'
@@ -495,6 +496,69 @@ export class ReportService {
       authenticate: true,
       arrayBuffer: true,
       httpResponse: true
+    })
+  }
+
+  updateConformanceStatementDocumentationReportSettings(communityId: number, reportSettings: CommunityReportSettings, settings: ConformanceStatementDocumentationReportSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(settings)
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.updateConformanceStatementDocumentationReportSettings(communityId).url,
+      authenticate: true,
+      data: dataToUse,
+      files: files
+    })
+  }
+
+  exportDemoConformanceStatementDocumentationReport(communityId: number, reportSettings: CommunityReportSettings, settings: ConformanceStatementDocumentationReportSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(settings)
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceStatementDocumentationReport(communityId).url,
+      data: dataToUse,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true,
+      files: files
+    })
+  }
+
+  exportDemoConformanceStatementDocumentationReportInXML(communityId: number, reportSettings: CommunityReportSettings, settings: ConformanceStatementDocumentationReportSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse: any = {
+      enable: reportSettings.customPdfsWithCustomXml,
+      settings: JSON.stringify(settings)
+    }
+    return this.restService.post<string>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceStatementDocumentationReportInXML(communityId).url,
+      authenticate: true,
+      files: files,
+      text: true,
+      data: dataToUse
+    })
+  }
+
+  exportConformanceStatementDocumentationReport(actorId: number, systemId: number) {
+    const data: any = {
+      actor_id: actorId,
+      system_id: systemId
+    }
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceStatementDocumentationReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
     })
   }
 

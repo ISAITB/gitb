@@ -18,6 +18,7 @@ package com.gitb.reports;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.reports.dto.ConformanceOverview;
+import com.gitb.reports.dto.ConformanceStatementDocumentation;
 import com.gitb.reports.dto.ConformanceStatementOverview;
 import com.gitb.reports.dto.TestCaseOverview;
 import com.gitb.reports.dto.tar.ContextItem;
@@ -83,7 +84,8 @@ public class ReportGenerator {
                     TAR.class,
                     TestCaseOverviewReportType.class,
                     TestCaseReportType.class,
-                    TestStepStatus.class);
+                    TestStepStatus.class,
+                    ConformanceStatementDocumentationReportType.class);
         } catch (JAXBException e) {
             throw new IllegalStateException("Error initialising report generator", e);
         }
@@ -437,6 +439,50 @@ public class ReportGenerator {
             writeClasspathReport("reports/ConformanceStatementOverview.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while generating report", e);
+        }
+    }
+
+    public void writeConformanceStatementDocumentationReport(ConformanceStatementDocumentation data, OutputStream outputStream, ReportSpecs specs) {
+        if (data.getReportDate() == null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            data.setReportDate(sdf.format(new Date()));
+        }
+        if (data.getIncludeTestCaseDocumentation()) {
+            // Force the includeTestCaseDocumentation flag is no test suite has documentation (to avoid an empty heading).
+            boolean hasAnyTestCaseDocumentation = false;
+            if (data.getTestSuites() != null) {
+                hasAnyTestCaseDocumentation = data.getTestSuites().stream()
+                        .filter(ts -> ts.getTestCases() != null)
+                        .flatMap(ts -> ts.getTestCases().stream())
+                        .anyMatch(tc -> tc.getDocumentation() != null && !tc.getDocumentation().isBlank());
+            }
+            if (!hasAnyTestCaseDocumentation) data.setIncludeTestCaseDocumentation(false);
+        }
+        if (data.getIncludeTestSuiteDocumentation()) {
+            // Force the includeTestSuiteDocumentation flag is no test suite has documentation (to avoid an empty heading).
+            boolean hasAnyTestSuiteDocumentation = false;
+            if (data.getTestSuites() != null) {
+                hasAnyTestSuiteDocumentation = data.getTestSuites().stream()
+                        .anyMatch(ts -> ts.getDocumentation() != null && !ts.getDocumentation().isBlank());
+            }
+            if (!hasAnyTestSuiteDocumentation) data.setIncludeTestSuiteDocumentation(false);
+        }
+        try {
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("data", data);
+            writeClasspathReport("reports/ConformanceStatementDocumentation.ftl", parameters, outputStream, specs);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unexpected error while generating report", e);
+        }
+    }
+
+    public void writeConformanceStatementDocumentationXmlReport(ConformanceStatementDocumentationReportType report, OutputStream outputStream) {
+        try {
+            Marshaller marshaller = jaxbContext.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            marshaller.marshal(new ObjectFactory().createConformanceStatementDocumentationReport(report), outputStream);
+        } catch(Exception e) {
+            throw new IllegalStateException(e);
         }
     }
 

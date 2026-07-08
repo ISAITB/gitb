@@ -42,6 +42,7 @@
                     <xsd:element name="selfRegistrationSettings" type="SelfRegistrationSettings" minOccurs="0"/>
                     <xsd:element name="conformanceCertificateSettings" type="ConformanceCertificateSettings" minOccurs="0"/>
                     <xsd:element name="conformanceOverviewCertificateSettings" type="ConformanceOverviewCertificateSettings" minOccurs="0"/>
+                    <xsd:element name="conformanceStatementDocumentationReportSettings" type="ConformanceStatementDocumentationReportSettings" minOccurs="0"/>
                     <xsd:element name="signatureSettings" type="SignatureSettings" minOccurs="0"/>
                     <xsd:element name="organisationProperties" type="OrganisationProperties" minOccurs="0"/>
                     <xsd:element name="systemProperties" type="SystemProperties" minOccurs="0"/>
@@ -101,6 +102,7 @@
             <xsd:enumeration value="TEST_STEP"/>
             <xsd:enumeration value="CONFORMANCE_OVERVIEW_CERTIFICATE"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_CERTIFICATE"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_DOCUMENTATION"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="ConformanceCertificateSettings">
@@ -134,6 +136,15 @@
         <xsd:attribute name="enableDomainLevel" type="xsd:boolean" default="false"/>
         <xsd:attribute name="enableSpecificationGroupLevel" type="xsd:boolean" default="false"/>
         <xsd:attribute name="enableSpecificationLevel" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceStatementDocumentationReportSettings">
+        <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addOverview" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addStatementDocumentation" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addTestCaseListing" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addTestSuiteDocumentation" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addTestCaseDocumentation" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
     </xsd:complexType>
     <xsd:complexType name="ConformanceOverviewCertificateMessages">
         <xsd:sequence>

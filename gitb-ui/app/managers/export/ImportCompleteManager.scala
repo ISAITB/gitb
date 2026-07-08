@@ -549,6 +549,14 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     ConformanceOverviewCertificateWithMessages(settings, messages)
   }
 
+  private def toModelConformanceStatementDocumentationReportSettings(exportedSettings: com.gitb.xml.export.ConformanceStatementDocumentationReportSettings, communityId: Long): models.ConformanceStatementDocumentationReportSettings = {
+    models.ConformanceStatementDocumentationReportSettings(
+      0L, exportedSettings.isEnabled, exportedSettings.isAddOverview, exportedSettings.isAddStatementDocumentation,
+      exportedSettings.isAddTestCaseListing, exportedSettings.isAddTestSuiteDocumentation, exportedSettings.isAddTestCaseDocumentation,
+      exportedSettings.isAddSignature, communityId
+    )
+  }
+
   private def toModelConformanceOverviewCertificateMessageType(exportedType: com.gitb.xml.export.ConformanceOverviewCertificateMessageType): OverviewLevelType = {
     exportedType match {
       case com.gitb.xml.export.ConformanceOverviewCertificateMessageType.DOMAIN => OverviewLevelType.DomainLevel
@@ -738,6 +746,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         models.Enums.ReportType.ConformanceStatementCertificate
       case ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE =>
         models.Enums.ReportType.ConformanceOverviewCertificate
+      case ReportType.CONFORMANCE_STATEMENT_DOCUMENTATION =>
+        models.Enums.ReportType.ConformanceStatementDocumentationReport
       case _ => throw new IllegalArgumentException("Unknown report type [%s]".formatted(data.value()))
     }
     reportType
@@ -2509,6 +2519,23 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               DBIO.successful(())
             }
           }
+          // Conformance statement documentation report settings
+          _ <- {
+            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+            if (communityId.isDefined) {
+              if (exportedCommunity.getConformanceStatementDocumentationReportSettings == null) {
+                // Delete
+                communityManager.deleteConformanceStatementDocumentationReportSettings(communityId.get)
+              } else {
+                // Update/Add
+                reportManager.updateConformanceStatementDocumentationReportSettingsInternal(
+                  toModelConformanceStatementDocumentationReportSettings(exportedCommunity.getConformanceStatementDocumentationReportSettings, communityId.get)
+                )
+              }
+            } else {
+              DBIO.successful(())
+            }
+          }
           // Signature settings
           _ <- {
             val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
@@ -2534,6 +2561,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               var hasTestStep = false
               var hasConformanceOverviewCertificate = false
               var hasConformanceStatementCertificate = false
+              var hasConformanceStatementDocumentation = false
               exportedCommunity.getReportStylesheets.getStylesheet.forEach { stylesheet =>
                 val tempFile = stringToTempFile(stylesheet.getContent).toPath
                 val reportType = toModelReportType(stylesheet.getReportType)
@@ -2544,6 +2572,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   case models.Enums.ReportType.TestStepReport => hasTestStep = true
                   case models.Enums.ReportType.ConformanceStatementCertificate => hasConformanceStatementCertificate = true
                   case models.Enums.ReportType.ConformanceOverviewCertificate => hasConformanceOverviewCertificate = true
+                  case models.Enums.ReportType.ConformanceStatementDocumentationReport => hasConformanceStatementDocumentation = true
                 }
                 ctx.onSuccessCalls += (() => repositoryUtils.saveCommunityReportStylesheet(communityId.get, reportType, tempFile))
                 ctx.onSuccessCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
@@ -2555,6 +2584,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               if (!hasTestStep) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.TestStepReport))
               if (!hasConformanceOverviewCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceOverviewCertificate))
               if (!hasConformanceStatementCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementCertificate))
+              if (!hasConformanceStatementDocumentation) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementDocumentationReport))
             }
             DBIO.successful(())
           }

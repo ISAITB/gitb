@@ -1741,6 +1741,12 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		DB.run(PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.documentation).result.headOption).map(_.flatten)
 	}
 
+	def getTestSuiteDocumentationByIds(testSuiteIds: Iterable[Long]): Future[Map[Long, String]] = {
+		DB.run(PersistenceSchema.testSuites.filter(_.id inSet testSuiteIds).map(x => (x.id, x.documentation)).result).map { results =>
+			results.collect { case (id, Some(documentation)) if documentation.nonEmpty => id -> documentation }.toMap
+		}
+	}
+
 	def extractTestSuite(testSuite: TestSuites, testSuiteOutputPath: Option[Path]): Path = {
 		val testSuiteFolder = repositoryUtils.getTestSuitePath(testSuite.domain, testSuite.filename)
 		var outputPathToUse = testSuiteOutputPath

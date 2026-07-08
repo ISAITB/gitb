@@ -251,6 +251,9 @@ import {
   ConformanceOverviewCertificateModalComponent
 } from './modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
 import {
+  ConformanceStatementDocumentationReportFormComponent
+} from './pages/admin/user-management/community-reports/conformance-statement-documentation-report-form/conformance-statement-documentation-report-form.component';
+import {
   EndpointParameterTabContentComponent
 } from './pages/admin/domain-management/endpoint/endpoint-parameter-tab-content/endpoint-parameter-tab-content.component';
 import {CustomPropertyPanelComponent} from './components/custom-property-panel/custom-property-panel.component';
@@ -475,6 +478,7 @@ import { TestResultCommentsModalComponent } from './modals/test-result-comments-
     CommunityKeystoreModalComponent,
     ConformanceOverviewCertificateFormComponent,
     ConformanceOverviewCertificateModalComponent,
+    ConformanceStatementDocumentationReportFormComponent,
     EndpointParameterTabContentComponent,
     CustomPropertyPanelComponent,
     PendingDivComponent,

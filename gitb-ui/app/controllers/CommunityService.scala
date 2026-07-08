@@ -22,7 +22,7 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, R
 import exceptions.ErrorCodes
 import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
-import models.{ActualUserInfo, Communities, Enums, Organizations, Users}
+import models._
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
@@ -127,7 +127,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       val withDefaultOrganisation = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.COMMUNITY_SELFREG_DEFAULT_ORGANISATION).getOrElse(false)
       val withDefaultUserPreferences = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.PREFERENCES).getOrElse(false)
       communityManager.getCommunityById(communityId, withDefaultOrganisation, withDefaultUserPreferences).map { community =>
-        val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
+        val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -493,11 +493,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   def getUserCommunity: Action[AnyContent] = authorizedAction.async { request =>
     val userId = ParameterExtractor.extractUserId(request)
     authorizationManager.canViewOwnCommunity(request).flatMap { _ =>
-      communityManager.getUserCommunity(userId).flatMap { community =>
-        communityManager.getCommunityLabels(community.id).map { labels =>
-          val json: String = JsonUtil.serializeCommunity(community, Some(labels), includeAdminInfo = false)
-          ResponseConstructor.constructJsonResponse(json)
-        }
+      communityManager.getCommunityInfoForLogin(userId).map { communityInfo =>
+        val json: String = JsonUtil.jsCommunityInfoForLogin(communityInfo).toString()
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

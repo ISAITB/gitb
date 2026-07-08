@@ -623,6 +623,21 @@ object PersistenceSchema {
   val conformanceOverviewCertificateMessages = TableQuery[ConformanceOverviewCertificateMessagesTable]
   val insertConformanceOverviewCertificateMessage = conformanceOverviewCertificateMessages returning conformanceOverviewCertificateMessages.map(_.id)
 
+  class ConformanceStatementDocumentationReportSettingsTable(tag: Tag) extends Table[ConformanceStatementDocumentationReportSettings](tag, "ConformanceStatementDocumentationReportSettings") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def enabled = column[Boolean]("enabled")
+    def includeOverview = column[Boolean]("include_overview")
+    def includeStatementDocumentation = column[Boolean]("include_statement_documentation")
+    def includeTestCaseListing = column[Boolean]("include_test_case_listing")
+    def includeTestSuiteDocumentation = column[Boolean]("include_test_suite_documentation")
+    def includeTestCaseDocumentation = column[Boolean]("include_test_case_documentation")
+    def includeSignature = column[Boolean]("include_signature")
+    def community = column[Long]("community")
+    def * = (id, enabled, includeOverview, includeStatementDocumentation, includeTestCaseListing, includeTestSuiteDocumentation, includeTestCaseDocumentation, includeSignature, community) <> (ConformanceStatementDocumentationReportSettings.tupled, ConformanceStatementDocumentationReportSettings.unapply)
+  }
+  val conformanceStatementDocumentationReportSettings = TableQuery[ConformanceStatementDocumentationReportSettingsTable]
+  val insertConformanceStatementDocumentationReportSettings = conformanceStatementDocumentationReportSettings returning conformanceStatementDocumentationReportSettings.map(_.id)
+
   class OrganisationParametersTable(tag: Tag) extends Table[OrganisationParameters](tag, "OrganisationParameters") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name = column[String]("name")

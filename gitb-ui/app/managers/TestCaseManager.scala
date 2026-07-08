@@ -164,6 +164,12 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager,
 		}
 	}
 
+	def getTestCaseDocumentationByIds(testCaseIds: Iterable[Long]): Future[Map[Long, String]] = {
+		DB.run(PersistenceSchema.testCases.filter(_.id inSet testCaseIds).map(x => (x.id, x.documentation)).result).map { results =>
+			results.collect { case (id, Some(documentation)) if documentation.nonEmpty => id -> documentation }.toMap
+		}
+	}
+
 	def searchTestCases(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]], actorIds: Option[List[Long]], testSuiteIds: Option[List[Long]]): Future[List[TestCases]] = {
 		DB.run(
 			for {

@@ -52,6 +52,7 @@ export interface Community extends CommunityLimited {
   apiKey?: string;
   preferences?: UserPreferences
   tags?: TagData[]
+  statementDocumentationReportEnabled?: boolean
 
   sameDescriptionAsDomain: boolean;
   activeDescription?: string;

@@ -1158,6 +1158,27 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def getConformanceStatementDocumentationReportSettings(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      communityManager.getConformanceStatementDocumentationReportSettingsWrapper(communityId, defaultIfMissing = true).map { settings =>
+        if (settings.isDefined) {
+          val json = JsonUtil.jsConformanceStatementDocumentationReportSettings(settings.get)
+          ResponseConstructor.constructJsonResponse(json.toString)
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
+  }
+
+  def conformanceStatementDocumentationReportEnabled(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
+      communityManager.conformanceStatementDocumentationReportEnabled(communityId).map { checkResult =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsExists(checkResult).toString())
+      }
+    }
+  }
+
   def testCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     val tempKeystorePath = Paths.get(repositoryUtils.getTempFolder().getAbsolutePath, UUID.randomUUID().toString)
     val task = for {

@@ -20,9 +20,12 @@ import ch.qos.logback.classic.Logger;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.reports.dto.ConformanceOverview;
+import com.gitb.reports.dto.ConformanceStatementDocumentation;
 import com.gitb.reports.dto.ConformanceStatementOverview;
+import com.gitb.reports.dto.TestCaseDocumentation;
 import com.gitb.reports.dto.TestCaseGroup;
 import com.gitb.reports.dto.TestCaseOverview;
+import com.gitb.reports.dto.TestSuiteDocumentation;
 import com.gitb.reports.dto.TestSuiteOverview;
 import com.gitb.reports.dto.*;
 import com.gitb.tr.*;
@@ -429,6 +432,63 @@ public class ReportGeneratorTest {
 
         try (var outputStream = Files.newOutputStream(Path.of(tempDirectory.toString(), "ConformanceStatementOverview.pdf"))) {
             generator.writeConformanceStatementOverviewReport(data, outputStream, specs);
+        }
+    }
+
+    @Test
+    void testConformanceStatementDocumentation() throws IOException {
+        ConformanceStatementDocumentation data = new ConformanceStatementDocumentation();
+        data.setTitle("Conformance Statement Documentation");
+        data.setLabelDomain("Domain");
+        data.setLabelSpecificationGroup("Group");
+        data.setLabelSpecificationInGroup("Option");
+        data.setLabelSpecification("Specification");
+        data.setLabelActor("Actor");
+        data.setTestDomain("My domain");
+        data.setTestSpecification("My specification");
+        data.setTestActor("My actor");
+
+        data.setIncludeOverview(true);
+        data.setIncludeStatementDocumentation(true);
+        data.setIncludeTestCaseListing(true);
+        data.setIncludeTestSuiteDocumentation(true);
+        data.setIncludeTestCaseDocumentation(true);
+
+        data.setStatementDocumentation("<p>This is the <strong>documentation</strong> relevant to the conformance statement as a whole.</p>");
+
+        var testCase1 = new TestCaseDocumentation();
+        testCase1.setName("Test case 1");
+        testCase1.setDocumentation("<p>Documentation for <strong>test case 1</strong>.</p>");
+        var testCase2 = new TestCaseDocumentation();
+        testCase2.setName("Test case 2");
+        // No documentation set - should not get a page or listing link.
+        var testCase3 = new TestCaseDocumentation();
+        testCase3.setName("Test case 3");
+        testCase3.setDocumentation("<p>Documentation for <strong>test case 3</strong>.</p>");
+
+        var testSuite1 = new TestSuiteDocumentation();
+        testSuite1.setName("The first test suite");
+        testSuite1.setDocumentation("<p>Documentation for the <strong>first test suite</strong>.</p>");
+        testSuite1.setTestCases(List.of(testCase1, testCase2));
+
+        var testSuite2 = new TestSuiteDocumentation();
+        testSuite2.setName("The second test suite");
+        // No documentation set - should not get a page or listing link.
+        testSuite2.setTestCases(List.of(testCase3));
+
+        var testCase4 = new TestCaseDocumentation();
+        testCase4.setName("Test case 4");
+        // No documentation set.
+        var testSuite3 = new TestSuiteDocumentation();
+        testSuite3.setName("The third test suite");
+        testSuite3.setDocumentation("<p>Documentation for the <strong>third test suite</strong>.</p>");
+        // No test case has documentation - the whole suite should be hidden from the listing.
+        testSuite3.setTestCases(List.of(testCase4));
+
+        data.setTestSuites(List.of(testSuite1, testSuite2, testSuite3));
+
+        try (var outputStream = Files.newOutputStream(Path.of(tempDirectory.toString(), "ConformanceStatementDocumentation.pdf"))) {
+            generator.writeConformanceStatementDocumentationReport(data, outputStream, ReportSpecs.build());
         }
     }
 
