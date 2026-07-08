@@ -90,7 +90,8 @@ public class TestbedService {
                         configData.getOrganisationConfiguration(),
                         configData.getSystemConfiguration(),
                         configData.getTestServiceConfigurations(),
-                        inputs
+                        inputs,
+						configData.getSettings()
                 ), ActorRef.noSender());
 	}
 

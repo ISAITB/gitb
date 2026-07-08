@@ -183,6 +183,7 @@ public class TestCaseContext {
 	private TestResultType forcedFinalResult = null;
 	private Path dataFolder;
     private boolean requiresPersistentReports = false;
+	private final Set<String> registeredCallbackApiKeys = new HashSet<>();
 
     public TestCaseContext(TestCase testCase, String testCaseIdentifier, String sessionId) {
         this.currentState = TestCaseStateEnum.IDLE;
@@ -296,7 +297,7 @@ public class TestCaseContext {
      * @param configurations SUT configurations
      * @return Simulated actor configurations for each (actorId, endpointName) tuple
      */
-    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration, List<ActorConfiguration> testServiceConfigurations){
+    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration, List<ActorConfiguration> testServiceConfigurations) {
 		addSpecialConfiguration(DOMAIN_MAP, domainConfiguration);
 		addSpecialConfiguration(ORGANISATION_MAP, organisationConfiguration);
 		addSpecialConfiguration(SYSTEM_MAP, systemConfiguration);
@@ -307,7 +308,7 @@ public class TestCaseContext {
 		    sutConfigurations.put(actorIdEndpointTupleKey, actorConfiguration);
 		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<>());
 	    }
-        // Traverse test case stes to determine information for the test execution,
+        // Traverse test case stes to determine information for the test execution
         var transactionInfoVisitor = new TransactionInfoVisitor();
         var persistentReportVisitor = new PersistentReportVisitor();
 		var expressionHandlerStack = new LinkedList<StaticExpressionHandler>();
@@ -392,6 +393,13 @@ public class TestCaseContext {
 								}
 							})
 							.orElse(HandlerApiType.SOAP);
+					// Record callback handling settings if needed
+					if (CallbackAuthorizer.getInstance().areCallbackApiKeysEnabled()) {
+						serviceConfiguration.getConfig().stream()
+								.filter(c -> PropertyConstants.TEST_SERVICE_API_KEY.equals(c.getName()) && c.getValue() != null)
+								.findAny()
+								.ifPresent(c -> registeredCallbackApiKeys.add(c.getValue()));
+					}
                     registeredTestServices.put(testKey, new TestServiceInformation(authenticationProperties, apiType));
                 }
             }
@@ -772,6 +780,13 @@ public class TestCaseContext {
 			testService.authenticationProperties().forEach(propertiesToUse::putIfAbsent);
 		}
 		return propertiesToUse;
+	}
+
+	public boolean isApiKeyExpectedForTestSession(String apiKey) {
+		if (apiKey != null) {
+			return registeredCallbackApiKeys.contains(apiKey);
+		}
+		return false;
 	}
 
 	private static class MessagingContextBuilder {

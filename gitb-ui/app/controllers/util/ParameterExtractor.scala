@@ -1101,7 +1101,9 @@ object ParameterExtractor {
       authHttpHeaderName = authHttpHeaderName,
       authHttpHeaderValue = authHttpHeaderValue,
       monitorHealth = optionalBooleanBodyParameter(request, ParameterNames.MONITOR).getOrElse(true),
-      parameter = parameter.id
+      parameter = parameter.id,
+      // The API key is never set from client-provided data - it is managed separately (creation generates it, updates leave it untouched).
+      apiKey = ""
     )
     TestServiceWithParameter(service, parameter)
   }

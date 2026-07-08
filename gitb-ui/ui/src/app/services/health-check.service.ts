@@ -69,6 +69,13 @@ export class HealthCheckService {
     })
   }
 
+  checkTestServiceCallbacks(): Observable<HealthInfo> {
+    return this.restService.get<HealthInfo>({
+      path: ROUTES.controllers.HealthCheckService.checkTestServiceCallbacks().url,
+      authenticate: true,
+    })
+  }
+
   checkAntivirusService(): Observable<HealthInfo> {
     return this.restService.get<HealthInfo>({
       path: ROUTES.controllers.HealthCheckService.checkAntivirusService().url,

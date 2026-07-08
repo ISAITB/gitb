@@ -29,5 +29,6 @@ export interface TestService {
   authHttpHeaderValue?: string
   monitor: boolean
   parameter: number
+  apiKey?: string
 
 }

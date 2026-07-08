@@ -109,6 +109,12 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
         checkFunction: () => this.healthCheckService.checkTestEngineCallbacks()
       })
       this.cards.push({
+        type: HealthCardService.TEST_SERVICE_CALLBACKS,
+        title: "Test service callbacks",
+        info: this.emptyHealthInfo(),
+        checkFunction: () => this.healthCheckService.checkTestServiceCallbacks()
+      })
+      this.cards.push({
         type: HealthCardService.ANTIVIRUS,
         title: "Antivirus scanning service",
         info: this.emptyHealthInfo(),

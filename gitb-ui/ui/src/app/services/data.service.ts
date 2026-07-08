@@ -184,6 +184,7 @@ export class DataService {
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
+      testServiceCallbacksApiKeysEnabled: (this.configuration?.testServiceCallbacksApiKeysEnabled != undefined)?this.configuration!.testServiceCallbacksApiKeysEnabled:false,
       versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
       hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
       conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,

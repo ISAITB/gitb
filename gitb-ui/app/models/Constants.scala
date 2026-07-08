@@ -39,6 +39,7 @@ object Constants {
   val SoftwareVersionCheck = "software_version_check"
   val StartupWizard = "startup_wizard"
   val UsageTips = "usage_tips"
+  val TestServiceCallbacks = "test_service_callbacks"
 
   // env variables
   val EnvironmentTheme = "THEME"

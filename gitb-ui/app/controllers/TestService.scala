@@ -24,7 +24,7 @@ import controllers.util._
 import exceptions.ErrorCodes
 import managers._
 import managers.triggers.TriggerHelper
-import models.{SessionConfigurationData, TestResultComments}
+import models.{SessionConfigurationData, TestResultComments, TypedActorConfiguration}
 import org.apache.commons.io.FileUtils
 import org.apache.pekko.actor.ActorSystem
 import play.api.mvc._
@@ -124,7 +124,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         organisationParameters = None,
         systemParameters = None,
         testServiceParameters = None,
-        predefinedVariables = None
+        predefinedVariables = None,
+        settings = Some(TypedActorConfiguration.fromSettings())
       )
     }
   }
@@ -145,7 +146,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         organisationParameters = Some(x._2._2._1._2),
         systemParameters = Some(x._2._2._2._1),
         testServiceParameters = x._2._2._2._2,
-        predefinedVariables = None
+        predefinedVariables = None,
+        settings = Some(TypedActorConfiguration.fromSettings())
       )
     }
   }

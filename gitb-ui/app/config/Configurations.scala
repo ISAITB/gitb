@@ -215,6 +215,11 @@ object Configurations {
   var SOFTWARE_VERSION_CHECK_INFO_URL: String = ""
   var SOFTWARE_VERSION_CHECK_JWKS_URL: String = ""
 
+  var TEST_SERVICE_CALLBACKS_ENABLED: Boolean = true
+  var TEST_SERVICE_CALLBACKS_SOAP_ENABLED: Boolean = true
+  var TEST_SERVICE_CALLBACKS_REST_ENABLED: Boolean = true
+  var TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED: Boolean = false
+
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
       Constants.VersionNumber + " (" + Configurations.BUILD_TIMESTAMP + ")"
@@ -467,6 +472,12 @@ object Configurations {
       SOFTWARE_VERSION_CHECK_INFO_URL = fromEnv("SOFTWARE_VERSION_CHECK_INFO_URL", conf.getString("softwareVersionCheck.statusUrl"))
       SOFTWARE_VERSION_CHECK_JWKS_URL = fromEnv("SOFTWARE_VERSION_CHECK_JWKS_URL", conf.getString("softwareVersionCheck.jwksUrl"))
       // Software version check - END
+      // Test service callbacks - START
+      TEST_SERVICE_CALLBACKS_ENABLED = fromEnv("TEST_SERVICE_CALLBACKS_ENABLED", "true").toBoolean
+      TEST_SERVICE_CALLBACKS_SOAP_ENABLED = fromEnv("TEST_SERVICE_CALLBACKS_SOAP_ENABLED", "true").toBoolean && TEST_SERVICE_CALLBACKS_ENABLED
+      TEST_SERVICE_CALLBACKS_REST_ENABLED = fromEnv("TEST_SERVICE_CALLBACKS_REST_ENABLED", "true").toBoolean && TEST_SERVICE_CALLBACKS_ENABLED
+      TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED = fromEnv("TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED", "false").toBoolean && TEST_SERVICE_CALLBACKS_ENABLED
+      // Test service callbacks - END
       // Test suite deploy from URI - allowed base URIs whitelist (overrides the SSRF blacklist for internal hosts)
       TESTSUITE_DEPLOY_ALLOWED_URIS = Option(fromEnv(TESTSUITE_DEPLOY_ALLOWED_URIS_NAME, null))
         .map(_.split(",").map(_.trim).filter(_.nonEmpty).toSet)

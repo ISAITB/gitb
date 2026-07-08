@@ -60,6 +60,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   tokenAuthPasswordMask!: string
   httpHeaderAuthName?: string
   httpHeaderAuthValueMask!: string
+  apiKeyUpdatePending = false
 
   constructor(
     private readonly modalInstance: NgbActiveModal,
@@ -255,6 +256,20 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
 
   cancel() {
     this.modalInstance.dismiss()
+  }
+
+  updateApiKey(): void {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the API key value?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
+    .subscribe(() => {
+      this.apiKeyUpdatePending = true
+      this.domainParameterService.updateTestServiceApiKey(this.domainId, this.testService.service!.id!)
+      .subscribe((newApiKey) => {
+        this.testService.service!.apiKey = newApiKey
+        this.popupService.success('Test service API key updated.')
+      }).add(() => {
+        this.apiKeyUpdatePending = false
+      })
+    })
   }
 
   private isMatchingParameterId(obj: Id|any): obj is Id {

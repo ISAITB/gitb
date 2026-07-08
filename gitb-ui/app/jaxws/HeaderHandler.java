@@ -15,12 +15,13 @@
 
 package jaxws;
 
+import com.gitb.utils.HmacUtils;
 import config.Configurations;
+import jakarta.xml.soap.SOAPException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import javax.xml.namespace.QName;
 import jakarta.xml.soap.SOAPElement;
@@ -30,32 +31,41 @@ import jakarta.xml.ws.handler.MessageContext;
 import jakarta.xml.ws.handler.soap.SOAPHandler;
 import jakarta.xml.ws.handler.soap.SOAPMessageContext;
 
-
 public class HeaderHandler implements SOAPHandler<SOAPMessageContext> {
 
-    private static final String SOAP_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope";
+    private static final String SOAP_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/";
     private static final String TESTBED_CLIENT_NODE = "TestbedClient";
     private static final Logger logger = LoggerFactory.getLogger(HeaderHandler.class);
 
     public boolean handleMessage(SOAPMessageContext smc) {
+        Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+        if (!Boolean.TRUE.equals(outbound)) {
+            return true;
+        }
         try {
-            SOAPEnvelope envelope = smc.getMessage().getSOAPPart().getEnvelope();
-            SOAPHeader header = envelope.getHeader();
-
-            //add TestbedClient address as a custom header, so that TestbedService will now where it is
-            SOAPElement client = header.addHeaderElement(new QName(SOAP_NAMESPACE, TESTBED_CLIENT_NODE));
-
-            if(Configurations.TESTBED_CLIENT_URL().endsWith("?wsdl")){
-                client.addTextNode(Configurations.TESTBED_CLIENT_URL());
-            } else{
-                client.addTextNode(Configurations.TESTBED_CLIENT_URL() + "?wsdl");
-            }
-
+            addTestbedClientHeader(smc);
+            addHttpHeaders(smc);
         } catch (Exception e) {
             logger.error("Error in HeaderHandler", e);
         }
-
         return true;
+    }
+
+    private void addTestbedClientHeader(SOAPMessageContext smc) throws SOAPException {
+        SOAPEnvelope envelope = smc.getMessage().getSOAPPart().getEnvelope();
+        SOAPHeader header = envelope.getHeader();
+        SOAPElement client = header.addHeaderElement(new QName(SOAP_NAMESPACE, TESTBED_CLIENT_NODE));
+        String url = Configurations.TESTBED_CLIENT_URL();
+        client.addTextNode(url.endsWith("?wsdl") ? url : url + "?wsdl");
+    }
+
+    private void addHttpHeaders(SOAPMessageContext smc) {
+        Map<String, List<String>> headers = new HashMap<>();
+        HmacUtils.TokenData tokenData = HmacUtils.getTokenData("POST|/TestbedService");
+        headers.put(HmacUtils.HMAC_HEADER_TOKEN, Collections.singletonList(tokenData.getTokenValue()));
+        headers.put(HmacUtils.HMAC_HEADER_TIMESTAMP, Collections.singletonList(tokenData.getTokenTimestamp()));
+        smc.put(MessageContext.HTTP_REQUEST_HEADERS, headers);
+        smc.setScope(MessageContext.HTTP_REQUEST_HEADERS, MessageContext.Scope.APPLICATION);
     }
 
     public Set<QName> getHeaders() {

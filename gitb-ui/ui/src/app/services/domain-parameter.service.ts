@@ -213,6 +213,14 @@ export class DomainParameterService {
     })
   }
 
+  updateTestServiceApiKey(domainId: number, serviceId: number) {
+    return this.restService.post<string>({
+      path: ROUTES.controllers.DomainParameterService.updateTestServiceApiKey(domainId, serviceId).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
   getAvailableDomainParametersForTestServiceConversion(domainId: number) {
     return this.restService.get<DomainParameter[]>({
       path: ROUTES.controllers.DomainParameterService.getAvailableDomainParametersForTestServiceConversion(domainId).url,

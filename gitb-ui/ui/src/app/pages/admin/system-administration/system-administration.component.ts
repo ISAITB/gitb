@@ -50,6 +50,7 @@ import {SslProtocol} from '../../../types/ssl-protocol';
 import {MimeType} from '../../../types/mime-type';
 import {BaseTabbedComponent} from '../../base-tabbed-component';
 import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
+import {TestServiceCallbackSettings} from '../../../types/test-service-callback-settings';
 import {ValidationState} from '../../../types/validation-state';
 import {UsageTipsConfiguration} from '../../../types/usage-tips-configuration';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
@@ -58,7 +59,6 @@ import {TableApi} from '../../../components/table/table-api';
 import {ResourceState} from '../../../components/resource-management-tab/resource-state';
 import {SessionTimeoutConfiguration} from '../../../types/session-timeout-configuration';
 import {RestApiRateLimits} from '../../../types/rest-api-rate-limits';
-import {RestApiEndpointDescription} from '../../../types/rest-api-endpoint-description';
 import {RestApiEndpointDescriptionWithId} from '../../../types/rest-api-endpoint-description-with-id';
 import {RestApiEndpointLimit} from '../../../types/rest-api-endpoint-limit';
 import {RestApiEndpointBasic} from '../../../types/rest-api-endpoint-basic';
@@ -150,6 +150,15 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
   softwareVersionCheckResetPending = false
   softwareVersionCheckValidation = new ValidationState()
+
+  // Test service callbacks
+  testServiceCallbacksStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  testServiceCallbacksSettings: TestServiceCallbackSettings = {
+    enabled: true,
+    soapEnabled: true,
+    restEnabled: true,
+    apiKeysEnabled: false
+  }
 
   // TTL
   sessionTimeoutStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -316,6 +325,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             // Software version status check.
             this.initialiseSoftwareVersionCheckSettings(configItem)
             break
+          case Constants.SYSTEM_CONFIG.TEST_SERVICE_CALLBACKS:
+            // Test service callbacks.
+            this.initialiseTestServiceCallbacksSettings(configItem)
+            break
           case Constants.SYSTEM_CONFIG.REST_API_ENABLED:
             // REST API.
             this.restApiEnabled = configItem.parameter != undefined && configItem.parameter.toLowerCase() == 'true'
@@ -439,6 +452,19 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }
       this.softwareVersionCheckStatus.fromDefault = settings.default
       this.softwareVersionCheckStatus.fromEnv = settings.environment
+    }
+  }
+
+  private initialiseTestServiceCallbacksSettings(settings: SystemConfiguration|undefined) {
+    if (settings != undefined) {
+      if (settings.parameter != undefined) {
+        this.testServiceCallbacksSettings = JSON.parse(settings.parameter)
+        this.testServiceCallbacksStatus.enabled = this.testServiceCallbacksSettings.enabled
+      } else {
+        this.testServiceCallbacksStatus.enabled = false
+      }
+      this.testServiceCallbacksStatus.fromDefault = settings.default
+      this.testServiceCallbacksStatus.fromEnv = settings.environment
     }
   }
 
@@ -1082,6 +1108,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     return !this.softwareVersionCheckSettings.enabled || (this.textProvided(this.softwareVersionCheckSettings.jws) && this.textProvided(this.softwareVersionCheckSettings.jwks))
   }
 
+  testServiceCallbacksSettingsOk() {
+    return !this.testServiceCallbacksSettings.enabled || this.testServiceCallbacksSettings.soapEnabled || this.testServiceCallbacksSettings.restEnabled
+  }
+
   emailSettingsOk() {
     return !this.emailSettings.enabled ||
       (
@@ -1182,6 +1212,21 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }).add(() => {
       this.softwareVersionCheckResetPending = false
     })
+  }
+
+  saveTestServiceCallbacks() {
+    if (this.testServiceCallbacksSettingsOk()) {
+      this.testServiceCallbacksStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.TEST_SERVICE_CALLBACKS, JSON.stringify(this.testServiceCallbacksSettings))
+        .subscribe((appliedValue) => {
+          this.initialiseTestServiceCallbacksSettings(appliedValue)
+          this.testServiceCallbacksStatus.collapsed = true
+          this.dataService.configuration.testServiceCallbacksApiKeysEnabled = this.testServiceCallbacksSettings.apiKeysEnabled
+          this.popupService.success('Updated test engine callback settings.')
+        }).add(() => {
+        this.testServiceCallbacksStatus.pending = false
+      })
+    }
   }
 
   saveEmailSettings() {

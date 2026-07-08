@@ -16,7 +16,7 @@
 package models
 
 import com.gitb.PropertyConstants
-import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
+import com.gitb.core.{ActorConfiguration, AnyContent, Configuration, ValueEmbeddingEnumeration}
 
 object TypedActorConfiguration {
 
@@ -32,6 +32,33 @@ object TypedActorConfiguration {
     TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_VARIABLES, PropertyConstants.ACTOR_CONFIG_VARIABLES, configs)
   }
 
+  def fromSettings(): TypedActorConfiguration = {
+    val settings = TestEngineCallbackSettings.fromEnvironment()
+    TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_SETTINGS, PropertyConstants.ACTOR_CONFIG_SETTINGS, List(
+      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_REST_ENABLED, settings.restEnabled), "SIMPLE"),
+      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_SOAP_ENABLED, settings.soapEnabled), "SIMPLE"),
+      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED, settings.apiKeysEnabled), "SIMPLE")
+    ))
+  }
+
+  private def createBooleanConfig(name: String, value: Boolean): Configuration = {
+    val config = new Configuration()
+    config.setName(name)
+    config.setValue(value.toString)
+    config
+  }
+
 }
 
-case class TypedActorConfiguration(actor: String, endpoint: String, config: List[TypedConfiguration])
+case class TypedActorConfiguration(actor: String, endpoint: String, config: List[TypedConfiguration]) {
+
+  def toActorConfiguration(): ActorConfiguration = {
+    val actorConfiguration = new ActorConfiguration()
+    actorConfiguration.setActor(actor)
+    actorConfiguration.setEndpoint(endpoint)
+    import scala.jdk.CollectionConverters._
+    actorConfiguration.getConfig.addAll(config.map(_.data).asJava)
+    actorConfiguration
+  }
+
+}

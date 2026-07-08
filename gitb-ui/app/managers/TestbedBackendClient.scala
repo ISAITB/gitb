@@ -15,11 +15,12 @@
 
 package managers
 
+import com.gitb.PropertyConstants
 import com.gitb.core.AnyContent
 import com.gitb.tbs._
 import config.Configurations
 import jaxws.HeaderHandlerResolver
-import models.SessionConfigurationData
+import models.{SessionConfigurationData, TypedActorConfiguration}
 import org.apache.cxf.BusFactory
 import org.apache.cxf.wsdl11.WSDLManagerImpl
 import org.slf4j.{Logger, LoggerFactory}
@@ -87,6 +88,16 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
       }
       val response = service().initiate(requestData)
       response.getTcInstanceId
+    }
+  }
+
+  def updateSettings(settings: TypedActorConfiguration): Future[Unit] = {
+    Future {
+      val cRequest: ConfigureRequest = new ConfigureRequest
+      // Use a special marker as a session ID to tell the test engine to treat this differently.
+      cRequest.setTcInstanceId(PropertyConstants.ACTOR_CONFIG_SETTINGS)
+      cRequest.getConfigs.add(settings.toActorConfiguration())
+      service().configure(cRequest)
     }
   }
 

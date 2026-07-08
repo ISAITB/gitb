@@ -15,6 +15,7 @@
 
 package com.gitb.tbs.rest;
 
+import com.gitb.engine.CallbackAuthorizer;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.SessionManager;
 import com.gitb.model.core.LogLevel;
@@ -22,8 +23,10 @@ import com.gitb.model.core.LogRequest;
 import com.gitb.model.core.ServiceClient;
 import com.gitb.model.ms.MessagingClient;
 import com.gitb.model.ms.NotifyForMessageRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
@@ -47,6 +50,9 @@ public class ServiceClientImpl implements MessagingClient, ServiceClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceClientImpl.class);
 
+    @Autowired
+    private HttpServletRequest request;
+
     /**
      * Receives asynchronous messaging callback notifications from services.
      *
@@ -56,10 +62,18 @@ public class ServiceClientImpl implements MessagingClient, ServiceClient {
     @PostMapping(path = "/gitb/notifyForMessage")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void notifyForMessage(@RequestBody NotifyForMessageRequest parameters) {
-        CallbackManager.getInstance().callbackReceived(
-                parameters.getSessionId(),
-                parameters.getCallId(),
-                getMessagingReport(fromModel(parameters.getReport())));
+        if (parameters.getSessionId() != null) {
+            var testSessionId = SessionManager.getInstance().getTestSessionForMessagingSession(parameters.getSessionId());
+            if (testSessionId == null) {
+                LOG.warn("Could not determine test session for messaging notification [{}]", parameters.getSessionId());
+            } else {
+                CallbackAuthorizer.getInstance().checkApiKeyAccepted(testSessionId, request);
+                CallbackManager.getInstance().callbackReceived(
+                        parameters.getSessionId(),
+                        parameters.getCallId(),
+                        getMessagingReport(fromModel(parameters.getReport())));
+            }
+        }
     }
 
     /**
@@ -76,6 +90,7 @@ public class ServiceClientImpl implements MessagingClient, ServiceClient {
             if (testSessionId == null) {
                 LOG.warn("Could not determine test session for ID [{}]", logRequest.getSessionId());
             } else {
+                CallbackAuthorizer.getInstance().checkApiKeyAccepted(testSessionId, request);
                 var level = switch (logRequest.getLevel()) {
                     case LogLevel.ERROR -> com.gitb.core.LogLevel.ERROR;
                     case LogLevel.WARNING -> com.gitb.core.LogLevel.WARNING;

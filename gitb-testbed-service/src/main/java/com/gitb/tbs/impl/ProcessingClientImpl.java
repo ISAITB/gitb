@@ -17,15 +17,15 @@ package com.gitb.tbs.impl;
 
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.SessionManager;
-import com.gitb.ps.ProcessingClient;
 import com.gitb.ps.LogRequest;
+import com.gitb.ps.ProcessingClient;
 import com.gitb.ps.Void;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ProcessingClientImpl implements ProcessingClient {
+public class ProcessingClientImpl extends BaseClientImpl implements ProcessingClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProcessingClientImpl.class);
 
@@ -35,8 +35,9 @@ public class ProcessingClientImpl implements ProcessingClient {
         if (logRequest.getSessionId() != null) {
             var testSessionId = SessionManager.getInstance().getTestSessionForProcessingSession(logRequest.getSessionId());
             if (testSessionId == null) {
-                LOG.warn("Could not determine test session for processing session [{}]", logRequest.getSessionId());
+                LOG.warn("Could not determine test session for log call [{}]", logRequest.getSessionId());
             } else {
+                checkApiKey(testSessionId);
                 CallbackManager.getInstance().logMessageReceived(testSessionId, logRequest.getMessage(), logRequest.getLevel());
             }
         } else {

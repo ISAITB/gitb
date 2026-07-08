@@ -32,11 +32,11 @@ case class TestServiceInfo(parameterInfo: KeyValue, description: Option[Option[S
     DomainParameter(parameterId.getOrElse(0L), parameterInfo.key, description.flatten, "SIMPLE", parameterInfo.value, inTests = true, None, isTestService = true, domainId)
   }
 
-  def getAsNewTestService(serviceId: Option[Long], parameterId: Long): TestService = {
+  def getAsNewTestService(serviceId: Option[Long], parameterId: Long, apiKey: String): TestService = {
     TestService(
       serviceId.getOrElse(0L), serviceType.get.id.toShort, apiType.getOrElse(TestServiceApiType.SoapApi).id.toShort, identifier.flatten, version.flatten,
       authBasicUsername.flatten, authBasicPassword.flatten, authTokenUsername.flatten, authTokenPassword.flatten, authTokenPasswordType.flatten.map(_.id.toShort),
-      authHeaderName.flatten, authHeaderValue.flatten, monitorHealth = true, parameterId
+      authHeaderName.flatten, authHeaderValue.flatten, monitorHealth = true, parameterId, apiKey
     )
   }
 

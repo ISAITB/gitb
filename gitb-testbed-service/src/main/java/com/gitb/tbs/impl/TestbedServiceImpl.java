@@ -15,8 +15,10 @@
 
 package com.gitb.tbs.impl;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.Actor;
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.CallbackAuthorizer;
 import com.gitb.engine.TestCaseManager;
 import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -125,14 +127,27 @@ public class TestbedServiceImpl implements TestbedService {
         }
     }
 
+    private void handleSettingsUpdate(ConfigureRequest parameters) {
+        if (parameters.getConfigs().isEmpty()) {
+            logger.warn("Setting update received with no payload.");
+        } else {
+            CallbackAuthorizer.getInstance().updateSettings(parameters.getConfigs().getFirst());
+            logger.info("Updated settings.");
+        }
+    }
+
     @Override
     public Void configure(ConfigureRequest parameters) throws Error {
         String sessionId = null;
         try {
             sessionId = parameters.getTcInstanceId();
-            // Call the real TestbedService
-            logger.debug("Received configure request for session [{}]", sessionId);
-            com.gitb.engine.TestbedService.configure(sessionId, parameters.getConfigs(), parameters.getInputs());
+            if (PropertyConstants.ACTOR_CONFIG_SETTINGS.equals(sessionId)) {
+                handleSettingsUpdate(parameters);
+            } else {
+                // Call the real TestbedService
+                logger.debug("Received configure request for session [{}]", sessionId);
+                com.gitb.engine.TestbedService.configure(sessionId, parameters.getConfigs(), parameters.getInputs());
+            }
             return new Void();
         } catch (GITBEngineInternalError e) {
             logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);

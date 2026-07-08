@@ -583,7 +583,8 @@ export class Constants {
     SOFTWARE_VERSION_CHECK: 'software_version_check',
     WELCOME_TITLE: 'welcome_title',
     STARTUP_WIZARD: 'startup_wizard',
-    USAGE_TIPS: 'usage_tips'
+    USAGE_TIPS: 'usage_tips',
+    TEST_SERVICE_CALLBACKS: 'test_service_callbacks'
 	}
 
   public static readonly USAGE_TIP = {

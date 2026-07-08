@@ -270,6 +270,14 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def updateTestServiceApiKey(domainId: Long, serviceId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageTestServices(request, domainId).flatMap { _ =>
+      domainParameterManager.updateTestServiceApiKey(serviceId).map { newApiKey =>
+        ResponseConstructor.constructStringResponse(newApiKey)
+      }
+    }
+  }
+
   def getAvailableDomainParametersForTestServiceConversion(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageTestServices(request, domainId).flatMap { _ =>
       domainParameterManager.getAvailableDomainParametersForTestServiceConversion(domainId).map { result =>

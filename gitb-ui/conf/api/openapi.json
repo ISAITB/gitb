@@ -2413,7 +2413,14 @@
         },
         "responses": {
           "200": {
-            "description": "Test service created."
+            "description": "Test service created. The response body is only present if API keys are enabled for test engine callbacks, in which case it carries the API key assigned to the new service.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
           },
           "429": {
             "description": "Call rate limit threshold exceeded for this operation.",
@@ -5804,6 +5811,10 @@
           },
           "version": {
             "description": "The service's version.",
+            "type": "string"
+          },
+          "apiKey": {
+            "description": "The API key expected to be included as the ITB-API-KEY HTTP header in callbacks made by this service to the test engine. Only returned if this is enabled at Test Bed level.",
             "type": "string"
           }
         },

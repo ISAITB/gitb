@@ -21,6 +21,7 @@ import actors.events.{TestSessionFailedEvent, TestSessionSucceededEvent}
 import com.gitb.PropertyConstants
 import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tr.TestResultType
+import config.Configurations
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import managers.TestExecutionManager.{LOGGER, SessionCompletionData, TestResultInfo, TestResultTriggerInfo, TestSessionCommentUpdateResult}
 import managers.triggers.TriggerHelper
@@ -188,8 +189,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       PersistenceSchema.domainParameters
         .join(PersistenceSchema.testServices).on(_.id === _.parameter)
         .filter(_._1.domain === domainId)
-        .filter(x => x._2.authBasicUsername.isDefined || x._2.authTokenUsername.isDefined || x._2.authHttpHeaderName.isDefined || x._2.apiType =!= TestServiceApiType.SoapApi.id.toShort)
-        .map(x => (x._1.name, x._2.apiType, x._2.authBasicUsername, x._2.authBasicPassword, x._2.authTokenUsername, x._2.authTokenPassword, x._2.authTokenPasswordType, x._2.authHttpHeaderName, x._2.authHttpHeaderValue))
+        .map(x => (x._1.name, x._2.apiType, x._2.authBasicUsername, x._2.authBasicPassword, x._2.authTokenUsername, x._2.authTokenPassword, x._2.authTokenPasswordType, x._2.authHttpHeaderName, x._2.authHttpHeaderValue, x._2.apiKey))
         .result
         .map { results =>
           Some(results.map { result =>
@@ -202,6 +202,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             val authTokenPasswordType = result._7
             val authHeaderName = result._8
             val authHeaderValue = result._9
+            val apiKey = result._10
             val configs = new ListBuffer[TypedConfiguration]
             if (authBasicUsername.isDefined && authBasicPassword.isDefined) {
               configs += toTypedConfig(PropertyConstants.AUTH_BASIC_USERNAME, authBasicUsername.get, "SIMPLE")
@@ -228,6 +229,9 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
                   }
                 }
               case _ => throw new IllegalStateException("Unknown test service API type [%s]".formatted(apiType))
+            }
+            if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
+              configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_KEY, apiKey, "SIMPLE")
             }
             val actorKey = "%s%s%s".formatted(PropertyConstants.ACTOR_CONFIG_TEST_SERVICE, PropertyConstants.ACTOR_CONFIG_TEST_SERVICE_SEPARATOR, testKey)
             TypedActorConfiguration(actorKey, actorKey, configs.toList)

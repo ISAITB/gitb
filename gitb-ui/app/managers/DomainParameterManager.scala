@@ -28,7 +28,7 @@ import models._
 import models.automation.{DomainParameterInfo, TestServiceInfo, TestServiceSearchCriteria, TestServiceWithParameterAndDomainKey}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
 import java.io.{ByteArrayOutputStream, File}
 import java.net.URI
@@ -291,8 +291,9 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield parameter
   }
 
-  def createTestServiceThroughAutomationApi(communityApiKey: String, service: TestServiceInfo): Future[Unit] = {
+  def createTestServiceThroughAutomationApi(communityApiKey: String, service: TestServiceInfo): Future[String] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val newApiKey = CryptoUtil.generateApiKey()
     val dbAction = for {
       // Load domain ID.
       domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(communityApiKey, service.domainApiKey)
@@ -322,9 +323,9 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
           }
         }
       }
-      _ <- createTestServiceInternal(service.getAsNewTestService(None, parameterIdToUse))
+      _ <- createTestServiceInternal(service.getAsNewTestService(None, parameterIdToUse, newApiKey), checkApiKeyUniqueness = false)
     } yield ()
-    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => newApiKey)
   }
 
   private def getTestServiceForAutomationApi(domainId: Long, parameterKey: String): DBIO[TestServiceWithParameter] = {
@@ -579,12 +580,12 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
           updateDomainParameterAsTestService(serviceData.parameter.copy(id = matchingParameterId.get), onSuccessCalls).map(_ => matchingParameterId.get)
         }
       }
-      _ <- createTestServiceInternal(serviceData.service.copy(parameter = parameterIdToUse))
+      _ <- createTestServiceInternal(serviceData.service.copy(parameter = parameterIdToUse, apiKey = CryptoUtil.generateApiKey()), checkApiKeyUniqueness = false)
     } yield ()
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def createTestServiceInternal(service: TestService): DBIO[Long] = {
+  def createTestServiceInternal(service: TestService, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
     val serviceToSave = if (service.authBasicPassword.isDefined || service.authTokenPassword.isDefined || service.authHttpHeaderValue.isDefined) {
       service.copy(
         authBasicPassword = service.authBasicPassword.map(MimeUtil.encryptString),
@@ -594,7 +595,22 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } else {
       service
     }
-    PersistenceSchema.testServices.returning(PersistenceSchema.testServices.map(_.id)) += serviceToSave
+    for {
+      replaceApiKey <- if (checkApiKeyUniqueness) {
+        PersistenceSchema.testServices.filter(_.apiKey === serviceToSave.apiKey).exists.result
+      } else {
+        DBIO.successful(false)
+      }
+      newServiceId <- {
+        val serviceToInsert = if (replaceApiKey) serviceToSave.withApiKey(CryptoUtil.generateApiKey()) else serviceToSave
+        PersistenceSchema.testServices.returning(PersistenceSchema.testServices.map(_.id)) += serviceToInsert
+      }
+    } yield newServiceId
+  }
+
+  def updateTestServiceApiKey(serviceId: Long): Future[String] = {
+    val newApiKey = CryptoUtil.generateApiKey()
+    DB.run(PersistenceSchema.testServices.filter(_.id === serviceId).map(_.apiKey).update(newApiKey).transactionally).map(_ => newApiKey)
   }
 
   private def updateDomainParameterAsTestService(parameter: DomainParameter, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Unit] = {
@@ -663,7 +679,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def updateTestServiceInternal(service: TestService): DBIO[Unit] = {
+  def updateTestServiceInternal(service: TestService, apiKey: Option[String] = None, checkApiKeyUniqueness: Boolean = false): DBIO[Unit] = {
     for {
       // Update non-password information
       _ <- PersistenceSchema.testServices
@@ -731,6 +747,20 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
             .filter(_.id === service.id)
             .map(_.authHttpHeaderValue)
             .update(None)
+        }
+      }
+      // Handle the API key (only ever provided when completing an import - regular edits leave the API key untouched)
+      replaceApiKey <- if (apiKey.isDefined && checkApiKeyUniqueness) {
+        PersistenceSchema.testServices.filter(_.apiKey === apiKey.get).filter(_.id =!= service.id).exists.result
+      } else {
+        DBIO.successful(false)
+      }
+      _ <- {
+        if (apiKey.isDefined) {
+          val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+          PersistenceSchema.testServices.filter(_.id === service.id).map(_.apiKey).update(apiKeyToUse)
+        } else {
+          DBIO.successful(())
         }
       }
     } yield ()

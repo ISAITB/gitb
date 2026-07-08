@@ -629,6 +629,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 exportedTestService.setAuthHeaderName(testService.authHttpHeaderName.orNull)
                 exportedTestService.setAuthHeaderValue(encryptText(testService.authHttpHeaderValue, isAlreadyEncrypted = true, exportSettings.encryptionKey))
                 exportedTestService.setMonitorHealth(testService.monitorHealth)
+                exportedTestService.setApiKey(testService.apiKey)
                 exportedTestService.setParameter(exportedDomainParameterMap(testService.parameter))
                 exportedDomain.getTestServices.getService.add(exportedTestService)
               }

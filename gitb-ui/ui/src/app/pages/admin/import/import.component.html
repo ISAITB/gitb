@@ -111,7 +111,7 @@
                                                 </div>
                                                 <div app-tooltip class="col-auto" [tbTooltip]="'A short name used in selection lists and tabular displays where space is limited.'"></div>
                                             </div>
-                                            <div class="row mt-3">
+                                            <div class="row pt-3">
                                                 <label class="col-3 col-form-label text-end" for="fullName">* Full name:</label>
                                                 <div class="col-7 col-sm-6">
                                                     <input id="fullName" name="fullName" [(ngModel)]="settings.fullNameReplacement" class="form-control" type="text">
@@ -121,7 +121,7 @@
                                         </div>
                                     </div>
                                 }
-                                <div class="row mt-3">
+                                <div class="row pt-3">
                                     <label class="col-3 col-form-label text-end">* Data archive:</label>
                                     <div class="col-8 col-sm-7 col-md-6">
                                         <app-file-select
@@ -136,7 +136,7 @@
                                     </div>
                                     <div app-tooltip class="col-auto" tbTooltip="The archive containing the data to import."></div>
                                 </div>
-                                <div class="row mt-3">
+                                <div class="row pt-3">
                                     <label class="col-3 col-form-label text-end" for="encryptionPassword">* Archive password:</label>
                                     <div class="col-8 col-sm-4">
                                         <app-secret-input inputId="encryptionPassword" inputName="encryptionPassword" name="encryptionPasswordSecret" [(ngModel)]="settings.encryptionKey"></app-secret-input>
@@ -144,7 +144,7 @@
                                     <div app-tooltip class="col-auto" tbTooltip="Provide the password that was used to encrypt the export archive."></div>
                                 </div>
                                 @if (exportType != "deletions") {
-                                    <div class="row mt-3">
+                                    <div class="row pt-3">
                                         <legend class="col-3 col-form-label text-end pt-0">* Default import actions:</legend>
                                         <div class="col-9">
                                             <div class="form-check form-check-inline">

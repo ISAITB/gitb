@@ -15,20 +15,25 @@
 
 package com.gitb.tbs.config;
 
+import com.gitb.tbs.filters.CallbackAuthorizationFilter;
+import com.gitb.tbs.filters.TestBedServiceAuthorizationFilter;
 import com.gitb.tbs.impl.MessagingClientImpl;
 import com.gitb.tbs.impl.ProcessingClientImpl;
 import com.gitb.tbs.impl.TestbedServiceImpl;
 import com.gitb.tbs.impl.ValidationClientImpl;
+import com.gitb.tdl.HandlerApiType;
 import jakarta.servlet.MultipartConfigElement;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxws.EndpointImpl;
 import org.apache.cxf.transport.servlet.CXFServlet;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.xml.namespace.QName;
@@ -38,6 +43,30 @@ import static com.gitb.engine.TestEngineConfiguration.HANDLER_API_SEGMENT;
 
 @Configuration
 public class BeanConfig {
+
+    @Bean
+    public FilterRegistrationBean<CallbackAuthorizationFilter> restCallbackFilter() {
+        var registration = new FilterRegistrationBean<>(new CallbackAuthorizationFilter(HandlerApiType.REST));
+        registration.addUrlPatterns("/"+ HANDLER_API_SEGMENT +"/gitb/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<CallbackAuthorizationFilter> soapCallbackFilter() {
+        var registration = new FilterRegistrationBean<>(new CallbackAuthorizationFilter(HandlerApiType.SOAP));
+        registration.addUrlPatterns("/MessagingClient/*", "/ValidationClient/*", "/ProcessingClient/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<TestBedServiceAuthorizationFilter> testBedServiceFilter() {
+        var registration = new FilterRegistrationBean<>(new TestBedServiceAuthorizationFilter());
+        registration.addUrlPatterns("/TestbedService/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
 
     @Bean
     public ServletRegistrationBean<CXFServlet> servletRegistrationBean() {

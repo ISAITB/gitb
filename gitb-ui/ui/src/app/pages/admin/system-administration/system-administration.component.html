@@ -552,6 +552,67 @@
                             </form>
                         </app-configuration-entry>
                     </div>
+                    <!-- Test service callbacks -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Test service callbacks"
+                            configDescription="Allow custom test services to make callbacks to the test engine as part of test sessions."
+                            [(status)]="testServiceCallbacksStatus"
+                        >
+                            <form>
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="testServiceCallbacksEnabled" name="testServiceCallbacksEnabled" [(ngModel)]="testServiceCallbacksSettings.enabled">
+                                            <label class="form-check-label" for="testServiceCallbacksEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div [ngbCollapse]="!testServiceCallbacksSettings.enabled" [animation]="true">
+                                    <div class="pt-3">
+                                        <div class="form-container">
+                                            <div class="row">
+                                                <legend class="col-3 col-form-label text-end pt-0">Enabled callback APIs:</legend>
+                                                <div class="col-8 col-md-6">
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="checkbox" id="testServiceCallbacksRest" name="testServiceCallbacksRest" [(ngModel)]="testServiceCallbacksSettings.restEnabled" [class.is-invalid]="!testServiceCallbacksSettingsOk()">
+                                                        <label class="form-check-label" for="testServiceCallbacksRest">GITB test service REST API
+                                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Support callbacks using the RESTful GITB test service API."></div>
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="checkbox" id="testServiceCallbacksSoap" name="testServiceCallbacksSoap" [(ngModel)]="testServiceCallbacksSettings.soapEnabled" [class.is-invalid]="!testServiceCallbacksSettingsOk()">
+                                                        <label class="form-check-label" for="testServiceCallbacksSoap">GITB test service SOAP API
+                                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Support callbacks using the SOAP-based GITB test service API."></div>
+                                                        </label>
+                                                    </div>
+                                                    @if (!testServiceCallbacksSettingsOk()) {
+                                                        <div class="invalid-feedback d-block">At least one API type must be enabled if callbacks are expected.</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="row pt-3">
+                                                <label class="col-3 col-form-label text-end pt-0" for="testServiceCallbacksApiKeys">Callback API keys:</label>
+                                                <div class="col-7">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="testServiceCallbacksApiKeys" name="testServiceCallbacksApiKeys" [(ngModel)]="testServiceCallbacksSettings.apiKeysEnabled">
+                                                        <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Require a valid API key to be included in callbacks. A test service's API key is managed as part of its details and is expected to be included as the ITB-API-KEY HTTP header in calls to the test engine." [inline]="true"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-auto">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="testServiceCallbacksStatus.pending || !testServiceCallbacksSettingsOk()" [pending]="testServiceCallbacksStatus.pending" (click)="saveTestServiceCallbacks()">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
                     <!-- Idle session timeout. -->
                     <div class="configContainer" >
                         <app-configuration-entry

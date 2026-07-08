@@ -959,7 +959,7 @@ object JsonUtil {
   }
 
   def jsTestService(service: TestService): JsObject = {
-    Json.obj(
+    var json = Json.obj(
       "id" -> service.id,
       "identifier" -> service.identifier,
       "version" -> service.version,
@@ -973,6 +973,10 @@ object JsonUtil {
       "authHttpHeaderName" -> service.authHttpHeaderName,
       "monitor" -> service.monitorHealth
     )
+    if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
+      json = json.+("apiKey" -> JsString(service.apiKey))
+    }
+    json
   }
 
   def jsTestServicesBasicInfo(list: Iterable[TestServiceBasicInfo]):JsArray = {
@@ -2730,6 +2734,7 @@ object JsonUtil {
       "savedFileMaxSize" -> Configurations.SAVED_FILE_MAX_SIZE,
       "mode" -> Configurations.TESTBED_MODE,
       "automationApiEnabled" -> Configurations.AUTOMATION_API_ENABLED,
+      "testServiceCallbacksApiKeysEnabled" -> Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED,
       "versionNumber" -> Configurations.versionInfo(),
       "hasDefaultLegalNotice" -> hasDefaultLegalNotice,
       "conformanceStatementReportMaxTestCases" -> Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES,
@@ -3748,6 +3753,25 @@ object JsonUtil {
     )
   }
 
+  def jsTestEngineCallbackSettings(settings: TestEngineCallbackSettings): JsObject = {
+    Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "soapEnabled" -> JsBoolean(settings.soapEnabled),
+      "restEnabled" -> JsBoolean(settings.restEnabled),
+      "apiKeysEnabled" -> JsBoolean(settings.apiKeysEnabled)
+    )
+  }
+
+  def parseJsTestEngineCallbackSettings(jsonString: String): TestEngineCallbackSettings = {
+    val json = Json.parse(jsonString)
+    TestEngineCallbackSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      soapEnabled = (json \ "soapEnabled").as[Boolean],
+      restEnabled = (json \ "restEnabled").as[Boolean],
+      apiKeysEnabled = (json \ "apiKeysEnabled").as[Boolean]
+    )
+  }
+
   def jsEmailSettings(settings: EmailSettings, maskPassword: Boolean = true): JsObject = {
     var json = Json.obj("enabled" -> JsBoolean(settings.enabled))
     if (settings.from.isDefined) json = json + ("from" -> JsString(settings.from.get))
@@ -4136,6 +4160,9 @@ object JsonUtil {
     }
     if (service.service.service.version.isDefined) {
       json = json + ("version" -> JsString(service.service.service.version.get))
+    }
+    if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
+      json = json + ("apiKey" -> JsString(service.service.service.apiKey))
     }
     json
   }

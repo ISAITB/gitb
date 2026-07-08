@@ -18,6 +18,7 @@ package com.gitb.engine.actors;
 import com.gitb.PropertyConstants;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
+import com.gitb.engine.CallbackAuthorizer;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngine;
 import com.gitb.engine.TestbedService;
@@ -157,6 +158,10 @@ public class SessionActor extends AbstractActor {
         allowForStates(() -> {
             var context = ctx.testCaseContext();
             try {
+                // We update at this point the general settings, even though these are of a global (not per session) scope.
+                // We do this as a fail-safe to avoid cases where the test engine did not receive the settings earlier
+                // or lost it's state due to a restart.
+                CallbackAuthorizer.getInstance().updateSettings(ctx.message().getSettings());
                 List<SUTConfiguration> sutConfigurations = context.configure(
                         ctx.message().getActorConfigurations(),
                         ctx.message().getDomainConfiguration(),

@@ -15,6 +15,8 @@
 
 package managers
 
+import actors.TestEngineSettingsUpdateActor
+import actors.TestEngineSettingsUpdateActor.PushSettings
 import config.Configurations
 import managers.SystemConfigurationManager.ThemeStatus
 import managers.ratelimit.RateLimitManager
@@ -24,6 +26,7 @@ import models.health.SoftwareVersionCheckSettings
 import models.theme.{Theme, ThemeFiles}
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.lang3.{StringUtils, Strings}
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -34,6 +37,8 @@ import utils._
 import java.io.File
 import java.nio.file.Files
 import java.sql.Timestamp
+import java.time.temporal.ChronoUnit
+import java.time.Duration
 import java.util.{Calendar, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -52,6 +57,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
                                             testExecutionManager: TestExecutionManager,
                                             repositoryUtils: RepositoryUtils,
                                             rateLimitManager: RateLimitManager,
+                                            actorSystem: ActorSystem,
                                             dbConfigProvider: DatabaseConfigProvider)
                                            (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -61,14 +67,41 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips,
+    Constants.TestServiceCallbacks
   )
+  // Configuration types whose value changes need to be pushed eagerly to the test engine (gitb-srv).
+  private final val testEngineNotifiedConfigurationTypes = Set(Constants.TestServiceCallbacks)
 
   private var activeThemeId: Option[Long] = None
   private var activeThemeCss: Option[String] = None
   private var activeThemeFavicon: Option[String] = None
   private var defaultEmailSettings: Option[EmailSettings] = None
   private var defaultSoftwareVersionCheckSettings: Option[SoftwareVersionCheckSettings] = None
+  private var defaultTestEngineCallbackSettings: Option[TestEngineCallbackSettings] = None
+  private var testEngineSettingsUpdateActor: Option[ActorRef] = None
+
+  private def getTestEngineSettingsUpdateActor(): ActorRef = {
+    if (testEngineSettingsUpdateActor.isEmpty) {
+      testEngineSettingsUpdateActor = Some(
+        actorSystem
+          .actorSelection("/user/"+TestEngineSettingsUpdateActor.actorName)
+          .resolveOne(Duration.of(5, ChronoUnit.SECONDS))
+          .toCompletableFuture
+          .get()
+      )
+    }
+    testEngineSettingsUpdateActor.get
+  }
+
+  /**
+   * Push the latest global settings that the test engine (gitb-srv) needs to be aware of, so that they are applied
+   * as soon as possible rather than waiting for the next test session to be initiated (through which they are also
+   * always propagated as a fallback).
+   */
+  def notifyTestEngineOfUpdatedSettings(): Unit = {
+    getTestEngineSettingsUpdateActor() ! PushSettings(TypedActorConfiguration.fromSettings())
+  }
 
   private def constructLogoPath(themeId: Long, partialLogoPath: String): String = {
     // We go up two levels as URLs are relative to the CSS defining them which here is under "/api/theme/
@@ -239,6 +272,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
+        val testEngineCallbacksConfig = persistedConfigs.find(config => config.config.name == Constants.TestServiceCallbacks)
         val rateLimitConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits)
         if (restApiEnabledConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
@@ -275,6 +309,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         if (softwareVersionCheckConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(SoftwareVersionCheckSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED"))
         }
+        if (testEngineCallbacksConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.TestServiceCallbacks, Some(JsonUtil.jsTestEngineCallbackSettings(TestEngineCallbackSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("TEST_SERVICE_CALLBACKS_ENABLED"))
+        }
         if (rateLimitConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiRateLimits, Some(JsonUtil.jsRestApiLimits(RestApiLimits.defaultSettings(), withDescriptions = false).toString()), None), defaultSetting = true, environmentSetting = false)
         }
@@ -296,6 +333,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       }
     } yield updates
     DB.run(action.transactionally).map { results =>
+      if (configs.exists(config => testEngineNotifiedConfigurationTypes.contains(config.name))) {
+        notifyTestEngineOfUpdatedSettings()
+      }
       results.filter(result => result.isDefined).map(_.get)
     }
   }
@@ -304,7 +344,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
    * Set system parameter
    */
   def updateSystemParameter(name: String, value: Option[String] = None): Future[Option[SystemConfigurationsWithEnvironment]] = {
-    DB.run(updateSystemParameterInternal(name, value, applySetting = true).transactionally)
+    DB.run(updateSystemParameterInternal(name, value, applySetting = true).transactionally).map { result =>
+      if (testEngineNotifiedConfigurationTypes.contains(name)) {
+        notifyTestEngineOfUpdatedSettings()
+      }
+      result
+    }
   }
 
   private def processReceivedEmailSettings(jsonString: String): EmailSettings = {
@@ -347,7 +392,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -460,6 +505,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             settings.toEnvironment()
             DBIO.successful(Some(
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(settings).toString()), None), fromDefault, fromEnv)
+            ))
+          case Constants.TestServiceCallbacks =>
+            var fromDefault = false
+            var fromEnv = false
+            val settings = if (value.isDefined) {
+              JsonUtil.parseJsTestEngineCallbackSettings(value.get)
+            } else {
+              fromDefault = true
+              fromEnv = sys.env.contains("TEST_SERVICE_CALLBACKS_ENABLED")
+              defaultTestEngineCallbackSettings.get
+            }
+            settings.toEnvironment()
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.TestServiceCallbacks, Some(JsonUtil.jsTestEngineCallbackSettings(settings).toString()), None), fromDefault, fromEnv)
             ))
           case _ => DBIO.successful(None)
         }
@@ -929,6 +988,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     // This is called before we adapt the settings based on stored values.
     defaultSoftwareVersionCheckSettings = Some(SoftwareVersionCheckSettings.fromEnvironment())
     defaultSoftwareVersionCheckSettings.get
+  }
+
+  def recordDefaultTestEngineCallbackSettings(): TestEngineCallbackSettings = {
+    // This is called before we adapt the settings based on stored values.
+    defaultTestEngineCallbackSettings = Some(TestEngineCallbackSettings.fromEnvironment())
+    defaultTestEngineCallbackSettings.get
   }
 
   def disableStartupWizard(): Future[Unit] = {

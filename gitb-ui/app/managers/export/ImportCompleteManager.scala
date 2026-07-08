@@ -120,7 +120,13 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       mutable.ListBuffer[() => _]()
     )
     loadExistingSystemSettingsData(canManageSettings, ctx).flatMap { data =>
-      DB.run(completeFileSystemFinalisation(data._1, completeSystemSettingsImportInternal(exportedSettings, data._1, canManageSettings, ownUserId, new mutable.HashSet[String](), data._2)).transactionally)
+      DB.run(completeFileSystemFinalisation(data._1, completeSystemSettingsImportInternal(exportedSettings, data._1, canManageSettings, ownUserId, new mutable.HashSet[String](), data._2)).transactionally).map { result =>
+        if (ctx.importTargets.hasSystemConfigurations) {
+          // Push the imported settings to the test engine as soon as possible.
+          systemConfigurationManager.notifyTestEngineOfUpdatedSettings()
+        }
+        result
+      }
     }
   }
 
@@ -728,7 +734,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       Option(data.getAuthTokenPasswordType).map(toModelTestServiceAuthTokenPasswordType(_).id.toShort),
       Option(data.getAuthHeaderName), Option(data.getAuthHeaderValue).map(decrypt(importSettings, _)),
       Option(data.isMonitorHealth).getOrElse(true),
-      parameterId
+      parameterId,
+      Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
     )
   }
 
@@ -1660,7 +1667,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 (data: com.gitb.xml.export.TestService, _: ImportItem) => {
                   val processedDomainParameterId = ctx.processedIdMap(ImportItemType.DomainParameter).get(data.getParameter.getId).map(_.toLong)
                   if (processedDomainParameterId.isDefined) {
-                    domainParameterManager.createTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, None, ctx.importSettings))
+                    domainParameterManager.createTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, None, ctx.importSettings), checkApiKeyUniqueness = true)
                   } else {
                     DBIO.successful("")
                   }
@@ -1668,7 +1675,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 (data: com.gitb.xml.export.TestService, targetKey: String, _: ImportItem) => {
                   val processedDomainParameterId = ctx.processedIdMap(ImportItemType.DomainParameter).get(data.getParameter.getId).map(_.toLong)
                   if (processedDomainParameterId.isDefined) {
-                    domainParameterManager.updateTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, Some(targetKey.toLong), ctx.importSettings))
+                    domainParameterManager.updateTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, Some(targetKey.toLong), ctx.importSettings), apiKey = Option(data.getApiKey), checkApiKeyUniqueness = true)
                   } else {
                     DBIO.successful(())
                   }

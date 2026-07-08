@@ -239,7 +239,8 @@ object PersistenceSchema {
     def authHttpHeaderValue = column[Option[String]]("auth_http_header_value")
     def monitorHealth = column[Boolean]("monitor_health")
     def parameter = column[Long]("parameter")
-    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, authHttpHeaderName, authHttpHeaderValue, monitorHealth, parameter) <> (models.TestService.tupled, models.TestService.unapply)
+    def apiKey = column[String]("api_key")
+    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, authHttpHeaderName, authHttpHeaderValue, monitorHealth, parameter, apiKey) <> (models.TestService.tupled, models.TestService.unapply)
   }
   val testServices = TableQuery[TestServicesTable]
 

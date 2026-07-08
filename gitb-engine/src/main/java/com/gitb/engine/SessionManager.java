@@ -162,4 +162,12 @@ public class SessionManager {
 		processingSessionToTestSessionMap.put(processingSessionId, testSessionId);
 	}
 
+	public boolean isApiKeyExpectedForAnyTestSession(String apiKey) {
+		return contexts.values().stream().anyMatch(ctx -> ctx.isApiKeyExpectedForTestSession(apiKey));
+	}
+
+	public boolean hasActiveSessions() {
+		return !contexts.isEmpty();
+	}
+
 }

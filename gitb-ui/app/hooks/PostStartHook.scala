@@ -190,6 +190,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     // Record the default settings (from the config, fixed values and the environment).
     val defaultEmailSettings = systemConfigurationManager.recordDefaultEmailSettings()
     systemConfigurationManager.recordDefaultSoftwareVersionCheckSettings()
+    systemConfigurationManager.recordDefaultTestEngineCallbackSettings()
     // Load persisted configuration parameters.
     systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).flatMap { persistedConfigs =>
       // Check against environment settings.
@@ -297,6 +298,18 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           if (checkSettings.nonEmpty && checkSettings.get.parameter.nonEmpty) {
             JsonUtil.parseJsSoftwareVersionCheckSettings(checkSettings.get.parameter.get).toEnvironment()
           }
+          Future.successful(())
+        }
+        // Test engine callback settings.
+        _ <- {
+          val callbackSettings = persistedConfigs.find(config => config.config.name == Constants.TestServiceCallbacks).map(_.config)
+          if (callbackSettings.nonEmpty && callbackSettings.get.parameter.nonEmpty) {
+            JsonUtil.parseJsTestEngineCallbackSettings(callbackSettings.get.parameter.get).toEnvironment()
+          }
+          // Push the current settings to the test engine as soon as possible, rather than relying only on the
+          // fallback propagation that takes place through test session initiation calls. The test engine may not
+          // yet be reachable at this point (e.g. still starting up) - this is retried internally.
+          systemConfigurationManager.notifyTestEngineOfUpdatedSettings()
           Future.successful(())
         }
       } yield ()

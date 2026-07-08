@@ -42,6 +42,7 @@ export interface AppConfigurationProperties {
   savedFileMaxSize: number
   mode: string
   automationApiEnabled: boolean
+  testServiceCallbacksApiKeysEnabled: boolean
   versionNumber: string
   hasDefaultLegalNotice: boolean
   conformanceStatementReportMaxTestCases: number

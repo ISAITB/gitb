@@ -19,6 +19,12 @@ case class TestService(id: Long, serviceType: Short, apiType: Short, identifier:
                        authBasicUsername: Option[String], authBasicPassword: Option[String], authTokenUsername: Option[String],
                        authTokenPassword: Option[String], authTokenPasswordType: Option[Short],
                        authHttpHeaderName: Option[String], authHttpHeaderValue: Option[String],
-                       monitorHealth: Boolean, parameter: Long)
+                       monitorHealth: Boolean, parameter: Long, apiKey: String) {
+
+  def withApiKey(newApiKey: String): TestService = {
+    copy(apiKey = newApiKey)
+  }
+
+}
 
 

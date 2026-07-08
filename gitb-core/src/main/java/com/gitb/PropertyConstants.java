@@ -35,9 +35,14 @@ public class PropertyConstants {
     public static final String TEST_CASE_ID = "TEST_CASE_ID";
     public static final String TEST_STEP_ID = "TEST_STEP_ID";
 
+    public static final String TEST_SERVICE_CALLBACKS_SOAP_ENABLED = "TEST_SERVICE_CALLBACKS_SOAP_ENABLED";
+    public static final String TEST_SERVICE_CALLBACKS_REST_ENABLED = "TEST_SERVICE_CALLBACKS_REST_ENABLED";
+    public static final String TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED = "TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED";
+
     public static final String TEST_SERVICE_API_TYPE = "TEST_SERVICE_API_TYPE";
     public static final String TEST_SERVICE_API_TYPE_SOAP = "SOAP";
     public static final String TEST_SERVICE_API_TYPE_REST = "REST";
+    public static final String TEST_SERVICE_API_KEY = "TEST_SERVICE_API_KEY";
 
     public static final String ACTOR_MAP = "ACTOR";
     public static final String DOMAIN_MAP = "DOMAIN";
@@ -50,6 +55,7 @@ public class PropertyConstants {
     public static final String ACTOR_CONFIG_SYSTEM = "com.gitb.SYSTEM";
     public static final String ACTOR_CONFIG_TEST_SERVICE = "com.gitb.TEST_SERVICE";
     public static final String ACTOR_CONFIG_VARIABLES = "com.gitb.VARIABLES";
+    public static final String ACTOR_CONFIG_SETTINGS = "com.gitb.SETTINGS";
     public static final char ACTOR_CONFIG_TEST_SERVICE_SEPARATOR = '|';
 
     /**

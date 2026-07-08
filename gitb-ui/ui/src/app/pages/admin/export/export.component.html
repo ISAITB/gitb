@@ -52,7 +52,7 @@
                             <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainLower()+' to export.'"></div>
                         </div>
                     } @else if (exportType == 'community') {
-                        <div class="row" [class.mt-3]="showDomainOption">
+                        <div class="row" [class.pt-3]="showDomainOption">
                             <label class="col-3 col-form-label text-end" for="community">* Community:</label>
                             <div class="col-8 col-sm-6">
                                 @if (dataService.isSystemAdmin) {
@@ -65,7 +65,7 @@
                             <div app-tooltip class="col-auto" tbTooltip="The community to export."></div>
                         </div>
                     }
-                    <div class="row mt-3">
+                    <div class="row pt-3">
                         <label class="col-3 col-form-label text-end" for="encryptionPassword">* Export password:</label>
                         <div class="col-8 col-sm-4">
                             <app-secret-input inputId="encryptionPassword" inputName="encryptionPassword" name="encryptionPasswordSecret" [(ngModel)]="settings.encryptionKey"></app-secret-input>
@@ -73,7 +73,7 @@
                         <div app-tooltip class="col-auto" tbTooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></div>
                     </div>
                     @if (exportType != 'deletions') {
-                        <div class="row mt-3">
+                        <div class="row pt-3">
                             <div class="offset-1 col-10">
                                 <div class="card table-container rounded mb-0">
                                     <table class="table table-directive extra-padding">
@@ -292,14 +292,14 @@
                             </div>
                         </div>
                     } @else {
-                        <div class="row mt-3">
+                        <div class="row pt-3">
                             <label class="col-3 col-form-label text-end" for="community">{{dataService.labelDomains()}} to delete:</label>
                             <div class="col-8 col-sm-7 col-md-5">
                                 <app-multi-select-filter [config]="domainsToDeleteConfig!" (apply)="domainsToDeleteChanged($event)"></app-multi-select-filter>
                             </div>
                             <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainsLower()+' to mark for deletion when the archive will be imported. The matching of existing '+dataService.labelDomainsLower()+' is based on the '+dataService.labelDomainLower()+' API keys.'"></div>
                         </div>
-                        <div class="row mt-3 pt-0">
+                        <div class="row pt-3">
                             <div class="col-8 offset-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="addExtraDomainsForDeletion" name="addExtraDomainsForDeletion" [(ngModel)]="addExtraDomainsForDeletion">
@@ -334,14 +334,14 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row mt-3">
+                        <div class="row pt-3">
                             <label class="col-3 col-form-label text-end" for="community">Communities to delete:</label>
                             <div class="col-8 col-sm-7 col-md-5">
                                 <app-multi-select-filter [config]="communitiesToDeleteConfig!" (apply)="communitiesToDeleteChanged($event)"></app-multi-select-filter>
                             </div>
                             <div app-tooltip class="col-auto" [tbTooltip]="'The communities to mark for deletion when the archive will be imported. The matching of existing communities is based on the community API keys.'"></div>
                         </div>
-                        <div class="row mt-3 pt-0">
+                        <div class="row pt-3 pt-0">
                             <div class="col-8 offset-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="addExtraCommunitiesForDeletion" name="addExtraCommunitiesForDeletion" [(ngModel)]="addExtraCommunitiesForDeletion">
