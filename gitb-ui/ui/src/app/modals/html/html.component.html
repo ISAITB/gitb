@@ -11,7 +11,7 @@
     <div class="btn-toolbar">
         <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
         @if (showDownload) {
-            <button type="button" [labelIcon]="Constants.BUTTON_ICON.DOWNLOAD" class="btn btn-secondary" [pending]="downloadPending" (click)="download.emit()">Download</button>
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" class="btn btn-secondary" [pending]="downloadPending" (click)="download.emit()">Download</button>
         }
     </div>
 </div>
