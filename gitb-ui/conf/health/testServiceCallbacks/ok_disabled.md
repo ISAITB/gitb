@@ -1,4 +1,4 @@
-Callbacks from custom test services are **disabled**. Such callbacks would be made during test sessions to:
+Callbacks from [custom test services](https://www.itb.ec.europa.eu/docs/services/latest/) are **disabled**. Such callbacks would be made during test sessions to:
 
 - Notify the test engine to complete pending `receive` steps (or handler-enabled `interact` steps).
 - Send messages to add to the **test session log**.
