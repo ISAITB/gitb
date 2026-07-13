@@ -13,16 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface CommunityReportSettings {
+/**
+ * Test Bed-wide report settings (system administration). The keys of fileNameExpressions are the
+ * report type IDs (see Constants.REPORT_TYPE).
+ */
+export interface ReportSettings {
 
-    stylesheetExists: boolean
-    signPdfs: boolean
-    customPdfs: boolean
-    customPdfsWithCustomXml: boolean
-    customPdfService?: string
-    // The community-specific naming expression override for the report's file name (undefined if not customised).
-    fileNameExpression?: string
-    // The naming expression that currently applies by default (Test Bed-wide setting or built-in default).
-    defaultFileNameExpression: string
+  enabled: boolean
+  fileNameExpressions: {[key: number]: string}
 
 }

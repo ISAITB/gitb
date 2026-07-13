@@ -698,7 +698,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelReportSetting(data: com.gitb.xml.export.CommunityReportSetting, communityId: Long): models.CommunityReportSettings = {
-    models.CommunityReportSettings(toModelReportType(data.getReportType).id.toShort, data.isSignPdfs, data.isCustomPdfs, data.isCustomPdfsWithCustomXml, Option(data.getCustomPdfService), communityId)
+    models.CommunityReportSettings(toModelReportType(data.getReportType).id.toShort, data.isSignPdfs, data.isCustomPdfs, data.isCustomPdfsWithCustomXml, Option(data.getCustomPdfService), Option(data.getFileNameExpression), communityId)
   }
 
   private def toModelTestServiceType(data: com.gitb.xml.export.TestServiceType): models.Enums.TestServiceType.TestServiceType = {

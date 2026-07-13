@@ -555,8 +555,9 @@ object PersistenceSchema {
     def customPdfs = column[Boolean]("custom_pdf")
     def customPdfsWithCustomXml = column[Boolean]("custom_pdf_with_custom_xml")
     def customPdfService  = column[Option[String]]("custom_pdf_service")
+    def fileNameExpression = column[Option[String]]("file_name_expression")
     def community = column[Long]("community")
-    def * = (reportType, signPdfs, customPdfs, customPdfsWithCustomXml, customPdfService, community) <> (CommunityReportSettings.tupled, CommunityReportSettings.unapply)
+    def * = (reportType, signPdfs, customPdfs, customPdfsWithCustomXml, customPdfService, fileNameExpression, community) <> (CommunityReportSettings.tupled, CommunityReportSettings.unapply)
   }
   val communityReportSettings = TableQuery[CommunityReportSettingsTable]
 

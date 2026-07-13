@@ -62,6 +62,8 @@ import {RestApiRateLimits} from '../../../types/rest-api-rate-limits';
 import {RestApiEndpointDescriptionWithId} from '../../../types/rest-api-endpoint-description-with-id';
 import {RestApiEndpointLimit} from '../../../types/rest-api-endpoint-limit';
 import {RestApiEndpointBasic} from '../../../types/rest-api-endpoint-basic';
+import {ReportSettings} from '../../../types/report-settings';
+import {REPORT_TYPE_INFOS} from '../../../types/report-type-info';
 
 @Component({
     selector: 'app-system-administration',
@@ -246,6 +248,11 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   emailAttachmentTypeSelectConfig!: MultiSelectConfig<MimeType>
   restApiEndpointSelectConfig!: MultiSelectConfig<RestApiEndpointDescriptionWithId>
 
+  // Report settings
+  reportSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  reportSettings: ReportSettings = { enabled: false, fileNameExpressions: {} }
+  reportTypeInfos = REPORT_TYPE_INFOS
+
   // Resources
   resourceActions!: ResourceActions
   prepareForShutdown = false
@@ -404,6 +411,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
               this.restApiEndpointLimitsEnabled = this.restApiLimits != undefined && this.restApiLimits.endpointLimits.length > 0
             }
             break
+          case Constants.SYSTEM_CONFIG.REPORT_SETTINGS:
+            // Report settings.
+            this.initialiseReportSettings(configItem)
+            break
           default:
             console.warn(`Unknown system configuration [${configItem.name}]`)
         }
@@ -465,6 +476,19 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }
       this.testServiceCallbacksStatus.fromDefault = settings.default
       this.testServiceCallbacksStatus.fromEnv = settings.environment
+    }
+  }
+
+  private initialiseReportSettings(settings: SystemConfiguration|undefined) {
+    if (settings != undefined) {
+      if (settings.parameter != undefined) {
+        this.reportSettings = JSON.parse(settings.parameter)
+        this.reportSettingsStatus.enabled = this.reportSettings.enabled
+      } else {
+        this.reportSettingsStatus.enabled = false
+      }
+      this.reportSettingsStatus.fromDefault = settings.default
+      this.reportSettingsStatus.fromEnv = settings.environment
     }
   }
 
@@ -1108,6 +1132,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     return !this.softwareVersionCheckSettings.enabled || (this.textProvided(this.softwareVersionCheckSettings.jws) && this.textProvided(this.softwareVersionCheckSettings.jwks))
   }
 
+  reportSettingsOk() {
+    return !this.reportSettings.enabled || this.reportTypeInfos.every((info) => this.textProvided(this.reportSettings.fileNameExpressions[info.type]))
+  }
+
   testServiceCallbacksSettingsOk() {
     return !this.testServiceCallbacksSettings.enabled || this.testServiceCallbacksSettings.soapEnabled || this.testServiceCallbacksSettings.restEnabled
   }
@@ -1212,6 +1240,20 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }).add(() => {
       this.softwareVersionCheckResetPending = false
     })
+  }
+
+  saveReportSettings() {
+    if (this.reportSettingsOk()) {
+      this.reportSettingsStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REPORT_SETTINGS, JSON.stringify(this.reportSettings))
+        .subscribe((appliedValue) => {
+          this.initialiseReportSettings(appliedValue)
+          this.reportSettingsStatus.collapsed = true
+          this.popupService.success('Updated report settings.')
+        }).add(() => {
+          this.reportSettingsStatus.pending = false
+        })
+    }
   }
 
   saveTestServiceCallbacks() {

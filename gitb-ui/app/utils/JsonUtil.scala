@@ -3039,10 +3039,14 @@ object JsonUtil {
     "stylesheetExists" -> stylesheetExists,
     "signPdfs" -> settings.signPdfs,
     "customPdfs" -> settings.customPdfs,
-    "customPdfsWithCustomXml" -> settings.customPdfsWithCustomXml
+    "customPdfsWithCustomXml" -> settings.customPdfsWithCustomXml,
+    "defaultFileNameExpression" -> ReportNameResolver.effectiveDefault(settings.reportType)
     )
     if (settings.customPdfService.isDefined) {
       json += ("customPdfService" -> JsString(settings.customPdfService.get))
+    }
+    if (settings.fileNameExpression.isDefined) {
+      json += ("fileNameExpression" -> JsString(settings.fileNameExpression.get))
     }
     json
   }
@@ -3750,6 +3754,26 @@ object JsonUtil {
       enabled = (json \ "enabled").as[Boolean],
       jws = (json \ "jws").as[String],
       jwks = (json \ "jwks").as[String]
+    )
+  }
+
+  def jsReportSettings(settings: ReportSettings): JsObject = {
+    Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "fileNameExpressions" -> JsObject(settings.fileNameExpressions.map { case (reportType, expression) =>
+        reportType.toString -> (JsString(expression): JsValue)
+      })
+    )
+  }
+
+  def parseJsReportSettings(jsonString: String): ReportSettings = {
+    val json = Json.parse(jsonString)
+    val expressions = (json \ "fileNameExpressions").asOpt[JsObject].map { obj =>
+      obj.fields.map { case (reportType, expression) => reportType.toShort -> expression.as[String] }.toMap
+    }.getOrElse(Map[Short, String]())
+    ReportSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      fileNameExpressions = expressions
     )
   }
 

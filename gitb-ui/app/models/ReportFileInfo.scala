@@ -13,16 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface CommunityReportSettings {
+package models
 
-    stylesheetExists: boolean
-    signPdfs: boolean
-    customPdfs: boolean
-    customPdfsWithCustomXml: boolean
-    customPdfService?: string
-    // The community-specific naming expression override for the report's file name (undefined if not customised).
-    fileNameExpression?: string
-    // The naming expression that currently applies by default (Test Bed-wide setting or built-in default).
-    defaultFileNameExpression: string
+import java.nio.file.Path
 
-}
+/**
+ * Class used to hold the path to a report file as well as the name to use when streaming it to the frontend.
+ */
+case class ReportFileInfo(file: Path, fileName: String)

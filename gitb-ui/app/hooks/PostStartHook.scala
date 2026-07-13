@@ -24,7 +24,7 @@ import managers._
 import managers.export.ImportCompleteManager
 import managers.ratelimit.RateLimitManager
 import models.Enums.UserRole
-import models.{Constants, RestApiLimits}
+import models.{Constants, ReportSettings, RestApiLimits}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
@@ -310,6 +310,16 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           // fallback propagation that takes place through test session initiation calls. The test engine may not
           // yet be reachable at this point (e.g. still starting up) - this is retried internally.
           systemConfigurationManager.notifyTestEngineOfUpdatedSettings()
+          Future.successful(())
+        }
+        // Report settings.
+        _ <- {
+          val reportSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.ReportSettings).map(_.config)
+          if (reportSettingsConfig.nonEmpty && reportSettingsConfig.get.parameter.nonEmpty) {
+            Configurations.REPORT_SETTINGS = JsonUtil.parseJsReportSettings(reportSettingsConfig.get.parameter.get)
+          } else {
+            Configurations.REPORT_SETTINGS = ReportSettings.defaultConfiguration()
+          }
           Future.successful(())
         }
       } yield ()

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { HttpHeaders } from "@angular/common/http"
+import { HttpHeaders, HttpResponse } from "@angular/common/http"
 import { HttpRequestConfig } from "../types/http-request-config.type"
 
 export class Utils {
@@ -59,6 +59,21 @@ export class Utils {
 
     public static uniqueValues<T>(array: T[]): T[] {
       return [...new Set(array)]
+    }
+
+    /**
+     * Extracts the file name set by the backend on the "Content-Disposition" response header (e.g. for generated
+     * report downloads), falling back to the provided default if the header is missing or unparseable.
+     */
+    public static fileNameFromContentDisposition(response: HttpResponse<any>, fallback: string): string {
+        const contentDisposition = response.headers.get('Content-Disposition')
+        if (contentDisposition != null) {
+            const match = /filename="?([^";]+)"?/.exec(contentDisposition)
+            if (match != null) {
+                return match[1]
+            }
+        }
+        return fallback
     }
 
     public static removeFromArray<T>(array: T[]|undefined, predicate: (item: T, index: number, array: T[]) => boolean): T[] {

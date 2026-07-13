@@ -18,7 +18,8 @@ package config
 import authentication.ecas.AuthenticationLevel
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
-import models.{Constants, UsageTipsConfiguration}
+import models.{Constants, ReportSettings, UsageTipsConfiguration}
+import models.Enums.ReportType
 import org.apache.commons.lang3.{StringUtils, Strings}
 
 import java.util.Locale
@@ -219,6 +220,21 @@ object Configurations {
   var TEST_SERVICE_CALLBACKS_SOAP_ENABLED: Boolean = true
   var TEST_SERVICE_CALLBACKS_REST_ENABLED: Boolean = true
   var TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED: Boolean = false
+
+  // Built-in default naming expressions per report type. These always apply when no system-wide
+  // or community-specific override is in effect for the relevant report type.
+  val REPORT_NAMING_EXPRESSIONS: Map[Short, String] = Map(
+    ReportType.ConformanceStatementReport.id.toShort -> "conformance_report",
+    ReportType.ConformanceOverviewReport.id.toShort -> "conformance_overview",
+    ReportType.TestCaseReport.id.toShort -> "test_report",
+    ReportType.TestStepReport.id.toShort -> "step_report",
+    ReportType.ConformanceStatementCertificate.id.toShort -> "conformance_certificate",
+    ReportType.ConformanceOverviewCertificate.id.toShort -> "conformance_certificate",
+    ReportType.ConformanceStatementDocumentationReport.id.toShort -> "conformance_statement_documentation"
+  )
+  // Test Bed-wide report settings (loaded from the DB at startup - see PostStartHook#adaptSystemConfiguration).
+  // Not sourced from the environment.
+  var REPORT_SETTINGS: ReportSettings = ReportSettings.defaultConfiguration()
 
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {

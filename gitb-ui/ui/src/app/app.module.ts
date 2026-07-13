@@ -186,6 +186,7 @@ import {
 } from './components/conformance-statement-items-display/conformance-statement-items-display.component';
 import {CollapsingIconComponent} from './components/collapsing-icon/collapsing-icon.component';
 import {PlaceholderSelectorComponent} from './components/placeholder-selector/placeholder-selector.component';
+import {ReportFileNameExpressionComponent} from './components/report-file-name-expression/report-file-name-expression.component';
 import {TestResultRatioComponent} from './components/test-result-ratio/test-result-ratio.component';
 import {PrescriptionLevelComponent} from './components/prescription-level/prescription-level.component';
 import {CheckboxOptionPanelComponent} from './components/checkbox-option-panel/checkbox-option-panel.component';
@@ -430,6 +431,7 @@ import { TestResultCommentsModalComponent } from './modals/test-result-comments-
     ConformanceStatementItemsDisplayComponent,
     CollapsingIconComponent,
     PlaceholderSelectorComponent,
+    ReportFileNameExpressionComponent,
     TestResultRatioComponent,
     PrescriptionLevelComponent,
     CheckboxOptionPanelComponent,

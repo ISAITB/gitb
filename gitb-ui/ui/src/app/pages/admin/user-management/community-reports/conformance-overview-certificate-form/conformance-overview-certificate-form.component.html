@@ -1,6 +1,23 @@
 @if (settings) {
     <form>
-        <div class="row pt-1">
+        <div class="row">
+            <label class="col-3 col-form-label text-end">* Report file name:</label>
+            <div class="col-8 col-md-6">
+                <div class="row row-cols-auto align-items-center gx-3">
+                    <div class="col-auto">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="customiseFileName" name="customiseFileName" [(ngModel)]="customiseFileName" (change)="onCustomiseFileNameChange()">
+                            <label class="form-check-label" for="customiseFileName">Customise?</label>
+                        </div>
+                    </div>
+                    <div class="col-auto flex-grow-1">
+                        <app-report-file-name-expression [reportType]="reportType" [value]="customiseFileName ? reportSettings!.fileNameExpression : reportSettings!.defaultFileNameExpression" (valueChange)="reportSettings!.fileNameExpression = $event" [readonly]="!customiseFileName"></app-report-file-name-expression>
+                    </div>
+                </div>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The naming expression used to define the report's file name."></div>
+        </div>
+        <div class="row pt-3">
             <legend class="col-3 col-form-label text-end pt-0">Report enabled for:</legend>
             <div class="col-9">
                 <div class="form-check form-check-inline">

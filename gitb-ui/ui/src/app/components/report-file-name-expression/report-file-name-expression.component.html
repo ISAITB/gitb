@@ -1,0 +1,14 @@
+<div class="input-group">
+    <input type="text" class="form-control" [attr.id]="'fileNameExpression'+reportType" [attr.name]="'fileNameExpression'+reportType" [ngModel]="value" (ngModelChange)="onValueChange($event)" [readonly]="readonly">
+    <span class="input-group-text">{{extension}}</span>
+    <div class="btn-group" ngbDropdown placement="bottom-end">
+        <button [attr.id]="'buttonFileNameExpressionPlaceholders'+reportType" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle report-file-name-expression-dropdown-toggle" [disabled]="readonly" [attr.aria-controls]="'dropdownFileNameExpressionPlaceholders'+reportType" ngbTooltip="Copy placeholder text" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" tooltipClass="shortTooltip" container="body">
+            <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.CLIPBOARD" aria-hidden="true"></i></span>
+        </button>
+        <div [attr.id]="'dropdownFileNameExpressionPlaceholders'+reportType" ngbDropdownMenu [attr.aria-labelledby]="'buttonFileNameExpressionPlaceholders'+reportType">
+            @for (placeholder of placeholders; track placeholder.key) {
+                <button ngbDropdownItem type="button" (click)="selectPlaceholder(placeholder)"><b>{{placeholder.key}}:</b> {{placeholder.value}}</button>
+            }
+        </div>
+    </div>
+</div>

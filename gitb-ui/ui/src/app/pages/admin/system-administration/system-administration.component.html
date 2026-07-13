@@ -340,6 +340,49 @@
                             </form>
                         </app-configuration-entry>
                     </div>
+                    <!-- Report settings -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Report settings"
+                            configDescription="Manage settings related to producing reports and other report features."
+                            [(status)]="reportSettingsStatus"
+                        >
+                            <form>
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="reportSettingsEnabled" name="reportSettingsEnabled" [(ngModel)]="reportSettings.enabled">
+                                            <label class="form-check-label" for="reportSettingsEnabled">Override default settings?</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div [ngbCollapse]="!reportSettings.enabled" [animation]="true">
+                                    <div class="pt-3">
+                                        <div class="form-container">
+                                            <app-form-section sectionTitle="Report file names">
+                                                @for (info of reportTypeInfos; track info.type) {
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end">* {{info.label}}:</label>
+                                                        <div class="col-8 col-md-6">
+                                                            <app-report-file-name-expression [reportType]="info.type" [value]="reportSettings.fileNameExpressions[info.type]" (valueChange)="reportSettings.fileNameExpressions[info.type] = $event"></app-report-file-name-expression>
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip [tbTooltip]="'The file naming expression used when generating the ' + info.label.toLowerCase() + '.'"></div>
+                                                    </div>
+                                                }
+                                            </app-form-section>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-auto">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="reportSettingsStatus.pending || !reportSettingsOk()" [pending]="reportSettingsStatus.pending" (click)="saveReportSettings()">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
                     <!-- REST API. -->
                     <div class="configContainer">
                         <app-configuration-entry

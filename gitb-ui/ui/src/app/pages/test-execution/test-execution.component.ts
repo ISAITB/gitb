@@ -1302,11 +1302,11 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }
   }
 
-	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fileName: string) {
+	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fallbackFileName: string) {
     this.testCaseOperationPending[testCase.id] = true
-    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType).subscribe((data) => {
-      const blobData = new Blob([data], {type: contentType});
-      saveAs(blobData, fileName);
+    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
     }).add(() => {
       this.testCaseOperationPending[testCase.id] = false
     })

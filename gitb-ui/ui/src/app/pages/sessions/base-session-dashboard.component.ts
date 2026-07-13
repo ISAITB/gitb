@@ -40,6 +40,7 @@ import {CheckboxOption} from '../../components/checkbox-option-panel/checkbox-op
 import {CheckboxOptionState} from '../../components/checkbox-option-panel/checkbox-option-state';
 import {SessionColumnCase, SessionColumnsService} from '../../services/session-columns.service';
 import {BaseComponent} from '../base-component.component';
+import {Utils} from '../../common/utils';
 
 /** The full state of a session dashboard page, persisted so that returning here via a "View XYZ"
  * Back control restores filters, paging, sort and the previously expanded session. */
@@ -610,13 +611,13 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
     }
   }
 
-  private onReportExport(testResult: TestResultForDisplay, contentType: string, fileName: string) {
+  private onReportExport(testResult: TestResultForDisplay, contentType: string, fallbackFileName: string) {
     return this.reportService.exportTestCaseReport(testResult.session, testResult.testCaseId!, contentType)
       .pipe(
-        mergeMap((data) => {
-          const blobData = new Blob([data], {type: contentType});
-          saveAs(blobData, fileName);
-          return of(data)
+        mergeMap((response) => {
+          const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+          saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
+          return of(response)
         }),
         share()
       )

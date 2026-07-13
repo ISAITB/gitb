@@ -48,7 +48,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
   ) { super(conformanceService, modalService, reportService, errorService) }
 
   previewEnabled() {
-    return this.reportSettings?.customPdfs == false || (this.textProvided(this.reportSettings?.customPdfService) && (!this.reportSettings?.customPdfsWithCustomXml || this.reportSettings?.stylesheetExists))
+    return (this.reportSettings?.customPdfs == false || (this.textProvided(this.reportSettings?.customPdfService) && (!this.reportSettings?.customPdfsWithCustomXml || this.reportSettings?.stylesheetExists))) && this.fileNameExpressionOk()
   }
 
   handleExpanded(): void {
@@ -91,6 +91,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
             if (this.reportSettings.stylesheetExists) {
               this.stylesheetNameToShow = 'stylesheet.xslt'
             }
+            this.initialiseFileNameCustomisation()
           }
           return this.loadAdditionalData()
         })
@@ -111,6 +112,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
   }
 
   update() {
+    this.prepareFileNameExpressionForSave()
     this.updatePending = true
     this.updateSettings()
     .subscribe(() => {

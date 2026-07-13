@@ -14,6 +14,7 @@
  */
 
 import {Injectable} from '@angular/core';
+import {HttpResponse} from '@angular/common/http';
 import {ConformanceCertificateModalComponent} from '../modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import {ConformanceCertificateSettings} from '../types/conformance-certificate-settings';
 import {ConformanceService} from './conformance.service';
@@ -27,6 +28,7 @@ import {saveAs} from 'file-saver';
 import {DataService} from './data.service';
 import {Constants} from '../common/constants';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from '../common/utils';
 
 @Injectable({
   providedIn: 'root'
@@ -106,16 +108,16 @@ export class ReportSupportService {
     if (reportLevel == 'group') groupId = identifier
     if (reportLevel == 'specification') specId = identifier
     if (format == 'xml') {
-      let observable: Observable<ArrayBuffer>
+      let observable: Observable<HttpResponse<ArrayBuffer>>
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
         observable = this.reportService.exportConformanceOverviewReportInXML(communityId, systemId, domainId, groupId, specId, snapshotId)
       } else {
         observable = this.reportService.exportOwnConformanceOverviewReportInXML(systemId, domainId, groupId, specId, snapshotId)
       }
       return observable.pipe(
-          mergeMap((data) => {
-            const blobData = new Blob([data], {type: "application/xml"})
-            saveAs(blobData, "conformance_overview_report.xml")
+          mergeMap((response) => {
+            const blobData = new Blob([response.body as ArrayBuffer], {type: "application/xml"})
+            saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_overview_report.xml"))
             return of(true)
           })
         )
@@ -143,9 +145,9 @@ export class ReportSupportService {
                 } else {
                   // This can only be a report as the certificate settings don't foresee support for the requested reporting level
                   return this.reportService.exportConformanceOverviewReport(systemId, domainId, groupId, specId, snapshotId)
-                    .pipe(mergeMap((data) => {
-                      const blobData = new Blob([data], {type: "application/pdf"})
-                      saveAs(blobData, "conformance_overview_report.pdf")
+                    .pipe(mergeMap((response) => {
+                      const blobData = new Blob([response.body as ArrayBuffer], {type: "application/pdf"})
+                      saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_overview_report.pdf"))
                       return of(true)
                     }))
                 }
@@ -167,9 +169,9 @@ export class ReportSupportService {
               } else {
                 // This is a report
                 return this.reportService.exportConformanceOverviewReport(systemId, domainId, groupId, specId, snapshotId)
-                  .pipe(mergeMap((data) => {
-                    const blobData = new Blob([data], {type: "application/pdf"})
-                    saveAs(blobData, "conformance_overview_report.pdf")
+                  .pipe(mergeMap((response) => {
+                    const blobData = new Blob([response.body as ArrayBuffer], {type: "application/pdf"})
+                    saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_overview_report.pdf"))
                     return of(true)
                   }))
               }
@@ -178,9 +180,9 @@ export class ReportSupportService {
         } else {
           // This is a report
           return this.reportService.exportConformanceOverviewReport(systemId, domainId, groupId, specId, snapshotId)
-            .pipe(mergeMap((data) => {
-              const blobData = new Blob([data], {type: "application/pdf"})
-              saveAs(blobData, "conformance_overview_report.pdf")
+            .pipe(mergeMap((response) => {
+              const blobData = new Blob([response.body as ArrayBuffer], {type: "application/pdf"})
+              saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_overview_report.pdf"))
               return of(true)
             }))
         }

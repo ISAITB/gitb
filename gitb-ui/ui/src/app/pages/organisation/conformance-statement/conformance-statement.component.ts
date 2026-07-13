@@ -38,6 +38,7 @@ import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {OrganisationParameter} from 'src/app/types/organisation-parameter';
 import {SystemParameter} from 'src/app/types/system-parameter';
 import {ConformanceTestCase} from './conformance-test-case';
+import {Utils} from 'src/app/common/utils';
 import {ConformanceTestSuite} from './conformance-test-suite';
 import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
 import {CustomProperty} from 'src/app/types/custom-property.type';
@@ -789,9 +790,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   onExportConformanceCertificate() {
     this.exportPending = true
     this.reportService.exportOwnConformanceCertificateReport(this.actorId, this.systemId, this.snapshotId)
-    .subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/pdf'});
-      saveAs(blobData, "conformance_certificate.pdf");
+    .subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_certificate.pdf"));
     }).add(() => {
       this.exportPending = false
     })
@@ -800,9 +801,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   onExportConformanceStatementDocumentation() {
     this.exportPending = true
     this.reportService.exportConformanceStatementDocumentationReport(this.actorId, this.systemId)
-    .subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/pdf'});
-      saveAs(blobData, "conformance_statement_documentation.pdf");
+    .subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_statement_documentation.pdf"));
     }).add(() => {
       this.exportPending = false
     })

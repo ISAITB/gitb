@@ -88,6 +88,7 @@
     <xsd:complexType name="CommunityReportSetting">
         <xsd:sequence>
             <xsd:element name="customPdfService" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="fileNameExpression" type="xsd:string" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="reportType" type="ReportType" use="required"/>
         <xsd:attribute name="signPdfs" type="xsd:boolean" default="false"/>

@@ -26,6 +26,7 @@ import {map, Observable, share} from 'rxjs';
 import {forkJoin} from 'rxjs';
 import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import {DataService} from '../../../../../services/data.service';
+import {Utils} from '../../../../../common/utils';
 
 @Component({
     selector: 'app-conformance-statement-documentation-report-form',
@@ -119,19 +120,19 @@ export class ConformanceStatementDocumentationReportFormComponent extends BaseRe
     if (this.settings && this.reportSettings) {
       this.previewPending = true
       this.reportService.exportDemoConformanceStatementDocumentationReportInXML(this.communityId, this.reportSettings, this.settings, this.uploadedStylesheet)
-      .subscribe((data) => {
+      .subscribe((response) => {
         const modal = this.modalService.open(CodeEditorModalComponent, { size: 'lg' })
         const modalInstance = modal.componentInstance as CodeEditorModalComponent
         modalInstance.documentName = 'Conformance statement documentation report (XML)'
         modalInstance.editorOptions = {
-          value: data,
+          value: response.body ?? '',
           readOnly: true,
           lineNumbers: true,
           smartIndent: false,
           electricChars: false,
           mode: 'application/xml',
           download: {
-            fileName: 'conformance_statement_documentation.xml',
+            fileName: Utils.fileNameFromContentDisposition(response, 'conformance_statement_documentation.xml'),
             mimeType: 'application/xml'
           }
         }

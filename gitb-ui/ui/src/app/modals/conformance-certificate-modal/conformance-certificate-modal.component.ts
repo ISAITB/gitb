@@ -14,6 +14,7 @@
  */
 
 import {Component, ElementRef, EventEmitter, Input, OnInit, ViewChild} from '@angular/core';
+import {HttpResponse} from '@angular/common/http';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {ReportService} from 'src/app/services/report.service';
@@ -22,6 +23,7 @@ import {saveAs} from 'file-saver';
 import {Observable} from 'rxjs';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
@@ -145,11 +147,11 @@ export class ConformanceCertificateModalComponent implements OnInit {
 
   generate() {
     this.exportPending = true
-    let fileName: string
+    let fallbackFileName: string
     let contentType: string
-    let exportObservable: Observable<ArrayBuffer>
+    let exportObservable: Observable<HttpResponse<ArrayBuffer>>
     if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE) {
-      fileName = "conformance_certificate.pdf"
+      fallbackFileName = "conformance_certificate.pdf"
       contentType = "application/pdf"
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
         exportObservable = this.reportService.exportConformanceCertificate(this.communityId, this.actorId, this.systemId, this.settings, this.snapshotId)
@@ -160,11 +162,11 @@ export class ConformanceCertificateModalComponent implements OnInit {
       const includeDetails = this.choice == Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT && !this.statementReportDisabled
       if (this.format == 'pdf') {
         contentType = "application/pdf"
-        fileName = "conformance_report.pdf"
+        fallbackFileName = "conformance_report.pdf"
         exportObservable = this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, includeDetails, this.snapshotId)
       } else {
         contentType = "application/xml"
-        fileName = "conformance_report.xml"
+        fallbackFileName = "conformance_report.xml"
         if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
           exportObservable = this.reportService.exportConformanceStatementReportInXML(this.actorId, this.systemId, this.communityId, includeDetails, this.snapshotId)
         } else {
@@ -172,9 +174,9 @@ export class ConformanceCertificateModalComponent implements OnInit {
         }
       }
     }
-    exportObservable.subscribe((data) => {
-      const blobData = new Blob([data], {type: contentType})
-      saveAs(blobData, fileName)
+    exportObservable.subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: contentType})
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName))
       this.modalInstance.dismiss()
     }).add(() => {
       this.exportPending = false

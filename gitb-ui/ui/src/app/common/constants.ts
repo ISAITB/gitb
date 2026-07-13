@@ -584,7 +584,8 @@ export class Constants {
     WELCOME_TITLE: 'welcome_title',
     STARTUP_WIZARD: 'startup_wizard',
     USAGE_TIPS: 'usage_tips',
-    TEST_SERVICE_CALLBACKS: 'test_service_callbacks'
+    TEST_SERVICE_CALLBACKS: 'test_service_callbacks',
+    REPORT_SETTINGS: 'report_settings'
 	}
 
   public static readonly USAGE_TIP = {

@@ -31,6 +31,7 @@ import {TestResultStatusDisplayComponentApi} from '../test-result-status-display
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-test-case-display',
@@ -217,11 +218,11 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
   }
 
-	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fileName: string) {
+	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fallbackFileName: string) {
     this.operationPending[testCase.id] = true
-    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id, contentType).subscribe((data) => {
-      const blobData = new Blob([data], {type: contentType});
-      saveAs(blobData, fileName);
+    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id, contentType).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
     }).add(() => {
       this.operationPending[testCase.id] = false
     })

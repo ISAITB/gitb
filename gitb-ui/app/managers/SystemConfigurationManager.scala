@@ -68,7 +68,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
     Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips,
-    Constants.TestServiceCallbacks
+    Constants.TestServiceCallbacks, Constants.ReportSettings
   )
   // Configuration types whose value changes need to be pushed eagerly to the test engine (gitb-srv).
   private final val testEngineNotifiedConfigurationTypes = Set(Constants.TestServiceCallbacks)
@@ -274,6 +274,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
         val testEngineCallbacksConfig = persistedConfigs.find(config => config.config.name == Constants.TestServiceCallbacks)
         val rateLimitConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits)
+        val reportSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.ReportSettings)
         if (restApiEnabledConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
         }
@@ -314,6 +315,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         if (rateLimitConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiRateLimits, Some(JsonUtil.jsRestApiLimits(RestApiLimits.defaultSettings(), withDescriptions = false).toString()), None), defaultSetting = true, environmentSetting = false)
+        }
+        if (reportSettingsConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.ReportSettings, Some(JsonUtil.jsReportSettings(ReportSettings(enabled = false, fileNameExpressions = Configurations.REPORT_NAMING_EXPRESSIONS)).toString()), None), defaultSetting = true, environmentSetting = false)
         }
       }
       persistedConfigs
@@ -384,6 +388,14 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         config = config.copy(disabledForScreens = Set())
       }
       Some(JsonUtil.serializeUsageTipsConfiguration(config).toString())
+    } else if (name == Constants.ReportSettings && providedValue.isDefined) {
+      val settings = JsonUtil.parseJsReportSettings(providedValue.get)
+      if (settings.enabled) {
+        // Only keep the setting persisted while it is enabled with custom naming expressions.
+        Some(JsonUtil.jsReportSettings(settings).toString())
+      } else {
+        None
+      }
     } else {
       providedValue
     }
@@ -392,7 +404,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime || name == Constants.ReportSettings) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -519,6 +531,18 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             settings.toEnvironment()
             DBIO.successful(Some(
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.TestServiceCallbacks, Some(JsonUtil.jsTestEngineCallbackSettings(settings).toString()), None), fromDefault, fromEnv)
+            ))
+          case Constants.ReportSettings =>
+            val settings = if (value.isDefined) {
+              JsonUtil.parseJsReportSettings(value.get)
+            } else {
+              ReportSettings.defaultConfiguration()
+            }
+            Configurations.REPORT_SETTINGS = settings
+            // When not enabled, report back the built-in default expressions as a starting point for the form.
+            val settingsToReport = if (settings.enabled) settings else settings.copy(fileNameExpressions = Configurations.REPORT_NAMING_EXPRESSIONS)
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.ReportSettings, Some(JsonUtil.jsReportSettings(settingsToReport).toString()), None), defaultSetting = !settings.enabled, environmentSetting = false)
             ))
           case _ => DBIO.successful(None)
         }

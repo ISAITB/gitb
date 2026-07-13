@@ -945,6 +945,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedSetting.setCustomPdfs(setting.customPdfs)
     exportedSetting.setCustomPdfsWithCustomXml(setting.customPdfsWithCustomXml)
     exportedSetting.setCustomPdfService(setting.customPdfService.orNull)
+    exportedSetting.setFileNameExpression(setting.fileNameExpression.orNull)
     exportedSetting
   }
 

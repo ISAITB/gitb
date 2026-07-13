@@ -396,7 +396,8 @@ object ParameterExtractor {
     val useCustomPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_CUSTOM_PDF_REPORTS).toBoolean
     val useCustomPdfReportsWithCustomXml = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_CUSTOM_PDFS_WITH_CUSTOM_XML).toBoolean
     val customPdfService = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.CUSTOM_PDF_SERVICE)
-    CommunityReportSettings(reportType.id.toShort, signPdfReports, useCustomPdfReports, useCustomPdfReportsWithCustomXml, customPdfService.filter(StringUtils.isNotBlank), communityId)
+    val fileNameExpression = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.FILE_NAME_EXPRESSION)
+    CommunityReportSettings(reportType.id.toShort, signPdfReports, useCustomPdfReports, useCustomPdfReportsWithCustomXml, customPdfService.filter(StringUtils.isNotBlank), fileNameExpression.filter(StringUtils.isNotBlank), communityId)
   }
 
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
