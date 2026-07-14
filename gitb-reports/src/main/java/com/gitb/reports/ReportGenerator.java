@@ -50,6 +50,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +75,8 @@ public class ReportGenerator {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReportGenerator.class);
     private static final ReportGenerator INSTANCE = new ReportGenerator();
+    private static final String PAGE_BREAK_PLACEHOLDER = "$PAGE_BREAK";
+    private static final String REPORT_MESSAGE_SELECTOR = "div.report-message";
     private final JAXBContext jaxbContext;
     private final Map<String, Template> templateCache;
     private final Map<String, TemplateMethodModelEx> extensionFunctions;
@@ -115,6 +120,106 @@ public class ReportGenerator {
         });
     }
 
+    private boolean hasPageBreakPlaceholder(Boolean includeMessage, String message) {
+        return Boolean.TRUE.equals(includeMessage) && message != null && message.contains(PAGE_BREAK_PLACEHOLDER);
+    }
+
+    /**
+     * Resolves "$PAGE_BREAK" placeholder tokens found within the custom report message block(s) (marked with the
+     * "report-message" CSS class in the certificate templates) into CSS page breaks:
+     * - If an element follows the placeholder (within the message), "page-break-before: always;" is applied to it.
+     * - If the placeholder is trailing (nothing follows it within the message), "page-break-after: always;" is
+     *   applied to the message container itself, so that the report content following the message starts on a new page.
+     * The placeholder text (and its surrounding whitespace) is removed in all cases.
+     */
+    private void processPageBreaks(Document doc) {
+        for (Element container : doc.select(REPORT_MESSAGE_SELECTOR)) {
+            processPageBreaksInContainer(container);
+        }
+    }
+
+    private void processPageBreaksInContainer(Element container) {
+        TextNode targetNode;
+        while ((targetNode = findTextNodeWithPlaceholder(container)) != null) {
+            Element anchor = (parentOf(targetNode) instanceof Element parentElement) ? parentElement : container;
+            String updatedText = targetNode.getWholeText().replaceAll("\\s*\\Q"+PAGE_BREAK_PLACEHOLDER+"\\E\\s*", " ").trim();
+            if (updatedText.isEmpty()) {
+                targetNode.remove();
+            } else {
+                targetNode.text(updatedText);
+            }
+            // Determine the next element to break before, scoped to the message container's own content.
+            Element nextElement = findNextElementWithin(anchor, container);
+            if (anchor != container && isEffectivelyEmpty(anchor)) {
+                // The placeholder was on its own line/block - drop the now-empty wrapper.
+                anchor.remove();
+            }
+            if (nextElement != null) {
+                addPageBreakStyle(nextElement, "page-break-before");
+            } else if (!isEffectivelyEmpty(container)) {
+                addPageBreakStyle(container, "page-break-after");
+            }
+        }
+    }
+
+    private TextNode findTextNodeWithPlaceholder(Element root) {
+        for (var child : root.childNodes()) {
+            if (child instanceof TextNode textNode) {
+                if (textNode.getWholeText().contains(PAGE_BREAK_PLACEHOLDER)) {
+                    return textNode;
+                }
+            } else if (child instanceof Element childElement) {
+                TextNode found = findTextNodeWithPlaceholder(childElement);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Element findNextElementWithin(Element anchor, Element container) {
+        Element current = anchor;
+        while (current != null && current != container) {
+            Element sibling = current.nextElementSibling();
+            if (sibling != null) {
+                return sibling;
+            }
+            current = (parentOf(current) instanceof Element parentElement) ? parentElement : null;
+        }
+        return null;
+    }
+
+    /**
+     * Equivalent to node.parent(), but resolved through the base org.jsoup.nodes.Node#parent() (which always
+     * returns Node) rather than through the Element/LeafNode-level overrides that (depending on the jsoup version)
+     * covariantly narrow the return type to Element. Binding to those overrides at compile time can otherwise
+     * produce a NoSuchMethodError if the runtime classpath resolves an older jsoup jar without the narrower override.
+     */
+    private org.jsoup.nodes.Node parentOf(org.jsoup.nodes.Node node) {
+        return node.parent();
+    }
+
+    private boolean isEffectivelyEmpty(Element element) {
+        return element.text().trim().isEmpty() && element.children().isEmpty();
+    }
+
+    private void addPageBreakStyle(Element element, String property) {
+        String existingStyle = element.attr("style").trim();
+        if (existingStyle.contains(property)) {
+            return;
+        }
+        StringBuilder styleBuilder = new StringBuilder(existingStyle);
+        if (!styleBuilder.isEmpty() && styleBuilder.charAt(styleBuilder.length() - 1) != ';') {
+            styleBuilder.append(';');
+        }
+        if (!styleBuilder.isEmpty()) {
+            styleBuilder.append(' ');
+        }
+        styleBuilder.append(property).append(": always;");
+        element.attr("style", styleBuilder.toString());
+    }
+
     private void loadFonts(PdfRendererBuilder builder) {
         builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSans.ttf"), "FreeSans", 400, BaseRendererBuilder.FontStyle.NORMAL, true);
         builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSansBold.ttf"), "FreeSans", 700, BaseRendererBuilder.FontStyle.NORMAL, true);
@@ -131,6 +236,10 @@ public class ReportGenerator {
     }
 
     public void writeClasspathReport(String reportPath, Map<String, Object> parameters, OutputStream outputStream, ReportSpecs specs) {
+        writeClasspathReport(reportPath, parameters, outputStream, specs, false);
+    }
+
+    private void writeClasspathReport(String reportPath, Map<String, Object> parameters, OutputStream outputStream, ReportSpecs specs, boolean applyPageBreaks) {
         ReportSpecs specsToUse = Objects.requireNonNullElseGet(specs, ReportSpecs::build);
         // Add custom extension functions.
         parameters = Objects.requireNonNullElse(parameters, new HashMap<>());
@@ -176,11 +285,13 @@ public class ReportGenerator {
                 }
             });
 
-            if (tempHtmlFile != null) {
-                builder.withW3cDocument(new W3CDom().fromJsoup(Jsoup.parse(tempHtmlFile, StandardCharsets.UTF_8.name())), "reports");
-            } else {
-                builder.withW3cDocument(new W3CDom().fromJsoup(Jsoup.parse(tempHtmlString)), "reports");
+            var doc = (tempHtmlFile != null)
+                    ? Jsoup.parse(tempHtmlFile, StandardCharsets.UTF_8.name())
+                    : Jsoup.parse(tempHtmlString);
+            if (applyPageBreaks) {
+                processPageBreaks(doc);
             }
+            builder.withW3cDocument(new W3CDom().fromJsoup(doc), "reports");
 
             builder.toStream(outputStream);
             builder.run();
@@ -422,7 +533,7 @@ public class ReportGenerator {
         try {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("data", overview);
-            writeClasspathReport("reports/ConformanceOverview.ftl", parameters, outputStream, specs);
+            writeClasspathReport("reports/ConformanceOverview.ftl", parameters, outputStream, specs, hasPageBreakPlaceholder(overview.getIncludeMessage(), overview.getMessage()));
         } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while generating report", e);
         }
@@ -436,7 +547,7 @@ public class ReportGenerator {
         try {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("data", overview);
-            writeClasspathReport("reports/ConformanceStatementOverview.ftl", parameters, outputStream, specs);
+            writeClasspathReport("reports/ConformanceStatementOverview.ftl", parameters, outputStream, specs, hasPageBreakPlaceholder(overview.getIncludeMessage(), overview.getMessage()));
         } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while generating report", e);
         }

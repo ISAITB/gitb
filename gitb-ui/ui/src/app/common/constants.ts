@@ -311,6 +311,7 @@ export class Constants {
   public static readonly PLACEHOLDER__LAST_UPDATE_DATE = "$LAST_UPDATE_DATE"
   public static readonly PLACEHOLDER__REPORT_DATE = "$REPORT_DATE"
   public static readonly PLACEHOLDER__SNAPSHOT = "$SNAPSHOT"
+  public static readonly PLACEHOLDER__PAGE_BREAK = "$PAGE_BREAK"
 
 	public static readonly TEST_STATUS = {
 		UNKNOWN: null,

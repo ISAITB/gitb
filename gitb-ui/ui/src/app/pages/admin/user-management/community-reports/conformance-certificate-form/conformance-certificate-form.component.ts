@@ -62,7 +62,8 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
       { key: Constants.PLACEHOLDER__BADGE, value: 'The badge image corresponding to the current conformance status (original image size).'},
       { key: Constants.PLACEHOLDER__BADGE+'{width}', value: 'The badge image corresponding to the current conformance status (with fixed width in pixels).', select: () => Constants.PLACEHOLDER__BADGE+'{100}' },
       { key: Constants.PLACEHOLDER__REPORT_DATE+'{format}', value: 'The report generation date (with date format).', select: () => Constants.PLACEHOLDER__REPORT_DATE+'{dd/MM/yyyy}' },
-      { key: Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{format}', value: 'The conformance last update time (with date format).', select: () => Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{dd/MM/yyyy}' }
+      { key: Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{format}', value: 'The conformance last update time (with date format).', select: () => Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{dd/MM/yyyy}' },
+      { key: Constants.PLACEHOLDER__PAGE_BREAK, value: 'A page break that can be used to force a new page at the specific location.' }
     ]
   }
 
