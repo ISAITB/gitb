@@ -363,7 +363,7 @@
                                                 @for (info of reportTypeInfos; track info.type) {
                                                     <div class="row pt-3">
                                                         <label class="col-3 col-form-label text-end">* {{info.label}}:</label>
-                                                        <div class="col-8 col-md-6">
+                                                        <div class="col-8 col-xl-6">
                                                             <app-report-file-name-expression [reportType]="info.type" [value]="reportSettings.fileNameExpressions[info.type]" (valueChange)="reportSettings.fileNameExpressions[info.type] = $event"></app-report-file-name-expression>
                                                         </div>
                                                         <div class="col-auto" app-tooltip [tbTooltip]="'The file naming expression used when generating the ' + info.label.toLowerCase() + '.'"></div>
