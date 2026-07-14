@@ -2,8 +2,8 @@ publiccodeYmlVersion: 0.4.0
 name: Interoperability Test Bed
 applicationSuite: ""
 url: https://github.com/ISAITB/gitb
-softwareVersion: 1.29.4
-releaseDate: 2026-05-21
+softwareVersion: 1.29.5
+releaseDate: 2026-06-19
 logo: https://www.itb.ec.europa.eu/files/itb_logo_simple.png?v=1
 platforms:
   - web
