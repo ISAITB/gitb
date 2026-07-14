@@ -172,7 +172,8 @@ public enum ErrorCode {
     FOREACH_MISSING_ITERATION_END(                      "TDL-135", "%s [%s] defines a foreach step with no limit. You need to either specify an explicit 'end' attribute, or the collection to iterate over through the 'of' attribute.", ERROR, true),
     MISSING_ACTOR_REFERENCE_IN_TRANSACTION(             "TDL-136", "Test case [%s] defines a btxn step with missing actor references. This is allowed only when the test case defines at most two actors.", ERROR, false),
     HANDLER_TIMEOUT_DEFINED_WHEN_USING_TRANSACTION(     "TDL-137", "%s [%s] defines a %s step with a transaction reference (txnId) and handler timeout (handlerTimeout). When using transactions, handler timeouts not declared on the level of the transaction are ignored.", WARNING, true),
-    POTENTIALLY_INVALID_ACTOR_VARIABLE(                 "TDL-138", "References are made to custom actor properties %s. Ensure these will be defined at runtime.", INFO)
+    POTENTIALLY_INVALID_ACTOR_VARIABLE(                 "TDL-138", "References are made to custom actor properties %s. Ensure these will be defined at runtime.", INFO),
+    INVALID_MULTIPLE_ATTRIBUTE(                         "TDL-139", "%s [%s] defines a user interaction request with a [multiple] attribute that defines neither a [options] attribute (for a multiple selection), neither has [inputType] set to [UPLOAD] (for a multiple file upload). The [multiple] attribute will be ignored.", WARNING, true)
     ;
 
     private final String code;

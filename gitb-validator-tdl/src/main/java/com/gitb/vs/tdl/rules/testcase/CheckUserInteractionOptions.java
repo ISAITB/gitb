@@ -15,6 +15,7 @@
 
 package com.gitb.vs.tdl.rules.testcase;
 
+import com.gitb.core.InputRequestInputType;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.tdl.InstructionOrRequest;
 import com.gitb.tdl.UserInteraction;
@@ -35,12 +36,13 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                 for (InstructionOrRequest ir : ((UserInteraction) step).getInstructOrRequest()) {
                     if (ir instanceof UserRequest ur) {
                         hasInputRequests = true;
-                        if (StringUtils.isBlank(ur.getOptions())) {
+                        boolean hasNoOptions = StringUtils.isBlank(ur.getOptions());
+                        if (hasNoOptions) {
                             if (StringUtils.isNotBlank(ur.getOptionLabels())) {
                                 addReportItem(ErrorCode.MISSING_INTERACTION_OPTIONS, currentTestCase.getId(), "optionLabels", "optionLabels");
                             }
-                            if (StringUtils.isNotBlank(ur.getMultiple())) {
-                                addReportItem(ErrorCode.MISSING_INTERACTION_OPTIONS, currentTestCase.getId(), "multiple", "multiple");
+                            if (StringUtils.isNotBlank(ur.getMultiple()) && ur.getInputType() != InputRequestInputType.UPLOAD) {
+                                addReportItem(ErrorCode.INVALID_MULTIPLE_ATTRIBUTE, currentTestCase.getId());
                             }
                         } else {
                             if (ur.getContentType() != null && ur.getContentType() != ValueEmbeddingEnumeration.STRING) {
