@@ -23,15 +23,13 @@ import com.gitb.tbs.InteractWithUsersRequest;
 import com.gitb.tbs.TestStepStatus;
 import com.gitb.tpl.*;
 import com.gitb.tr.*;
+import config.Configurations;
 import jakarta.xml.bind.JAXBElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.core.Version;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.SerializationContext;
-import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.*;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
@@ -39,6 +37,7 @@ import tools.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
 /**
  * A Jackson wrapper for converting JAVA objects into JSON and vice versa
@@ -60,32 +59,37 @@ public class JacksonUtil {
         mapper = JsonMapper.builder()
                 .addModule(new JakartaXmlBindAnnotationModule())
                 .addModule(customSerializersModule)
-                .defaultDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm"))
                 .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
                 .build();
     }
 
+    private static ObjectWriter getWriter() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Configurations.TIME_ZONE()));
+        return mapper.writer(dateFormat);
+    }
+
     public static String serializeTestCasePresentation(TestCase testCase) {
-        return mapper.writeValueAsString(testCase);
+        return getWriter().writeValueAsString(testCase);
     }
 
     public static String serializeConfigurationCompleteRequest(ConfigurationCompleteRequest request) {
         // We are calling getConfigs() to ensure that the configurations' array is not null. The goal is to include an empty array in the JSON to detect the type of payload.
         request.getConfigs();
-        return mapper.writeValueAsString(request);
+        return getWriter().writeValueAsString(request);
     }
 
     public static String serializeTestStepStatus(TestStepStatus testStepStatus) {
-        return mapper.writeValueAsString(testStepStatus);
+        return getWriter().writeValueAsString(testStepStatus);
     }
 
     public static String serializeTestReport(TestStepReportType report) {
-        return mapper.writeValueAsString(report);
+        return getWriter().writeValueAsString(report);
     }
 
 
     public static String serializeInteractionRequest (InteractWithUsersRequest request) {
-        return mapper.writeValueAsString(request);
+        return getWriter().writeValueAsString(request);
     }
 
     private static class StatusSerializer extends ValueSerializer<StepStatus> {
@@ -146,6 +150,7 @@ public class JacksonUtil {
             }
             if (testStepReport.getDate() != null) {
                 String dateString = testStepReport.getDate().toGregorianCalendar().toZonedDateTime()
+                        .withZoneSameInstant(Configurations.TIME_ZONE())
                         .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
                 json.writePOJOProperty("date", dateString);
             }

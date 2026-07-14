@@ -15,19 +15,19 @@
 
 package utils
 
+import config.Configurations
 import models.Constants
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.LocalDateTime
 import java.util.{Calendar, Date, TimeZone}
 
 object TimeUtil {
 
   private val MS_IN_A_SECOND = 1000L
-  private val DATE_FORMATTER_UTC = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-  private val UTC_ZONE = ZoneId.of("UTC")
+  private val DISPLAY_FORMATTER = DateTimeFormatter.ofPattern(Constants.FilterDateFormat)
 
   private val formatUTC: SimpleDateFormat = {
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -35,26 +35,40 @@ object TimeUtil {
     format
   }
 
+  /**
+   * Parses a date/time string (as submitted by the UI as a filter bound) as wall-clock time in the application's
+   * configured/default timezone (see [[Configurations.TIME_ZONE]]).
+   */
   def dateFromFilterString(dateStr: Option[String]): Option[Date] = {
     if (dateStr.isEmpty) {
       None
     } else {
-      Some(new SimpleDateFormat(Constants.FilterDateFormat).parse(dateStr.get))
+      Some(Date.from(LocalDateTime.parse(dateStr.get, DISPLAY_FORMATTER).atZone(Configurations.TIME_ZONE).toInstant))
     }
   }
 
+  /**
+   * Formats the provided instant for display in the application's configured/default timezone
+   * (see [[Configurations.TIME_ZONE]]).
+   */
   def serializeTimestamp(t:Timestamp): String = {
-    new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date(t.getTime))
+    t.toInstant.atZone(Configurations.TIME_ZONE).format(DISPLAY_FORMATTER)
   }
 
-  def serializeTimestampUTC(t:Timestamp): String = {
-    ZonedDateTime.of(t.toLocalDateTime, ZoneId.systemDefault())
-      .withZoneSameInstant(UTC_ZONE)
-      .format(DATE_FORMATTER_UTC)
+  /**
+   * Formats the provided date (an instant) for display in the application's configured/default timezone
+   * (see [[Configurations.TIME_ZONE]]), using the given pattern.
+   */
+  def formatDate(date: Date, pattern: String): String = {
+    DateTimeFormatter.ofPattern(pattern).withZone(Configurations.TIME_ZONE).format(date.toInstant)
   }
 
+  /**
+   * Parses a date/time string (as submitted by the UI, e.g. as a filter bound) as wall-clock time in the
+   * application's configured/default timezone (see [[Configurations.TIME_ZONE]]).
+   */
   def parseTimestamp(timestamp:String): Timestamp = {
-    new Timestamp(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse(timestamp).getTime)
+    Timestamp.from(LocalDateTime.parse(timestamp, DISPLAY_FORMATTER).atZone(Configurations.TIME_ZONE).toInstant)
   }
 
   def getCurrentTimestamp(): Timestamp = {

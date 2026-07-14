@@ -313,8 +313,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
 
   private def createDemoTestCaseOverview(communityId: Long, source: TestCaseOverviewReportType, reportSpecs: ReportSpecs): Future[com.gitb.reports.dto.TestCaseOverview] = {
     getReportLabels(communityId).map { labels =>
-      val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-      val sdfLog = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
       val overview = new com.gitb.reports.dto.TestCaseOverview
       overview.setTitle("Test Case Report")
       // Labels
@@ -328,7 +326,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       overview.setOutputMessages(source.getMessage)
       overview.setSessionId(UUID.randomUUID().toString)
       // Start time
-      overview.setStartTime(sdf.format(source.getStartTime.toGregorianCalendar.getTime))
+      overview.setStartTime(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "dd/MM/yyyy HH:mm:ss"))
       // End time
       overview.setEndTime(overview.getStartTime)
       overview.setId("1")
@@ -341,9 +339,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       overview.setTestDescription("Sample test case description")
       overview.setDocumentation("<p>Sample test case documentation</p>")
       overview.setLogMessages(util.List.of(
-        "[%s] INFO Sample log info message".formatted(sdfLog.format(source.getStartTime.toGregorianCalendar.getTime)),
-        "[%s] WARN Sample log warning message".formatted(sdfLog.format(source.getStartTime.toGregorianCalendar.getTime)),
-        "[%s] ERROR Sample log error message".formatted(sdfLog.format(source.getStartTime.toGregorianCalendar.getTime))
+        "[%s] INFO Sample log info message".formatted(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "yyyy-MM-dd HH:mm:ss")),
+        "[%s] WARN Sample log warning message".formatted(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "yyyy-MM-dd HH:mm:ss")),
+        "[%s] ERROR Sample log error message".formatted(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "yyyy-MM-dd HH:mm:ss"))
       ))
       overview.setSpecReference("SPEC1")
       overview.setSpecDescription("Description for SPEC1")
@@ -428,7 +426,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           }
         } else {
           // Create demo data.
-          val reportSpecs = ReportSpecs.build()
+          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE)
           val reportData = createDemoTAR(None, None)
           // Write PDF report.
           Using.resource(Files.newOutputStream(reportPath)) { output =>
@@ -549,7 +547,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           }
         } else {
           // Create demo data.
-          val reportSpecs = ReportSpecs.build()
+          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE)
           createDemoTestCaseOverview(reportSettings.community, createDemoTestCaseOverviewReport(), reportSpecs).map { reportData =>
             // Write PDF report.
             Using.resource(Files.newOutputStream(reportPath)) { output =>
@@ -1624,7 +1622,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           } else {
             overview.setTitle("Conformance Overview Report")
           }
-          overview.setReportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(conformanceData.reportDate))
+          overview.setReportDate(TimeUtil.formatDate(conformanceData.reportDate, "dd/MM/yyyy HH:mm:ss"))
           overview.setOrganisation(conformanceData.organisationName.getOrElse("-"))
           overview.setSystem(conformanceData.systemName.getOrElse("-"))
           if (certificateSettings.isDefined) {
@@ -1972,7 +1970,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
 
   private def getDateFormatter(format: String): Option[SimpleDateFormat] = {
       try {
-        Some(new SimpleDateFormat(format))
+        val formatter = new SimpleDateFormat(format)
+        formatter.setTimeZone(java.util.TimeZone.getTimeZone(Configurations.TIME_ZONE))
+        Some(formatter)
       } catch {
         case e: Exception =>
           LOGGER.warn("Invalid date format {}", format, e)
@@ -2785,7 +2785,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
       }
       overview <- {
-        val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
         val overview = new com.gitb.reports.dto.ConformanceStatementOverview()
         // Labels
         overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
@@ -2860,9 +2859,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
               if (info.sessionId.exists(session => testResultMap.exists(_.contains(session)))) {
                 val testResult = testResultMap.get(info.sessionId.get)
                 testCaseOverview.setSessionId(info.sessionId.get)
-                testCaseOverview.setStartTime(sdf.format(new Date(testResult._1.startTime.getTime)))
+                testCaseOverview.setStartTime(TimeUtil.formatDate(testResult._1.startTime, "dd/MM/yyyy HH:mm:ss"))
                 if (testResult._1.endTime.isDefined) {
-                  testCaseOverview.setEndTime(sdf.format(new Date(testResult._1.endTime.get.getTime)))
+                  testCaseOverview.setEndTime(TimeUtil.formatDate(testResult._1.endTime.get, "dd/MM/yyyy HH:mm:ss"))
                 }
                 val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult._2)))
                 val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult._1.startTime), isExpected = true)
@@ -3000,7 +2999,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         overview.setFailedTestsIgnored(failedTestsIgnored)
         overview.setUndefinedTestsIgnored(undefinedTestsIgnored)
         overview.setIncludeTestStatus(addTestStatus)
-        overview.setReportDate(sdf.format(reportDate))
+        overview.setReportDate(TimeUtil.formatDate(reportDate, "dd/MM/yyyy HH:mm:ss"))
         Future.successful(overview)
       }
       // Add also custom message (doing here as we need the overall result to be calculated)

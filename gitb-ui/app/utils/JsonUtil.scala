@@ -246,10 +246,10 @@ object JsonUtil {
       var obj = Json.obj(
         "session" -> item.sessionId,
         "result" -> item.result,
-        "startTime" -> TimeUtil.serializeTimestampUTC(item.startTime)
+        "startTime" -> TimeUtil.serializeTimestamp(item.startTime)
       )
       if (item.endTime.isDefined) {
-        obj = obj.+("endTime", JsString(TimeUtil.serializeTimestampUTC(item.endTime.get)))
+        obj = obj.+("endTime", JsString(TimeUtil.serializeTimestamp(item.endTime.get)))
       }
       if (item.outputMessage.isDefined) {
         obj = obj.+("message", JsString(item.outputMessage.get))

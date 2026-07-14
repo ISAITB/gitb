@@ -1195,10 +1195,12 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	def getPathForTestSessionObj(sessionId: String, sessionStartTime: Option[Timestamp], isExpected: Boolean): SessionFolderInfo = {
 		var startTime: LocalDateTime = null
 		if (sessionStartTime.isDefined) {
-			startTime = sessionStartTime.get.toLocalDateTime
+			// Interpreted in the application's configured/default timezone (see Configurations.TIME_ZONE) so that the
+			// resulting folder bucketing matches what is displayed to users.
+			startTime = sessionStartTime.get.toInstant.atZone(Configurations.TIME_ZONE).toLocalDateTime
 		} else {
 			// We have no DB entry only in the case of preliminary steps.
-			startTime = LocalDateTime.now()
+			startTime = LocalDateTime.now(Configurations.TIME_ZONE)
 		}
 		val statusUpdateFolderPath = getStatusUpdatesFolder().getAbsolutePath
 		val path = Paths.get(

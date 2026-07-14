@@ -17,7 +17,6 @@ package utils
 
 import config.Configurations
 
-import java.text.SimpleDateFormat
 import java.util.Date
 import scala.util.matching.Regex
 
@@ -96,7 +95,7 @@ object ReportNameResolver {
       "SYSTEM" -> ctx.system.getOrElse(""),
       "CONFORMANCE_TARGET" -> ctx.conformanceTarget.getOrElse(""),
       "TEST_CASE_NAME" -> ctx.testCaseName.getOrElse(""),
-      "DATE" -> new SimpleDateFormat(FileDateFormat).format(ctx.date)
+      "DATE" -> TimeUtil.formatDate(ctx.date, FileDateFormat)
     )
     tokenValues.foldLeft(expression) { case (current, (token, value)) =>
       current.replace("${"+token+"}", value)

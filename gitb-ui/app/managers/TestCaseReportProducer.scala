@@ -30,13 +30,12 @@ import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils
+import utils.{RepositoryUtils, TimeUtil}
 
 import java.io.{File, StringReader}
 import java.nio.file.{Files, Path, Paths}
-import java.text.SimpleDateFormat
 import java.util
-import java.util.{Date, UUID}
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable.ListBuffer
@@ -213,7 +212,6 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
 
   private def generateDetailedTestCaseReportPdf(input: ReportGenerationInput, testData: TestSessionData, labels: Future[Map[Short, CommunityLabels]], specs: ReportSpecs): Future[Path] = {
     val reportPath = Paths.get(input.exportedReportPath.getAbsolutePath)
-    val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     for {
       // Overview
       overview <- {
@@ -243,24 +241,24 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
         overview.setSessionId(testResult.sessionId)
         // Start time
         val start = testResult.startTime
-        overview.setStartTime(sdf.format(new Date(start.getTime)))
+        overview.setStartTime(TimeUtil.formatDate(start, "dd/MM/yyyy HH:mm:ss"))
         // End time
         if (testResult.endTime.isDefined) {
           val end = testResult.endTime.get
-          overview.setEndTime(sdf.format(new Date(end.getTime)))
+          overview.setEndTime(TimeUtil.formatDate(end, "dd/MM/yyyy HH:mm:ss"))
         }
         // Comments
         if (testData.comments.isDefined) {
           if (testData.comments.get.userComment.isDefined && testData.comments.get.userCommentTime.isDefined) {
             overview.setUserComment(new TestCaseOverview.UserComment(
               testData.comments.get.userComment.get,
-              sdf.format(new Date(testData.comments.get.userCommentTime.get.getTime))
+              TimeUtil.formatDate(testData.comments.get.userCommentTime.get, "dd/MM/yyyy HH:mm:ss")
             ))
           }
           if (testData.comments.get.adminComment.isDefined && testData.comments.get.adminCommentTime.isDefined) {
             overview.setAdminComment(new TestCaseOverview.AdminComment(
               testData.comments.get.adminComment.get,
-              sdf.format(new Date(testData.comments.get.adminCommentTime.get.getTime)),
+              TimeUtil.formatDate(testData.comments.get.adminCommentTime.get, "dd/MM/yyyy HH:mm:ss"),
               testData.comments.get.resultForced.nonEmpty,
               testData.comments.get.userCommentTime.isEmpty || testData.comments.get.userCommentTime.get.before(testData.comments.get.adminCommentTime.get)
             ))

@@ -21,26 +21,33 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by serbay.
+ * <br>
+ * Report/interchange date-time values produced here are always expressed in UTC (the database and the engine's
+ * XML interchange format record UTC only - presentation in a specific timezone is a concern of the consuming
+ * application, e.g. gitb-ui).
  */
 public class XMLDateTimeUtils {
 
+    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+
     public static XMLGregorianCalendar getXMLGregorianCalendarDateTime() throws DatatypeConfigurationException {
-        GregorianCalendar calendar = new GregorianCalendar();
+        GregorianCalendar calendar = new GregorianCalendar(UTC);
         return DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
     }
 
 	public static XMLGregorianCalendar getXMLGregorianCalendarDateTime(Date date) throws DatatypeConfigurationException {
-		GregorianCalendar calendar = new GregorianCalendar();
+		GregorianCalendar calendar = new GregorianCalendar(UTC);
 		calendar.setTime(date);
 		return DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
 	}
 
 	public static XMLGregorianCalendar getXMLGregorianCalendarDate(Date date) throws DatatypeConfigurationException {
-		Calendar calendar = Calendar.getInstance();
+		Calendar calendar = Calendar.getInstance(UTC);
 		calendar.setTime(date);
 		return DatatypeFactory.newInstance().newXMLGregorianCalendarDate(
 			calendar.get(Calendar.YEAR),
@@ -58,10 +65,10 @@ public class XMLDateTimeUtils {
 	}
 
 	public static XMLGregorianCalendar getXMLGregorianCalendarTime(Date date) throws DatatypeConfigurationException {
-		Calendar calendar = Calendar.getInstance();
+		Calendar calendar = Calendar.getInstance(UTC);
 		calendar.setTime(date);
 		return DatatypeFactory.newInstance().newXMLGregorianCalendarTime(
-			calendar.get(Calendar.HOUR),
+			calendar.get(Calendar.HOUR_OF_DAY),
 			calendar.get(Calendar.MINUTE),
 			calendar.get(Calendar.SECOND),
 			calendar.get(Calendar.MILLISECOND),
@@ -70,7 +77,7 @@ public class XMLDateTimeUtils {
 
 	public static XMLGregorianCalendar getXMLGregorianCalendarTime(Calendar calendar) throws DatatypeConfigurationException {
 		return DatatypeFactory.newInstance().newXMLGregorianCalendarTime(
-			calendar.get(Calendar.HOUR),
+			calendar.get(Calendar.HOUR_OF_DAY),
 			calendar.get(Calendar.MINUTE),
 			calendar.get(Calendar.SECOND),
 			calendar.get(Calendar.MILLISECOND),

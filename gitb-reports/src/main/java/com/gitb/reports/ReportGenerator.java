@@ -481,7 +481,7 @@ public class ReportGenerator {
         Report report = new Report();
         if (reportType.getDate() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            sdf.setTimeZone(TimeZone.getDefault());
+            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
             report.setReportDate(sdf.format(reportType.getDate().toGregorianCalendar().getTime()));
         }
         report.setReportResult(reportType.getResult().value());
@@ -528,6 +528,7 @@ public class ReportGenerator {
     public void writeConformanceOverviewReport(ConformanceOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
             overview.setReportDate(sdf.format(new Date()));
         }
         try {
@@ -542,6 +543,7 @@ public class ReportGenerator {
     public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
             overview.setReportDate(sdf.format(new Date()));
         }
         try {
@@ -556,6 +558,7 @@ public class ReportGenerator {
     public void writeConformanceStatementDocumentationReport(ConformanceStatementDocumentation data, OutputStream outputStream, ReportSpecs specs) {
         if (data.getReportDate() == null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
             data.setReportDate(sdf.format(new Date()));
         }
         if (data.getIncludeTestCaseDocumentation()) {

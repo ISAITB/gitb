@@ -16,6 +16,7 @@
 package com.gitb.reports;
 
 import java.nio.file.Path;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,6 +32,9 @@ public class ReportSpecs {
     private int contextItemTruncateLimit = 1000;
     private final Set<String> mimeTypesToConvertToStrings = new HashSet<>();
     private Path tempFolderPath;
+    // The timezone to use for dates rendered onto reports. Defaults to the platform (JVM/host) timezone, matching
+    // the behaviour to apply when the calling application (e.g. gitb-ui) does not have a configured override.
+    private ZoneId zoneId = ZoneId.systemDefault();
 
     private ReportSpecs() {}
 
@@ -78,6 +82,11 @@ public class ReportSpecs {
         return this;
     }
 
+    public ReportSpecs withZone(ZoneId zoneId) {
+        this.zoneId = zoneId;
+        return this;
+    }
+
     public Function<String, String> getResourceResolver() {
         return resourceResolver;
     }
@@ -108,5 +117,9 @@ public class ReportSpecs {
 
     public Path getTempFolderPath() {
         return tempFolderPath;
+    }
+
+    public ZoneId getZone() {
+        return zoneId;
     }
 }

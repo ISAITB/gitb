@@ -25,7 +25,7 @@ spec:
             - name: TESTBED_CLIENT_URL
               value: "http://itb-ui:9090/TestbedClient"
             - name: DB_DEFAULT_URL
-              value: "jdbc:mysql://itb-mysql:3306/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true"
+              value: "jdbc:mysql://itb-mysql:3306/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true"
             - name: DB_DEFAULT_ROOTURL
               value: "jdbc:mysql://itb-mysql:3306/"
             - name: REDIS_HOST

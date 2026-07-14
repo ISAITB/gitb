@@ -21,13 +21,17 @@ import com.typesafe.config.{Config, ConfigFactory}
 import models.{Constants, ReportSettings, UsageTipsConfiguration}
 import models.Enums.ReportType
 import org.apache.commons.lang3.{StringUtils, Strings}
+import org.slf4j.LoggerFactory
 
+import java.time.ZoneId
 import java.util.Locale
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.matching.Regex
 
 object Configurations {
+
+  private val LOGGER = LoggerFactory.getLogger(Configurations.getClass)
 
   private var _IS_LOADED = false
   var STARTUP_FAILURE = false
@@ -55,6 +59,9 @@ object Configurations {
   var TESTBED_CLIENT_URL = ""
   var TESTBED_CLIENT_URL_INTERNAL = ""
 	var TEST_CASE_REPOSITORY_PATH = ""
+  // The timezone considered by the application for presentation and calculation purposes. Defaults to the
+  // platform (JVM/host) timezone if not explicitly configured via the TIMEZONE environment variable.
+  var TIME_ZONE: ZoneId = ZoneId.systemDefault()
 
   var EMAIL_ENABLED = false
   var EMAIL_FROM: Option[String] = None
@@ -284,6 +291,22 @@ object Configurations {
       TESTBED_CLIENT_URL_INTERNAL = fromEnv("TESTBED_CLIENT_URL_INTERNAL", TESTBED_CLIENT_URL)
 
       TEST_CASE_REPOSITORY_PATH = conf.getString("testcase.repository.path")
+
+      val configuredTimeZone = Option(fromEnv("TIMEZONE", null)).flatMap { value =>
+        try {
+          // Value is an IANA Time Zone ID
+          Some(ZoneId.of(value))
+        } catch {
+          case _: Exception =>
+            LOGGER.warn("Configured TIMEZONE value [{}] is not a valid timezone identifier and will be ignored.", value)
+            None
+        }
+      }
+      if (configuredTimeZone.isDefined) {
+        TIME_ZONE = configuredTimeZone.get
+      } else {
+        TIME_ZONE = ZoneId.systemDefault()
+      }
 
       EMAIL_ENABLED = fromEnv("EMAIL_ENABLED", conf.getString("email.enabled")).toBoolean
       EMAIL_FROM = Option(fromEnv("EMAIL_FROM", null))

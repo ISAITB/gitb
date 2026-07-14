@@ -38,8 +38,9 @@ import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.time.LocalDate
+import java.time.format.TextStyle
 import java.util
-import java.util.Properties
+import java.util.{Locale, Properties}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -112,6 +113,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
       Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("banner.txt")) { stream =>
         banner = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
       }
+      logger.info("Using time zone [{}] ({})", Configurations.TIME_ZONE.getId, Configurations.TIME_ZONE.getDisplayName(TextStyle.FULL, Locale.ENGLISH));
       logger.info("Web context root is [{}], public context root is [{}] and public home link is [{}]", Configurations.WEB_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT, Configurations.TESTBED_HOME_LINK)
       logger.info("Started ITB frontend (itb-ui) in {} mode - release {} ({})\n{}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP, banner)
     }

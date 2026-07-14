@@ -16,6 +16,7 @@
 package managers
 
 import com.gitb.reports.ReportSpecs
+import config.Configurations
 import org.apache.commons.lang3.Strings
 import org.slf4j.{Logger, LoggerFactory}
 import utils.RepositoryUtils
@@ -35,6 +36,7 @@ class ReportHelper @Inject()(repositoryUtils: RepositoryUtils, communityResource
   def createReportSpecs(communityId: Option[Long] = None): ReportSpecs = {
     var specs = ReportSpecs.build()
       .withTempFolder(Path.of(repositoryUtils.getTempReportFolder().toPath.toString, "html"))
+      .withZone(Configurations.TIME_ZONE)
     specs = specs.withResourceResolver((resourceUri: String) => {
       var resolvedPath: String = null
       if (resourceUri != null) {

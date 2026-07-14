@@ -23,6 +23,7 @@ import com.gitb.vs.ValidationResponse;
 import com.gitb.vs.ValidationService;
 import com.gitb.vs.ValidationService_Service;
 import com.gitb.vs.tdl.*;
+import com.gitb.utils.XMLDateTimeUtils;
 import config.Configurations;
 import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.codec.binary.Base64;
@@ -32,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -207,8 +207,7 @@ public class TestSuiteValidationAdapter {
         // Add the current timestamp to the report.
         report.setReports(new TestAssertionGroupReportsType());
         try {
-            GregorianCalendar calendar = new GregorianCalendar();
-            report.setDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar));
+            report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
         } catch (DatatypeConfigurationException e) {
             throw new IllegalStateException(e);
         }

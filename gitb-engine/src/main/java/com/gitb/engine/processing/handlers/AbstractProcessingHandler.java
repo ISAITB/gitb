@@ -25,11 +25,10 @@ import com.gitb.ps.ProcessingOperation;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.DataType;
+import com.gitb.utils.XMLDateTimeUtils;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 import java.lang.reflect.InvocationTargetException;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 public abstract class AbstractProcessingHandler extends AbstractHandler implements IProcessingHandler {
@@ -89,7 +88,7 @@ public abstract class AbstractProcessingHandler extends AbstractHandler implemen
         report.getContext().setType("map");
         report.setResult(result);
         try {
-            report.setDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar()));
+            report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
         } catch (DatatypeConfigurationException e) {
             throw new IllegalStateException(e);
         }
