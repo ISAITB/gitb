@@ -447,7 +447,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       case Constants.UsageTips => "Usage tips"
       case Constants.RestApiRateLimits => "REST API rate limits"
       case Constants.TestServiceCallbacks => "Test service callbacks"
-      case Constants.ReportSettings => "Report settings"
+      case Constants.ReportSettings => "Report and display settings"
       case _ => setting
     }
   }

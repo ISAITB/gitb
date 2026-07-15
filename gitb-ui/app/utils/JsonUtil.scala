@@ -3758,12 +3758,16 @@ object JsonUtil {
   }
 
   def jsReportSettings(settings: ReportSettings): JsObject = {
-    Json.obj(
+    var json = Json.obj(
       "enabled" -> JsBoolean(settings.enabled),
       "fileNameExpressions" -> JsObject(settings.fileNameExpressions.map { case (reportType, expression) =>
         reportType.toString -> (JsString(expression): JsValue)
       })
     )
+    if (settings.timeZone.isDefined) {
+      json = json ++ Json.obj("timeZone" -> JsString(settings.timeZone.get))
+    }
+    json
   }
 
   def parseJsReportSettings(jsonString: String): ReportSettings = {
@@ -3773,7 +3777,8 @@ object JsonUtil {
     }.getOrElse(Map[Short, String]())
     ReportSettings(
       enabled = (json \ "enabled").as[Boolean],
-      fileNameExpressions = expressions
+      fileNameExpressions = expressions,
+      timeZone = (json \ "timeZone").asOpt[String]
     )
   }
 

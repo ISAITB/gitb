@@ -64,6 +64,8 @@ import {RestApiEndpointLimit} from '../../../types/rest-api-endpoint-limit';
 import {RestApiEndpointBasic} from '../../../types/rest-api-endpoint-basic';
 import {ReportSettings} from '../../../types/report-settings';
 import {REPORT_TYPE_INFOS} from '../../../types/report-type-info';
+import {TimeZoneInfo} from '../../../types/time-zone-info';
+import {ConfigurationEntryComponentApi} from './configuration-entry/configuration-entry-component-api';
 
 @Component({
     selector: 'app-system-administration',
@@ -78,6 +80,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
   @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
   @ViewChild("themesTable") themesTable?: TableApi
+  @ViewChild("reportSettingsEntry") reportSettingsEntry?: ConfigurationEntryComponentApi
+  @ViewChild("demoAccountEntry") demoAccountEntry?: ConfigurationEntryComponentApi
+  @ViewChild("emailSettingsEntry") emailSettingsEntry?: ConfigurationEntryComponentApi
+  @ViewChild("restApiEntry") restApiEntry?: ConfigurationEntryComponentApi
 
   adminStatus = {status: Constants.STATUS.NONE}
   landingPageStatus = {status: Constants.STATUS.NONE}
@@ -187,7 +193,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   // REST API
-  restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
   restApiLimits?: RestApiRateLimits
   restApiDataLoaded = false
   restApiEnabled = false
@@ -196,7 +202,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   updateRestApiAdminKeyPending = false
 
   // Demo account
-  demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
   demoAccountId?: number
   demoAccountEnabled = false
   demoAccountDataLoaded = false
@@ -220,7 +226,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   welcomePageTitle?: string
 
   // Email settings
-  emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
   emailSettingsDataLoaded = false
   emailTestActive = false
   emailResetPending = false
@@ -249,9 +255,13 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   restApiEndpointSelectConfig!: MultiSelectConfig<RestApiEndpointDescriptionWithId>
 
   // Report settings
-  reportSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  reportSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true}
   reportSettings: ReportSettings = { enabled: false, fileNameExpressions: {} }
+  reportSettingsDataLoaded = false
   reportTypeInfos = REPORT_TYPE_INFOS
+  timeZones?: TimeZoneInfo[]
+  selectedTimeZone?: TimeZoneInfo
+  timeZoneSelectConfig!: MultiSelectConfig<TimeZoneInfo>
 
   // Resources
   resourceActions!: ResourceActions
@@ -477,6 +487,29 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       this.testServiceCallbacksStatus.fromDefault = settings.default
       this.testServiceCallbacksStatus.fromEnv = settings.environment
     }
+  }
+
+  expandingReportSettings() {
+    if (!this.reportSettingsDataLoaded) {
+      this.timeZones = this.buildTimeZoneInfos()
+      this.selectedTimeZone = this.timeZones.find((zone) => zone.zoneId == this.reportSettings.timeZone)
+      this.timeZoneSelectConfig = {
+        name: 'timeZone',
+        textField: 'label',
+        textDecorator: (item) => item.offset,
+        singleSelection: true,
+        singleSelectionPersistent: true,
+        showAsFormControl: true,
+        filterLabel: 'Select time zone...',
+        searchPlaceholder: 'Search time zones...',
+        noItemsMessage: 'No time zones available.',
+        loader: () => of(this.timeZones!),
+        // Separate the "UTC" entry (id 0), always listed first, from the rest of the zones.
+        placeholderItemIds: new Set([0])
+      }
+      this.reportSettingsDataLoaded = true
+    }
+    this.reportSettingsEntry?.expand()
   }
 
   private initialiseReportSettings(settings: SystemConfiguration|undefined) {
@@ -978,10 +1011,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
     this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.USAGE_TIPS, JSON.stringify(this.usageTipsValue)).subscribe(() => {
       this.usageTipsStatus.collapsed = true
-      this.usageTipsStatus.enabled = this.usageTipsValue?.enabled === true
+      this.usageTipsStatus.enabled = this.usageTipsValue?.enabled
       this.usageTipsStatus.fromDefault = false
       this.usageTipsStatus.fromEnv = false
-      this.dataService.configuration.usageTipsEnabled = this.usageTipsValue?.enabled === true
+      this.dataService.configuration.usageTipsEnabled = this.usageTipsValue?.enabled
       if (!this.dataService.configuration.usageTipsEnabled) {
         this.dataService.configuration.usageTipsDisabledForScreens = []
       }
@@ -1245,11 +1278,12 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   saveReportSettings() {
     if (this.reportSettingsOk()) {
       this.reportSettingsStatus.pending = true
+      this.reportSettings.timeZone = this.selectedTimeZone?.zoneId
       this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REPORT_SETTINGS, JSON.stringify(this.reportSettings))
         .subscribe((appliedValue) => {
           this.initialiseReportSettings(appliedValue)
           this.reportSettingsStatus.collapsed = true
-          this.popupService.success('Updated report settings.')
+          this.popupService.success('Updated report and display settings.')
         }).add(() => {
           this.reportSettingsStatus.pending = false
         })
@@ -1371,7 +1405,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   expandingDemoAccount() {
     if (this.demoAccountDataLoaded) {
-      this.demoAccountStatus.deferredExpand!.emit(true)
+      this.demoAccountEntry?.expand()
     } else {
       // Demo account.
       this.communitySelectConfig = {
@@ -1474,7 +1508,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         }),
         finalize(() => {
           this.demoAccountDataLoaded = true
-          this.demoAccountStatus.deferredExpand!.emit(true)
+          this.demoAccountEntry?.expand()
         })
       ).subscribe(() => {})
     }
@@ -1500,7 +1534,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }
       this.emailSettingsDataLoaded = true
     }
-    this.emailSettingsStatus.deferredExpand!.emit(true)
+    this.emailSettingsEntry?.expand()
   }
 
   restApiEndpointDescriptionsMap?: Map<string, string|undefined>
@@ -1508,7 +1542,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   expandingRestApi() {
     if (this.restApiDataLoaded) {
-      this.restApiStatus.deferredExpand!.emit(true)
+      this.restApiEntry?.expand()
     } else {
       this.restApiEndpointSelectConfig = {
         name: 'restApiEndpoints',
@@ -1535,7 +1569,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         }),
         finalize(() => {
           this.restApiDataLoaded = true
-          this.restApiStatus.deferredExpand!.emit(true)
+          this.restApiEntry?.expand()
         })
       ).subscribe(() => {})
     }
@@ -1588,6 +1622,32 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.restApiEndpointSelectConfig.eventsDisabled = true
     this.restApiEndpointSelectConfig.replaceSelectedItems!.emit([])
     this.restApiEndpointSelectConfig.eventsDisabled = false
+  }
+
+  /**
+   * Builds the full list of IANA time zone IDs supported by the browser, along with their current
+   * UTC offset (e.g. "Europe/Brussels" / "UTC+02:00"), sorted by zone ID. A "UTC" entry is always
+   * added first (id 0), followed by a separator, ahead of the regular sorted zone list.
+   */
+  buildTimeZoneInfos(): TimeZoneInfo[] {
+    // Exclude a bare "UTC" if the browser already reports it, to avoid a duplicate entry.
+    const zoneIds = Intl.supportedValuesOf('timeZone').filter((zoneId) => zoneId != 'UTC').sort()
+    const utcInfo: TimeZoneInfo = { id: 0, zoneId: 'UTC', label: 'Coordinated Universal Time - UTC', offset: 'UTC+00:00' }
+    const otherInfos = zoneIds.map((zoneId, index) => {
+      return { id: index + 1, zoneId: zoneId, label: zoneId, offset: this.offsetForZone(zoneId) }
+    })
+    return [utcInfo, ...otherInfos]
+  }
+
+  offsetForZone(zoneId: string): string {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: zoneId, timeZoneName: 'longOffset' }).formatToParts(new Date())
+    const namePart = parts.find((part) => part.type == 'timeZoneName')
+    const offset = namePart?.value ?? 'UTC'
+    // Normalise the bare "GMT"/"UTC" (returned for zero offset) to "UTC+00:00".
+    if (offset == 'GMT' || offset == 'UTC') {
+      return 'UTC+00:00'
+    }
+    return offset.replace('GMT', 'UTC')
   }
 
   protected readonly Constants = Constants;

@@ -62,6 +62,9 @@
                                             <i class="optionIcon" [ngClass]="item[config.iconField]"></i>
                                         }
                                         {{ item[config.textField] }}
+                                        @if (config.textDecorator) {
+                                            <span class="item-text-decoration">{{ config.textDecorator(item) }}</span>
+                                        }
                                     </div>
                                 } @else {
                                     <div class="d-flex">
@@ -78,6 +81,9 @@
                                     </div>
                                 }
                             </div>
+                            @if (config.placeholderItemIds && config.placeholderItemIds.has(item.id) && !$last) {
+                                <div class="itemSeparator"></div>
+                            }
                         }
                     }
                 }

@@ -41,5 +41,7 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   enableSelectAll?: boolean
   textDecorator?: (item: T) => string
   iconField?: string
+  // Ids of available items that should be followed by a separator (unless the item is the last visible one).
+  placeholderItemIds?: Set<number>
 
 }

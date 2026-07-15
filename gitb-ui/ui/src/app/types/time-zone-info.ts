@@ -13,15 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EventEmitter } from "@angular/core"
+import {EntityWithId} from './entity-with-id';
 
-export interface ConfigStatus {
-
-    pending: boolean
-    collapsed: boolean
-    enabled?: boolean
-    fromDefault?: boolean
-    fromEnv?: boolean
-    deferredExpand?: boolean
-
+export interface TimeZoneInfo extends EntityWithId {
+  zoneId: string
+  label: string
+  offset: string
 }

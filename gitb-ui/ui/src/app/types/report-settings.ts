@@ -21,5 +21,6 @@ export interface ReportSettings {
 
   enabled: boolean
   fileNameExpressions: {[key: number]: string}
+  timeZone?: string
 
 }

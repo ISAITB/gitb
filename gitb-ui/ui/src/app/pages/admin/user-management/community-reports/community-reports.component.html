@@ -8,6 +8,7 @@
             <div class="configContainer">
                 <!-- Conformance statement certificate -->
                 <app-configuration-entry
+                    #conformanceStatementCertificateEntry
                     configTitle="Conformance statement certificate"
                     configDescription="Certificate produced for a specific conformance statement that is successfully completed."
                     [(status)]="conformanceStatementCertificateSettings.status"
@@ -17,13 +18,14 @@
                         [communityId]="communityId"
                         [selected]="conformanceStatementCertificateSettings.expanding"
                         [expanded]="conformanceStatementCertificateSettings.expanded"
-                        (loaded)="conformanceStatementCertificateSettings.setLoaded()"
+                        (loaded)="conformanceStatementCertificateSettings.setLoaded(conformanceStatementCertificateEntry)"
                         (collapse)="conformanceStatementCertificateSettings.setCollapsed()"></app-conformance-certificate-form>
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
                 <!-- Conformance overview certificate -->
                 <app-configuration-entry
+                    #conformanceOverviewEntry
                     configTitle="Conformance overview certificate"
                     configDescription="Certificate produced for multiple conformance statements once all have successfully completed."
                     [(status)]="conformanceOverviewCertificateSettings.status"
@@ -33,13 +35,14 @@
                         [communityId]="communityId"
                         [selected]="conformanceOverviewCertificateSettings.expanding"
                         [expanded]="conformanceOverviewCertificateSettings.expanded"
-                        (loaded)="conformanceOverviewCertificateSettings.setLoaded()"
+                        (loaded)="conformanceOverviewCertificateSettings.setLoaded(conformanceOverviewEntry)"
                         (collapse)="conformanceOverviewCertificateSettings.setCollapsed()"></app-conformance-overview-certificate-form>
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
                 <!-- Conformance statement report -->
                 <app-configuration-entry
+                    #conformanceStatementReportEntry
                     configTitle="Conformance statement report"
                     configDescription="Report summarising the status of a specific conformance statement."
                     [(status)]="conformanceStatementReportSettings.status"
@@ -49,13 +52,14 @@
                     [communityId]="communityId"
                     [selected]="conformanceStatementReportSettings.expanding"
                     [expanded]="conformanceStatementReportSettings.expanded"
-                    (loaded)="conformanceStatementReportSettings.setLoaded()"
+                    (loaded)="conformanceStatementReportSettings.setLoaded(conformanceStatementReportEntry)"
                     (collapse)="conformanceStatementReportSettings.setCollapsed()"></app-conformance-statement-report-form>
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
                 <!-- Conformance overview report -->
                 <app-configuration-entry
+                    #conformanceOverviewReportEntry
                     configTitle="Conformance overview report"
                     configDescription="Report summarising the status of multiple conformance statements."
                     [(status)]="conformanceOverviewReportSettings.status"
@@ -65,13 +69,14 @@
                         [communityId]="communityId"
                         [selected]="conformanceOverviewReportSettings.expanding"
                         [expanded]="conformanceOverviewReportSettings.expanded"
-                        (loaded)="conformanceOverviewReportSettings.setLoaded()"
+                        (loaded)="conformanceOverviewReportSettings.setLoaded(conformanceOverviewReportEntry)"
                         (collapse)="conformanceOverviewReportSettings.setCollapsed()"></app-conformance-overview-report-form>
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
                 <!-- Conformance statement documentation report -->
                 <app-configuration-entry
+                    #conformanceStatementDocumentationReportEntry
                     configTitle="Conformance statement documentation"
                     configDescription="Report summarising all documentation linked to a specific conformance statement."
                     [(status)]="conformanceStatementDocumentationReportSettings.status"
@@ -81,13 +86,14 @@
                         [communityId]="communityId"
                         [selected]="conformanceStatementDocumentationReportSettings.expanding"
                         [expanded]="conformanceStatementDocumentationReportSettings.expanded"
-                        (loaded)="conformanceStatementDocumentationReportSettings.setLoaded()"
+                        (loaded)="conformanceStatementDocumentationReportSettings.setLoaded(conformanceStatementDocumentationReportEntry)"
                         (collapse)="conformanceStatementDocumentationReportSettings.setCollapsed()"></app-conformance-statement-documentation-report-form>
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
                 <!-- Test case report -->
                 <app-configuration-entry
+                    #testCaseReportEntry
                     configTitle="Test case report"
                     configDescription="Report providing details on the result of a test session execution."
                     [(status)]="testCaseReportSettings.status"
@@ -97,13 +103,14 @@
                         [communityId]="communityId"
                         [selected]="testCaseReportSettings.expanding"
                         [expanded]="testCaseReportSettings.expanded"
-                        (loaded)="testCaseReportSettings.setLoaded()"
+                        (loaded)="testCaseReportSettings.setLoaded(testCaseReportEntry)"
                         (collapse)="testCaseReportSettings.setCollapsed()"></app-test-case-report-form>
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
                 <!-- Test step report -->
                 <app-configuration-entry
+                    #testStepReportEntry
                     configTitle="Test step report"
                     configDescription="Report summarising the results of a specific test case step."
                     [(status)]="testStepReportSettings.status"
@@ -113,7 +120,7 @@
                         [communityId]="communityId"
                         [selected]="testStepReportSettings.expanding"
                         [expanded]="testStepReportSettings.expanded"
-                        (loaded)="testStepReportSettings.setLoaded()"
+                        (loaded)="testStepReportSettings.setLoaded(testStepReportEntry)"
                         (collapse)="testStepReportSettings.setCollapsed()"></app-test-step-report-form>
                 </app-configuration-entry>
             </div>

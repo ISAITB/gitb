@@ -322,6 +322,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           } else {
             Configurations.REPORT_SETTINGS = ReportSettings.defaultConfiguration()
           }
+          Configurations.TIME_ZONE = Configurations.resolveTimeZone(Configurations.REPORT_SETTINGS)
           Future.successful(())
         }
       } yield ()

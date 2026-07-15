@@ -18,18 +18,23 @@ package models
 object ReportSettings {
 
   def defaultConfiguration(): ReportSettings = {
-    ReportSettings(enabled = false, fileNameExpressions = Map[Short, String]())
+    ReportSettings(enabled = false, fileNameExpressions = Map[Short, String](), timeZone = None)
   }
 
 }
 
 /**
- * The Test Bed-wide (system administration) settings used to determine report file names.
+ * The Test Bed-wide (system administration) settings used to determine report file names and the
+ * display time zone.
  *
- * @param enabled Whether custom naming expressions are in effect. When false the built-in
- *                defaults (see [[config.Configurations.REPORT_NAMING_EXPRESSIONS]]) always apply.
+ * @param enabled Whether custom naming expressions and/or a custom time zone are in effect. When
+ *                false the built-in defaults (see [[config.Configurations.REPORT_NAMING_EXPRESSIONS]])
+ *                and the environment/platform time zone always apply.
  * @param fileNameExpressions The naming expression to use per report type (keyed by the
  *                             [[models.Enums.ReportType]] id). A report type missing from this
  *                             map falls back to the built-in default even when enabled is true.
+ * @param timeZone The IANA time zone ID to use for presentation and reporting purposes when enabled
+ *                 is true. When not set, or when enabled is false, the environment/platform default
+ *                 (see [[config.Configurations.resolveDefaultTimeZone]]) applies.
  */
-case class ReportSettings(enabled: Boolean, fileNameExpressions: Map[Short, String])
+case class ReportSettings(enabled: Boolean, fileNameExpressions: Map[Short, String], timeZone: Option[String] = None)

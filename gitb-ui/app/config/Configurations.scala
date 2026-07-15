@@ -255,6 +255,41 @@ object Configurations {
     Strings.CS.removeEnd(Constants.VersionNumber.toLowerCase(Locale.getDefault), "-snapshot")
   }
 
+  /**
+   * Resolves the time zone to consider as the application's default, sourced from the TIMEZONE
+   * environment variable (an IANA Time Zone ID) or, if not set or invalid, the platform default.
+   */
+  def resolveDefaultTimeZone(): ZoneId = {
+    val configuredTimeZone = Option(fromEnv("TIMEZONE", null)).flatMap { value =>
+      try {
+        // Value is an IANA Time Zone ID
+        Some(ZoneId.of(value))
+      } catch {
+        case _: Exception =>
+          LOGGER.warn("Configured TIMEZONE value [{}] is not a valid timezone identifier and will be ignored.", value)
+          None
+      }
+    }
+    configuredTimeZone.getOrElse(ZoneId.systemDefault())
+  }
+
+  /**
+   * Resolves the time zone to apply given the provided Test Bed-wide report settings: the settings'
+   * time zone when defined and valid, otherwise the environment/platform default (see
+   * [[resolveDefaultTimeZone]]).
+   */
+  def resolveTimeZone(settings: ReportSettings): ZoneId = {
+    settings.timeZone.flatMap { value =>
+      try {
+        Some(ZoneId.of(value))
+      } catch {
+        case _: Exception =>
+          LOGGER.warn("Configured report settings time zone [{}] is not a valid timezone identifier and will be ignored.", value)
+          None
+      }
+    }.getOrElse(resolveDefaultTimeZone())
+  }
+
   def loadConfigurations(): Unit = {
     if (!_IS_LOADED) {
       // Load configuration file
@@ -292,21 +327,7 @@ object Configurations {
 
       TEST_CASE_REPOSITORY_PATH = conf.getString("testcase.repository.path")
 
-      val configuredTimeZone = Option(fromEnv("TIMEZONE", null)).flatMap { value =>
-        try {
-          // Value is an IANA Time Zone ID
-          Some(ZoneId.of(value))
-        } catch {
-          case _: Exception =>
-            LOGGER.warn("Configured TIMEZONE value [{}] is not a valid timezone identifier and will be ignored.", value)
-            None
-        }
-      }
-      if (configuredTimeZone.isDefined) {
-        TIME_ZONE = configuredTimeZone.get
-      } else {
-        TIME_ZONE = ZoneId.systemDefault()
-      }
+      TIME_ZONE = resolveDefaultTimeZone()
 
       EMAIL_ENABLED = fromEnv("EMAIL_ENABLED", conf.getString("email.enabled")).toBoolean
       EMAIL_FROM = Option(fromEnv("EMAIL_FROM", null))

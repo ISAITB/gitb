@@ -13,15 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EventEmitter } from "@angular/core"
+export interface ConfigurationEntryComponentApi {
 
-export interface ConfigStatus {
-
-    pending: boolean
-    collapsed: boolean
-    enabled?: boolean
-    fromDefault?: boolean
-    fromEnv?: boolean
-    deferredExpand?: boolean
+  expand(): void;
 
 }

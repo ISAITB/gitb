@@ -15,10 +15,11 @@
 
 import { EventEmitter } from "@angular/core"
 import { ConfigStatus } from "../../system-administration/config-status"
+import {ConfigurationEntryComponentApi} from '../../system-administration/configuration-entry/configuration-entry-component-api';
 
 export class ReportSettings {
 
-    status: ConfigStatus = { pending: false, collapsed: true, deferredExpand: new EventEmitter<boolean>() }
+    status: ConfigStatus = { pending: false, collapsed: true, deferredExpand: true }
     expanding = new EventEmitter<boolean>()
     expanded = new EventEmitter<void>()
 
@@ -26,8 +27,8 @@ export class ReportSettings {
         this.expanding.emit(true)
     }
 
-    setLoaded() {
-        this.status.deferredExpand!.emit(true)
+    setLoaded(configEntry: ConfigurationEntryComponentApi) {
+      configEntry.expand()
     }
 
     setExpanded() {
