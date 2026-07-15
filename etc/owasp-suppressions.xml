@@ -697,4 +697,12 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.httpcomponents/.*@.*$</packageUrl>
         <cve>CVE-2026-54428</cve>
     </suppress>
+    <suppress>
+        <!-- Non applicable CVE. -->
+        <notes><![CDATA[
+    file name: log4j-api-2.25.4.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
+        <cpe>cpe:/a:apache:log4j</cpe>
+    </suppress>
 </suppressions>
