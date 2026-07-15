@@ -47,6 +47,9 @@ export class DateRangeComponent implements ControlValueAccessor {
   @ViewChild('customBegin') customBegin?: NgbInputDatepicker;
   @ViewChild('customEnd') customEnd?: NgbInputDatepicker;
 
+  // Matches the gap other filter popups (e.g. the multi-select filter's .filterForm) leave below their control.
+  private static readonly POPUP_GAP = 2;
+
   private onChange: (value: DateRange) => void = () => {};
   private onTouched: () => void = () => {};
 
@@ -306,11 +309,11 @@ export class DateRangeComponent implements ControlValueAccessor {
     if (!popup) return;
     const popupHeight = popup.offsetHeight;
     const popupWidth = popup.offsetWidth;
-    let top = inputRect.bottom;
+    let top = inputRect.bottom + DateRangeComponent.POPUP_GAP;
     let left = inputRect.left;
     // Vertical flip if needed.
     if (top + popupHeight > window.innerHeight) {
-      const flippedTop = inputRect.top - popupHeight;
+      const flippedTop = inputRect.top - popupHeight - DateRangeComponent.POPUP_GAP;
       if (flippedTop >= 0) {
         top = flippedTop;
       }
