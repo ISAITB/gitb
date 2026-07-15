@@ -60,3 +60,4 @@ test/resources/repository
 /deps.txt
 /gitb-ui/deps.txt
 .playwright-cli/
+.screenshots/
