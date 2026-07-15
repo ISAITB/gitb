@@ -421,4 +421,12 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-13006</vulnerabilityName>
     </suppress>
+    <suppress>
+        <!-- Non applicable CVE. -->
+        <notes><![CDATA[
+    file name: log4j-api-2.25.4.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/.*@.*$</packageUrl>
+        <cpe>cpe:/a:apache:log4j</cpe>
+    </suppress>
 </suppressions>
