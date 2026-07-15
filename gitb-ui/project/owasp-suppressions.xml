@@ -951,4 +951,12 @@
         <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
         <cve>CVE-2026-41839</cve>
     </suppress>
+    <suppress>
+        <!-- Not applicable as Webflux is not used. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-41839</cve>
+    </suppress>
 </suppressions>
