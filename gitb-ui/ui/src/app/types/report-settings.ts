@@ -22,5 +22,12 @@ export interface ReportSettings {
   enabled: boolean
   fileNameExpressions: {[key: number]: string}
   timeZone?: string
+  dateFormats?: ReportDateFormats
 
+}
+
+export interface ReportDateFormats {
+  date?: string
+  dateTime?: string
+  dateFile?: string
 }

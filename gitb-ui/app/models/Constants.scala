@@ -69,7 +69,6 @@ object Constants {
   val ProductionMode = "production"
   val DevelopmentMode = "development"
 
-  val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
   val AcceptHeader = "Accept"
   val AccessTokenKey = "tat"
 

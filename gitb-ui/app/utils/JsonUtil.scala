@@ -2740,7 +2740,9 @@ object JsonUtil {
       "conformanceStatementReportMaxTestCases" -> Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES,
       "headerNameAuthenticationCookiePath" -> Configurations.HEADER_NAME_AUTHENTICATION_COOKIE_PATH,
       "welcomePageTitle" -> Configurations.WELCOME_TITLE,
-      "preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN
+      "preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN,
+      "dateFormat" -> Configurations.DATE_FORMAT_DATE,
+      "dateTimeFormat" -> Configurations.DATE_FORMAT_DATETIME
     )
     json
   }
@@ -3767,6 +3769,19 @@ object JsonUtil {
     if (settings.timeZone.isDefined) {
       json = json ++ Json.obj("timeZone" -> JsString(settings.timeZone.get))
     }
+    if (settings.dateFormat.isDefined || settings.dateTimeFormat.isDefined || settings.dateFileFormat.isDefined) {
+      var dateFormats = Json.obj()
+      if (settings.dateFormat.isDefined) {
+        dateFormats = dateFormats ++ Json.obj("date" -> JsString(settings.dateFormat.get))
+      }
+      if (settings.dateTimeFormat.isDefined) {
+        dateFormats = dateFormats ++ Json.obj("dateTime" -> JsString(settings.dateTimeFormat.get))
+      }
+      if (settings.dateFileFormat.isDefined) {
+        dateFormats = dateFormats ++ Json.obj("dateFile" -> JsString(settings.dateFileFormat.get))
+      }
+      json = json ++ Json.obj("dateFormats" -> dateFormats)
+    }
     json
   }
 
@@ -3775,10 +3790,14 @@ object JsonUtil {
     val expressions = (json \ "fileNameExpressions").asOpt[JsObject].map { obj =>
       obj.fields.map { case (reportType, expression) => reportType.toShort -> expression.as[String] }.toMap
     }.getOrElse(Map[Short, String]())
+    val dateFormats = (json \ "dateFormats").asOpt[JsObject]
     ReportSettings(
       enabled = (json \ "enabled").as[Boolean],
       fileNameExpressions = expressions,
-      timeZone = (json \ "timeZone").asOpt[String]
+      timeZone = (json \ "timeZone").asOpt[String],
+      dateFormat = dateFormats.flatMap(obj => (obj \ "date").asOpt[String]),
+      dateTimeFormat = dateFormats.flatMap(obj => (obj \ "dateTime").asOpt[String]),
+      dateFileFormat = dateFormats.flatMap(obj => (obj \ "dateFile").asOpt[String])
     )
   }
 

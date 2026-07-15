@@ -33,7 +33,6 @@ import scala.util.matching.Regex
  */
 object ReportNameResolver {
 
-  private val FileDateFormat = "yyyy-MM-dd"
   // Characters that are unsafe/reserved in file names on common operating systems, plus control characters.
   private val UnsafeCharacters: Regex = "[\\\\/:*?\"<>|\\x00-\\x1F]".r
   private val WhitespaceRun: Regex = "\\s+".r
@@ -95,7 +94,7 @@ object ReportNameResolver {
       "SYSTEM" -> ctx.system.getOrElse(""),
       "CONFORMANCE_TARGET" -> ctx.conformanceTarget.getOrElse(""),
       "TEST_CASE_NAME" -> ctx.testCaseName.getOrElse(""),
-      "DATE" -> TimeUtil.formatDate(ctx.date, FileDateFormat)
+      "DATE" -> TimeUtil.formatFileDate(ctx.date)
     )
     tokenValues.foldLeft(expression) { case (current, (token, value)) =>
       current.replace("${"+token+"}", value)

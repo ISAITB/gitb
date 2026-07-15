@@ -17,6 +17,7 @@ package com.gitb.reports;
 
 import java.nio.file.Path;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -35,6 +36,14 @@ public class ReportSpecs {
     // The timezone to use for dates rendered onto reports. Defaults to the platform (JVM/host) timezone, matching
     // the behaviour to apply when the calling application (e.g. gitb-ui) does not have a configured override.
     private ZoneId zoneId = ZoneId.systemDefault();
+    // The date/time format pattern to use for dates rendered onto reports. Defaults to the built-in pattern
+    // below, matching the behaviour to apply when the calling application (e.g. gitb-ui) does not have a
+    // configured override.
+    private String dateTimeFormat = "dd/MM/yyyy HH:mm:ss";
+    // Cached, zone-applied formatter matching zoneId/dateTimeFormat above. Lazily (re)built by
+    // getDateTimeFormatter() whenever either is set, so repeat report-date formatting calls do not
+    // re-parse the pattern each time. DateTimeFormatter is immutable/thread-safe, so caching is safe.
+    private DateTimeFormatter dateTimeFormatter;
 
     private ReportSpecs() {}
 
@@ -84,6 +93,13 @@ public class ReportSpecs {
 
     public ReportSpecs withZone(ZoneId zoneId) {
         this.zoneId = zoneId;
+        this.dateTimeFormatter = null;
+        return this;
+    }
+
+    public ReportSpecs withDateTimeFormat(String dateTimeFormat) {
+        this.dateTimeFormat = dateTimeFormat;
+        this.dateTimeFormatter = null;
         return this;
     }
 
@@ -121,5 +137,19 @@ public class ReportSpecs {
 
     public ZoneId getZone() {
         return zoneId;
+    }
+
+    public String getDateTimeFormat() {
+        return dateTimeFormat;
+    }
+
+    /**
+     * A cached DateTimeFormatter for dateTimeFormat/zoneId, (re)built lazily whenever either changes.
+     */
+    public DateTimeFormatter getDateTimeFormatter() {
+        if (dateTimeFormatter == null) {
+            dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat).withZone(zoneId);
+        }
+        return dateTimeFormatter;
     }
 }

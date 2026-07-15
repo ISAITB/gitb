@@ -599,11 +599,11 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
       if (this.startDateModel !== undefined) {
         if (this.startDateModel.start !== undefined) {
           filters.startTimeBegin = this.startDateModel.start
-          filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.startTimeBeginStr = formatDate(filters.startTimeBegin, this.dataService.configuration.dateTimeFormat, 'en')
         }
         if (this.startDateModel.end !== undefined) {
           filters.startTimeEnd = this.startDateModel.end
-          filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.startTimeEndStr = formatDate(filters.startTimeEnd, this.dataService.configuration.dateTimeFormat, 'en')
         }
       }
     }
@@ -611,11 +611,11 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
       if (this.endDateModel !== undefined) {
         if (this.endDateModel.start !== undefined) {
           filters.endTimeBegin = this.endDateModel.start
-          filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.endTimeBeginStr = formatDate(filters.endTimeBegin, this.dataService.configuration.dateTimeFormat, 'en')
         }
         if (this.endDateModel.end !== undefined) {
           filters.endTimeEnd = this.endDateModel.end
-          filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.endTimeEndStr = formatDate(filters.endTimeEnd, this.dataService.configuration.dateTimeFormat, 'en')
         }
       }
     }

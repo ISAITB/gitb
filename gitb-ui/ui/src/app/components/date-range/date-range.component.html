@@ -52,7 +52,7 @@
                         <input name="customBegin"
                                class="form-control"
                                ngbDatepicker
-                               placeholder="dd-mm-yyyy"
+                               [placeholder]="datePlaceholder"
                                [(ngModel)]="beginDate"
                                [maxDate]="startMaxDate"
                                [footerTemplate]="beginFooterTemplate"
@@ -64,7 +64,7 @@
                         <input name="customEnd"
                                class="form-control"
                                ngbDatepicker
-                               placeholder="dd-mm-yyyy"
+                               [placeholder]="datePlaceholder"
                                [(ngModel)]="endDate"
                                [minDate]="endMinDate"
                                [footerTemplate]="endFooterTemplate"

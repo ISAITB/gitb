@@ -36,7 +36,6 @@ import tools.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
 /**
@@ -64,7 +63,11 @@ public class JacksonUtil {
     }
 
     private static ObjectWriter getWriter() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        // Jackson's ObjectWriter.with(DateFormat) requires a java.text.DateFormat (it clones it per
+        // serialization, so a fresh, unshared instance built here is safe) - this is the one place a
+        // SimpleDateFormat is still built directly rather than going through the cached
+        // Configurations.DATE_TIME_FORMATTER (a java.time.format.DateTimeFormatter).
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Configurations.DATE_FORMAT_DATETIME());
         dateFormat.setTimeZone(TimeZone.getTimeZone(Configurations.TIME_ZONE()));
         return mapper.writer(dateFormat);
     }
@@ -149,9 +152,8 @@ public class JacksonUtil {
                 json.writeStringProperty("type", "SR");
             }
             if (testStepReport.getDate() != null) {
-                String dateString = testStepReport.getDate().toGregorianCalendar().toZonedDateTime()
-                        .withZoneSameInstant(Configurations.TIME_ZONE())
-                        .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
+                String dateString = Configurations.DATE_TIME_FORMATTER().format(
+                        testStepReport.getDate().toGregorianCalendar().toInstant());
                 json.writePOJOProperty("date", dateString);
             }
             if (testStepReport.getResult() != null) {

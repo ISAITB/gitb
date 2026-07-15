@@ -190,7 +190,9 @@ export class DataService {
       conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,
       headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH",
       welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:'',
-      preparingForShutdown: this.configuration?.preparingForShutdown === true
+      preparingForShutdown: this.configuration?.preparingForShutdown,
+      dateFormat: this.configuration?.dateFormat??'dd/MM/yyyy',
+      dateTimeFormat: this.configuration?.dateTimeFormat??'dd/MM/yyyy HH:mm:ss'
     }
   }
 

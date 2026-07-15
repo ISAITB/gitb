@@ -49,5 +49,7 @@ export interface AppConfigurationProperties {
   headerNameAuthenticationCookiePath: string
   welcomePageTitle: string
   preparingForShutdown: boolean
+  dateFormat: string
+  dateTimeFormat: string
 
 }

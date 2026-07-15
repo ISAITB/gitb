@@ -24,6 +24,7 @@ import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.LoggerFactory
 
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -32,6 +33,12 @@ import scala.util.matching.Regex
 object Configurations {
 
   private val LOGGER = LoggerFactory.getLogger(Configurations.getClass)
+
+  // Built-in default date/time formatting patterns, applied when no persisted report setting nor
+  // environment variable override is in effect.
+  private val DEFAULT_DATE_FORMAT = "dd/MM/yyyy"
+  private val DEFAULT_DATE_TIME_FORMAT = "dd/MM/yyyy HH:mm:ss"
+  private val DEFAULT_DATE_FILE_FORMAT = "yyyy-MM-dd"
 
   private var _IS_LOADED = false
   var STARTUP_FAILURE = false
@@ -60,8 +67,22 @@ object Configurations {
   var TESTBED_CLIENT_URL_INTERNAL = ""
 	var TEST_CASE_REPOSITORY_PATH = ""
   // The timezone considered by the application for presentation and calculation purposes. Defaults to the
-  // platform (JVM/host) timezone if not explicitly configured via the TIMEZONE environment variable.
+  // platform (JVM/host) timezone if not explicitly configured via the DATE_TIMEZONE environment variable
+  // (or the deprecated TIMEZONE environment variable).
   var TIME_ZONE: ZoneId = ZoneId.systemDefault()
+  // The date/time formatting patterns considered by the application for presentation purposes. Default to
+  // the built-in patterns below if not explicitly configured via the DATE_FORMAT_DATE, DATE_FORMAT_DATETIME
+  // and DATE_FORMAT_DATE_FILE environment variables.
+  var DATE_FORMAT_DATE: String = DEFAULT_DATE_FORMAT
+  var DATE_FORMAT_DATETIME: String = DEFAULT_DATE_TIME_FORMAT
+  var DATE_FORMAT_DATE_FILE: String = DEFAULT_DATE_FILE_FORMAT
+  // Cached, zone-applied formatters matching the DATE_FORMAT_* patterns above and TIME_ZONE. Refreshed
+  // via refreshDateFormatters() whenever the time zone or a format pattern changes, so that callers always
+  // format using DateTimeFormatter (thread-safe) without re-parsing the pattern or re-applying the zone
+  // on every call.
+  var DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT_DATE).withZone(TIME_ZONE)
+  var DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT_DATETIME).withZone(TIME_ZONE)
+  var DATE_FILE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT_DATE_FILE).withZone(TIME_ZONE)
 
   var EMAIL_ENABLED = false
   var EMAIL_FROM: Option[String] = None
@@ -256,17 +277,17 @@ object Configurations {
   }
 
   /**
-   * Resolves the time zone to consider as the application's default, sourced from the TIMEZONE
-   * environment variable (an IANA Time Zone ID) or, if not set or invalid, the platform default.
+   * Resolves the time zone to consider as the application's default, sourced from the DATE_TIMEZONE
+   * environment variable (an IANA Time Zone ID) falling back to, if not set or valid, the platform default.
    */
-  def resolveDefaultTimeZone(): ZoneId = {
-    val configuredTimeZone = Option(fromEnv("TIMEZONE", null)).flatMap { value =>
+  private def resolveDefaultTimeZone(): ZoneId = {
+    val configuredTimeZone = Option(fromEnv("DATE_TIMEZONE", null)).flatMap { value =>
       try {
         // Value is an IANA Time Zone ID
         Some(ZoneId.of(value))
       } catch {
         case _: Exception =>
-          LOGGER.warn("Configured TIMEZONE value [{}] is not a valid timezone identifier and will be ignored.", value)
+          LOGGER.warn("Configured DATE_TIMEZONE value [{}] is not a valid timezone identifier and will be ignored.", value)
           None
       }
     }
@@ -288,6 +309,112 @@ object Configurations {
           None
       }
     }.getOrElse(resolveDefaultTimeZone())
+  }
+
+  /**
+   * Whether the provided value is a valid [[DateTimeFormatter]] pattern.
+   */
+  private def isValidDateFormatPattern(pattern: String): Boolean = {
+    try {
+      DateTimeFormatter.ofPattern(pattern)
+      true
+    } catch {
+      case _: Exception => false
+    }
+  }
+
+  /**
+   * Resolves a date/time formatting pattern sourced from the given environment variable (validated as a
+   * [[DateTimeFormatter]] pattern), falling back to the provided built-in default if not set or invalid.
+   */
+  private def resolveDefaultDateFormatValue(envVariableName: String, builtInDefault: String): String = {
+    Option(fromEnv(envVariableName, null)).filter { value =>
+      val valid = isValidDateFormatPattern(value)
+      if (!valid) {
+        LOGGER.warn("Configured {} value [{}] is not a valid date format pattern and will be ignored.", envVariableName, value)
+      }
+      valid
+    }.getOrElse(builtInDefault)
+  }
+
+  /**
+   * Resolves the date-only formatting pattern to consider as the application's default, sourced from the
+   * DATE_FORMAT_DATE environment variable, or, if not set or invalid, the built-in default.
+   */
+  private def resolveDefaultDateFormat(): String = resolveDefaultDateFormatValue("DATE_FORMAT_DATE", DEFAULT_DATE_FORMAT)
+
+  /**
+   * Resolves the date/time formatting pattern to consider as the application's default, sourced from the
+   * DATE_FORMAT_DATETIME environment variable, or, if not set or invalid, the built-in default.
+   */
+  private def resolveDefaultDateTimeFormat(): String = resolveDefaultDateFormatValue("DATE_FORMAT_DATETIME", DEFAULT_DATE_TIME_FORMAT)
+
+  /**
+   * Resolves the file name date formatting pattern to consider as the application's default, sourced from
+   * the DATE_FORMAT_DATE_FILE environment variable, or, if not set or invalid, the built-in default.
+   */
+  private def resolveDefaultDateFileFormat(): String = resolveDefaultDateFormatValue("DATE_FORMAT_DATE_FILE", DEFAULT_DATE_FILE_FORMAT)
+
+  /**
+   * Resolves a date/time formatting pattern to apply given a value optionally defined in the Test Bed-wide
+   * report settings: the settings' value when defined and valid, otherwise the provided environment/platform
+   * default.
+   */
+  private def resolveDateFormatValue(settingValue: Option[String], defaultValue: => String, label: String): String = {
+    settingValue.filter { value =>
+      val valid = isValidDateFormatPattern(value)
+      if (!valid) {
+        LOGGER.warn("Configured {} [{}] is not a valid date format pattern and will be ignored.", label, value)
+      }
+      valid
+    }.getOrElse(defaultValue)
+  }
+
+  /**
+   * Resolves the date-only formatting pattern to apply given the provided Test Bed-wide report settings:
+   * the settings' value when defined and valid, otherwise the environment/platform default (see
+   * [[resolveDefaultDateFormat]]).
+   */
+  def resolveDateFormat(settings: ReportSettings): String = resolveDateFormatValue(settings.dateFormat, resolveDefaultDateFormat(), "report settings date format")
+
+  /**
+   * Resolves the date/time formatting pattern to apply given the provided Test Bed-wide report settings:
+   * the settings' value when defined and valid, otherwise the environment/platform default (see
+   * [[resolveDefaultDateTimeFormat]]).
+   */
+  def resolveDateTimeFormat(settings: ReportSettings): String = resolveDateFormatValue(settings.dateTimeFormat, resolveDefaultDateTimeFormat(), "report settings date/time format")
+
+  /**
+   * Resolves the file name date formatting pattern to apply given the provided Test Bed-wide report
+   * settings: the settings' value when defined and valid, otherwise the environment/platform default (see
+   * [[resolveDefaultDateFileFormat]]).
+   */
+  def resolveDateFileFormat(settings: ReportSettings): String = resolveDateFormatValue(settings.dateFileFormat, resolveDefaultDateFileFormat(), "report settings file name date format")
+
+  /**
+   * Rebuilds [[DATE_FORMATTER]], [[DATE_TIME_FORMATTER]] and [[DATE_FILE_FORMATTER]] from the current
+   * DATE_FORMAT_* patterns and TIME_ZONE. Must be called after any of those are updated.
+   */
+  private def refreshDateFormatters(): Unit = {
+    DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_DATE).withZone(TIME_ZONE)
+    DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_DATETIME).withZone(TIME_ZONE)
+    DATE_FILE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_DATE_FILE).withZone(TIME_ZONE)
+  }
+
+  /**
+   * Applies the given Test Bed-wide report settings: stores them as [[REPORT_SETTINGS]], resolves and
+   * applies [[TIME_ZONE]] and the DATE_FORMAT_* patterns (settings' values falling back to the
+   * environment/platform defaults), and refreshes the cached formatters accordingly. Used both when
+   * report settings are saved (see managers.SystemConfigurationManager) and when they are loaded at
+   * startup (see hooks.PostStartHook).
+   */
+  def applyReportSettings(settings: ReportSettings): Unit = {
+    REPORT_SETTINGS = settings
+    TIME_ZONE = resolveTimeZone(settings)
+    DATE_FORMAT_DATE = resolveDateFormat(settings)
+    DATE_FORMAT_DATETIME = resolveDateTimeFormat(settings)
+    DATE_FORMAT_DATE_FILE = resolveDateFileFormat(settings)
+    refreshDateFormatters()
   }
 
   def loadConfigurations(): Unit = {
@@ -328,6 +455,10 @@ object Configurations {
       TEST_CASE_REPOSITORY_PATH = conf.getString("testcase.repository.path")
 
       TIME_ZONE = resolveDefaultTimeZone()
+      DATE_FORMAT_DATE = resolveDefaultDateFormat()
+      DATE_FORMAT_DATETIME = resolveDefaultDateTimeFormat()
+      DATE_FORMAT_DATE_FILE = resolveDefaultDateFileFormat()
+      refreshDateFormatters()
 
       EMAIL_ENABLED = fromEnv("EMAIL_ENABLED", conf.getString("email.enabled")).toBoolean
       EMAIL_FROM = Option(fromEnv("EMAIL_FROM", null))

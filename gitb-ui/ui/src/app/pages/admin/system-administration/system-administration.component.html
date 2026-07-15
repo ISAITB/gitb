@@ -372,6 +372,27 @@
                                                         </div>
                                                         <div class="col-auto" app-tooltip tbTooltip="The time zone to use when displaying dates and timestamps on the user interface and in PDF reports. Note that XML reports and internal processing always use UTC."></div>
                                                     </div>
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" for="reportDateFormat">* Date format:</label>
+                                                        <div class="col-8 col-xl-3">
+                                                            <input type="text" class="form-control" id="reportDateFormat" name="reportDateFormat" [(ngModel)]="reportSettings.dateFormats!.date">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The pattern used to display dates (without a time component) on the user interface and in PDF reports, e.g. dd/MM/yyyy. The formatting characters follow the Java date/time formatting strings."></div>
+                                                    </div>
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" for="reportDateTimeFormat">* Date/time format:</label>
+                                                        <div class="col-8 col-xl-3">
+                                                            <input type="text" class="form-control" id="reportDateTimeFormat" name="reportDateTimeFormat" [(ngModel)]="reportSettings.dateFormats!.dateTime">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The pattern used to display dates together with a time component on the user interface and in PDF reports, e.g. dd/MM/yyyy HH:mm:ss. The formatting characters follow the Java date/time formatting strings."></div>
+                                                    </div>
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" for="reportDateFileFormat">* File name date format:</label>
+                                                        <div class="col-8 col-xl-3">
+                                                            <input type="text" class="form-control" id="reportDateFileFormat" name="reportDateFileFormat" [(ngModel)]="reportSettings.dateFormats!.dateFile">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The pattern used to format the DATE placeholder when it is referenced in a report file naming expression, e.g. yyyy-MM-dd. The formatting characters follow the Java date/time formatting strings."></div>
+                                                    </div>
                                                 </app-form-section>
                                                 <app-form-section sectionTitle="Report file names" [marginBefore]="true">
                                                     @for (info of reportTypeInfos; track info.type) {

@@ -61,7 +61,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -480,9 +480,7 @@ public class ReportGenerator {
         specs = Objects.requireNonNullElseGet(specs, ReportSpecs::build);
         Report report = new Report();
         if (reportType.getDate() != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
-            report.setReportDate(sdf.format(reportType.getDate().toGregorianCalendar().getTime()));
+            report.setReportDate(specs.getDateTimeFormatter().format(reportType.getDate().toGregorianCalendar().toInstant()));
         }
         report.setReportResult(reportType.getResult().value());
         report.setTitle(Objects.requireNonNullElse(title, "Report"));
@@ -527,9 +525,7 @@ public class ReportGenerator {
 
     public void writeConformanceOverviewReport(ConformanceOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
-            overview.setReportDate(sdf.format(new Date()));
+            overview.setReportDate(specs.getDateTimeFormatter().format(Instant.now()));
         }
         try {
             Map<String, Object> parameters = new HashMap<>();
@@ -542,9 +538,7 @@ public class ReportGenerator {
 
     public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
-            overview.setReportDate(sdf.format(new Date()));
+            overview.setReportDate(specs.getDateTimeFormatter().format(Instant.now()));
         }
         try {
             Map<String, Object> parameters = new HashMap<>();
@@ -557,9 +551,7 @@ public class ReportGenerator {
 
     public void writeConformanceStatementDocumentationReport(ConformanceStatementDocumentation data, OutputStream outputStream, ReportSpecs specs) {
         if (data.getReportDate() == null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            sdf.setTimeZone(TimeZone.getTimeZone(specs.getZone()));
-            data.setReportDate(sdf.format(new Date()));
+            data.setReportDate(specs.getDateTimeFormatter().format(Instant.now()));
         }
         if (data.getIncludeTestCaseDocumentation()) {
             // Force the includeTestCaseDocumentation flag is no test suite has documentation (to avoid an empty heading).

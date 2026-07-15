@@ -559,7 +559,7 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
               // Extract software information
               val softwareInfo = JsonUtil.parseJsSoftwareVersionInfo(Json.parse(jwsObject.getPayload().toString()))
               val releaseNoteContent = softwareInfo.latest.releaseNotes.map(x => " (see [release notes](%s))".formatted(x)).getOrElse("")
-              val releaseDateContent = DateTimeFormatter.ofPattern("dd/MM/yyyy").format(ZonedDateTime.ofInstant(softwareInfo.latest.releaseDate, ZoneOffset.UTC))
+              val releaseDateContent = DateTimeFormatter.ofPattern(Configurations.DATE_FORMAT_DATE).format(ZonedDateTime.ofInstant(softwareInfo.latest.releaseDate, ZoneOffset.UTC))
               // Parse current release's timestamp
               val currentBuildTime = LocalDateTime.parse(Configurations.BUILD_TIMESTAMP, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).toInstant(ZoneOffset.UTC)
               if (currentBuildTime.isBefore(softwareInfo.latest.releaseDate)) {

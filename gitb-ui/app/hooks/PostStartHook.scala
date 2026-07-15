@@ -317,12 +317,12 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
         // Report settings.
         _ <- {
           val reportSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.ReportSettings).map(_.config)
-          if (reportSettingsConfig.nonEmpty && reportSettingsConfig.get.parameter.nonEmpty) {
-            Configurations.REPORT_SETTINGS = JsonUtil.parseJsReportSettings(reportSettingsConfig.get.parameter.get)
+          val settings = if (reportSettingsConfig.nonEmpty && reportSettingsConfig.get.parameter.nonEmpty) {
+            JsonUtil.parseJsReportSettings(reportSettingsConfig.get.parameter.get)
           } else {
-            Configurations.REPORT_SETTINGS = ReportSettings.defaultConfiguration()
+            ReportSettings.defaultConfiguration()
           }
-          Configurations.TIME_ZONE = Configurations.resolveTimeZone(Configurations.REPORT_SETTINGS)
+          Configurations.applyReportSettings(settings)
           Future.successful(())
         }
       } yield ()

@@ -16,52 +16,64 @@
 package utils
 
 import config.Configurations
-import models.Constants
 
 import java.sql.Timestamp
-import java.time.LocalDateTime
+import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Date
 
 object TimeUtil {
 
   private val MS_IN_A_SECOND = 1000L
-  private val DISPLAY_FORMATTER = DateTimeFormatter.ofPattern(Constants.FilterDateFormat)
 
   /**
    * Parses a date/time string (as submitted by the UI as a filter bound) as wall-clock time in the application's
-   * configured/default timezone (see [[Configurations.TIME_ZONE]]).
+   * configured/default timezone and date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
    */
   def dateFromFilterString(dateStr: Option[String]): Option[Date] = {
-    if (dateStr.isEmpty) {
-      None
-    } else {
-      Some(Date.from(LocalDateTime.parse(dateStr.get, DISPLAY_FORMATTER).atZone(Configurations.TIME_ZONE).toInstant))
-    }
+    dateStr.map(str => Date.from(Instant.from(Configurations.DATE_TIME_FORMATTER.parse(str))))
   }
 
   /**
-   * Formats the provided instant for display in the application's configured/default timezone
-   * (see [[Configurations.TIME_ZONE]]).
+   * Formats the provided instant for display using the application's configured/default timezone and
+   * date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
    */
-  def serializeTimestamp(t:Timestamp): String = {
-    t.toInstant.atZone(Configurations.TIME_ZONE).format(DISPLAY_FORMATTER)
+  def serializeTimestamp(t: Timestamp): String = {
+    Configurations.DATE_TIME_FORMATTER.format(t.toInstant)
   }
 
   /**
    * Formats the provided date (an instant) for display in the application's configured/default timezone
-   * (see [[Configurations.TIME_ZONE]]), using the given pattern.
+   * (see [[Configurations.TIME_ZONE]]), using the given (arbitrary, not necessarily the configured)
+   * pattern. Prefer [[formatDateTime]] or [[formatFileDate]] when formatting using one of the currently
+   * configured patterns, to avoid re-parsing the pattern string on every call.
    */
   def formatDate(date: Date, pattern: String): String = {
     DateTimeFormatter.ofPattern(pattern).withZone(Configurations.TIME_ZONE).format(date.toInstant)
   }
 
   /**
-   * Parses a date/time string (as submitted by the UI, e.g. as a filter bound) as wall-clock time in the
-   * application's configured/default timezone (see [[Configurations.TIME_ZONE]]).
+   * Formats the provided date (an instant) for display using the application's configured/default
+   * timezone and date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
    */
-  def parseTimestamp(timestamp:String): Timestamp = {
-    Timestamp.from(LocalDateTime.parse(timestamp, DISPLAY_FORMATTER).atZone(Configurations.TIME_ZONE).toInstant)
+  def formatDateTime(date: Date): String = {
+    Configurations.DATE_TIME_FORMATTER.format(date.toInstant)
+  }
+
+  /**
+   * Formats the provided date (an instant) for use in report file names, using the application's
+   * configured/default timezone and file name date format (see [[Configurations.DATE_FILE_FORMATTER]]).
+   */
+  def formatFileDate(date: Date): String = {
+    Configurations.DATE_FILE_FORMATTER.format(date.toInstant)
+  }
+
+  /**
+   * Parses a date/time string (as submitted by the UI, e.g. as a filter bound) as wall-clock time in the
+   * application's configured/default timezone and date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
+   */
+  def parseTimestamp(timestamp: String): Timestamp = {
+    Timestamp.from(Instant.from(Configurations.DATE_TIME_FORMATTER.parse(timestamp)))
   }
 
   def getCurrentTimestamp(): Timestamp = {

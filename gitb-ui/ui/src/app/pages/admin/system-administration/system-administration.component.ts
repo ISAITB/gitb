@@ -256,7 +256,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   // Report settings
   reportSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true}
-  reportSettings: ReportSettings = { enabled: false, fileNameExpressions: {} }
+  reportSettings: ReportSettings = { enabled: false, fileNameExpressions: {}, dateFormats: { date: 'dd/MM/yyyy', dateTime: 'dd/MM/yyyy HH:mm:ss', dateFile: 'yyyy-MM-dd' } }
   reportSettingsDataLoaded = false
   reportTypeInfos = REPORT_TYPE_INFOS
   timeZones?: TimeZoneInfo[]
@@ -522,6 +522,13 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }
       this.reportSettingsStatus.fromDefault = settings.default
       this.reportSettingsStatus.fromEnv = settings.environment
+      // Guard against older persisted settings that predate the date format properties.
+      if (this.reportSettings.dateFormats == undefined) {
+        this.reportSettings.dateFormats = {}
+      }
+      this.reportSettings.dateFormats.date ??= 'dd/MM/yyyy'
+      this.reportSettings.dateFormats.dateTime ??= 'dd/MM/yyyy HH:mm:ss'
+      this.reportSettings.dateFormats.dateFile ??= 'yyyy-MM-dd'
     }
   }
 
@@ -1166,7 +1173,12 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   reportSettingsOk() {
-    return !this.reportSettings.enabled || this.reportTypeInfos.every((info) => this.textProvided(this.reportSettings.fileNameExpressions[info.type]))
+    return !this.reportSettings.enabled || (
+      this.reportTypeInfos.every((info) => this.textProvided(this.reportSettings.fileNameExpressions[info.type])) &&
+      this.textProvided(this.reportSettings.dateFormats?.date) &&
+      this.textProvided(this.reportSettings.dateFormats?.dateTime) &&
+      this.textProvided(this.reportSettings.dateFormats?.dateFile)
+    )
   }
 
   testServiceCallbacksSettingsOk() {
@@ -1284,6 +1296,12 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           this.initialiseReportSettings(appliedValue)
           this.reportSettingsStatus.collapsed = true
           this.popupService.success('Updated report and display settings.')
+          // Apply the date formats immediately for the Test Bed administrator making the change, rather than
+          // waiting for the next initial connection (see DataService.emptyAppConfiguration/setConfiguration).
+          if (this.reportSettings.dateFormats?.date != undefined && this.reportSettings.dateFormats?.dateTime != undefined) {
+            this.dataService.configuration.dateFormat = this.reportSettings.dateFormats.date
+            this.dataService.configuration.dateTimeFormat = this.reportSettings.dateFormats.dateTime
+          }
         }).add(() => {
           this.reportSettingsStatus.pending = false
         })

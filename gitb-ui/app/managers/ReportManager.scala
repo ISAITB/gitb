@@ -49,7 +49,7 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardCopyOption}
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 import java.util
 import java.util.regex.Pattern
 import java.util.stream.Collectors
@@ -326,7 +326,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       overview.setOutputMessages(source.getMessage)
       overview.setSessionId(UUID.randomUUID().toString)
       // Start time
-      overview.setStartTime(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "dd/MM/yyyy HH:mm:ss"))
+      overview.setStartTime(TimeUtil.formatDateTime(source.getStartTime.toGregorianCalendar.getTime))
       // End time
       overview.setEndTime(overview.getStartTime)
       overview.setId("1")
@@ -426,7 +426,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           }
         } else {
           // Create demo data.
-          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE)
+          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE).withDateTimeFormat(Configurations.DATE_FORMAT_DATETIME)
           val reportData = createDemoTAR(None, None)
           // Write PDF report.
           Using.resource(Files.newOutputStream(reportPath)) { output =>
@@ -547,7 +547,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           }
         } else {
           // Create demo data.
-          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE)
+          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE).withDateTimeFormat(Configurations.DATE_FORMAT_DATETIME)
           createDemoTestCaseOverview(reportSettings.community, createDemoTestCaseOverviewReport(), reportSpecs).map { reportData =>
             // Write PDF report.
             Using.resource(Files.newOutputStream(reportPath)) { output =>
@@ -1622,7 +1622,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           } else {
             overview.setTitle("Conformance Overview Report")
           }
-          overview.setReportDate(TimeUtil.formatDate(conformanceData.reportDate, "dd/MM/yyyy HH:mm:ss"))
+          overview.setReportDate(TimeUtil.formatDateTime(conformanceData.reportDate))
           overview.setOrganisation(conformanceData.organisationName.getOrElse("-"))
           overview.setSystem(conformanceData.systemName.getOrElse("-"))
           if (certificateSettings.isDefined) {
@@ -1968,11 +1968,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     messageToUse
   }
 
-  private def getDateFormatter(format: String): Option[SimpleDateFormat] = {
+  private def getDateFormatter(format: String): Option[DateTimeFormatter] = {
       try {
-        val formatter = new SimpleDateFormat(format)
-        formatter.setTimeZone(java.util.TimeZone.getTimeZone(Configurations.TIME_ZONE))
-        Some(formatter)
+        Some(DateTimeFormatter.ofPattern(format).withZone(Configurations.TIME_ZONE))
       } catch {
         case e: Exception =>
           LOGGER.warn("Invalid date format {}", format, e)
@@ -1986,7 +1984,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     if (matches.size() > 0) {
       if (dateValue.isDefined) {
         matches.forEach { result =>
-          val textToSet = getDateFormatter(result.group(2)).map(_.format(dateValue.get)).getOrElse("")
+          val textToSet = getDateFormatter(result.group(2)).map(_.format(dateValue.get.toInstant)).getOrElse("")
           messageToUse = message.replace(result.group(1), textToSet)
         }
       } else {
@@ -2859,9 +2857,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
               if (info.sessionId.exists(session => testResultMap.exists(_.contains(session)))) {
                 val testResult = testResultMap.get(info.sessionId.get)
                 testCaseOverview.setSessionId(info.sessionId.get)
-                testCaseOverview.setStartTime(TimeUtil.formatDate(testResult._1.startTime, "dd/MM/yyyy HH:mm:ss"))
+                testCaseOverview.setStartTime(TimeUtil.formatDateTime(testResult._1.startTime))
                 if (testResult._1.endTime.isDefined) {
-                  testCaseOverview.setEndTime(TimeUtil.formatDate(testResult._1.endTime.get, "dd/MM/yyyy HH:mm:ss"))
+                  testCaseOverview.setEndTime(TimeUtil.formatDateTime(testResult._1.endTime.get))
                 }
                 val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult._2)))
                 val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult._1.startTime), isExpected = true)
@@ -2999,7 +2997,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         overview.setFailedTestsIgnored(failedTestsIgnored)
         overview.setUndefinedTestsIgnored(undefinedTestsIgnored)
         overview.setIncludeTestStatus(addTestStatus)
-        overview.setReportDate(TimeUtil.formatDate(reportDate, "dd/MM/yyyy HH:mm:ss"))
+        overview.setReportDate(TimeUtil.formatDateTime(reportDate))
         Future.successful(overview)
       }
       // Add also custom message (doing here as we need the overall result to be calculated)

@@ -241,24 +241,24 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
         overview.setSessionId(testResult.sessionId)
         // Start time
         val start = testResult.startTime
-        overview.setStartTime(TimeUtil.formatDate(start, "dd/MM/yyyy HH:mm:ss"))
+        overview.setStartTime(TimeUtil.formatDateTime(start))
         // End time
         if (testResult.endTime.isDefined) {
           val end = testResult.endTime.get
-          overview.setEndTime(TimeUtil.formatDate(end, "dd/MM/yyyy HH:mm:ss"))
+          overview.setEndTime(TimeUtil.formatDateTime(end))
         }
         // Comments
         if (testData.comments.isDefined) {
           if (testData.comments.get.userComment.isDefined && testData.comments.get.userCommentTime.isDefined) {
             overview.setUserComment(new TestCaseOverview.UserComment(
               testData.comments.get.userComment.get,
-              TimeUtil.formatDate(testData.comments.get.userCommentTime.get, "dd/MM/yyyy HH:mm:ss")
+              TimeUtil.formatDateTime(testData.comments.get.userCommentTime.get)
             ))
           }
           if (testData.comments.get.adminComment.isDefined && testData.comments.get.adminCommentTime.isDefined) {
             overview.setAdminComment(new TestCaseOverview.AdminComment(
               testData.comments.get.adminComment.get,
-              TimeUtil.formatDate(testData.comments.get.adminCommentTime.get, "dd/MM/yyyy HH:mm:ss"),
+              TimeUtil.formatDateTime(testData.comments.get.adminCommentTime.get),
               testData.comments.get.resultForced.nonEmpty,
               testData.comments.get.userCommentTime.isEmpty || testData.comments.get.userCommentTime.get.before(testData.comments.get.adminCommentTime.get)
             ))

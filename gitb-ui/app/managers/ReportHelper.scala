@@ -37,6 +37,7 @@ class ReportHelper @Inject()(repositoryUtils: RepositoryUtils, communityResource
     var specs = ReportSpecs.build()
       .withTempFolder(Path.of(repositoryUtils.getTempReportFolder().toPath.toString, "html"))
       .withZone(Configurations.TIME_ZONE)
+      .withDateTimeFormat(Configurations.DATE_FORMAT_DATETIME)
     specs = specs.withResourceResolver((resourceUri: String) => {
       var resolvedPath: String = null
       if (resourceUri != null) {

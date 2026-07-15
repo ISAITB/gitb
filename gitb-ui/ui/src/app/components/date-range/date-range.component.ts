@@ -368,6 +368,12 @@ export class DateRangeComponent implements ControlValueAccessor {
     return this.endDate ?? this.defaultMaxDate;
   }
 
+  // The Test Bed-wide configured date-only pattern, shown as an input placeholder hint (lower-cased so
+  // that "mm" reads unambiguously as "month" rather than the DatePipe/format-token case for minutes).
+  get datePlaceholder(): string {
+    return this.dateFormatter.pattern.toLowerCase()
+  }
+
   todayEnabledForBegin() {
     return !this.todayDate.after(NgbDate.from(this.startMaxDate))
   }
