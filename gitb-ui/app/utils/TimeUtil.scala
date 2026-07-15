@@ -19,21 +19,14 @@ import config.Configurations
 import models.Constants
 
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
-import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
-import java.util.{Calendar, Date, TimeZone}
+import java.time.format.DateTimeFormatter
+import java.util.Date
 
 object TimeUtil {
 
   private val MS_IN_A_SECOND = 1000L
   private val DISPLAY_FORMATTER = DateTimeFormatter.ofPattern(Constants.FilterDateFormat)
-
-  private val formatUTC: SimpleDateFormat = {
-    val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    format.setTimeZone(TimeZone.getTimeZone("UTC"))
-    format
-  }
 
   /**
    * Parses a date/time string (as submitted by the UI as a filter bound) as wall-clock time in the application's
@@ -83,18 +76,8 @@ object TimeUtil {
     }
   }
 
-  def getTimeDifferenceInSeconds(timestamp:String):Long = {
-    getTimeDifference(timestamp) / MS_IN_A_SECOND
-  }
-
   def getTimeDifferenceInSeconds(timestamp:Timestamp):Long = {
     (getCurrentTimestamp().getTime - timestamp.getTime) / MS_IN_A_SECOND
-  }
-
-  private def getTimeDifference(timestamp:String): Long = {
-    val d = formatUTC.parse(timestamp)
-    val curr = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime
-    curr.getTime - d.getTime
   }
 
 }
