@@ -14,6 +14,7 @@
  */
 
 import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -63,6 +64,14 @@ export class ReportFileNameExpressionComponent implements OnChanges {
     })
   }
 
+  dropdownToggleClicked(pop: NgbTooltip) {
+    pop.disableTooltip = true
+    pop.close()
+    setTimeout(() => {
+      pop.disableTooltip = false
+    }, Constants.TOOLTIP_DELAY + 50)
+  }
+
   private placeholdersFor(reportType: number): KeyValue[] {
     const organisation = this.dataService.labelOrganisationLower()
     const system = this.dataService.labelSystemLower()
@@ -71,7 +80,8 @@ export class ReportFileNameExpressionComponent implements OnChanges {
     const organisationPlaceholder: KeyValue = { key: '${ORGANISATION}', value: `The ${organisation} for which the report is generated.` }
     const systemPlaceholder: KeyValue = { key: '${SYSTEM}', value: `The ${system} for which conformance is being tested.` }
     const datePlaceholder: KeyValue = { key: '${DATE}', value: 'The report date.' }
-    const testCaseNamePlaceholder: KeyValue = { key: '${TEST_CASE_NAME}', value: 'The name of the related test case.' }
+    const testCasePlaceholder: KeyValue = { key: '${TEST_CASE}', value: 'The name of the related test case.' }
+    const testSuitePlaceholder: KeyValue = { key: '${TEST_SUITE}', value: 'The name of the related test suite.' }
     const conformanceTarget = (targetOf: string): KeyValue => (
       { key: '${CONFORMANCE_TARGET}', value: `The target of the conformance ${targetOf} (${specification} or ${actor}).` }
     )
@@ -81,7 +91,7 @@ export class ReportFileNameExpressionComponent implements OnChanges {
       case Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_REPORT:
         return [organisationPlaceholder, systemPlaceholder, conformanceTarget('statements'), datePlaceholder]
       case Constants.REPORT_TYPE.TEST_CASE_REPORT:
-        return [organisationPlaceholder, systemPlaceholder, testCaseNamePlaceholder, datePlaceholder]
+        return [organisationPlaceholder, systemPlaceholder, testCasePlaceholder, datePlaceholder]
       case Constants.REPORT_TYPE.TEST_STEP_REPORT:
         return [datePlaceholder]
       case Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_CERTIFICATE:
@@ -89,6 +99,12 @@ export class ReportFileNameExpressionComponent implements OnChanges {
         return [organisationPlaceholder, systemPlaceholder, conformanceTarget('certificate'), datePlaceholder]
       case Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT:
         return [conformanceTarget('statement'), datePlaceholder]
+      case Constants.REPORT_TYPE.TEST_SUITE_DOCUMENTATION_REPORT:
+        return [testSuitePlaceholder, datePlaceholder]
+      case Constants.REPORT_TYPE.TEST_CASE_DOCUMENTATION_REPORT:
+        return [testCasePlaceholder, datePlaceholder]
+      case Constants.REPORT_TYPE.TEST_DATA_ARCHIVE:
+        return [organisationPlaceholder, systemPlaceholder, testCasePlaceholder, datePlaceholder]
       default:
         return []
     }
@@ -101,6 +117,8 @@ export class ReportFileNameExpressionComponent implements OnChanges {
       case Constants.REPORT_TYPE.TEST_CASE_REPORT:
       case Constants.REPORT_TYPE.TEST_STEP_REPORT:
         return '.pdf | .xml'
+      case Constants.REPORT_TYPE.TEST_DATA_ARCHIVE:
+        return '.zip'
       default:
         return '.pdf'
     }

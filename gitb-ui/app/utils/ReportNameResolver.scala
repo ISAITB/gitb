@@ -45,6 +45,7 @@ object ReportNameResolver {
                                 system: Option[String] = None,
                                 conformanceTarget: Option[String] = None,
                                 testCaseName: Option[String] = None,
+                                testSuiteName: Option[String] = None,
                                 date: Date = new Date())
 
   /**
@@ -93,7 +94,8 @@ object ReportNameResolver {
       "ORGANISATION" -> ctx.organisation.getOrElse(""),
       "SYSTEM" -> ctx.system.getOrElse(""),
       "CONFORMANCE_TARGET" -> ctx.conformanceTarget.getOrElse(""),
-      "TEST_CASE_NAME" -> ctx.testCaseName.getOrElse(""),
+      "TEST_CASE" -> ctx.testCaseName.getOrElse(""),
+      "TEST_SUITE" -> ctx.testSuiteName.getOrElse(""),
       "DATE" -> TimeUtil.formatFileDate(ctx.date)
     )
     tokenValues.foldLeft(expression) { case (current, (token, value)) =>

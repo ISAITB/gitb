@@ -616,11 +616,23 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
-  def generateTestSessionDataArchive(archivePath: Path, sessionId: String): Future[Option[Path]] = {
+  def generateTestSessionDataArchive(archivePath: Path, sessionId: String, requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
     for {
+      sessionInfo <- resolveTestSessionReportInfo(sessionId, requestedUserId)
+      reportSettings <- {
+        if (sessionInfo._1.isDefined) {
+          getReportSettings(sessionInfo._1.get, ReportType.TestDataArchive).map(Some(_))
+        } else {
+          Future.successful(None)
+        }
+      }
       reportInfo <- testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(Constants.MimeTypeZIP), None, None)
       report <- finaliseTestSessionReport(archivePath, reportInfo, Constants.MimeTypeZIP, None, None, ReportType.TestCaseReport)
-    } yield report
+    } yield {
+      report.map { path =>
+        ReportFileInfo(path, resolveReportFileName(ReportType.TestDataArchive, reportSettings.flatMap(_.fileNameExpression), sessionInfo._2, "zip"))
+      }
+    }
   }
 
   def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
@@ -917,20 +929,54 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     reportPath
   }
 
-  def generateTestCaseDocumentationReport(reportPath: Path, communityId: Long, documentation: String): Path = {
-    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Case Documentation")
+  def generateTestCaseDocumentationReport(reportPath: Path, communityId: Long, documentation: String, testCaseId: Long): Future[ReportFileInfo] = {
+    for {
+      reportSettings <- getReportSettings(communityId, ReportType.TestCaseDocumentationReport)
+      testCase <- testCaseManager.getTestCase(testCaseId.toString)
+      signedPath <- {
+        generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Case Documentation")
+        signReportIfNeeded(reportSettings, reportPath)
+      }
+    } yield {
+      val ctx = ReportNameResolver.ReportNameContext(testCaseName = testCase.map(_.fullname))
+      ReportFileInfo(signedPath, resolveReportFileName(ReportType.TestCaseDocumentationReport, reportSettings.fileNameExpression, ctx, "pdf"))
+    }
   }
 
-  def generateTestSuiteDocumentationReport(reportPath: Path, communityId: Long, documentation: String): Path = {
-    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Suite Documentation")
+  def generateTestSuiteDocumentationReport(reportPath: Path, communityId: Long, documentation: String, testSuiteId: Long): Future[ReportFileInfo] = {
+    for {
+      reportSettings <- getReportSettings(communityId, ReportType.TestSuiteDocumentationReport)
+      testSuite <- testSuiteManager.getById(testSuiteId)
+      signedPath <- {
+        generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Suite Documentation")
+        signReportIfNeeded(reportSettings, reportPath)
+      }
+    } yield {
+      val ctx = ReportNameResolver.ReportNameContext(testSuiteName = testSuite.map(_.fullname))
+      ReportFileInfo(signedPath, resolveReportFileName(ReportType.TestSuiteDocumentationReport, reportSettings.fileNameExpression, ctx, "pdf"))
+    }
   }
 
   def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
-    generateTestCaseDocumentationReport(reportPath, communityId, documentation)
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Case Documentation")
   }
 
   def generateTestSuiteDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
-    generateTestSuiteDocumentationReport(reportPath, communityId, documentation)
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Suite Documentation")
+  }
+
+  def generateDemoTestCaseDocumentationReport(reportPath: Path, communityId: Long, reportSettings: CommunityReportSettings): Future[Unit] = {
+    for {
+      _ <- Future { generateHtmlDocumentationReport(reportPath, communityId, "<p>Sample documentation for a test case, illustrating how the produced PDF report will be structured.</p>", "Test Case Documentation") }
+      _ <- signReportIfNeeded(reportSettings, reportPath)
+    } yield ()
+  }
+
+  def generateDemoTestSuiteDocumentationReport(reportPath: Path, communityId: Long, reportSettings: CommunityReportSettings): Future[Unit] = {
+    for {
+      _ <- Future { generateHtmlDocumentationReport(reportPath, communityId, "<p>Sample documentation for a test suite, illustrating how the produced PDF report will be structured.</p>", "Test Suite Documentation") }
+      _ <- signReportIfNeeded(reportSettings, reportPath)
+    } yield ()
   }
 
   private def getConformanceDataForOverviewReport(conformanceInfoBuilder: ConformanceStatusBuilder[ConformanceStatementFull], reportLevel: OverviewLevelType, communityId: Long, actorIdsToDisplay: Option[Set[Long]], snapshotId: Option[Long]): Future[ConformanceData] = {
@@ -3477,7 +3523,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       organisation = Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation, single = true, lowercase = true)),
       system = Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System, single = true, lowercase = true)),
       conformanceTarget = Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification, single = true, lowercase = true)),
-      testCaseName = Some("Sample test case")
+      testCaseName = Some("Sample test case"),
+      testSuiteName = Some("Sample test suite")
     )
   }
 

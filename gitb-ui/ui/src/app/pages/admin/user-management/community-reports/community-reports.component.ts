@@ -34,8 +34,11 @@ export class CommunityReportsComponent implements OnInit {
   conformanceOverviewCertificateSettings = new ReportSettings()
   conformanceOverviewReportSettings = new ReportSettings()
   conformanceStatementDocumentationReportSettings = new ReportSettings()
+  testSuiteDocumentationReportSettings = new ReportSettings()
+  testCaseDocumentationReportSettings = new ReportSettings()
   testCaseReportSettings = new ReportSettings()
   testStepReportSettings = new ReportSettings()
+  testDataArchiveSettings = new ReportSettings()
 
   constructor(
     private readonly route: ActivatedRoute,

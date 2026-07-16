@@ -1284,9 +1284,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   exportTestData(testCase: ConformanceTestCase) {
     this.testCaseOperationPending[testCase.id] = true
-    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/zip'});
-      saveAs(blobData, 'test_case_data.zip');
+    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/zip'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, 'test_data.zip'));
     }).add(() => {
       this.testCaseOperationPending[testCase.id] = false
     })

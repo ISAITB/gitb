@@ -255,6 +255,15 @@ import {
   ConformanceStatementDocumentationReportFormComponent
 } from './pages/admin/user-management/community-reports/conformance-statement-documentation-report-form/conformance-statement-documentation-report-form.component';
 import {
+  TestSuiteDocumentationReportFormComponent
+} from './pages/admin/user-management/community-reports/test-suite-documentation-report-form/test-suite-documentation-report-form.component';
+import {
+  TestCaseDocumentationReportFormComponent
+} from './pages/admin/user-management/community-reports/test-case-documentation-report-form/test-case-documentation-report-form.component';
+import {
+  TestDataArchiveReportFormComponent
+} from './pages/admin/user-management/community-reports/test-data-archive-report-form/test-data-archive-report-form.component';
+import {
   EndpointParameterTabContentComponent
 } from './pages/admin/domain-management/endpoint/endpoint-parameter-tab-content/endpoint-parameter-tab-content.component';
 import {CustomPropertyPanelComponent} from './components/custom-property-panel/custom-property-panel.component';
@@ -481,6 +490,9 @@ import { TestResultCommentsModalComponent } from './modals/test-result-comments-
     ConformanceOverviewCertificateFormComponent,
     ConformanceOverviewCertificateModalComponent,
     ConformanceStatementDocumentationReportFormComponent,
+    TestSuiteDocumentationReportFormComponent,
+    TestCaseDocumentationReportFormComponent,
+    TestDataArchiveReportFormComponent,
     EndpointParameterTabContentComponent,
     CustomPropertyPanelComponent,
     PendingDivComponent,

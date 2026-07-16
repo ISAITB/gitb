@@ -25,6 +25,7 @@ import {HtmlService} from 'src/app/services/html.service';
 import {ReportService} from 'src/app/services/report.service';
 import {TestSuiteDisplayComponentApi} from './test-suite-display-component-api';
 import {TestCaseDisplayComponentApi} from '../test-case-display/test-case-display-component-api';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-test-suite-display',
@@ -139,9 +140,9 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
     .subscribe((data) => {
       this.htmlService.showHtml("Test suite documentation", data, undefined, () => {
         return this.reportService.exportTestSuiteDocumentationReport(testSuite.id).pipe(
-          tap((pdfData) => {
-            const blobData = new Blob([pdfData], {type: 'application/pdf'});
-            saveAs(blobData, "test_suite_documentation.pdf");
+          tap((response) => {
+            const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
+            saveAs(blobData, Utils.fileNameFromContentDisposition(response, "test_suite_documentation.pdf"));
           })
         )
       })

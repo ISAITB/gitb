@@ -1900,6 +1900,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       case models.Enums.ReportType.ConformanceOverviewCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE
       case models.Enums.ReportType.ConformanceStatementCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_CERTIFICATE
       case models.Enums.ReportType.ConformanceStatementDocumentationReport => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_DOCUMENTATION
+      case models.Enums.ReportType.TestSuiteDocumentationReport => com.gitb.xml.export.ReportType.TEST_SUITE_DOCUMENTATION
+      case models.Enums.ReportType.TestCaseDocumentationReport => com.gitb.xml.export.ReportType.TEST_CASE_DOCUMENTATION
+      case models.Enums.ReportType.TestDataArchive => com.gitb.xml.export.ReportType.TEST_DATA_ARCHIVE
       case _ => throw new IllegalArgumentException("Unknown report type %s".formatted(reportType.id))
     }
   }

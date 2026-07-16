@@ -725,18 +725,40 @@ export class ReportService {
   }
 
   exportTestCaseDocumentationReport(testCaseId: number) {
-    return this.restService.get<ArrayBuffer>({
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportTestCaseDocumentationReport(testCaseId).url,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
   exportTestSuiteDocumentationReport(testSuiteId: number) {
-    return this.restService.get<ArrayBuffer>({
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportTestSuiteDocumentationReport(testSuiteId).url,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
+  exportDemoTestCaseDocumentationReport(communityId: number, reportSettings: CommunityReportSettings) {
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoTestCaseDocumentationReport(communityId).url,
+      data: this.reportSettingsToData(Constants.REPORT_TYPE.TEST_CASE_DOCUMENTATION_REPORT, false, reportSettings),
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
+  exportDemoTestSuiteDocumentationReport(communityId: number, reportSettings: CommunityReportSettings) {
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoTestSuiteDocumentationReport(communityId).url,
+      data: this.reportSettingsToData(Constants.REPORT_TYPE.TEST_SUITE_DOCUMENTATION_REPORT, false, reportSettings),
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -839,13 +861,14 @@ export class ReportService {
   }
 
   exportTestSessionData(session: string) {
-    return this.restService.get<ArrayBuffer>(({
+    return this.restService.get<HttpResponse<ArrayBuffer>>(({
       path: ROUTES.controllers.RepositoryService.exportTestSessionData().url,
       params: {
         session_id: session
       },
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     }))
   }
 

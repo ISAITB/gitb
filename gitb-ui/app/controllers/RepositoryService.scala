@@ -787,6 +787,45 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     })
   }
 
+  def exportDemoTestCaseDocumentationReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoDocumentationReport(communityId, request, ReportType.TestCaseDocumentationReport, (reportPath, reportSettings) => {
+      reportManager.generateDemoTestCaseDocumentationReport(reportPath, communityId, reportSettings)
+    })
+  }
+
+  def exportDemoTestSuiteDocumentationReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoDocumentationReport(communityId, request, ReportType.TestSuiteDocumentationReport, (reportPath, reportSettings) => {
+      reportManager.generateDemoTestSuiteDocumentationReport(reportPath, communityId, reportSettings)
+    })
+  }
+
+  /**
+   * Generic handler for demo/preview PDF-only report types that have no stylesheet or external
+   * service configuration option (only a naming expression and, optionally, a signature setting).
+   */
+  private def exportDemoDocumentationReport(communityId: Long, request: RequestWithAttributes[AnyContent], reportType: ReportType, generator: (Path, CommunityReportSettings) => Future[Unit]): Future[Result] = {
+    val reportPath = getReportTempFile(".pdf")
+    val task = for {
+      paramMap <- Future.successful(ParameterExtractor.paramMap(request))
+      _ <- authorizationManager.canManageCommunity(request, communityId)
+      reportSettings <- Future.successful(ParameterExtractor.extractCommunityReportSettings(paramMap, communityId))
+      _ <- generator(reportPath, reportSettings)
+      labels <- communityLabelManager.getLabels(communityId)
+    } yield {
+      val ctx = reportManager.getDemoReportNameContext(labels)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some(reportManager.resolveReportFileName(reportType, reportSettings.fileNameExpression, ctx, "pdf")),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    }
+    task.recover {
+      case e: Exception => handleDemoReportGeneralError(e, reportPath)
+    }
+  }
+
   private def exportDemoReport(request: RequestWithAttributes[AnyContent], communityId: Long, reportType: ReportType, handler: (Path, Option[Path], Option[Map[String, Seq[String]]]) => Future[Unit]): Future[Result] = {
     val reportPath = getReportTempFile(".pdf")
     val task = for {
@@ -1076,22 +1115,21 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       testCaseManager.getTestCaseDocumentation(testCaseId).flatMap { documentation =>
         if (documentation.isDefined) {
           val userId = ParameterExtractor.extractUserId(request)
-          communityManager.getUserCommunityId(userId).map { communityId =>
-            val reportPath = getReportTempFile(".pdf")
-            try {
-              reportManager.generateTestCaseDocumentationReport(reportPath, communityId, documentation.get)
+          val reportPath = getReportTempFile(".pdf")
+          communityManager.getUserCommunityId(userId).flatMap { communityId =>
+            reportManager.generateTestCaseDocumentationReport(reportPath, communityId, documentation.get, testCaseId).map { reportInfo =>
               Ok.sendFile(
-                content = reportPath.toFile,
-                fileName = _ => Some("documentation.pdf"),
+                content = reportInfo.file.toFile,
+                fileName = _ => Some(reportInfo.fileName),
                 onClose = () => {
                   FileUtils.deleteQuietly(reportPath.toFile)
                 }
               )
-            } catch {
-              case e: Exception =>
-                FileUtils.deleteQuietly(reportPath.toFile)
-                throw e
             }
+          }.recover {
+            case e: Exception =>
+              FileUtils.deleteQuietly(reportPath.toFile)
+              throw e
           }
         } else {
           Future.successful(NotFound)
@@ -1105,22 +1143,21 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       testSuiteManager.getTestSuiteDocumentation(testSuiteId).flatMap { documentation =>
         if (documentation.isDefined) {
           val userId = ParameterExtractor.extractUserId(request)
-          communityManager.getUserCommunityId(userId).map { communityId =>
-            val reportPath = getReportTempFile(".pdf")
-            try {
-              reportManager.generateTestSuiteDocumentationReport(reportPath, communityId, documentation.get)
+          val reportPath = getReportTempFile(".pdf")
+          communityManager.getUserCommunityId(userId).flatMap { communityId =>
+            reportManager.generateTestSuiteDocumentationReport(reportPath, communityId, documentation.get, testSuiteId).map { reportInfo =>
               Ok.sendFile(
-                content = reportPath.toFile,
-                fileName = _ => Some("documentation.pdf"),
+                content = reportInfo.file.toFile,
+                fileName = _ => Some(reportInfo.fileName),
                 onClose = () => {
                   FileUtils.deleteQuietly(reportPath.toFile)
                 }
               )
-            } catch {
-              case e: Exception =>
-                FileUtils.deleteQuietly(reportPath.toFile)
-                throw e
             }
+          }.recover {
+            case e: Exception =>
+              FileUtils.deleteQuietly(reportPath.toFile)
+              throw e
           }
         } else {
           Future.successful(NotFound)
@@ -1503,11 +1540,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canExportTestSessionData(request, session).flatMap { _ =>
       Files.createDirectories(archiveFolder)
       val archiveFile = archiveFolder.resolve("test_data.zip")
-      reportManager.generateTestSessionDataArchive(archiveFile, session).map { resultingFile =>
-        if (resultingFile.isDefined) {
+      val userId = ParameterExtractor.extractUserId(request)
+      reportManager.generateTestSessionDataArchive(archiveFile, session, Some(userId)).map { resultingReport =>
+        if (resultingReport.isDefined) {
           Ok.sendFile(
-            content = resultingFile.get.toFile,
-            fileName = _ => Some("test_data.zip"),
+            content = resultingReport.get.file.toFile,
+            fileName = _ => Some(resultingReport.get.fileName),
             onClose = () => {
               if (Files.exists(archiveFolder)) {
                 FileUtils.deleteQuietly(archiveFolder.toFile)

@@ -91,6 +91,40 @@
                 </app-configuration-entry>
             </div>
             <div class="configContainer">
+                <!-- Test suite documentation report -->
+                <app-configuration-entry
+                    #testSuiteDocumentationReportEntry
+                    configTitle="Test suite documentation"
+                    configDescription="Report including the documentation related to a specific test suite."
+                    [(status)]="testSuiteDocumentationReportSettings.status"
+                    (beforeExpand)="testSuiteDocumentationReportSettings.setExpanding()"
+                    (afterExpand)="testSuiteDocumentationReportSettings.setExpanded()">
+                    <app-test-suite-documentation-report-form
+                        [communityId]="communityId"
+                        [selected]="testSuiteDocumentationReportSettings.expanding"
+                        [expanded]="testSuiteDocumentationReportSettings.expanded"
+                        (loaded)="testSuiteDocumentationReportSettings.setLoaded(testSuiteDocumentationReportEntry)"
+                        (collapse)="testSuiteDocumentationReportSettings.setCollapsed()"></app-test-suite-documentation-report-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
+                <!-- Test case documentation report -->
+                <app-configuration-entry
+                    #testCaseDocumentationReportEntry
+                    configTitle="Test case documentation"
+                    configDescription="Report including the documentation related to a specific test case."
+                    [(status)]="testCaseDocumentationReportSettings.status"
+                    (beforeExpand)="testCaseDocumentationReportSettings.setExpanding()"
+                    (afterExpand)="testCaseDocumentationReportSettings.setExpanded()">
+                    <app-test-case-documentation-report-form
+                        [communityId]="communityId"
+                        [selected]="testCaseDocumentationReportSettings.expanding"
+                        [expanded]="testCaseDocumentationReportSettings.expanded"
+                        (loaded)="testCaseDocumentationReportSettings.setLoaded(testCaseDocumentationReportEntry)"
+                        (collapse)="testCaseDocumentationReportSettings.setCollapsed()"></app-test-case-documentation-report-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
                 <!-- Test case report -->
                 <app-configuration-entry
                     #testCaseReportEntry
@@ -122,6 +156,23 @@
                         [expanded]="testStepReportSettings.expanded"
                         (loaded)="testStepReportSettings.setLoaded(testStepReportEntry)"
                         (collapse)="testStepReportSettings.setCollapsed()"></app-test-step-report-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
+                <!-- Test data archive -->
+                <app-configuration-entry
+                    #testDataArchiveEntry
+                    configTitle="Test data archive"
+                    configDescription="Archive containing all data related to a specific test session."
+                    [(status)]="testDataArchiveSettings.status"
+                    (beforeExpand)="testDataArchiveSettings.setExpanding()"
+                    (afterExpand)="testDataArchiveSettings.setExpanded()">
+                    <app-test-data-archive-report-form
+                        [communityId]="communityId"
+                        [selected]="testDataArchiveSettings.expanding"
+                        [expanded]="testDataArchiveSettings.expanded"
+                        (loaded)="testDataArchiveSettings.setLoaded(testDataArchiveEntry)"
+                        (collapse)="testDataArchiveSettings.setCollapsed()"></app-test-data-archive-report-form>
                 </app-configuration-entry>
             </div>
         </div>

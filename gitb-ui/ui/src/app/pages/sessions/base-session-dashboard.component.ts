@@ -625,9 +625,9 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
 
   private onExportTestData(testResult: TestResultForDisplay) {
     testResult.optionPending = true
-    this.reportService.exportTestSessionData(testResult.session).subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/zip'});
-      saveAs(blobData, 'test_case_data.zip');
+    this.reportService.exportTestSessionData(testResult.session).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/zip'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, 'test_data.zip'));
     }).add(() => {
       testResult.optionPending = false
     })

@@ -755,6 +755,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         models.Enums.ReportType.ConformanceOverviewCertificate
       case ReportType.CONFORMANCE_STATEMENT_DOCUMENTATION =>
         models.Enums.ReportType.ConformanceStatementDocumentationReport
+      case ReportType.TEST_SUITE_DOCUMENTATION =>
+        models.Enums.ReportType.TestSuiteDocumentationReport
+      case ReportType.TEST_CASE_DOCUMENTATION =>
+        models.Enums.ReportType.TestCaseDocumentationReport
+      case ReportType.TEST_DATA_ARCHIVE =>
+        models.Enums.ReportType.TestDataArchive
       case _ => throw new IllegalArgumentException("Unknown report type [%s]".formatted(data.value()))
     }
     reportType

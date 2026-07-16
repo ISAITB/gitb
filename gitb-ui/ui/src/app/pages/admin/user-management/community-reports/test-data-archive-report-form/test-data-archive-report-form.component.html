@@ -1,0 +1,24 @@
+@if (reportSettings) {
+    <form>
+        <div class="row">
+            <label class="col-3 col-form-label text-end">* Archive file name:</label>
+            <div class="col-8 col-md-6">
+                <div class="row row-cols-auto align-items-center gx-3">
+                    <div class="col-auto">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" [attr.id]="idValueCustomiseFileName" [name]="idValueCustomiseFileName" [(ngModel)]="customiseFileName" (change)="onCustomiseFileNameChange()">
+                            <label class="form-check-label" [attr.for]="idValueCustomiseFileName">Customise?</label>
+                        </div>
+                    </div>
+                    <div class="col-auto flex-grow-1">
+                        <app-report-file-name-expression [reportType]="Constants.REPORT_TYPE.TEST_DATA_ARCHIVE" [value]="customiseFileName ? reportSettings!.fileNameExpression : reportSettings!.defaultFileNameExpression" (valueChange)="reportSettings!.fileNameExpression = $event" [readonly]="!customiseFileName"></app-report-file-name-expression>
+                    </div>
+                </div>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The naming expression used to define the archive's file name."></div>
+        </div>
+        <div class="btn-toolbar mt-3">
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="update()" [disable]="!updateEnabled()" [pending]="updatePending">Update</button>
+        </div>
+    </form>
+}

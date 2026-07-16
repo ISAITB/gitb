@@ -158,7 +158,7 @@ object Enums {
 
   object ReportType extends Enumeration(1) {
     type ReportType = Value
-    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport, ConformanceStatementCertificate, ConformanceOverviewCertificate, ConformanceStatementDocumentationReport = Value
+    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport, ConformanceStatementCertificate, ConformanceOverviewCertificate, ConformanceStatementDocumentationReport, TestSuiteDocumentationReport, TestCaseDocumentationReport, TestDataArchive = Value
   }
 
   object TriggerFireExpressionType extends Enumeration(1) {

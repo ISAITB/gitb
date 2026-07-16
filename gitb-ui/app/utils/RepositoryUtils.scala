@@ -87,6 +87,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	private final val DATA_PATH_LOCK: String = "data.lock"
 	private final val STATUS_UPDATES_PATH: String = "status-updates"
 
+	// The report types that support a custom XSLT stylesheet (all others - e.g. the PDF-only
+	// documentation reports and the test data archive - have no stylesheet/XML customisation
+	// option at all, so there's no point probing the filesystem or computing a filename for them).
+	private final val REPORT_TYPES_WITH_STYLESHEETS: Set[ReportType] = Set(
+		ReportType.ConformanceStatementReport, ReportType.ConformanceOverviewReport,
+		ReportType.TestCaseReport, ReportType.TestStepReport,
+		ReportType.ConformanceStatementCertificate, ReportType.ConformanceOverviewCertificate,
+		ReportType.ConformanceStatementDocumentationReport
+	)
+
 	private def isChildPath(expectedParent: Path, expectedChild: Path): Boolean = {
 		expectedChild.normalize().toAbsolutePath.startsWith(expectedParent.normalize().toAbsolutePath)
 	}
@@ -113,9 +123,13 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	}
 
 	def getCommunityReportStylesheet(communityId: Long, reportType: ReportType): Option[Path] = {
-		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
-		val filePath = stylesheetFolder.resolve(stylesheetName(reportType))
-		Some(filePath).filter(Files.exists(_))
+		if (REPORT_TYPES_WITH_STYLESHEETS.contains(reportType)) {
+			val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
+			val filePath = stylesheetFolder.resolve(stylesheetName(reportType))
+			Some(filePath).filter(Files.exists(_))
+		} else {
+			None
+		}
 	}
 
 	private def stylesheetName(reportType: ReportType): String = {

@@ -3760,9 +3760,14 @@ object JsonUtil {
   }
 
   def jsReportSettings(settings: ReportSettings): JsObject = {
+    // Backfill any report type missing from the persisted map (e.g. one added after the settings
+    // were last saved) with its built-in default, so the editing screen never shows a blank value.
+    val completeFileNameExpressions = Configurations.REPORT_NAMING_EXPRESSIONS.map { case (reportType, builtInDefault) =>
+      reportType -> settings.fileNameExpressions.getOrElse(reportType, builtInDefault)
+    }
     var json = Json.obj(
       "enabled" -> JsBoolean(settings.enabled),
-      "fileNameExpressions" -> JsObject(settings.fileNameExpressions.map { case (reportType, expression) =>
+      "fileNameExpressions" -> JsObject(completeFileNameExpressions.map { case (reportType, expression) =>
         reportType.toString -> (JsString(expression): JsValue)
       })
     )

@@ -179,9 +179,9 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     .subscribe((data) => {
       this.htmlService.showHtml("Test case documentation", data, undefined, () => {
         return this.reportService.exportTestCaseDocumentationReport(testCase.id).pipe(
-          tap((pdfData) => {
-            const blobData = new Blob([pdfData], {type: 'application/pdf'});
-            saveAs(blobData, "test_case_documentation.pdf");
+          tap((response) => {
+            const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
+            saveAs(blobData, Utils.fileNameFromContentDisposition(response, "test_case_documentation.pdf"));
           })
         )
       })
@@ -206,9 +206,9 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
 
   onExportTestData(testCase: ConformanceTestCase) {
     this.operationPending[testCase.id] = true
-    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/zip'});
-      saveAs(blobData, 'test_case_data.zip');
+    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/zip'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, 'test_data.zip'));
     }).add(() => {
       this.operationPending[testCase.id] = false
     })

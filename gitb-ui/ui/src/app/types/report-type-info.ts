@@ -30,6 +30,9 @@ export const REPORT_TYPE_INFOS: ReportTypeInfo[] = [
   { type: Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_REPORT, label: 'Conformance statement report' },
   { type: Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_REPORT, label: 'Conformance overview report' },
   { type: Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT, label: 'Conformance statement documentation' },
+  { type: Constants.REPORT_TYPE.TEST_SUITE_DOCUMENTATION_REPORT, label: 'Test suite documentation' },
+  { type: Constants.REPORT_TYPE.TEST_CASE_DOCUMENTATION_REPORT, label: 'Test case documentation' },
   { type: Constants.REPORT_TYPE.TEST_CASE_REPORT, label: 'Test case report' },
-  { type: Constants.REPORT_TYPE.TEST_STEP_REPORT, label: 'Test step report' }
+  { type: Constants.REPORT_TYPE.TEST_STEP_REPORT, label: 'Test step report' },
+  { type: Constants.REPORT_TYPE.TEST_DATA_ARCHIVE, label: 'Test data archive' }
 ]

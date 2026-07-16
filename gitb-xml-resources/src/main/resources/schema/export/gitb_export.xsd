@@ -104,6 +104,9 @@
             <xsd:enumeration value="CONFORMANCE_OVERVIEW_CERTIFICATE"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_CERTIFICATE"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_DOCUMENTATION"/>
+            <xsd:enumeration value="TEST_SUITE_DOCUMENTATION"/>
+            <xsd:enumeration value="TEST_CASE_DOCUMENTATION"/>
+            <xsd:enumeration value="TEST_DATA_ARCHIVE"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="ConformanceCertificateSettings">

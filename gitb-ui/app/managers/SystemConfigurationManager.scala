@@ -326,18 +326,19 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             dateFileFormat = Some(Configurations.DATE_FORMAT_DATE_FILE)
           )).toString()), None), defaultSetting = true, environmentSetting = false)
         } else if (reportSettingsConfig.get.config.parameter.isDefined) {
-          // Ensure a time zone and date formats are always reported, backfilling older persisted settings that predate these properties.
+          // Always re-serialize through jsReportSettings (rather than passing the persisted JSON through
+          // as-is) so that a time zone, date formats, and a naming expression for every report type are
+          // always reported. Backfilling older persisted settings that predate these properties, or that
+          // predate a report type added after the settings were last saved.
           val parsedSettings = JsonUtil.parseJsReportSettings(reportSettingsConfig.get.config.parameter.get)
-          if (parsedSettings.timeZone.isEmpty || parsedSettings.dateFormat.isEmpty || parsedSettings.dateTimeFormat.isEmpty || parsedSettings.dateFileFormat.isEmpty) {
-            val backfilledSettings = parsedSettings.copy(
-              timeZone = Some(parsedSettings.timeZone.getOrElse(Configurations.TIME_ZONE.getId)),
-              dateFormat = Some(parsedSettings.dateFormat.getOrElse(Configurations.DATE_FORMAT_DATE)),
-              dateTimeFormat = Some(parsedSettings.dateTimeFormat.getOrElse(Configurations.DATE_FORMAT_DATETIME)),
-              dateFileFormat = Some(parsedSettings.dateFileFormat.getOrElse(Configurations.DATE_FORMAT_DATE_FILE))
-            )
-            persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.ReportSettings) :+
-              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.ReportSettings, Some(JsonUtil.jsReportSettings(backfilledSettings).toString()), None), defaultSetting = false, environmentSetting = false)
-          }
+          val backfilledSettings = parsedSettings.copy(
+            timeZone = Some(parsedSettings.timeZone.getOrElse(Configurations.TIME_ZONE.getId)),
+            dateFormat = Some(parsedSettings.dateFormat.getOrElse(Configurations.DATE_FORMAT_DATE)),
+            dateTimeFormat = Some(parsedSettings.dateTimeFormat.getOrElse(Configurations.DATE_FORMAT_DATETIME)),
+            dateFileFormat = Some(parsedSettings.dateFileFormat.getOrElse(Configurations.DATE_FORMAT_DATE_FILE))
+          )
+          persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.ReportSettings) :+
+            SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.ReportSettings, Some(JsonUtil.jsReportSettings(backfilledSettings).toString()), None), defaultSetting = false, environmentSetting = false)
         }
       }
       persistedConfigs

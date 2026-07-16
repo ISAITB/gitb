@@ -258,7 +258,10 @@ object Configurations {
     ReportType.TestStepReport.id.toShort -> "step_report",
     ReportType.ConformanceStatementCertificate.id.toShort -> "conformance_certificate",
     ReportType.ConformanceOverviewCertificate.id.toShort -> "conformance_certificate",
-    ReportType.ConformanceStatementDocumentationReport.id.toShort -> "conformance_statement_documentation"
+    ReportType.ConformanceStatementDocumentationReport.id.toShort -> "conformance_statement_documentation",
+    ReportType.TestSuiteDocumentationReport.id.toShort -> "test_suite_documentation",
+    ReportType.TestCaseDocumentationReport.id.toShort -> "test_case_documentation",
+    ReportType.TestDataArchive.id.toShort -> "test_data"
   )
   // Test Bed-wide report settings (loaded from the DB at startup - see PostStartHook#adaptSystemConfiguration).
   // Not sourced from the environment.

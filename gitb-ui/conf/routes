@@ -435,6 +435,8 @@ POST    /api/repository/export/conformancedemo                   @controllers.Re
 POST    /api/repository/export/conformancexmldemo                @controllers.RepositoryService.exportDemoConformanceStatementReportInXML(community_id: Long)
 POST    /api/repository/export/statementdocumentationdemo        @controllers.RepositoryService.exportDemoConformanceStatementDocumentationReport(community_id: Long)
 POST    /api/repository/export/statementdocumentationxmldemo     @controllers.RepositoryService.exportDemoConformanceStatementDocumentationReportInXML(community_id: Long)
+POST    /api/repository/export/testcasedocumentationdemo         @controllers.RepositoryService.exportDemoTestCaseDocumentationReport(community_id: Long)
+POST    /api/repository/export/testsuitedocumentationdemo        @controllers.RepositoryService.exportDemoTestSuiteDocumentationReport(community_id: Long)
 GET     /api/repository/export/settings                          @controllers.RepositoryService.loadReportSettings(community_id: Long)
 POST    /api/repository/export/settings                          @controllers.RepositoryService.updateReportSettings(community_id: Long)
 GET     /api/repository/export/stylesheet                        @controllers.RepositoryService.getReportStylesheet(community_id: Long)
