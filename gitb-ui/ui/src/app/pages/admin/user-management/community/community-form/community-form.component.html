@@ -333,13 +333,19 @@
                 </label>
             </div>
             @if (dataService.configuration.automationApiEnabled) {
-                <div class="form-check">
+                <div class="form-check pb-2">
                     <input class="form-check-input" type="checkbox" id="allowAutomationApi" name="allowAutomationApi" [(ngModel)]="community.allowAutomationApi">
                     <label class="form-check-label" for="allowAutomationApi">Manage test sessions via REST API
                          <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to use the Test Bed\'s REST API to start test sessions, stop them, and view their status.'"></div>
                     </label>
                 </div>
             }
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="allowObsoleteSessionDeletion" name="allowObsoleteSessionDeletion" [(ngModel)]="community.allowObsoleteSessionDeletion">
+                <label class="form-check-label" for="allowObsoleteSessionDeletion">Delete obsolete test sessions
+                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to delete their own obsolete test sessions.'"></div>
+                </label>
+            </div>
         </div>
     </div>
 </app-form-section>

@@ -49,6 +49,7 @@ export interface Community extends CommunityLimited {
   allowCommunityView: boolean;
   allowUserManagement: boolean;
   allowXmlReports: boolean;
+  allowObsoleteSessionDeletion: boolean;
   apiKey?: string;
   preferences?: UserPreferences
   tags?: TagData[]

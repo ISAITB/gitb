@@ -184,6 +184,7 @@ object ParameterNames {
   val ALLOW_COMMUNITY_VIEW = "allow_community_view"
   val ALLOW_USER_MANAGEMENT = "allow_user_management"
   val ALLOW_XML_REPORTS = "allow_xml_reports"
+  val ALLOW_OBSOLETE_SESSION_DELETION = "allow_obsolete_session_deletion"
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val ACTOR_DEFAULT   = "default"

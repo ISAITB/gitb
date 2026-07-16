@@ -169,7 +169,7 @@ export class CommunityService {
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
     selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean, allowObsoleteSessionDeletion: boolean,
     domainId: number|undefined, userPreferences: UserPreferences, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -185,6 +185,7 @@ export class CommunityService {
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
       allow_xml_reports: allowXmlReports,
+      allow_obsolete_session_deletion: allowObsoleteSessionDeletion,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
@@ -236,7 +237,7 @@ export class CommunityService {
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
     selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean, allowObsoleteSessionDeletion: boolean,
     domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -252,6 +253,7 @@ export class CommunityService {
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
       allow_xml_reports: allowXmlReports,
+      allow_obsolete_session_deletion: allowObsoleteSessionDeletion,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,

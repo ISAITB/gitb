@@ -1963,7 +1963,24 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteObsoleteTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
-    canManageOrganisationBasic(request, organisationId)
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        if (userInfo.organization.isDefined && userInfo.organization.get.id == organisationId) {
+          Future.successful(true)
+        } else {
+          organizationManager.getById(organisationId).map { org =>
+            org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
+          }
+        }
+      } else {
+        communityManager.getById(userInfo.organization.get.community).map { community =>
+          isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowObsoleteSessionDeletion && userInfo.organization.isDefined && userInfo.organization.get.id == organisationId
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested organisation"))
   }
 
   def canDeleteTestResults(request: RequestWithAttributes[_], communityId: Option[Long]): Future[Boolean] = {

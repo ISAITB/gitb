@@ -418,6 +418,7 @@ object ParameterExtractor {
     val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
     val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
     val allowXmlReports = requiredBodyParameter(request, ParameterNames.ALLOW_XML_REPORTS).toBoolean
+    val allowObsoleteSessionDeletion = requiredBodyParameter(request, ParameterNames.ALLOW_OBSOLETE_SESSION_DELETION).toBoolean
     val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -475,7 +476,7 @@ object ParameterExtractor {
       selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement,
       selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion,
       CryptoUtil.generateApiKey(), None, tags, domainId
     )
   }

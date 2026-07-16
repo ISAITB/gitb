@@ -2443,7 +2443,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
                     data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports,
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports, data.isAllowObsoleteSessionDeletion,
                     apiKey, None, Option(data.getTags), domainId
                   ), checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, 0L))
                 },
@@ -2456,7 +2456,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
                     data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports,
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports, data.isAllowObsoleteSessionDeletion,
                     Some(apiKey), domainId, checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, targetCommunity.get.id), overrideExistingUserPreferences = false, Option(data.getTags), ctx.onSuccessCalls
                   )
                 },

@@ -157,4 +157,11 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
     return this.conformanceService.deleteObsoleteTestResultsForOrganisation(this.organisationId!)
   }
 
+  protected override showDeleteObsolete() {
+    if (this.dataService.isVendorAdmin) {
+      return this.dataService.community?.allowObsoleteSessionDeletion ?? true
+    }
+    return super.showDeleteObsolete()
+  }
+
 }

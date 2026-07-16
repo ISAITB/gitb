@@ -866,6 +866,7 @@ object JsonUtil {
       "allowCommunityView" -> community.allowCommunityView,
       "allowUserManagement" -> community.allowUserManagement,
       "allowXmlReports" -> community.allowXmlReports,
+      "allowObsoleteSessionDeletion" -> community.allowObsoleteSessionDeletion,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {

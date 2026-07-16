@@ -58,11 +58,12 @@ object PersistenceSchema {
     def allowCommunityView = column[Boolean]("allow_community_view")
     def allowUserManagement = column[Boolean]("allow_user_management")
     def allowXmlReports = column[Boolean]("allow_xml_reports")
+    def allowObsoleteSessionDeletion = column[Boolean]("allow_obsolete_session_deletion")
     def apiKey = column[String]("api_key")
     def latestStatusLabel = column[Option[String]]("latest_status_label")
     def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
     def domain = column[Option[Long]] ("domain")
-    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: allowObsoleteSessionDeletion :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
