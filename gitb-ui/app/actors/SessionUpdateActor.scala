@@ -205,7 +205,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
           Files.createDirectories(sessionFolderPath)
           interactWithUsersRequest.getInteraction.getInstructionOrRequest.asScala.foreach {
             case instruction: Instruction if !StringUtils.isBlank(instruction.getValue) && StringUtils.isBlank(instruction.getName) => // Determine the file name from the BASE64 content.
-              val mimeType = MimeUtil.getMimeType(instruction.getValue, false, true)
+              val mimeType = MimeUtil.getMimeType(instruction.getValue, false)
               val extension = MimeUtil.getExtensionFromMimeType(mimeType)
               // Determine name.
               if (extension != null) {

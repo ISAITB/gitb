@@ -108,16 +108,56 @@ public class MimeUtil {
         return getMimeType(Base64.decodeBase64(base64));
     }
 
+    /**
+     * Detects the mime type of the given content. This is the single place detection happens - the result
+     * is already refined and ready to use directly (callers that only need this and not also the file
+     * extension no longer need to call anything else):
+     *  - a ZIP-based container recognised as OOXML/ODF is resolved to its specific mime type (e.g. a DOCX
+     *    is reported as such, rather than as a generic ZIP or Tika's own undisambiguated
+     *    "application/x-tika-ooxml" bucket type - see {@link #refineZipContainerMimeType(byte[])});
+     *  - a generic "text/plain" is refined to a more specific syntax where recognisable (JSON, HTML, XML -
+     *    see {@link #refineTextMimeType(String)}).
+     *
+     * See {@link #getFileExtension(byte[])} for the (still just two calls) equivalent that also resolves
+     * the file extension to use for this content.
+     */
     public static String getMimeType(byte[] bytes) {
-        return tika.detect(bytes);
+        return refineMimeType(tika.detect(bytes), bytes);
     }
 
+    /**
+     * Same as {@link #getMimeType(byte[])}, for a file already on disk.
+     */
     public static String getMimeType(Path path) {
         try {
-            return tika.detect(path);
+            return refineMimeType(tika.detect(path), path);
         } catch (IOException e) {
             throw new IllegalStateException("Unable to read file", e);
         }
+    }
+
+    private static String refineMimeType(String mimeType, byte[] content) {
+        if (mimeType != null && zipMimeTypes.contains(mimeType)) {
+            String refinedMimeType = refineZipContainerMimeType(content);
+            if (refinedMimeType != null) {
+                return refinedMimeType;
+            }
+        } else if (mimeType != null && mimeType.contains("text/plain")) {
+            return refineTextMimeType(new String(content, StandardCharsets.UTF_8));
+        }
+        return mimeType;
+    }
+
+    private static String refineMimeType(String mimeType, Path path) {
+        if (mimeType != null && zipMimeTypes.contains(mimeType)) {
+            String refinedMimeType = refineZipContainerMimeType(path);
+            if (refinedMimeType != null) {
+                return refinedMimeType;
+            }
+        } else if (mimeType != null && mimeType.contains("text/plain")) {
+            return refineTextMimeType(path);
+        }
+        return mimeType;
     }
 
     public static boolean isDataURL(String value) {
@@ -137,35 +177,26 @@ public class MimeUtil {
         return extension;
     }
 
-    public static String getMimeType(String content, boolean notEncoded, boolean refineTextPlain) {
-        String mimeType;
-        byte[] contentBytes = null;
+    /**
+     * Detects the mime type of the given content, refined as per {@link #getMimeType(byte[])}.
+     *
+     * @param notEncoded Whether {@code content} is the raw content itself, rather than base64-encoded
+     *                    (possibly as a full data URL).
+     */
+    public static String getMimeType(String content, boolean notEncoded) {
         if (notEncoded) {
-            mimeType = getMimeType(content.getBytes());
+            return getMimeType(content.getBytes());
         } else {
-            // Base64 content
-            if (isDataURL(content)) {
-                content = getBase64FromDataURL(content);
-            }
-            // Decoded base64 content
-            contentBytes = Base64.decodeBase64(content);
-            mimeType = getMimeType(contentBytes);
+            String base64 = isDataURL(content) ? getBase64FromDataURL(content) : content;
+            return getMimeType(Base64.decodeBase64(base64));
         }
-        if (refineTextPlain && mimeType != null && mimeType.contains("text/plain")) {
-            if (contentBytes != null) {
-                mimeType = refineTextMimeType(new String(contentBytes, StandardCharsets.UTF_8));
-            } else {
-                mimeType = refineTextMimeType(content);
-            }
-        }
-        return mimeType;
     }
 
     public static String getMimeTypeFromDataURL(String dataURL) {
         return getMimeTypeFromBase64(getBase64FromDataURL(dataURL));
     }
 
-    public static String refineTextMimeType(String content) {
+    private static String refineTextMimeType(String content) {
         String prefix = content.stripLeading();
         if (prefix.length() > 256) prefix = prefix.substring(0, 256);
         String lowerPrefix = prefix.toLowerCase(Locale.ROOT);
@@ -175,7 +206,7 @@ public class MimeUtil {
         return "text/plain";
     }
 
-    public static String refineTextMimeType(Path path) {
+    private static String refineTextMimeType(Path path) {
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             char[] buf = new char[256];
             int n = reader.read(buf);
@@ -187,39 +218,18 @@ public class MimeUtil {
 
     /**
      * Best-effort file extension (leading dot included) for the given file, or "" if it cannot be
-     * determined. Combines Tika's magic-byte detection with the text and ZIP-container refinements
-     * below to cover the syntaxes and container formats we can reasonably recognise. This is the single
-     * place content is mapped to a file extension - see the {@link #getFileExtension(byte[])} overload
-     * for content that is only available in memory (e.g. a small value embedded inline as a data URL,
-     * rather than decoupled to a file of its own).
+     * determined - just the (already refined) mime type from {@link #getMimeType(Path)}, mapped to an
+     * extension.
      */
     public static String getFileExtension(Path path) {
-        String mimeType = getMimeType(path);
-        if (mimeType != null && zipMimeTypes.contains(mimeType)) {
-            String refinedMimeType = refineZipContainerMimeType(path);
-            if (refinedMimeType != null) {
-                mimeType = refinedMimeType;
-            }
-        } else if (mimeType != null && mimeType.contains("text/plain")) {
-            mimeType = refineTextMimeType(path);
-        }
-        return resolveExtension(mimeType);
+        return resolveExtension(getMimeType(path));
     }
 
     /**
      * Same as {@link #getFileExtension(Path)}, for content already held in memory.
      */
     public static String getFileExtension(byte[] content) {
-        String mimeType = getMimeType(content);
-        if (mimeType != null && zipMimeTypes.contains(mimeType)) {
-            String refinedMimeType = refineZipContainerMimeType(content);
-            if (refinedMimeType != null) {
-                mimeType = refinedMimeType;
-            }
-        } else if (mimeType != null && mimeType.contains("text/plain")) {
-            mimeType = refineTextMimeType(new String(content, StandardCharsets.UTF_8));
-        }
-        return resolveExtension(mimeType);
+        return resolveExtension(getMimeType(content));
     }
 
     private static String resolveExtension(String mimeType) {

@@ -214,7 +214,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
             var mimeTypeToUse: Option[String] = None
             var dataUrl: Option[String] = None
             if (requestedMimeType.isEmpty || requestedMimeType.get.contains("*")) {
-              mimeTypeToUse = if (detectedMimeType.contains("text/plain")) Some(MimeUtil.refineTextMimeType(dataFile.get)) else detectedMimeType
+              mimeTypeToUse = detectedMimeType
               dataUrl = Some(MimeUtil.getFileAsDataURL(dataFile.get.toFile, mimeTypeToUse.getOrElse("application/octet-stream")))
             } else {
               mimeTypeToUse = requestedMimeType
@@ -245,8 +245,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         } else {
           var mimeTypeToUse = request.headers.get(ACCEPT)
           if (mimeTypeToUse.isEmpty || mimeTypeToUse.get.contains("*")) {
-            val detected = Option(MimeUtil.getMimeType(dataFile.get))
-            mimeTypeToUse = if (detected.contains("text/plain")) Some(MimeUtil.refineTextMimeType(dataFile.get)) else detected
+            mimeTypeToUse = Option(MimeUtil.getMimeType(dataFile.get))
           }
           val extension = MimeUtil.getExtensionFromMimeType(mimeTypeToUse.orNull)
           Ok.sendFile(

@@ -32,7 +32,7 @@ class TestResultService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canGetBinaryFileMetadata(request).map { _ =>
       val data:String= ParameterExtractor.requiredBodyParameter(request, ParameterNames.DATA)
       val isBase64:Boolean = java.lang.Boolean.valueOf(ParameterExtractor.requiredBodyParameter(request, ParameterNames.IS_BASE64))
-      val mimeType = MimeUtil.getMimeType(data, !isBase64, true)
+      val mimeType = MimeUtil.getMimeType(data, !isBase64)
       val extension = MimeUtil.getExtensionFromMimeType(mimeType)
       val json = JsonUtil.jsBinaryMetadata(mimeType, extension).toString()
       ResponseConstructor.constructJsonResponse(json)
