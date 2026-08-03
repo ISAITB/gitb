@@ -1127,4 +1127,12 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.neethi/.*@.*$</packageUrl>
         <cve>CVE-2026-66144</cve>
     </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+        file name: jackson-databind-2.21.1.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-59888</vulnerabilityName>
+    </suppress>    
 </suppressions>
