@@ -66,6 +66,14 @@ object ReportNameResolver {
   }
 
   /**
+   * Replaces characters that are unsafe/reserved in file names on common operating systems (see
+   * [[UnsafeCharacters]]) with an underscore. Exposed standalone (without [[resolve]]'s naming-expression
+   * substitution/whitespace-collapsing behaviour) for reuse by other code that sanitises arbitrary input for
+   * use in a file name, e.g. [[managers.TestSessionDataFileNamer]] sanitising TDL step identifiers.
+   */
+  def sanitiseFileNameCharacters(name: String): String = UnsafeCharacters.replaceAllIn(name, "_")
+
+  /**
    * Whether the naming expression that would apply (the community override if provided, otherwise the
    * effective default) references the CONFORMANCE_TARGET placeholder. Used to decide whether it's worth
    * resolving the more expensive "should the actor be displayed" data purely for naming purposes.

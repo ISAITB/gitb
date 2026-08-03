@@ -23,8 +23,8 @@ import com.gitb.tpl
 import com.gitb.tpl._
 import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
-import managers.TestCaseReportProducer.{ReportGenerationInput, TestSessionData}
-import models.{CommunityLabels, Constants, SessionReportPath, TestResult, TestResultComments}
+import managers.TestCaseReportProducer.{ReportGenerationInput, TestSessionData, TestSessionDataExport}
+import models.{CommunityLabels, Constants, SessionFolderInfo, SessionReportPath, TestResult, TestResultComments}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
@@ -47,6 +47,16 @@ object TestCaseReportProducer {
 
   case class ReportGenerationInput(stepReports: List[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], sessionId: String, keepStepContexts: Boolean)
   private case class TestSessionData(result: TestResult, presentation: com.gitb.tpl.TestCase, comments: Option[TestResultComments])
+  /**
+   * The two report artefacts produced for the test session data export archive (see
+   * [[ReportManager.generateTestSessionDataArchive]]), plus the UUID -> user-friendly file name map that
+   * was applied to both of them, needed by the caller to rename/write the underlying data files
+   * consistently. `inlineFileContents` holds the decoded content for references that were never decoupled
+   * to their own file (a small value embedded inline as a data URL) - the caller must write these out as
+   * new files, keyed by the same UUID used in `fileNames`, since there is nothing to copy from disk.
+   */
+  case class TestSessionDataExport(xmlReport: Option[Path], pdfReport: Option[Path], fileNames: Map[String, String],
+                                    inlineFileContents: Map[String, Array[Byte]], sessionFolderInfo: SessionFolderInfo)
 
 }
 
@@ -56,6 +66,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
                                         testCaseManager: TestCaseManager,
                                         communityLabelManager: CommunityLabelManager,
                                         repositoryUtils: RepositoryUtils,
+                                        testSessionDataFileNamer: TestSessionDataFileNamer,
                                         dbConfigProvider: DatabaseConfigProvider)
                                        (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -83,9 +94,6 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
             case Some(Constants.MimeTypePDF) => (".report.pdf", (input: ReportGenerationInput) => {
               generateDetailedTestCaseReportPdf(input, sessionData.get, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
             })
-            case Some(Constants.MimeTypeZIP) =>  (".reportData.xml", (input: ReportGenerationInput) => {
-              generateDetailedTestCaseReportXml(input, sessionData.get)
-            })
             case _ => (".report.xml", (input: ReportGenerationInput) => {
               generateDetailedTestCaseReportXml(input, sessionData.get)
             })
@@ -100,8 +108,8 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
           if (!exportedReport.exists() && sessionData.get.result.testCaseId.isDefined) {
             testCaseManager.getTestCase(sessionData.get.result.testCaseId.get.toString).flatMap { testCase =>
               val list = getListOfTestSteps(sessionData.get.presentation, sessionFolderInfo.path.toFile)
-              val keepStepContexts = contentType.contains(Constants.MimeTypeZIP)
-              reportData._2.apply(ReportGenerationInput(list, exportedReport, testCase, sessionId, keepStepContexts)).map { _ =>
+              // The step contexts are only kept for the test session data export (see generateTestSessionDataExport).
+              reportData._2.apply(ReportGenerationInput(list, exportedReport, testCase, sessionId, keepStepContexts = false)).map { _ =>
                 Some(exportedReport)
               }
             }
@@ -122,6 +130,46 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
           Future.successful {
             SessionReportPath(None, sessionFolderInfo)
           }
+        }
+      }
+    } yield result
+  }
+
+  /**
+   * Generates the XML and PDF report artefacts used for the test session data export archive. Unlike
+   * [[generateDetailedTestCaseReport]], both artefacts are produced here from the *same* in-memory step
+   * reports: before generating either, every file reference found in their contexts - a "___[[uuid]]___"
+   * pointer to an already-decoupled file, or a small value still embedded inline as a data URL - is
+   * rewritten in place to a resolved, user-friendly file name (see [[TestSessionDataFileNamer]]), so the
+   * two reports cannot show different names for the same file.
+   */
+  def generateTestSessionDataExport(sessionId: String,
+                                    labelSupplier: () => Future[Map[Short, CommunityLabels]],
+                                    reportSpecSupplier: () => ReportSpecs): Future[TestSessionDataExport] = {
+    for {
+      sessionFolderInfo <- repositoryUtils.getPathForTestSession(codec.decode(sessionId), isExpected = true)
+      sessionData <- loadTestSessionDataForReport(sessionId)
+      result <- {
+        if (sessionData.isDefined && sessionData.get.result.testCaseId.isDefined) {
+          testCaseManager.getTestCase(sessionData.get.result.testCaseId.get.toString).flatMap { testCase =>
+            val stepReports = getListOfTestSteps(sessionData.get.presentation, sessionFolderInfo.path.toFile)
+            val references = testSessionDataFileNamer.collectReferences(stepReports)
+            val dataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = false)
+            testSessionDataFileNamer.resolveNames(references, dataFolder).flatMap { fileNames =>
+              // Rewrite the pointers once - the same mutated step reports feed both writers below.
+              testSessionDataFileNamer.applyNames(references, fileNames)
+              val inlineFileContents = testSessionDataFileNamer.inlineFileContents(references)
+              val pdfInput = ReportGenerationInput(stepReports, new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + ".reportData.pdf"), testCase, sessionId, keepStepContexts = true)
+              val xmlInput = pdfInput.copy(exportedReportPath = new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + ".reportData.xml"))
+              for {
+                labels <- labelSupplier.apply()
+                pdfReportPath <- generateDetailedTestCaseReportPdf(pdfInput, sessionData.get, Future.successful(labels), reportSpecSupplier.apply())
+                xmlReportPath <- generateDetailedTestCaseReportXml(xmlInput, sessionData.get)
+              } yield TestSessionDataExport(Some(xmlReportPath), Some(pdfReportPath), fileNames, inlineFileContents, sessionFolderInfo)
+            }
+          }
+        } else {
+          Future.successful(TestSessionDataExport(None, None, Map.empty, Map.empty, sessionFolderInfo))
         }
       }
     } yield result

@@ -619,18 +619,69 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   def generateTestSessionDataArchive(archivePath: Path, sessionId: String, requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
     for {
       sessionInfo <- resolveTestSessionReportInfo(sessionId, requestedUserId)
+      communityId = sessionInfo._1
       reportSettings <- {
-        if (sessionInfo._1.isDefined) {
-          getReportSettings(sessionInfo._1.get, ReportType.TestDataArchive).map(Some(_))
+        if (communityId.isDefined) {
+          getReportSettings(communityId.get, ReportType.TestDataArchive).map(Some(_))
         } else {
           Future.successful(None)
         }
       }
-      reportInfo <- testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(Constants.MimeTypeZIP), None, None)
-      report <- finaliseTestSessionReport(archivePath, reportInfo, Constants.MimeTypeZIP, None, None, ReportType.TestCaseReport)
+      // The PDF report included in the archive is a plain vanilla report (no custom PDF service, no
+      // signing, no custom stylesheet) - only community terminology/labels are applied when known.
+      export <- testCaseReportProducer.generateTestSessionDataExport(sessionId,
+        () => if (communityId.isDefined) getReportLabels(communityId.get) else Future.successful(Map.empty[Short, CommunityLabels]),
+        () => reportHelper.createReportSpecs(communityId))
+      report <- finaliseTestSessionDataArchive(archivePath, export)
     } yield {
       report.map { path =>
         ReportFileInfo(path, resolveReportFileName(ReportType.TestDataArchive, reportSettings.flatMap(_.fileNameExpression), sessionInfo._2, "zip"))
+      }
+    }
+  }
+
+  /**
+   * Assembles the test session data export archive from the XML/PDF reports and the (already renamed, per
+   * [[TestSessionDataFileNamer]]) data folder produced by [[TestCaseReportProducer.generateTestSessionDataExport]].
+   */
+  private def finaliseTestSessionDataArchive(archivePath: Path, export: TestCaseReportProducer.TestSessionDataExport): Future[Option[Path]] = {
+    val task = if (export.xmlReport.isDefined && export.pdfReport.isDefined) {
+      val tempFolder = archivePath.getParent.resolve("temp")
+      Files.createDirectories(tempFolder)
+      Files.copy(export.xmlReport.get, tempFolder.resolve("test_case.xml"))
+      Files.copy(export.pdfReport.get, tempFolder.resolve("test_case.pdf"))
+      // The data folder is flat (one file per decoupled value) - copy each file under its resolved name,
+      // falling back to the original name for any file that turned out not to be referenced from the report.
+      val sourceData = repositoryUtils.getPathForTestSessionData(export.sessionFolderInfo, tempData = false)
+      if (Files.exists(sourceData) || export.inlineFileContents.nonEmpty) {
+        val destinationData = tempFolder.resolve("data")
+        Files.createDirectories(destinationData)
+        if (Files.exists(sourceData)) {
+          Using.resource(Files.list(sourceData)) { stream =>
+            stream.forEach { sourcePath =>
+              val destinationFileName = export.fileNames.getOrElse(sourcePath.getFileName.toString, sourcePath.getFileName.toString)
+              Files.copy(sourcePath, destinationData.resolve(destinationFileName))
+            }
+          }
+        }
+        // Values that were embedded inline (too small to have been decoupled to their own file) have
+        // nothing to copy from - write their content out as new files instead.
+        export.inlineFileContents.foreach { case (uuid, content) =>
+          val destinationFileName = export.fileNames.getOrElse(uuid, uuid)
+          Files.write(destinationData.resolve(destinationFileName), content)
+        }
+      }
+      new ZipArchiver(tempFolder, archivePath).zip()
+      Future.successful(Some(archivePath))
+    } else {
+      Future.successful(None)
+    }
+    task.andThen { _ =>
+      // Clean up the intermediate report files that were generated directly in the (live) session folder.
+      export.xmlReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
+      export.pdfReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
+      if (export.sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(export.sessionFolderInfo.path.toFile)
       }
     }
   }
@@ -709,22 +760,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             }
           }
         } yield pdfReport
-      } else if (contentType == Constants.MimeTypeZIP) {
-        // ZIP archive with all test data.
-        // Copy the XML report.
-        val tempFolder = reportPath.getParent.resolve("temp")
-        Files.createDirectories(tempFolder)
-        Files.copy(reportInfo.report.get, tempFolder.resolve("test_case.xml"))
-        val sourceData = repositoryUtils.getPathForTestSessionData(reportInfo.sessionFolderInfo.path, tempData = false)
-        val destinationData = tempFolder.resolve("data")
-        Using (Files.walk(sourceData)) { stream =>
-          stream.forEach { sourcePath =>
-            val destinationPath = destinationData.resolve(sourceData.relativize(sourcePath))
-            Files.copy(sourcePath, destinationPath)
-          }
-        }
-        new ZipArchiver(tempFolder, reportPath).zip()
-        Future.successful(Some(reportPath))
       } else {
         // XML reports are cached (i.e. keep the original).
         Files.copy(reportInfo.report.get, reportPath)

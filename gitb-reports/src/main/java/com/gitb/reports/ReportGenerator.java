@@ -402,6 +402,13 @@ public class ReportGenerator {
         return value;
     }
 
+    private boolean isResolvedFileReference(String value) {
+        // A value already resolved to a display-friendly file reference (e.g. "[1_1.pdf]") by the caller
+        // (see the test session data export in gitb-ui), rather than genuine base64 content. Valid base64
+        // never contains '[' or ']', so this is an unambiguous, cheap check to make before any decode attempt.
+        return Strings.CS.startsWith(value, "[") && Strings.CS.endsWith(value, "]");
+    }
+
     private ContextItem toContextItem(AnyContent content, ReportSpecs specs) {
         ContextItem item = null;
         if (content != null && content.isForDisplay()) {
@@ -418,7 +425,9 @@ public class ReportGenerator {
                     if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.URI) {
                         value = "["+content.getValue()+"]";
                     } else if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64) {
-                        if (content.getMimeType() != null && specs.getMimeTypesToConvertToStrings().contains(content.getMimeType())) {
+                        if (isResolvedFileReference(content.getValue())) {
+                            value = content.getValue();
+                        } else if (content.getMimeType() != null && specs.getMimeTypesToConvertToStrings().contains(content.getMimeType())) {
                             value = contextValueAsString(new String(Base64.getDecoder().decode(content.getValue())));
                         } else {
                             value = "[File content]";

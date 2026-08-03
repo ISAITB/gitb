@@ -17,6 +17,7 @@ package utils;
 
 import config.Configurations;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
@@ -28,19 +29,30 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Locale;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 public class MimeUtil {
 
     private static final Tika tika = new Tika();
     private static final Set<String> imageMimeTypes = Set.of("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml");
+    private static final Set<String> zipMimeTypes = Set.of("application/zip", "application/x-zip-compressed");
+    private static final String ODF_MIMETYPE_ENTRY = "mimetype";
+    private static final String OOXML_MARKER_ENTRY = "[Content_Types].xml";
+    private static final String OOXML_WORD_ENTRY = "word/document.xml";
+    private static final String OOXML_POWERPOINT_ENTRY = "ppt/presentation.xml";
+    private static final String OOXML_EXCEL_ENTRY = "xl/workbook.xml";
     private static final String PBE_ALGORITHM = "PBEWithMD5AndDES";
     private static final int PBE_ITERATIONS = 1000;
     private static final int PBE_SALT_SIZE = 8;
@@ -167,6 +179,134 @@ public class MimeUtil {
         } catch (IOException e) {
             return "text/plain";
         }
+    }
+
+    /**
+     * Best-effort file extension (leading dot included) for the given file, or "" if it cannot be
+     * determined. Combines Tika's magic-byte detection with the text and ZIP-container refinements
+     * below to cover the syntaxes and container formats we can reasonably recognise. This is the single
+     * place content is mapped to a file extension - see the {@link #getFileExtension(byte[])} overload
+     * for content that is only available in memory (e.g. a small value embedded inline as a data URL,
+     * rather than decoupled to a file of its own).
+     */
+    public static String getFileExtension(Path path) {
+        String mimeType = getMimeType(path);
+        if (mimeType != null && zipMimeTypes.contains(mimeType)) {
+            String refinedMimeType = refineZipContainerMimeType(path);
+            if (refinedMimeType != null) {
+                mimeType = refinedMimeType;
+            }
+        } else if (mimeType != null && mimeType.contains("text/plain")) {
+            mimeType = refineTextMimeType(path);
+        }
+        return resolveExtension(mimeType);
+    }
+
+    /**
+     * Same as {@link #getFileExtension(Path)}, for content already held in memory.
+     */
+    public static String getFileExtension(byte[] content) {
+        String mimeType = getMimeType(content);
+        if (mimeType != null && zipMimeTypes.contains(mimeType)) {
+            String refinedMimeType = refineZipContainerMimeType(content);
+            if (refinedMimeType != null) {
+                mimeType = refinedMimeType;
+            }
+        } else if (mimeType != null && mimeType.contains("text/plain")) {
+            mimeType = refineTextMimeType(new String(content, StandardCharsets.UTF_8));
+        }
+        return resolveExtension(mimeType);
+    }
+
+    private static String resolveExtension(String mimeType) {
+        if ("application/octet-stream".equals(mimeType)) {
+            // Tika's generic fallback for content it could not recognise at all - not a meaningful
+            // extension to report (its registered extension, ".bin", would be misleading here).
+            return "";
+        }
+        return StringUtils.defaultString(getExtensionFromMimeType(mimeType));
+    }
+
+    /**
+     * Tika's magic-byte detection cannot distinguish OOXML/ODF documents from a plain ZIP archive - they
+     * all start with the same local file header. This best-effort check inspects a few well-known entries
+     * to recognise the common office document container formats, without needing Tika's heavier
+     * parser/detector modules.
+     */
+    private static String refineZipContainerMimeType(Path path) {
+        try (ZipFile zip = new ZipFile(path.toFile())) {
+            byte[] odfMimetypeContent = null;
+            ZipEntry odfMimetypeEntry = zip.getEntry(ODF_MIMETYPE_ENTRY);
+            if (odfMimetypeEntry != null) {
+                // ODF: the first (stored, uncompressed) entry holds the exact mime type as its content.
+                try (InputStream is = zip.getInputStream(odfMimetypeEntry)) {
+                    odfMimetypeContent = is.readAllBytes();
+                }
+            }
+            boolean isOoxml = zip.getEntry(OOXML_MARKER_ENTRY) != null;
+            boolean isWord = zip.getEntry(OOXML_WORD_ENTRY) != null;
+            boolean isPowerpoint = zip.getEntry(OOXML_POWERPOINT_ENTRY) != null;
+            boolean isExcel = zip.getEntry(OOXML_EXCEL_ENTRY) != null;
+            return declaredZipContainerMimeType(isOoxml, isWord, isPowerpoint, isExcel, odfMimetypeContent);
+        } catch (IOException e) {
+            // Not a valid/readable ZIP - leave the mime type as plain zip.
+            return null;
+        }
+    }
+
+    /**
+     * Same as {@link #refineZipContainerMimeType(Path)}, for content already held in memory. Entries are
+     * only accessible sequentially via {@link ZipInputStream} (unlike {@link ZipFile}'s random-access
+     * lookups), so all entry names of interest are collected in a single pass.
+     */
+    private static String refineZipContainerMimeType(byte[] content) {
+        boolean isOdf = false;
+        boolean isOoxml = false;
+        boolean isWord = false;
+        boolean isPowerpoint = false;
+        boolean isExcel = false;
+        byte[] odfMimetypeContent = null;
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(content))) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                switch (entry.getName()) {
+                    case ODF_MIMETYPE_ENTRY -> { isOdf = true; odfMimetypeContent = zip.readAllBytes(); }
+                    case OOXML_MARKER_ENTRY -> isOoxml = true;
+                    case OOXML_WORD_ENTRY -> isWord = true;
+                    case OOXML_POWERPOINT_ENTRY -> isPowerpoint = true;
+                    case OOXML_EXCEL_ENTRY -> isExcel = true;
+                    default -> { /* Not a part we need to recognise the container format. */ }
+                }
+            }
+        } catch (IOException e) {
+            // Not a valid/readable ZIP - leave the mime type as plain zip.
+            return null;
+        }
+        return declaredZipContainerMimeType(isOoxml, isWord, isPowerpoint, isExcel, isOdf ? odfMimetypeContent : null);
+    }
+
+    /**
+     * Decides the mime type of a ZIP-based container from the well-known entries found within it - shared
+     * by the {@link Path} and {@code byte[]} variants of {@code refineZipContainerMimeType} above.
+     */
+    private static String declaredZipContainerMimeType(boolean isOoxml, boolean isWord, boolean isPowerpoint, boolean isExcel, byte[] odfMimetypeContent) {
+        if (odfMimetypeContent != null) {
+            // ODF: the first (stored, uncompressed) entry holds the exact mime type as its content.
+            String declaredMimeType = new String(odfMimetypeContent, StandardCharsets.UTF_8).trim();
+            if (StringUtils.isNotBlank(declaredMimeType)) {
+                return declaredMimeType;
+            }
+        } else if (isOoxml) {
+            // OOXML: distinguish by the well-known top-level part.
+            if (isWord) {
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            } else if (isPowerpoint) {
+                return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            } else if (isExcel) {
+                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            }
+        }
+        return null;
     }
 
     public static String encryptString(String input) {
