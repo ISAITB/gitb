@@ -48,7 +48,10 @@ public class MimeUtil {
 
     private static final Tika tika = new Tika();
     private static final Set<String> imageMimeTypes = Set.of("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml");
-    private static final Set<String> zipMimeTypes = Set.of("application/zip", "application/x-zip-compressed");
+    // "application/x-tika-ooxml" is Tika-core's own generic placeholder for a recognised-but-undisambiguated
+    // OOXML package (Word/PowerPoint/Excel all look the same until the well-known entries are inspected) -
+    // it has no extension of its own, so it must trigger the same zip-container refinement as a plain zip.
+    private static final Set<String> zipMimeTypes = Set.of("application/zip", "application/x-zip-compressed", "application/x-tika-ooxml");
     private static final String ODF_MIMETYPE_ENTRY = "mimetype";
     private static final String OOXML_MARKER_ENTRY = "[Content_Types].xml";
     private static final String OOXML_WORD_ENTRY = "word/document.xml";
