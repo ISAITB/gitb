@@ -8,12 +8,12 @@ val jacksonAnnotationsVersion = "2.22"
 val cxfVersion = "4.2.2"
 val gitbCommonsVersion = "1.30.0-SNAPSHOT"
 val gitbTypesVersion = "1.30.0-SNAPSHOT"
-val bouncyCastleVersion = "1.84"
+val bouncyCastleVersion = "1.85"
 val commonsTextVersion = "1.15.0"
 val mySqlConnectorVersion = "9.7.0"
-val pac4jVersion = "6.5.4"
-val nettyVersion = "4.2.15.Final"
-val pdfBoxVersion = "3.0.7"
+val pac4jVersion = "6.5.5"
+val nettyVersion = "4.2.16.Final"
+val pdfBoxVersion = "3.0.8"
 val jaxbVersion = "4.0.9"
 
 name := """GITB"""
@@ -75,10 +75,11 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "3.3.1",
+  "org.apache.neethi" % "neethi" % "3.2.3",
+  "org.apache.tika" % "tika-core" % "3.3.2",
   "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.32.8",
+  "org.webjars" % "swagger-ui" % "5.32.11",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
   "org.glassfish.jaxb"  % "jaxb-runtime" % jaxbVersion,
