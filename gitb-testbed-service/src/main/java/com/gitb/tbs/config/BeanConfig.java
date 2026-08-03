@@ -47,7 +47,7 @@ public class BeanConfig {
     @Bean
     public FilterRegistrationBean<CallbackAuthorizationFilter> restCallbackFilter() {
         var registration = new FilterRegistrationBean<>(new CallbackAuthorizationFilter(HandlerApiType.REST));
-        registration.addUrlPatterns("/"+ HANDLER_API_SEGMENT +"/gitb/*");
+        registration.addUrlPatterns("/"+ HANDLER_API_SEGMENT +"/gitb/notifyForMessage/*", "/"+ HANDLER_API_SEGMENT +"/gitb/log/*");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return registration;
     }
