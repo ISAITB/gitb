@@ -15,6 +15,7 @@
 
 package utils;
 
+import com.gitb.utils.EncodingUtils;
 import config.Configurations;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
@@ -117,7 +118,7 @@ public class MimeUtil {
     }
 
     public static boolean isDataURL(String value) {
-        return value != null && value.startsWith("data:") && value.substring(0, Math.min(50, value.length())).contains(";base64,");
+        return EncodingUtils.isDataUrl(value);
     }
 
     public static String getExtensionFromMimeType(String mimeType) {

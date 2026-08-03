@@ -49,8 +49,11 @@ public class StoredBinaryType extends BinaryType {
 
     @Override
     public void setValue(Object value) {
+        if (!(value instanceof byte[] bytes)) {
+            throw new IllegalArgumentException("Expected byte[] when storing session data to temporary filesystem");
+        }
         try {
-            Files.write(reference, (byte[]) value, StandardOpenOption.WRITE);
+            Files.write(reference, bytes, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             throw new IllegalStateException("Error while storing session data to temporary filesystem", e);
         }

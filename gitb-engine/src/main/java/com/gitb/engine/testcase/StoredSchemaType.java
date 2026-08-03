@@ -72,7 +72,7 @@ public class StoredSchemaType extends SchemaType {
                     if (!Files.exists(reference)) {
                         Files.createFile(reference);
                     }
-                    Files.write(reference, content, StandardOpenOption.WRITE);
+                    Files.write(reference, content, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                 } catch (IOException e) {
                     throw new IllegalStateException("Error while storing session data to temporary filesystem", e);
                 }

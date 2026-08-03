@@ -1164,7 +1164,7 @@ export class DataService {
   }
 
   isDataURL(str: string) {
-    return str.startsWith('data:') && str.slice(0, 50).includes(';base64,');
+    return str.startsWith('data:') && str.slice(0, 256).includes(';base64,');
   }
 
 	getFileInfo(blob: Blob, filename?: string): Observable<{type: string, extension: string, filename: string}> {
