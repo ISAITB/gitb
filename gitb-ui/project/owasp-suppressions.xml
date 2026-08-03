@@ -1134,5 +1134,205 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-59888</vulnerabilityName>
-    </suppress>    
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: logback-core-1.5.22.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-10532</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: lz4-java-1.10.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/at\.yawk\.lz4/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-59949</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: jetty-security-12.0.23.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-10050</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-56820</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-55851</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-56745</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-56817</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-44891</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-55831</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-55833</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-56816</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-56819</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-56746</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65902</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65898</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65899</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65900</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65901</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-66010</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65902</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65898</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65899</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65900</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65901</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.5.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-66010</vulnerabilityName>
+    </suppress>
 </suppressions>
