@@ -142,5 +142,17 @@
   "1123528": {
     "active": true,
     "notes": "Related to dev tooling."
+  },
+  "1130679": {
+    "active": true,
+    "notes": "Angular SSR not used."
+  },
+  "1130699": {
+    "active": true,
+    "notes": "Angular i18n not used."
+  },
+  "1130695": {
+    "active": true,
+    "notes": "Angular i18n not used."
   }
 }
