@@ -154,5 +154,45 @@
   "1130695": {
     "active": true,
     "notes": "Angular i18n not used."
+  },
+  "1124022": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124233": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124234": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124235": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124236": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124237": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124238": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124239": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124240": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1124241": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
   }
 }
