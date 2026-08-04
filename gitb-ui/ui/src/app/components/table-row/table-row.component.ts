@@ -22,6 +22,7 @@ import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {TableRowApi} from './table-row-api';
+import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
     selector: '[table-row-directive]',
@@ -58,12 +59,14 @@ export class TableRowComponent implements OnInit, OnChanges, TableRowApi {
   @Input() optionsVisibleForRow?: (row: any) => boolean
   @Input() optionProvider?: (row: any) => Observable<CheckboxOption[][]>
   @Input() optionPendingProperty = 'optionPending'
+  @Input() target?: NavigationTarget
 
   @Output() onOption: EventEmitter<{data: any, option: string}> = new EventEmitter()
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
+  @Output() navigating: EventEmitter<MouseEvent> = new EventEmitter()
 
   @ViewChild("optionButton") optionButton?: CheckBoxOptionPanelComponentApi
 
@@ -154,6 +157,10 @@ export class TableRowComponent implements OnInit, OnChanges, TableRowApi {
 
   check() {
     this.onCheck.emit(this.data)
+  }
+
+  cellClicked(event: MouseEvent) {
+    this.navigating.emit(event)
   }
 
   action() {

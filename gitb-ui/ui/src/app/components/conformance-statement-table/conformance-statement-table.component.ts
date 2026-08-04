@@ -30,6 +30,7 @@ import {TestResultSearchCriteria} from '../../types/test-result-search-criteria'
 import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
 import {TestStatusBase} from '../test-status-base/test-status-base';
+import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
   selector: 'app-conformance-statement-table',
@@ -55,7 +56,8 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
    * "Filter..." button can show loading feedback (the embedded filter's own header/pending
    * icon is not rendered). */
   @Output() filterLoading = new EventEmitter<boolean>()
-  @Output() select = new EventEmitter<ConformanceResultFullWithTestSuites>
+  @Input() rowTarget!: (statement: ConformanceResultFullWithTestSuites) => NavigationTarget
+  @Output() navigating = new EventEmitter<MouseEvent>()
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
   @ViewChildren("testStatusDisplay") testStatusDisplay?: QueryList<TestStatusBaseApi>
   @ViewChildren("optionButtons") optionButtons?: QueryList<StatementOptionsButtonApi<ConformanceResultFullWithTestSuites>>
@@ -356,8 +358,8 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     this.getConformanceStatements()
   }
 
-  onStatementSelect(statement: ConformanceResultFullWithTestSuites) {
-    this.select.emit(statement)
+  statementClicked(event: MouseEvent) {
+    this.navigating.emit(event)
   }
 
   @HostListener('document:click', ['$event'])

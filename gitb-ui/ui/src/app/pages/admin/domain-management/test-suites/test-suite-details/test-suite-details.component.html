@@ -115,9 +115,8 @@
                                                            [showExport]="false"
                                                            [showResults]="false"
                                                            [showViewDocumentation]="true"
-                                                           [showEdit]="true"
+                                                           [editTarget]="testCaseEditTarget"
                                                            [shaded]="false"
-                                                           (edit)="onTestCaseSelect($event.id)"
                                     ></app-test-case-display>
                                 </div>
                             } @else {
@@ -153,7 +152,7 @@
                                      [noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
                                      [loadingStatus]="specificationStatus"
                                      [allowSelect]="!selectingForUnlink"
-                                     (onSelect)="onSpecificationSelect($event)"
+                                     [rowTarget]="specificationRowTarget"
                                      [checkboxEnabled]="selectingForUnlink"
                                      [contentRefreshing]="specificationsRefreshing"
                                      [supportPaging]="true"

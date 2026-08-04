@@ -92,6 +92,11 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
     if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     }
+    if (this.communityId == undefined) {
+      this.routingService.ownConformanceStatementsBreadcrumbs(this.organisationId, this.systemId)
+    } else {
+      this.routingService.conformanceStatementsBreadcrumbs(this.communityId, this.organisationId, undefined, this.systemId)
+    }
     let domainIdObservable: Observable<number|undefined>
     if (this.communityId == undefined) {
       // Use own community domain.

@@ -62,7 +62,11 @@ label {
     white-space: nowrap;
 }
 .row {
-    & > div {
+    /*
+     * Matches both <div> (action options) and <a> (options that navigate, rendered as a real link -
+     * see CheckboxOption.target) item containers.
+     */
+    & > div, & > a {
         padding: 8px 20px 8px 14px;
     }
 }

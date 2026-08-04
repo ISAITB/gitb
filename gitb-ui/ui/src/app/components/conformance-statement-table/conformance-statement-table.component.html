@@ -54,54 +54,126 @@
         } @else if (conformanceStatements.length > 0) {
             <tbody [class.disable-events]="filterState.updatePending">
                 @for (statement of conformanceStatements; track trackStatement($index, statement)) {
-                    <tr (click)="onStatementSelect(statement)" class="table-row-directive selectable">
+                    @let target = rowTarget(statement);
+                    <tr class="table-row-directive selectable">
                         @if (organisationId == undefined) {
                             @if (!dataService.isCommunityAdmin) {
                                 <td>
-                                    <div class="cell-content">{{statement.communityName}}</div>
+                                    @if (target) {
+                                        <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">{{statement.communityName}}</a>
+                                    } @else {
+                                        <div class="cell-content">{{statement.communityName}}</div>
+                                    }
                                 </td>
                             }
-                            <td><div class="cell-content">{{statement.organizationName}}</div></td>
-                        }
-                        <td><div class="cell-content">{{statement.systemName}}</div></td>
-                        @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
-                            <td><div class="cell-content">{{statement.domainName}}</div></td>
-                        }
-                        <td><div class="cell-content">{{statement.specName}}</div></td>
-                        <td><div class="cell-content">{{statement.actorName}}</div></td>
-                        <td class="td-min centered">
-                            <div class="cell-content">
-                                @if (statement.updateTime) {
-                                    <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="statement.updateTime" [inTable]="true"></app-tag>
+                            <td>
+                                @if (target) {
+                                    <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">{{statement.organizationName}}</a>
+                                } @else {
+                                    <div class="cell-content">{{statement.organizationName}}</div>
                                 }
-                            </div>
+                            </td>
+                        }
+                        <td>
+                            @if (target) {
+                                <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">{{statement.systemName}}</a>
+                            } @else {
+                                <div class="cell-content">{{statement.systemName}}</div>
+                            }
+                        </td>
+                        @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
+                            <td>
+                                @if (target) {
+                                    <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">{{statement.domainName}}</a>
+                                } @else {
+                                    <div class="cell-content">{{statement.domainName}}</div>
+                                }
+                            </td>
+                        }
+                        <td>
+                            @if (target) {
+                                <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">{{statement.specName}}</a>
+                            } @else {
+                                <div class="cell-content">{{statement.specName}}</div>
+                            }
+                        </td>
+                        <td>
+                            @if (target) {
+                                <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">{{statement.actorName}}</a>
+                            } @else {
+                                <div class="cell-content">{{statement.actorName}}</div>
+                            }
                         </td>
                         <td class="td-min centered">
-                            <div class="cell-content">
-                                <app-test-status-icons #testStatusDisplay
-                                                       [counters]="statement.counters!"
-                                                       [asLine]="true"
-                                                       (opened)="expandedStatusIcons($event)"
-                                ></app-test-status-icons>
-                            </div>
+                            @if (target) {
+                                <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">
+                                    @if (statement.updateTime) {
+                                        <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="statement.updateTime" [inTable]="true"></app-tag>
+                                    }
+                                </a>
+                            } @else {
+                                <div class="cell-content">
+                                    @if (statement.updateTime) {
+                                        <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="statement.updateTime" [inTable]="true"></app-tag>
+                                    }
+                                </div>
+                            }
                         </td>
                         <td class="td-min centered">
-                            <div class="cell-content">
-                                <span class="d-flex"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span>
-                            </div>
+                            @if (target) {
+                                <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">
+                                    <app-test-status-icons #testStatusDisplay
+                                                           [counters]="statement.counters!"
+                                                           [asLine]="true"
+                                                           (opened)="expandedStatusIcons($event)"
+                                    ></app-test-status-icons>
+                                </a>
+                            } @else {
+                                <div class="cell-content">
+                                    <app-test-status-icons #testStatusDisplay
+                                                           [counters]="statement.counters!"
+                                                           [asLine]="true"
+                                                           (opened)="expandedStatusIcons($event)"
+                                    ></app-test-status-icons>
+                                </div>
+                            }
+                        </td>
+                        <td class="td-min centered">
+                            @if (target) {
+                                <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">
+                                    <span class="d-flex"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span>
+                                </a>
+                            } @else {
+                                <div class="cell-content">
+                                    <span class="d-flex"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span>
+                                </div>
+                            }
                         </td>
                         @if (showExportControls) {
                             <td class="td-min centered">
-                                <div class="cell-content">
-                                    <app-statement-options-button #optionButtons
-                                                                  [inTable]="true"
-                                                                  [item]="statement"
-                                                                  [snapshotId]="snapshotId"
-                                                                  [communityId]="communityId ?? statement.communityId"
-                                                                  [organisationId]="organisationId ?? statement.organizationId"
-                                                                  [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
-                                                                  (export)="onExportConformanceStatement($event.item, $event.format)"></app-statement-options-button>
-                                </div>
+                                @if (target) {
+                                    <a class="cell-content plain-link" [navTarget]="target" (click)="statementClicked($event);$event.stopPropagation()">
+                                        <app-statement-options-button #optionButtons
+                                                                      [inTable]="true"
+                                                                      [item]="statement"
+                                                                      [snapshotId]="snapshotId"
+                                                                      [communityId]="communityId ?? statement.communityId"
+                                                                      [organisationId]="organisationId ?? statement.organizationId"
+                                                                      [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
+                                                                      (export)="onExportConformanceStatement($event.item, $event.format)"></app-statement-options-button>
+                                    </a>
+                                } @else {
+                                    <div class="cell-content">
+                                        <app-statement-options-button #optionButtons
+                                                                      [inTable]="true"
+                                                                      [item]="statement"
+                                                                      [snapshotId]="snapshotId"
+                                                                      [communityId]="communityId ?? statement.communityId"
+                                                                      [organisationId]="organisationId ?? statement.organizationId"
+                                                                      [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
+                                                                      (export)="onExportConformanceStatement($event.item, $event.format)"></app-statement-options-button>
+                                    </div>
+                                }
                             </td>
                         }
                     </tr>

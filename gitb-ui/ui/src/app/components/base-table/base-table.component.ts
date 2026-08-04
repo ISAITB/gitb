@@ -22,6 +22,7 @@ import {TableRowApi} from '../table-row/table-row-api';
 import {Constants} from '../../common/constants';
 import {Observable} from 'rxjs';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
     template: '',
@@ -64,6 +65,7 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() optionProvider?: (row: any) => Observable<CheckboxOption[][]>
   @Input() optionsVisibleForRow?: (row: any) => boolean
   @Input() optionPendingProperty = 'optionPending'
+  @Input() rowTarget?: (row: any) => NavigationTarget|undefined
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()
@@ -74,6 +76,7 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
   @Output() pageNavigation: EventEmitter<PagingEvent> = new EventEmitter()
   @Output() onSort: EventEmitter<TableColumnDefinition> = new EventEmitter()
+  @Output() navigating: EventEmitter<MouseEvent> = new EventEmitter()
 
   @ViewChildren("tableRowComponent") tableRowComponents?: QueryList<TableRowApi>
 
@@ -134,6 +137,10 @@ export abstract class BaseTableComponent extends BaseComponent {
 
   doPageNavigation(event: PagingEvent) {
     this.pageNavigation.emit(event)
+  }
+
+  propagateNavigating(event: MouseEvent) {
+    this.navigating.emit(event)
   }
 
   @HostListener('document:click', ['$event'])

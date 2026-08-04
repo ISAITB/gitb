@@ -26,6 +26,7 @@ import {SystemService} from 'src/app/services/system.service';
 import {Constants} from 'src/app/common/constants';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {forkJoin} from 'rxjs';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 
 @Component({
     selector: 'app-system-details',
@@ -57,7 +58,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     private readonly confirmationDialogService: ConfirmationDialogService,
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly systemService: SystemService
   ) { super() }
 
@@ -131,11 +132,11 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     })
   }
 
-  manageSystemTests() {
+  manageSystemTestsTarget(): NavigationTarget {
     if (this.fromCommunityManagement) {
-      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
+      return this.routingService.linkToConformanceStatements(this.communityId, this.organisationId, this.systemId)
     } else {
-      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
+      return this.routingService.linkToOwnConformanceStatements(this.organisationId, this.systemId)
     }
   }
 

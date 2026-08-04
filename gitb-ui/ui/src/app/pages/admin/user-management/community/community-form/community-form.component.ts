@@ -28,6 +28,8 @@ import {Organisation} from '../../../../../types/organisation.type';
 import {OrganisationService} from '../../../../../services/organisation.service';
 import {ConfirmationDialogService} from '../../../../../services/confirmation-dialog.service';
 import {SessionColumnCase} from 'src/app/services/session-columns.service';
+import {NavigationTarget} from 'src/app/types/navigation-target';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-community-form',
@@ -70,7 +72,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
 
   constructor(
     public readonly dataService: DataService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly organisationService: OrganisationService,
     private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
@@ -178,17 +180,29 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     }
   }
 
-  viewDomain() {
-    if (this.community.domain?.id != undefined) {
-      this.routingService.recordViewReturnTarget()
-      this.routingService.toDomain(this.community.domain.id)
+  viewDomainTarget(): NavigationTarget|undefined {
+    if (this.community.domainId != undefined) {
+      return this.routingService.linkToDomain(this.community.domainId)
     }
+    return undefined
   }
 
-  viewSelfRegDefaultOrganisation() {
+  viewSelfRegDefaultOrganisationTarget(): NavigationTarget|undefined {
     if (this.community.id != undefined && this.community.selfRegDefaultOrganisation != undefined) {
+      return this.routingService.linkToOrganisationDetails(this.community.id, this.community.selfRegDefaultOrganisation.id)
+    }
+    return undefined
+  }
+
+  /**
+   * Called on click of the "View" links above (which navigate via their own [navTarget]) so the
+   * "return to source" location can still be recorded before leaving this page - guarded to a plain
+   * (unmodified, primary-button) click since a modified click opens the destination in a new
+   * tab/window rather than navigating away from this one.
+   */
+  optionNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
       this.routingService.recordViewReturnTarget()
-      this.routingService.toOrganisationDetails(this.community.id, this.community.selfRegDefaultOrganisation.id)
     }
   }
 

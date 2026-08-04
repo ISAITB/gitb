@@ -29,6 +29,7 @@ import {EndpointRepresentation} from './endpoint-representation';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {EndpointParameter} from 'src/app/types/endpoint-parameter';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
+import {NavigationTarget} from '../../../../../types/navigation-target';
 
 @Component({
     selector: 'app-actor-details',
@@ -62,7 +63,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
     private readonly conformanceService: ConformanceService,
     private readonly actorService: ActorService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly popupService: PopupService,
     public readonly dataService: DataService,
     router: Router,
@@ -179,10 +180,14 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
     )
   }
 
-  onEndpointSelect(endpoint: EndpointRepresentation) {
-    this.routingService.toEndpoint(this.domainId, this.specificationId, this.actorId, endpoint.id)
+  endpointRowTarget = (endpoint: EndpointRepresentation): NavigationTarget => {
+    return this.routingService.linkToEndpoint(this.domainId, this.specificationId, this.actorId, endpoint.id)
   }
 
+  /** Forwarded from app-endpoint-parameter-tab-content's (createEndpoint) output - its own "Create
+   * endpoint" dropdown item (endpoint-parameter-tab-content.component.html:12), a separate control
+   * from the standalone "Create endpoint" button above (converted to a link) since it lives inside
+   * a shared, reusable component. */
   createEndpoint() {
     this.routingService.toCreateEndpoint(this.domainId, this.specificationId, this.actorId)
   }

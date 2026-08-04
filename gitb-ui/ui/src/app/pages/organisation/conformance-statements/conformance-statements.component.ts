@@ -35,6 +35,8 @@ import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
 import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-result-full-with-test-suites';
+import {NavigationTarget} from '../../../types/navigation-target';
+import {Utils} from '../../../common/utils';
 
 @Component({
     selector: 'app-conformance-statements',
@@ -209,28 +211,46 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     }
   }
 
-  onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
-    this.routingService.recordViewReturnTarget()
-    if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
-    } else {
-      this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+  /**
+   * Tree-view leaf items now navigate via their own [navTarget] link (see
+   * ConformanceStatementItemDisplayComponent.leafTarget()) rather than through onStatementSelect(),
+   * so this only runs the "return to source" side effect - guarded to a plain (unmodified,
+   * primary-button) click since a modified click opens the destination in a new tab/window rather
+   * than navigating away from this one.
+   */
+  onStatementNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
     }
   }
 
-  createStatement() {
-    this.routingService.toCreateConformanceStatement(this.organisationId!, this.system!.id, this.communityId)
+  listViewStatementRowTarget = (statement: ConformanceResultFullWithTestSuites): NavigationTarget => {
+    if (this.communityId == undefined) {
+      return this.routingService.linkToOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+    } else {
+      return this.routingService.linkToConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+    }
+  }
+
+  /**
+   * Bound directly in the template (evaluated on every change detection cycle, unlike the previous
+   * click handler), so this must tolerate `system` being undefined rather than relying on the
+   * button's [disable] state to prevent the access - the link itself is inert in that case since
+   * the control is disabled.
+   */
+  createStatementTarget(): NavigationTarget {
+    return this.routingService.linkToCreateConformanceStatement(this.organisationId!, this.system?.id ?? -1, this.communityId)
   }
 
   back() {
     this.routingService.toOrganisationDetails(this.communityId!, this.organisationId!)
   }
 
-  toCreateSystem() {
+  createSystemTarget(): NavigationTarget {
     if (this.communityId != undefined) {
-      this.routingService.toCreateSystem(this.communityId, this.organisationId!)
+      return this.routingService.linkToCreateSystem(this.communityId, this.organisationId!)
     } else {
-      this.routingService.toCreateOwnSystem()
+      return this.routingService.linkToCreateOwnSystem()
     }
   }
 

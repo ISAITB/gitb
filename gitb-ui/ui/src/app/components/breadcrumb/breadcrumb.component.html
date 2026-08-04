@@ -6,17 +6,30 @@
                     @if (!$first) {
                         <div class="breacrumbItemSeparator"><i class="fa-solid fa-angle-right"></i></div>
                     }
-                    <div class="breacrumbItem"
-                        [class.actionable]="crumb.action != undefined"
-                        #popup="ngbTooltip"
-                        (mouseover)="mouseOver($event)"
-                        [tooltipClass]="'shortTooltip'"
-                        placement="bottom"
-                        [ngbTooltip]="crumb.label"
-                        [openDelay]="Constants.TOOLTIP_DELAY"
-                        [disableTooltip]="!hasOverflow"
-                        (click)="popup.close();breadcrumbClicked(crumb)"
-                    >{{crumb.label}}</div>
+                    @if (crumb.target) {
+                        <a class="breacrumbItem actionable plain-link"
+                            #popup="ngbTooltip"
+                            (mouseover)="mouseOver($event)"
+                            [tooltipClass]="'shortTooltip'"
+                            placement="bottom"
+                            [ngbTooltip]="crumb.label"
+                            [openDelay]="Constants.TOOLTIP_DELAY"
+                            [disableTooltip]="!hasOverflow"
+                            [navTarget]="crumb.target"
+                            (click)="popup.close();breadcrumbClicked($event)"
+                        >{{crumb.label}}</a>
+                    } @else {
+                        <div class="breacrumbItem"
+                            #popup="ngbTooltip"
+                            (mouseover)="mouseOver($event)"
+                            [tooltipClass]="'shortTooltip'"
+                            placement="bottom"
+                            [ngbTooltip]="crumb.label"
+                            [openDelay]="Constants.TOOLTIP_DELAY"
+                            [disableTooltip]="!hasOverflow"
+                            (click)="popup.close()"
+                        >{{crumb.label}}</div>
+                    }
                 }
             }
         }

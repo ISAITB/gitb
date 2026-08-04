@@ -5,7 +5,7 @@
             <div class="btn-toolbar">
                 <app-text-filter name="domainFilter" [width]="300" [placeholder]="'Search '+dataService.labelDomainsLower()+'...'" [(ngModel)]="domainFilter" (apply)="applyFilter()"></app-text-filter>
         		@if (dataService.isSystemAdmin) {
-					<button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
+					<a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateDomain()">Create {{dataService.labelDomainLower()}}</a>
 	    		}
             </div>
         </div>
@@ -18,7 +18,7 @@
             [contentRefreshing]="domainsRefreshing"
             [supportPaging]="true"
             (pageNavigation)="doDomainPaging($event)"
-			(onSelect)="onDomainSelect($event)">
+			[rowTarget]="domainRowTarget">
 		</div>
 	</div>
 </div>

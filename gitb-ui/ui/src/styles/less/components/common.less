@@ -247,6 +247,37 @@ li.menu-section-start {
 		background-color: @gray-highlight;
 	}
 }
+/*
+ * Applied to navigation controls rendered as <a> elements (instead of <button> or <div>) so that
+ * they keep the appearance of the control they replace rather than picking up Bootstrap's default
+ * link styling (blue text, underline - see Bootstrap's reboot rule for bare "a" elements).
+ */
+.plain-link {
+	color: inherit;
+	text-decoration: none;
+	&:hover, &:focus, &:visited {
+		color: inherit;
+		text-decoration: none;
+	}
+	/*
+	 * These controls are also newly keyboard-focusable (a plain clickable div/button was not
+	 * necessarily so). Give them a visible focus indicator since none of the styles they inherit
+	 * provide one.
+	 */
+	&:focus-visible {
+		outline: 2px solid @blue;
+		outline-offset: 1px;
+	}
+	/*
+	 * Mirrors Bootstrap's own disabled-link convention (e.g. ".btn.disabled", ".dropdown-item.disabled")
+	 * for plain links that carry neither class - see PendingButtonDirective.
+	 */
+	&.disabled {
+		cursor: default;
+		pointer-events: none;
+		opacity: 0.65;
+	}
+}
 
 th.sortableHeader {
 	white-space: nowrap;

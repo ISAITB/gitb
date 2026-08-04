@@ -98,8 +98,12 @@ export class TableComponent extends BaseTableComponent implements OnInit {
   }
 
   select(rowIndex: number) {
+    const row = this.data![rowIndex]
+    if (this.rowTarget && this.rowTarget(row) != undefined) {
+      // Navigation for this row is handled by its link - avoid also running the old selection/emit logic.
+      return
+    }
     if (this.allowSelect || this.allowMultiSelect) {
-      const row = this.data![rowIndex]
       if (row._selected !== undefined && row._selected!) {
         if (this.allowMultiSelect) {
           row._selected = false

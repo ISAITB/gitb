@@ -52,6 +52,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    this.routingService.specificationChildBreadcrumbs(this.domainId, this.specificationId)
     if (this.dataService.isCommunityAdmin) {
       this.communityId = this.dataService.vendor?.community
     } else {

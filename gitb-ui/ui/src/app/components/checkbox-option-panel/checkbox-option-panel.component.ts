@@ -59,6 +59,8 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   @Output() opening = new EventEmitter<void>()
   @Output() opened = new EventEmitter<void>()
   @Output() closed = new EventEmitter<void>()
+  /** Emitted for options with a `target` (navigation happens via the option's own [navTarget]) so a caller can still run pre-navigation side effects (e.g. recording a "return to source" location). */
+  @Output() navigate = new EventEmitter<MouseEvent>()
 
   @ViewChild("button") buttonElement?: ElementRef<HTMLButtonElement>
   @ViewChild('popupTemplate') popupTemplate?: TemplateRef<any>;
@@ -273,13 +275,23 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     }
   }
 
-  handleClick(key: string) {
+  /**
+   * For an option with a `target`, navigation happens via the option's own [navTarget] (a real
+   * router link) rather than here - emitting `updated` for it too would cause a second, imperative
+   * navigation on top of the link's own. Such options only need the popup closed, and give the
+   * caller a chance (via `navigate`) to run any pre-navigation side effect.
+   */
+  handleClick(option: CheckboxOption, event?: MouseEvent) {
     if (this.singleSelection) {
-      this.currentState = {}
-      this.currentState[key] = true
-      const event:CheckboxOptionState = {}
-      event[key] = true
-      this.updated.emit(event)
+      if (option.target == undefined) {
+        this.currentState = {}
+        this.currentState[option.key] = true
+        const emitted: CheckboxOptionState = {}
+        emitted[option.key] = true
+        this.updated.emit(emitted)
+      } else if (event != undefined) {
+        this.navigate.emit(event)
+      }
       this.close()
     }
   }

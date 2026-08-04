@@ -1,4 +1,4 @@
-<div class="menu-item-root" [class.active]="active" (click)="itemClicked()">
+<ng-template #menuItemContent>
     @if (expanded) {
         <div class="menu-item">
             @if (customTemplate) {
@@ -23,4 +23,13 @@
             }
         </div>
     }
-</div>
+</ng-template>
+@if (target) {
+    <a class="menu-item-root plain-link" [class.active]="active" [navTarget]="target" (click)="itemClicked($event)">
+        <ng-container [ngTemplateOutlet]="menuItemContent"></ng-container>
+    </a>
+} @else {
+    <div class="menu-item-root" [class.active]="active" (click)="itemClicked()">
+        <ng-container [ngTemplateOutlet]="menuItemContent"></ng-container>
+    </div>
+}

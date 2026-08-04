@@ -44,7 +44,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly popupService: PopupService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly systemConfigurationService: SystemConfigurationService,
@@ -148,11 +148,6 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
         this.deletePending = false
       })
     })
-  }
-
-  copy() {
-    this.copyPending = true
-    this.routingService.toCreateTheme(this.themeId)
   }
 
   back() {

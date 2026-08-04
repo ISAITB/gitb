@@ -50,6 +50,7 @@ import {ResourceState} from '../../../../../components/resource-management-tab/r
 import {UserPreferences} from '../../../../../types/user-preferences';
 import {TagData} from '../../../../../types/tag-data';
 import {DisplayState} from '../../../../../types/display-state';
+import {NavigationTarget} from '../../../../../types/navigation-target';
 
 /** Persisted search/sort/paging state for the Organisations tab - restored when returning here
  * (e.g. via Back from an organisation's detail page) so the list looks the same as when left. */
@@ -178,7 +179,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   constructor(
     public readonly dataService: DataService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly userService: UserService,
     private readonly landingPageService: LandingPageService,
     private readonly legalNoticeService: LegalNoticeService,
@@ -639,44 +640,28 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
-  organisationSelect(organization: Organisation) {
-    this.routingService.toOrganisationDetails(this.communityId, organization.id)
+  organisationRowTarget = (organization: Organisation): NavigationTarget => {
+    return this.routingService.linkToOrganisationDetails(this.communityId, organization.id)
   }
 
-  createLandingPage(copyTestBedDefault: boolean) {
-    this.routingService.toCreateLandingPage(this.communityId, copyTestBedDefault)
+  landingPageRowTarget = (landingPage: LandingPage): NavigationTarget => {
+    return this.routingService.linkToLandingPage(this.communityId, landingPage.id)
   }
 
-  landingPageSelect(landingPage: LandingPage) {
-    this.routingService.toLandingPage(this.communityId, landingPage.id)
+  legalNoticeRowTarget = (legalNotice: LegalNotice): NavigationTarget => {
+    return this.routingService.linkToLegalNotice(this.communityId, legalNotice.id)
   }
 
-  createLegalNotice(copyTestBedDefault: boolean) {
-    this.routingService.toCreateLegalNotice(this.communityId, copyTestBedDefault)
+  errorTemplateRowTarget = (errorTemplate: ErrorTemplate): NavigationTarget => {
+    return this.routingService.linkToErrorTemplate(this.communityId, errorTemplate.id)
   }
 
-  legalNoticeSelect(legalNotice: LegalNotice) {
-    this.routingService.toLegalNotice(this.communityId, legalNotice.id)
+  triggerRowTarget = (trigger: Trigger): NavigationTarget => {
+    return this.routingService.linkToTrigger(this.communityId, trigger.id)
   }
 
-  createErrorTemplate(copyTestBedDefault: boolean) {
-    this.routingService.toCreateErrorTemplate(this.communityId, copyTestBedDefault)
-  }
-
-  errorTemplateSelect(errorTemplate: ErrorTemplate) {
-    this.routingService.toErrorTemplate(this.communityId, errorTemplate.id)
-  }
-
-  createTrigger() {
-    this.routingService.toCreateTrigger(this.communityId)
-  }
-
-  triggerSelect(trigger: Trigger) {
-    this.routingService.toTrigger(this.communityId, trigger.id)
-  }
-
-  adminSelect(admin: User) {
-    this.routingService.toCommunityAdmin(this.communityId, admin.id!)
+  adminRowTarget = (admin: User): NavigationTarget => {
+    return this.routingService.linkToCommunityAdmin(this.communityId, admin.id!)
   }
 
   cancelCommunityDetail() {
@@ -685,25 +670,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
-  updateReportSettings() {
-    this.routingService.toCommunityReportSettings(this.community.id)
-  }
-
-  updateParameters() {
-    this.routingService.toCommunityParameters(this.communityId)
-  }
-
-  editLabels() {
-    this.routingService.toCommunityLabels(this.communityId)
-  }
-
-  createAdmin() {
-    this.routingService.toCreateCommunityAdmin(this.communityId)
-  }
-
-  createOrganisation() {
-    this.routingService.toCreateOrganisation(this.communityId)
-  }
 
   doOrganisationPaging(event: PagingEvent) {
     this.queryOrganisations(event)

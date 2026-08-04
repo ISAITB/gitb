@@ -14,11 +14,14 @@
  */
 
 import { BreadcrumbType } from "src/app/types/breadcrumb-type"
+import { NavigationTarget } from "src/app/types/navigation-target"
 
 export interface BreadcrumbItem {
 
     type: BreadcrumbType
     action?: Function
+    /** Populated alongside `action` whenever the crumb navigates, so it can be rendered as a real link. */
+    target?: NavigationTarget
 
     label?: string
     typeId?: number|string

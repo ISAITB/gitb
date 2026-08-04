@@ -30,7 +30,7 @@
                         @if (!readonly) {
                             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
                         }
-                        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                        <a class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS" [navTarget]="manageOrganisationTestsTarget()">Manage tests</a>
                         @if (showBackButton) {
                             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancelDetailOrganisation()">Back</button>
                         }
@@ -53,7 +53,7 @@
                         @if (showCreateSystem) {
                             <div class="tabControls">
                                 <div class="btn-toolbar">
-                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="createSystemTarget()">Create {{dataService.labelSystemLower()}}</a>
                                 </div>
                             </div>
                         }
@@ -66,7 +66,7 @@
                                  [contentRefreshing]="systemsRefreshing"
                                  (pageNavigation)="doSystemPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="systemSelect($event)"
+                                 [rowTarget]="systemRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -81,7 +81,7 @@
                             @if (showCreateUser) {
                                 <div class="tabControls">
                                     <div class="btn-toolbar">
-                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                        <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="createUserTarget()">Create user</a>
                                     </div>
                                 </div>
                             }
@@ -94,7 +94,7 @@
                                      [contentRefreshing]="usersRefreshing"
                                      (pageNavigation)="doUserPaging($event)"
                                      [allowSelect]="showCreateUser"
-                                     (onSelect)="userSelect($event)"
+                                     [rowTarget]="userRowTarget"
                                      [supportPaging]="true">
                                 </div>
                             </div>

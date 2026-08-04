@@ -89,4 +89,16 @@ export class Utils {
       return removed;
     }
 
+    /**
+     * Determines whether a click on a navigation link (`<a [navTarget]>`) is a plain, same-tab
+     * navigation as opposed to one that opens the link elsewhere (a modifier click, or a
+     * non-primary mouse button). Used to guard side effects that should only apply to the current
+     * tab (e.g. recording a "return to source" location, or clearing display state) - since a
+     * modified click still fires the DOM "click" event even though the browser opens the link in
+     * a new tab/window rather than navigating away from the current page.
+     */
+    public static isPlainNavigationClick(event: MouseEvent): boolean {
+        return event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey
+    }
+
 }

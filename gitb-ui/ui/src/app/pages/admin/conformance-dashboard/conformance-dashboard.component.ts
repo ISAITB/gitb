@@ -28,6 +28,7 @@ import {CommunityService} from 'src/app/services/community.service';
 import {OrganisationService} from 'src/app/services/organisation.service';
 import {SystemService} from 'src/app/services/system.service';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {Utils} from 'src/app/common/utils';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {ReportSupportService} from 'src/app/services/report-support.service';
 import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
@@ -41,6 +42,7 @@ import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-re
 import {ActivatedRoute} from '@angular/router';
 import {MultiSelectFilterComponentApi} from '../../../components/multi-select-filter/multi-select-filter-component-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {NavigationTarget} from '../../../types/navigation-target';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -490,9 +492,21 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
-  onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
-    this.routingService.recordViewReturnTarget()
-    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
+  listViewStatementRowTarget = (statement: ConformanceResultFullWithTestSuites): NavigationTarget => {
+    return this.routingService.linkToConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
+  }
+
+  /**
+   * Tree-view leaf items now navigate via their own [navTarget] link (see
+   * ConformanceStatementItemDisplayComponent.leafTarget()) rather than through onStatementSelect(),
+   * so this only runs the "return to source" side effect - guarded to a plain (unmodified,
+   * primary-button) click since a modified click opens the destination in a new tab/window rather
+   * than navigating away from this one.
+   */
+  onStatementNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
+    }
   }
 
   protected displayStateKey(): string {

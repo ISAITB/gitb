@@ -54,6 +54,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    this.routingService.domainChildBreadcrumbs(this.domainId)
     if (this.dataService.isCommunityAdmin) {
       this.communityId = this.dataService.vendor?.community
     } else {

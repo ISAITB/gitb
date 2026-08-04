@@ -60,6 +60,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
 
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    this.routingService.communityChildBreadcrumbs(this.communityId)
     this.isSSO = this.dataService.configuration.ssoEnabled
   }
 

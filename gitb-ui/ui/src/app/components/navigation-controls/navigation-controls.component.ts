@@ -18,6 +18,8 @@ import {RoutingService} from '../../services/routing.service';
 import {DataService} from '../../services/data.service';
 import {NavigationControlsConfig} from './navigation-controls-config';
 import {Constants} from '../../common/constants';
+import {NavigationTarget} from '../../types/navigation-target';
+import {Utils} from '../../common/utils';
 
 @Component({
   selector: 'app-navigation-controls',
@@ -38,8 +40,8 @@ export class NavigationControlsComponent implements OnInit {
   organisationNavigable!: boolean
   communityNavigable!: boolean
 
-  mainNavigationItem?: { label?: string, action?: () => void }
-  extraNavigationItems: Array<{ label?: string, action?: () => void }> = []
+  mainNavigationItem?: { label?: string, target?: NavigationTarget }
+  extraNavigationItems: Array<{ label?: string, target?: NavigationTarget }> = []
 
   constructor(
     private readonly routingService: RoutingService,
@@ -50,39 +52,39 @@ export class NavigationControlsComponent implements OnInit {
     this.processConfig()
     // Statement
     if (this.statementNavigable) {
-      this.extraNavigationItems.push({ label: "View statement", action: () => this.viewNavigate(() => this.toStatement()) })
+      this.extraNavigationItems.push({ label: "View statement", target: this.statementTarget() })
     }
     // Party information
     if (this.systemNavigable) {
-      this.extraNavigationItems.push({ label: `View ${this.dataService.labelSystemLower()}`, action: () => this.viewNavigate(() => this.toSystem()) })
+      this.extraNavigationItems.push({ label: `View ${this.dataService.labelSystemLower()}`, target: this.systemTarget() })
     }
     if (this.organisationNavigable) {
-      this.extraNavigationItems.push({ label: `View ${this.dataService.labelOrganisationLower()}`, action: () => this.viewNavigate(() => this.toOrganisation()) })
+      this.extraNavigationItems.push({ label: `View ${this.dataService.labelOrganisationLower()}`, target: this.organisationTarget() })
     }
     if (this.communityNavigable) {
-      this.extraNavigationItems.push({ label: "View community", action: () => this.viewNavigate(() => this.toCommunity()) })
+      this.extraNavigationItems.push({ label: "View community", target: this.communityTarget() })
     }
     // Specification information
     if (this.domainNavigable || this.specificationNavigable || this.actorNavigable) {
       this.addSeparatorIfNeeded()
       if (this.actorNavigable) {
-        this.extraNavigationItems.push({ label: `View ${this.dataService.labelActorLower()}`, action: () => this.viewNavigate(() => this.toActor()) })
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelActorLower()}`, target: this.actorTarget() })
       }
       if (this.specificationNavigable) {
-        this.extraNavigationItems.push({ label: `View ${this.dataService.labelSpecificationLower()}`, action: () => this.viewNavigate(() => this.toSpecification()) })
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelSpecificationLower()}`, target: this.specificationTarget() })
       }
       if (this.domainNavigable) {
-        this.extraNavigationItems.push({ label: `View ${this.dataService.labelDomainLower()}`, action: () => this.viewNavigate(() => this.toDomain()) })
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelDomainLower()}`, target: this.domainTarget() })
       }
     }
     // Test case information
     if (this.testSuiteNavigable || this.testCaseNavigable) {
       this.addSeparatorIfNeeded()
       if (this.testCaseNavigable) {
-        this.extraNavigationItems.push({ label: "View test case", action: () => this.viewNavigate(() => this.toTestCase()) })
+        this.extraNavigationItems.push({ label: "View test case", target: this.testCaseTarget() })
       }
       if (this.testSuiteNavigable) {
-        this.extraNavigationItems.push({ label: "View test suite", action: () => this.viewNavigate(() => this.toTestSuite()) })
+        this.extraNavigationItems.push({ label: "View test suite", target: this.testSuiteTarget() })
       }
     }
     // Keep the first item as the main one.
@@ -93,11 +95,17 @@ export class NavigationControlsComponent implements OnInit {
     }
   }
 
-  /** Records the current page as the "return target" before navigating, so that the target page's
-   * Back/Cancel control can bring the user back here (with its state restored). */
-  private viewNavigate(navigate: () => void) {
-    this.routingService.recordViewReturnTarget()
-    navigate()
+  /**
+   * Records the current page as the "return target" before navigating, so that the target page's
+   * Back/Cancel control can bring the user back here (with its state restored). Guarded to a plain
+   * (unmodified, primary-button) click: a ctrl/cmd/shift/alt or middle click opens the destination
+   * in a new tab/window rather than navigating away from the current one, so it must not overwrite
+   * the return target recorded for this tab.
+   */
+  recordReturnTarget(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
+    }
   }
 
   private addSeparatorIfNeeded() {
@@ -130,73 +138,82 @@ export class NavigationControlsComponent implements OnInit {
     return identifier != undefined && identifier > 0
   }
 
-  private toSystem() {
+  private systemTarget(): NavigationTarget|undefined {
     if (this.systemNavigable) {
       if (this.isOwnOrganisation()) {
         // This is the user's own organisation
-        this.routingService.toOwnSystemDetails(this.config.systemId!)
+        return this.routingService.linkToOwnSystemDetails(this.config.systemId!)
       } else {
-        this.routingService.toSystemDetails(this.config.communityId!, this.config.organisationId!, this.config.systemId!)
+        return this.routingService.linkToSystemDetails(this.config.communityId!, this.config.organisationId!, this.config.systemId!)
       }
     }
+    return undefined
   }
 
-  private toStatement() {
+  private statementTarget(): NavigationTarget|undefined {
     if (this.statementNavigable) {
       if (this.isOwnOrganisation()) {
-        this.routingService.toOwnConformanceStatement(this.config.organisationId!, this.config.systemId!, this.config.actorId!, this.config.snapshotId, this.config.snapshotLabel)
+        return this.routingService.linkToOwnConformanceStatement(this.config.organisationId!, this.config.systemId!, this.config.actorId!, this.config.snapshotId, this.config.snapshotLabel)
       } else {
-        this.routingService.toConformanceStatement(this.config.organisationId!, this.config.systemId!, this.config.actorId!, this.config.communityId!, this.config.snapshotId, this.config.snapshotLabel)
+        return this.routingService.linkToConformanceStatement(this.config.organisationId!, this.config.systemId!, this.config.actorId!, this.config.communityId!, this.config.snapshotId, this.config.snapshotLabel)
       }
     }
+    return undefined
   }
 
-  private toOrganisation() {
+  private organisationTarget(): NavigationTarget|undefined {
     if (this.organisationNavigable) {
       if (this.isOwnOrganisation()) {
         // This is the user's own organisation
-        this.routingService.toOwnOrganisationDetails()
+        return this.routingService.linkToOwnOrganisationDetails()
       } else {
         // Another organisation
-        this.routingService.toOrganisationDetails(this.config.communityId!, this.config.organisationId!)
+        return this.routingService.linkToOrganisationDetails(this.config.communityId!, this.config.organisationId!)
       }
     }
+    return undefined
   }
 
-  private toCommunity() {
+  private communityTarget(): NavigationTarget|undefined {
     if (this.communityNavigable) {
-      this.routingService.toCommunity(this.config.communityId!)
+      return this.routingService.linkToCommunity(this.config.communityId!)
     }
+    return undefined
   }
 
-  private toDomain() {
+  private domainTarget(): NavigationTarget|undefined {
     if (this.domainNavigable) {
-      this.routingService.toDomain(this.config.domainId!)
+      return this.routingService.linkToDomain(this.config.domainId!)
     }
+    return undefined
   }
 
-  private toSpecification() {
+  private specificationTarget(): NavigationTarget|undefined {
     if (this.specificationNavigable) {
-      this.routingService.toSpecification(this.config.domainId!, this.config.specificationId!)
+      return this.routingService.linkToSpecification(this.config.domainId!, this.config.specificationId!)
     }
+    return undefined
   }
 
-  private toActor() {
+  private actorTarget(): NavigationTarget|undefined {
     if (this.actorNavigable) {
-      this.routingService.toActor(this.config.domainId!, this.config.specificationId!, this.config.actorId!)
+      return this.routingService.linkToActor(this.config.domainId!, this.config.specificationId!, this.config.actorId!)
     }
+    return undefined
   }
 
-  private toTestSuite() {
+  private testSuiteTarget(): NavigationTarget|undefined {
     if (this.testSuiteNavigable) {
-      this.routingService.toTestSuite(this.config.domainId!, this.config.specificationId!, this.config.testSuiteId!)
+      return this.routingService.linkToTestSuite(this.config.domainId!, this.config.specificationId!, this.config.testSuiteId!)
     }
+    return undefined
   }
 
-  private toTestCase() {
+  private testCaseTarget(): NavigationTarget|undefined {
     if (this.testCaseNavigable) {
-      this.routingService.toTestCase(this.config.domainId!, this.config.specificationId!, this.config.testSuiteId!, this.config.testCaseId!)
+      return this.routingService.linkToTestCase(this.config.domainId!, this.config.specificationId!, this.config.testSuiteId!, this.config.testCaseId!)
     }
+    return undefined
   }
 
   protected readonly Constants = Constants;

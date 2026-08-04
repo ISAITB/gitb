@@ -17,13 +17,13 @@
                   @if (!logoutInProgress) {
                     <div class="header-popup-options">
                       @if (!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()) {
-                        <div class="profile-option" (click)="toProfile()"><span class="icon"><i [class]="Constants.BUTTON_ICON.PROFILE"></i></span><span>My profile</span></div>
+                        <a class="profile-option plain-link" [navTarget]="routingService.linkToProfile()" (click)="profileOptionNavigating($event)"><span class="icon"><i [class]="Constants.BUTTON_ICON.PROFILE"></i></span><span>My profile</span></a>
                       }
                       @if (!dataService.isDemoAccount() && dataService.configuration.ssoEnabled && isAuthenticated()) {
                         <div class="profile-option" (click)="switchAccount()"><span class="icon"><i [class]="Constants.BUTTON_ICON.REPLACE"></i></span><span>Switch role</span></div>
                       }
                       @if (!dataService.isDemoAccount() && !dataService.configuration.ssoEnabled) {
-                        <div class="profile-option" (click)="toChangePassword()"><span class="icon"><i [class]="Constants.BUTTON_ICON.PASSWORD"></i></span><span>Change password</span></div>
+                        <a class="profile-option plain-link" [navTarget]="routingService.linkToChangePassword()" (click)="profileOptionNavigating($event)"><span class="icon"><i [class]="Constants.BUTTON_ICON.PASSWORD"></i></span><span>Change password</span></a>
                       }
                       <div class="profile-option" (click)="logout()"><span class="icon"><i [class]="Constants.BUTTON_ICON.LOGOUT"></i></span><span>Logout</span></div>
                     </div>

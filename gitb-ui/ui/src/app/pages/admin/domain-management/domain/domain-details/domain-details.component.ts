@@ -58,6 +58,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {UsageTipService} from '../../../../../services/usage-tip.service';
 import {TagData} from '../../../../../types/tag-data';
 import {DisplayState} from '../../../../../types/display-state';
+import {NavigationTarget} from '../../../../../types/navigation-target';
 
 /** Persisted search/paging state for the Specifications and Shared test suites tabs - restored when
  * returning here (e.g. via Back from a specification's/test suite's detail page). */
@@ -150,7 +151,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: NgbModal,
     private readonly popupService: PopupService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly usageTipService: UsageTipService,
     route: ActivatedRoute,
     router: Router
@@ -521,8 +522,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     }
   }
 
-  onSharedTestSuiteSelect(testSuite: TestSuite) {
-    this.routingService.toSharedTestSuite(this.domainId, testSuite.id)
+  sharedTestSuiteRowTarget = (testSuite: TestSuite): NavigationTarget => {
+    return this.routingService.linkToSharedTestSuite(this.domainId, testSuite.id)
   }
 
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
@@ -597,14 +598,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         this.loadSharedTestSuites(true)
       }
     })
-  }
-
-	createSpecification() {
-    this.routingService.toCreateSpecification(this.domainId)
-  }
-
-  createSpecificationGroup() {
-    this.routingService.toCreateSpecificationGroup(this.domainId)
   }
 
   private reloadCurrentSpecificationPage() {

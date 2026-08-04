@@ -63,6 +63,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TestStatusBaseApi} from '../../../components/test-status-base/test-status-base-api';
 import {TestStatusBase} from '../../../components/test-status-base/test-status-base';
 import {PreviewBadgeModalComponent} from '../../../modals/preview-badge-modal/preview-badge-modal.component';
+import {NavigationTarget} from '../../../types/navigation-target';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -809,12 +810,23 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
-  toTestCaseHistory(testCase: ConformanceTestCase) {
-    this.routingService.recordViewReturnTarget()
+  viewSessionsTarget = (testCase: ConformanceTestCase): NavigationTarget => {
     if (this.organisationId == this.dataService.vendor?.id) {
-      this.routingService.toTestHistory(this.organisationId, undefined, this.systemId,  testCase.id)
+      return this.routingService.linkToTestHistory(this.organisationId, undefined, this.systemId, testCase.id)
     } else {
-      this.routingService.toSessionDashboard(undefined, this.systemId, testCase.id)
+      return this.routingService.linkToSessionDashboard(undefined, this.systemId, testCase.id)
+    }
+  }
+
+  /**
+   * Called on click of the "View test sessions" option (which navigates via its own [navTarget])
+   * so the "return to source" location can still be recorded before leaving this page - guarded to
+   * a plain (unmodified, primary-button) click since a modified click opens the destination in a
+   * new tab/window rather than navigating away from this one.
+   */
+  onViewSessionsNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
     }
   }
 
@@ -937,45 +949,51 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     }
   }
 
-  viewSystem() {
-    this.routingService.recordViewReturnTarget()
-    if (this.organisationId == this.dataService.vendor?.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnSystemDetails(this.systemId!)
-    } else {
-      this.routingService.toSystemDetails(this.communityIdOfStatement!, this.organisationId!, this.systemId!)
+  /**
+   * Called on click of any of the "View X" options below (which navigate via their own
+   * [navTarget]) so the "return to source" location can still be recorded before leaving this
+   * page - guarded to a plain (unmodified, primary-button) click since a modified click opens the
+   * destination in a new tab/window rather than navigating away from this one.
+   */
+  optionNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
     }
   }
 
-  viewOrganisation() {
-    this.routingService.recordViewReturnTarget()
+  systemTarget(): NavigationTarget {
     if (this.organisationId == this.dataService.vendor?.id) {
       // This is the user's own organisation
-      this.routingService.toOwnOrganisationDetails()
+      return this.routingService.linkToOwnSystemDetails(this.systemId!)
+    } else {
+      return this.routingService.linkToSystemDetails(this.communityIdOfStatement!, this.organisationId!, this.systemId!)
+    }
+  }
+
+  organisationTarget(): NavigationTarget {
+    if (this.organisationId == this.dataService.vendor?.id) {
+      // This is the user's own organisation
+      return this.routingService.linkToOwnOrganisationDetails()
     } else {
       // Another organisation
-      this.routingService.toOrganisationDetails(this.communityIdOfStatement!, this.organisationId!)
+      return this.routingService.linkToOrganisationDetails(this.communityIdOfStatement!, this.organisationId!)
     }
   }
 
-  viewCommunity() {
-    this.routingService.recordViewReturnTarget()
-    this.routingService.toCommunity(this.communityIdOfStatement!)
+  communityTarget(): NavigationTarget {
+    return this.routingService.linkToCommunity(this.communityIdOfStatement!)
   }
 
-  viewActor() {
-    this.routingService.recordViewReturnTarget()
-    this.routingService.toActor(this.domainId!, this.specId!, this.actorId!)
+  actorTarget(): NavigationTarget {
+    return this.routingService.linkToActor(this.domainId!, this.specId!, this.actorId!)
   }
 
-  viewSpecification() {
-    this.routingService.recordViewReturnTarget()
-    this.routingService.toSpecification(this.domainId!, this.specId!)
+  specificationTarget(): NavigationTarget {
+    return this.routingService.linkToSpecification(this.domainId!, this.specId!)
   }
 
-  viewDomain() {
-    this.routingService.recordViewReturnTarget()
-    this.routingService.toDomain(this.domainId!)
+  domainTarget(): NavigationTarget {
+    return this.routingService.linkToDomain(this.domainId!)
   }
 
   isNavigable(identifier: number|undefined): boolean {

@@ -43,13 +43,13 @@
                                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
                                     }
                                     <div class="btn-group" ngbDropdown>
-                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                        <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateSpecification(domainId)">Create {{dataService.labelSpecificationLower()}}</a>
                                         <button id="button-create-spec" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                             <span class="caret"></span>
                                             <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
                                         </button>
                                         <div id="dropdown-create-spec" ngbDropdownMenu aria-labelledby="button-create-spec">
-                                            <button ngbDropdownItem type="button" (click)="createSpecificationGroup()">Create {{dataService.labelSpecificationGroupLower()}}</button>
+                                            <a ngbDropdownItem [navTarget]="routingService.linkToCreateSpecificationGroup(domainId)">Create {{dataService.labelSpecificationGroupLower()}}</a>
                                         </div>
                                     </div>
                                 }
@@ -106,7 +106,6 @@
                                                                           (removeSpec)="removeSpecificationFromGroup($event[0])"
                                                                           (moveSpec)="moveSpecificationToGroup($event[0], $event[2])"
                                                                           (copySpec)="copySpecificationToGroup($event[0], $event[2])"
-                                                                          (selectSpec)="onSpecificationSelect($event)"
                                                                           (dragging)="dragOngoing = $event"
                                                                           (click)="onSpecificationGroupSelect(spec)"
                                                                           (controlSelected)="onSpecificationDisplayControlSelected($event)"
@@ -141,7 +140,7 @@
                                  [contentRefreshing]="sharedTestSuitesRefreshing"
                                  [supportPaging]="true"
                                  (pageNavigation)="doSharedTestSuitePaging($event)"
-                                 (onSelect)="onSharedTestSuiteSelect($event)">
+                                 [rowTarget]="sharedTestSuiteRowTarget">
                             </div>
                         </div>
                     </div>

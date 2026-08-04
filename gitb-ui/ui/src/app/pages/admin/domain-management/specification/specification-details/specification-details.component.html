@@ -44,7 +44,7 @@
                                  [contentRefreshing]="testSuitesRefreshing"
                                  [supportPaging]="true"
                                  (pageNavigation)="doTestSuitePaging($event)"
-                                 (onSelect)="onTestSuiteSelect($event)">
+                                 [rowTarget]="testSuiteRowTarget">
                             </div>
                         </div>
                     </div>
@@ -56,7 +56,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+                                <a class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" [navTarget]="routingService.linkToCreateActor(domainId, specificationId)">Create {{dataService.labelActorLower()}}</a>
                             </div>
                         </div>
                         <div class="card">
@@ -69,7 +69,7 @@
                                  [contentRefreshing]="actorsRefreshing"
                                  [supportPaging]="true"
                                  (pageNavigation)="doActorPaging($event)"
-                                 (onSelect)="onActorSelect($event)">
+                                 [rowTarget]="actorRowTarget">
                             </div>
                         </div>
                     </div>

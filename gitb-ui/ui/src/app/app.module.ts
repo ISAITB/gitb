@@ -295,6 +295,7 @@ import {StartupWizardModalComponent} from './modals/startup-wizard-modal/startup
 import {RadioCardComponent} from './components/radio-card/radio-card.component';
 import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.component';
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
+import {NavTargetDirective} from './directives/nav-target.directive';
 import {
   NgbAlertModule,
   NgbCollapseModule,
@@ -541,7 +542,8 @@ import { TestResultCommentsModalComponent } from './modals/test-result-comments-
         NgbNavModule,
         CodemirrorModule,
         MarkdownModule.forRoot(),
-        SubmitOnControlEnterDirective
+        SubmitOnControlEnterDirective,
+        NavTargetDirective
     ], providers: [
         CookieService,
         { provide: HUGERTE_SCRIPT_SRC, useValue: 'hugerte/hugerte.min.js' },

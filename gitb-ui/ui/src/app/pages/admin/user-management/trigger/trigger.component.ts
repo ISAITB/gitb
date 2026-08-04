@@ -256,6 +256,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
           this.systemParameterSelect?.setSelectedItemIdsBeforeLoad(systemParameterIds)
           this.statementParameterSelect?.setSelectedItemIdsBeforeLoad(statementParameterIds)
         }
+      } else {
+        this.routingService.communityChildBreadcrumbs(this.communityId)
       }
       this.eventTypeChanged()
     }).add(() => {

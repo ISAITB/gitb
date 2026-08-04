@@ -44,7 +44,7 @@
                             } @else {
                                 <div class="tabControls">
                                     <div class="btn-toolbar">
-                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+                                        <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateEndpoint(domainId, specificationId, actorId)">Create {{dataService.labelEndpointLower()}}</a>
                                     </div>
                                 </div>
                                 <div class="card">
@@ -54,7 +54,7 @@
                                          [noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
                                          [loadingStatus]="dataStatus"
                                          [allowSelect]="true"
-                                         (onSelect)="onEndpointSelect($event)">
+                                         [rowTarget]="endpointRowTarget">
                                     </div>
                                 </div>
                             }

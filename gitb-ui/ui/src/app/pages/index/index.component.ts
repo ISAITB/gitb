@@ -29,6 +29,7 @@ import {HealthStatus} from '../../types/health-status';
 import {MenuItemStatus} from '../../types/menu-item-status.enum';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Constants} from '../../common/constants';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 
 @Component({
     selector: 'app-index',
@@ -253,11 +254,26 @@ export class IndexComponent implements OnInit, OnDestroy {
     })
   }
 
-  toDomainManagement() {
-    if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-      return this.routingService.toDomains()
+  /**
+   * Bound directly in the template (evaluated on every change detection cycle, unlike the previous
+   * click handler), so - unlike the imperative toX() methods this mirrors - this must tolerate
+   * dataService.community being momentarily undefined (e.g. before it's resolved) rather than
+   * relying on a non-null assertion, to avoid breaking rendering of the whole left-hand menu.
+   */
+  domainManagementTarget(): NavigationTarget {
+    const domainId = this.dataService.community?.domainId
+    if (this.dataService.isSystemAdmin || domainId == undefined) {
+      return this.routingService.linkToDomains()
     } else {
-      return this.routingService.toDomain(this.dataService.community!.domainId!)
+      return this.routingService.linkToDomain(domainId)
+    }
+  }
+
+  communityManagementTarget(): NavigationTarget {
+    if (this.dataService.isSystemAdmin) {
+      return this.routingService.linkToUserManagement()
+    } else {
+      return this.routingService.linkToCommunity(this.dataService.community?.id ?? -1)
     }
   }
 

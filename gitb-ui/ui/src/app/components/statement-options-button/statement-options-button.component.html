@@ -7,4 +7,5 @@
                            [pending]="pending == true"
                            [smallButton]="inTable == true"
                            (updated)="handleOption($event)"
+                           (navigate)="optionNavigating($event)"
                            (opening)="optionsOpening()"></app-checkbox-option-panel>

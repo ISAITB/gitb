@@ -73,6 +73,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
+    this.routingService.communitiesBreadcrumbs()
     this.conformanceService.getDomains()
     .subscribe((data) => {
       this.domains = data

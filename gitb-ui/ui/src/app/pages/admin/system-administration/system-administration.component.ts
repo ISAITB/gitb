@@ -48,6 +48,7 @@ import {UserBasic} from '../../../types/user-basic.type';
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {SslProtocol} from '../../../types/ssl-protocol';
 import {MimeType} from '../../../types/mime-type';
+import {NavigationTarget} from '../../../types/navigation-target';
 import {BaseTabbedComponent} from '../../base-tabbed-component';
 import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
 import {TestServiceCallbackSettings} from '../../../types/test-service-callback-settings';
@@ -272,7 +273,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     router: Router,
     private readonly userService: UserService,
     public readonly dataService: DataService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly landingPageService: LandingPageService,
     private readonly legalNoticeService: LegalNoticeService,
     private readonly errorTemplateService: ErrorTemplateService,
@@ -857,51 +858,41 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.themeStatus.status = Constants.STATUS.NONE
   }
 
-  createAdmin() {
-    this.routingService.toCreateTestBedAdmin()
-  }
-
-  adminSelect(admin: User) {
-    this.routingService.toTestBedAdmin(admin.id!)
+  adminRowTarget = (admin: User): NavigationTarget => {
+    return this.routingService.linkToTestBedAdmin(admin.id!)
   }
 
   showResources() {
     // No action needed.
   }
 
-  createLandingPage() {
-    this.routingService.toCreateLandingPage()
+  landingPageRowTarget = (landingPage: LandingPage): NavigationTarget => {
+    return this.routingService.linkToLandingPage(undefined, landingPage.id)
   }
 
-  landingPageSelect(landingPage: LandingPage) {
-    this.routingService.toLandingPage(undefined, landingPage.id)
+  legalNoticeRowTarget = (legalNotice: LegalNotice): NavigationTarget => {
+    return this.routingService.linkToLegalNotice(undefined, legalNotice.id)
   }
 
-  createLegalNotice() {
-    this.routingService.toCreateLegalNotice()
+  errorTemplateRowTarget = (errorTemplate: ErrorTemplate): NavigationTarget => {
+    return this.routingService.linkToErrorTemplate(undefined, errorTemplate.id)
   }
 
-  legalNoticeSelect(legalNotice: LegalNotice) {
-    this.routingService.toLegalNotice(undefined, legalNotice.id)
-  }
-
-  createErrorTemplate() {
-    this.routingService.toCreateErrorTemplate()
-  }
-
-  errorTemplateSelect(errorTemplate: ErrorTemplate) {
-    this.routingService.toErrorTemplate(undefined, errorTemplate.id)
-  }
-
-  createTheme() {
+  /**
+   * Bound directly as [navTarget], evaluated on every change detection cycle - returning undefined
+   * (rather than silently ignoring the click, as the previous click handler did) leaves the link
+   * without a destination, which is likewise inert on click, matching the previous behaviour.
+   */
+  createThemeTarget(): NavigationTarget|undefined {
     const activeTheme = this.themes.find((theme) => theme.active)
     if (activeTheme) {
-      this.routingService.toCreateTheme(activeTheme.id)
+      return this.routingService.linkToCreateTheme(activeTheme.id)
     }
+    return undefined
   }
 
-  themeSelect(theme: Theme) {
-    this.routingService.toTheme(theme.id)
+  themeRowTarget = (theme: Theme): NavigationTarget => {
+    return this.routingService.linkToTheme(theme.id)
   }
 
   accountRetentionPeriodCheckChanged() {

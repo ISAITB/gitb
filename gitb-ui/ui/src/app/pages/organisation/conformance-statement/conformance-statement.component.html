@@ -57,39 +57,39 @@
                                 @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || isNavigable(systemId) || isNavigable(organisationId)) {
                                     <div class="divider dropdown-divider"></div>
                                     @if (isNavigable(systemId)) {
-                                        <button ngbDropdownItem class="option-button" type="button" (click)="viewSystem()">
+                                        <a ngbDropdownItem class="option-button" [navTarget]="systemTarget()" (click)="optionNavigating($event)">
                                             <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                             <div class="option-label">View {{dataService.labelSystemLower()}}</div>
-                                        </button>
+                                        </a>
                                     }
                                     @if (isNavigable(organisationId)) {
-                                        <button ngbDropdownItem class="option-button" type="button" (click)="viewOrganisation()">
+                                        <a ngbDropdownItem class="option-button" [navTarget]="organisationTarget()" (click)="optionNavigating($event)">
                                             <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                             <div class="option-label">View {{dataService.labelOrganisationLower()}}</div>
-                                        </button>
+                                        </a>
                                     }
                                     @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
-                                        <button ngbDropdownItem class="option-button" type="button" (click)="viewCommunity()">
+                                        <a ngbDropdownItem class="option-button" [navTarget]="communityTarget()" (click)="optionNavigating($event)">
                                             <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                             <div class="option-label">View community</div>
-                                        </button>
+                                        </a>
                                         @if (isNavigable(actorId)) {
-                                            <button ngbDropdownItem class="option-button" type="button" (click)="viewActor()">
+                                            <a ngbDropdownItem class="option-button" [navTarget]="actorTarget()" (click)="optionNavigating($event)">
                                                 <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                                 <div class="option-label">View {{dataService.labelActorLower()}}</div>
-                                            </button>
+                                            </a>
                                         }
                                         @if (isNavigable(specId)) {
-                                            <button ngbDropdownItem class="option-button" type="button" (click)="viewSpecification()">
+                                            <a ngbDropdownItem class="option-button" [navTarget]="specificationTarget()" (click)="optionNavigating($event)">
                                                 <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                                 <div class="option-label">View {{dataService.labelSpecificationLower()}}</div>
-                                            </button>
+                                            </a>
                                         }
                                         @if (isNavigable(domainId)) {
-                                            <button ngbDropdownItem class="option-button" type="button" (click)="viewDomain()">
+                                            <a ngbDropdownItem class="option-button" [navTarget]="domainTarget()" (click)="optionNavigating($event)">
                                                 <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                                 <div class="option-label">View {{dataService.labelDomainLower()}}</div>
-                                            </button>
+                                            </a>
                                         }
                                     }
                                 }
@@ -303,7 +303,8 @@
                                                 [showExecute]="!isReadonly && !dataService.configuration.preparingForShutdown"
                                                 [showExport]="true"
                                                 [communityId]="communityIdOfStatement"
-                                                (viewTestSessions)="toTestCaseHistory($event)"
+                                                [viewSessionsTarget]="viewSessionsTarget"
+                                                (navigating)="onViewSessionsNavigating($event)"
                                                 (executeTestCase)="onTestSelect($event)"
                                                 (executeTestSuite)="onMultipleTestSelect($event)"
                                                 (optionsOpened)="onTestCaseOptionsOpened($event)"

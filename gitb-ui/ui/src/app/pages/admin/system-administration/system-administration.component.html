@@ -790,7 +790,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateTestBedAdmin()">Create system administrator</a>
                             </div>
                         </div>
                         <div class="card">
@@ -802,7 +802,7 @@
                                  [contentRefreshing]="adminsRefreshing"
                                  (pageNavigation)="doAdminPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="adminSelect($event)"
+                                 [rowTarget]="adminRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -816,7 +816,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLandingPage()">Create landing page</a>
                             </div>
                         </div>
                         <div class="card">
@@ -828,7 +828,7 @@
                                  [contentRefreshing]="landingPagesRefreshing"
                                  (pageNavigation)="doLandingPagePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="landingPageSelect($event)"
+                                 [rowTarget]="landingPageRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -842,7 +842,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLegalNotice()">Create legal notice</a>
                             </div>
                         </div>
                         <div class="card">
@@ -854,7 +854,7 @@
                                  [contentRefreshing]="legalNoticesRefreshing"
                                  (pageNavigation)="doLegalNoticePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="legalNoticeSelect($event)"
+                                 [rowTarget]="legalNoticeRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -868,7 +868,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateErrorTemplate()">Create error template</a>
                             </div>
                         </div>
                         <div class="card">
@@ -880,7 +880,7 @@
                                  [contentRefreshing]="errorTemplatesRefreshing"
                                  (pageNavigation)="doErrorTemplatePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="errorTemplateSelect($event)"
+                                 [rowTarget]="errorTemplateRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -894,7 +894,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="createThemeTarget()">Create theme</a>
                             </div>
                         </div>
                         <div class="card">
@@ -906,7 +906,7 @@
                                  [contentRefreshing]="themesRefreshing"
                                  (pageNavigation)="doThemePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="themeSelect($event)"
+                                 [rowTarget]="themeRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>

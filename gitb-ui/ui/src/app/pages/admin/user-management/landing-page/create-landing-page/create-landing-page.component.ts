@@ -66,6 +66,11 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
       this.communityId = Constants.DEFAULT_COMMUNITY_ID
       this.tooltipForDefaultCheck = 'Check this to make this landing page the default one assumed for all communities.'
     }
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.systemConfigurationBreadcrumbs()
+    } else {
+      this.routingService.communityChildBreadcrumbs(this.communityId)
+    }
     const base = this.route.snapshot.data['base'] as LandingPage|undefined
     if (base != undefined) {
       this.page.name = base.name

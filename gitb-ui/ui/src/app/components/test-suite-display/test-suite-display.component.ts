@@ -26,6 +26,7 @@ import {ReportService} from 'src/app/services/report.service';
 import {TestSuiteDisplayComponentApi} from './test-suite-display-component-api';
 import {TestCaseDisplayComponentApi} from '../test-case-display/test-case-display-component-api';
 import {Utils} from 'src/app/common/utils';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 
 @Component({
     selector: 'app-test-suite-display',
@@ -41,13 +42,16 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
   @Input() showViewDocumentation? = true
   @Input() shaded = false
   @Input() communityId?: number
+  /** When set, the "View test sessions" option is rendered as a real link to the given test case's sessions. */
+  @Input() viewSessionsTarget?: (testCase: ConformanceTestCase) => NavigationTarget
 
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()
-  @Output() viewTestSessions = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestCase = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestSuite = new EventEmitter<ConformanceTestSuite>()
   @Output() toggleExpand = new EventEmitter<boolean>()
   @Output() optionsOpened = new EventEmitter<ConformanceTestCase>()
+  /** Forwarded from the nested app-test-case-display (see its own "navigating" output). */
+  @Output() navigating = new EventEmitter<MouseEvent>()
 
   @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
 
@@ -121,8 +125,8 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
     })
   }
 
-  propagateViewTestSessions(testCase: ConformanceTestCase) {
-    this.viewTestSessions.emit(testCase)
+  propagateNavigating(event: MouseEvent) {
+    this.navigating.emit(event)
   }
 
   propagateExecuteTestSession(testCase: ConformanceTestCase) {

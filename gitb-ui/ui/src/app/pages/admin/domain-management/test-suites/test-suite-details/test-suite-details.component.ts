@@ -32,6 +32,7 @@ import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test
 import {finalize, forkJoin, Observable, tap} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
+import {NavigationTarget} from '../../../../../types/navigation-target';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
@@ -343,16 +344,21 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     return !this.loaded || this.savePending || !this.textProvided(this.testSuite?.sname)
   }
 
-	onTestCaseSelect(testCaseId: number) {
+  testCaseEditTarget = (testCase: ConformanceTestCase): NavigationTarget => {
     if (this.specificationId) {
-      this.routingService.toTestCase(this.domainId, this.specificationId!, this.testSuiteId, testCaseId)
+      return this.routingService.linkToTestCase(this.domainId, this.specificationId!, this.testSuiteId, testCase.id)
     } else {
-      this.routingService.toSharedTestCase(this.domainId, this.testSuiteId, testCaseId)
+      return this.routingService.linkToSharedTestCase(this.domainId, this.testSuiteId, testCase.id)
     }
   }
 
-  onSpecificationSelect(specification: Specification) {
-    this.routingService.toSpecification(this.domainId, specification.id)
+  /** Returns undefined while selecting specifications to unlink - row clicks then toggle the row's
+   * checkbox instead of navigating (see [allowSelect]="!selectingForUnlink" / [checkboxEnabled]). */
+  specificationRowTarget = (specification: Specification): NavigationTarget|undefined => {
+    if (this.selectingForUnlink) {
+      return undefined
+    }
+    return this.routingService.linkToSpecification(this.domainId, specification.id)
   }
 
   linkSpecifications() {

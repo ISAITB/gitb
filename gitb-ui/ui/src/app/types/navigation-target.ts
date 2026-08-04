@@ -13,16 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { NavigationTarget } from "../../types/navigation-target"
+import { NavigationExtras } from "@angular/router";
 
-export interface CheckboxOption {
+/**
+ * Describes a router destination in a form directly consumable by the `[navTarget]` directive
+ * (see `directives/nav-target.directive.ts`), i.e. the same `commands`/`extras` pair otherwise
+ * passed to `Router.navigate()`. Produced by the `RoutingService.linkToXyz()` methods so that
+ * both imperative navigation (`toXyz()`) and link-based navigation (`<a [navTarget]>`) share a
+ * single source of truth for how a URL is built.
+ */
+export interface NavigationTarget {
 
-    key: string
-    label: string
-    default: boolean
-    iconClass?: string
-    disabled?: boolean
-    /** Set only for single-selection options that navigate (e.g. "View system"), so the option is rendered as a real link. */
-    target?: NavigationTarget
+    commands: any[]
+    extras?: NavigationExtras
 
 }

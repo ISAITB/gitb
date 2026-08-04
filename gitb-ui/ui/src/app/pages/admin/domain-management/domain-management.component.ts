@@ -27,6 +27,7 @@ import {SearchResult} from '../../../types/search-result';
 import {UsageTipService} from '../../../services/usage-tip.service';
 import {BaseComponent} from '../../base-component.component';
 import {DisplayState} from '../../../types/display-state';
+import {NavigationTarget} from '../../../types/navigation-target';
 
 /** Persisted search/paging state for the Domains list - restored when returning here (e.g. via Back
  * from a domain's detail page). */
@@ -58,7 +59,7 @@ export class DomainManagementComponent extends BaseComponent implements OnInit, 
   constructor(
     public readonly dataService: DataService,
     private readonly conformanceService: ConformanceService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly usageTipService: UsageTipService
   ) { super() }
 
@@ -92,12 +93,8 @@ export class DomainManagementComponent extends BaseComponent implements OnInit, 
     }
   }
 
-	onDomainSelect(domain: Domain) {
-    this.routingService.toDomain(domain.id)
-  }
-
-  create() {
-    this.routingService.toCreateDomain()
+	domainRowTarget = (domain: Domain): NavigationTarget => {
+    return this.routingService.linkToDomain(domain.id)
   }
 
   applyFilter() {

@@ -38,6 +38,7 @@ import {PagingEvent} from '../../../../../components/paging-controls/paging-even
 import {TableApi} from '../../../../../components/table/table-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {DisplayState} from '../../../../../types/display-state';
+import {NavigationTarget} from '../../../../../types/navigation-target';
 
 /** Persisted search/paging state for the Test suites tab - restored when returning here (e.g. via
  * Back from a test suite's detail page). */
@@ -102,7 +103,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly specificationService: SpecificationService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     route: ActivatedRoute,
     router: Router,
     private readonly popupService: PopupService,
@@ -336,9 +337,6 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     return finished$.asObservable()
   }
 
-  createActor() {
-    this.routingService.toCreateActor(this.domainId, this.specificationId)
-  }
 
 	uploadTestSuite() {
     const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
@@ -438,12 +436,12 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     })
   }
 
-	onActorSelect(actor: Actor) {
-    this.routingService.toActor(this.domainId, this.specificationId, actor.id)
+	actorRowTarget = (actor: Actor): NavigationTarget => {
+    return this.routingService.linkToActor(this.domainId, this.specificationId, actor.id)
   }
 
-	onTestSuiteSelect(testSuite: TestSuite) {
-    this.routingService.toTestSuite(this.domainId, this.specificationId, testSuite.id)
+	testSuiteRowTarget = (testSuite: TestSuite): NavigationTarget => {
+    return this.routingService.linkToTestSuite(this.domainId, this.specificationId, testSuite.id)
   }
 
 	deleteSpecification() {

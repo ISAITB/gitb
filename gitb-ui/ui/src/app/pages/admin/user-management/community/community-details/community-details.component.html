@@ -26,9 +26,9 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending" [labelIcon]="Constants.BUTTON_ICON.SAVE">Save changes</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.REPORT">Manage report settings</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES">Manage configuration properties</button>
-                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.LABELS">Manage labels</button>
+                    <a class="btn btn-secondary" [navTarget]="routingService.linkToCommunityReportSettings(communityId)" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.REPORT">Manage report settings</a>
+                    <a class="btn btn-secondary" [navTarget]="routingService.linkToCommunityParameters(communityId)" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES">Manage configuration properties</a>
+                    <a class="btn btn-secondary" [navTarget]="routingService.linkToCommunityLabels(communityId)" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.LABELS">Manage labels</a>
                     @if (showBackButton) {
                         <button class="btn btn-secondary" type="button" (click)="cancelCommunityDetail()" [labelIcon]="Constants.BUTTON_ICON.BACK">Back</button>
                     }
@@ -63,7 +63,7 @@
                                         <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc)">{{sortByCreationOrderLabelDesc}}</button>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
+                                <a class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" [navTarget]="routingService.linkToCreateOrganisation(communityId)">Create {{dataService.labelOrganisationLower()}}</a>
                             </div>
                         </div>
                         <div class="card">
@@ -76,7 +76,7 @@
                                  [allowSelect]="true"
                                  (pageNavigation)="doOrganisationPaging($event)"
                                  (onSort)="sortOrganisations($event)"
-                                 (onSelect)="organisationSelect($event)"
+                                 [rowTarget]="organisationRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -90,7 +90,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create community administrator</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateCommunityAdmin(communityId)">Create community administrator</a>
                             </div>
                         </div>
                         <div class="card">
@@ -102,7 +102,7 @@
                                  [contentRefreshing]="adminsRefreshing"
                                  (pageNavigation)="doAdminPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="adminSelect($event)"
+                                 [rowTarget]="adminRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -117,9 +117,9 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLandingPage == undefined" type="button" class="btn btn-secondary" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLandingPage == undefined" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLandingPage(communityId, true)">Copy Test Bed landing page</a>
                                 }
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage(false)">Create landing page</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLandingPage(communityId, false)">Create landing page</a>
                             </div>
                         </div>
                         <div class="card">
@@ -131,7 +131,7 @@
                                  [contentRefreshing]="landingPagesRefreshing"
                                  (pageNavigation)="doLandingPagePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="landingPageSelect($event)"
+                                 [rowTarget]="landingPageRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -146,9 +146,9 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLegalNotice == undefined" type="button" class="btn btn-secondary" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLegalNotice == undefined" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLegalNotice(communityId, true)">Copy Test Bed legal notice</a>
                                 }
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice(false)">Create legal notice</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLegalNotice(communityId, false)">Create legal notice</a>
                             </div>
                         </div>
                         <div class="card">
@@ -160,7 +160,7 @@
                                  [contentRefreshing]="legalNoticesRefreshing"
                                  (pageNavigation)="doLegalNoticePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="legalNoticeSelect($event)"
+                                 [rowTarget]="legalNoticeRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -175,9 +175,9 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedErrorTemplate == undefined" type="button" class="btn btn-secondary" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedErrorTemplate == undefined" class="btn btn-secondary" [navTarget]="routingService.linkToCreateErrorTemplate(communityId, true)">Copy Test Bed error template</a>
                                 }
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate(false)">Create error template</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateErrorTemplate(communityId, false)">Create error template</a>
                             </div>
                         </div>
                         <div class="card">
@@ -189,7 +189,7 @@
                                  [contentRefreshing]="errorTemplatesRefreshing"
                                  (pageNavigation)="doErrorTemplatePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="errorTemplateSelect($event)"
+                                 [rowTarget]="errorTemplateRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -203,7 +203,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTrigger()">Create webhook</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateTrigger(communityId)">Create webhook</a>
                             </div>
                         </div>
                         <div class="card">
@@ -215,7 +215,7 @@
                                  [contentRefreshing]="triggersRefreshing"
                                  (pageNavigation)="doTriggerPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="triggerSelect($event)"
+                                 [rowTarget]="triggerRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>

@@ -26,6 +26,8 @@ import {StatementOptionsButtonApi} from './statement-options-button-api';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Constants} from '../../common/constants';
+import {NavigationTarget} from '../../types/navigation-target';
+import {Utils} from '../../common/utils';
 
 @Component({
   selector: 'app-statement-options-button',
@@ -112,23 +114,23 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
         optionState.push(reportOptions)
         const viewOptions: CheckboxOption[] = []
         if (this.item.systemId != undefined && this.item.systemId >= 0) {
-          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SYSTEM, label: `View ${this.dataService.labelSystemLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
+          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SYSTEM, label: `View ${this.dataService.labelSystemLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO, target: this.systemTarget()})
         }
         if (this.organisationId != undefined && this.organisationId >= 0) {
-          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ORGANISATION, label: `View ${this.dataService.labelOrganisationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
+          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ORGANISATION, label: `View ${this.dataService.labelOrganisationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO, target: this.organisationTarget()})
         }
         if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
           if (this.communityId != undefined && this.communityId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_COMMUNITY, label: 'View community', default: true, iconClass: Constants.BUTTON_ICON.GO})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_COMMUNITY, label: 'View community', default: true, iconClass: Constants.BUTTON_ICON.GO, target: this.routingService.linkToCommunity(this.communityId)})
           }
           if (this.item.actorId != undefined && this.item.actorId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ACTOR, label: `View ${this.dataService.labelActorLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ACTOR, label: `View ${this.dataService.labelActorLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO, target: this.routingService.linkToActor(this.item.domainId, this.item.specificationId, this.item.actorId)})
           }
           if (this.item.specificationId != undefined && this.item.specificationId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SPECIFICATION, label: `View ${this.dataService.labelSpecificationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SPECIFICATION, label: `View ${this.dataService.labelSpecificationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO, target: this.routingService.linkToSpecification(this.item.domainId, this.item.specificationId)})
           }
           if (this.item.domainId != undefined && this.item.domainId >= 0 && (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined))) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_DOMAIN, label: `View ${this.dataService.labelDomainLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_DOMAIN, label: `View ${this.dataService.labelDomainLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO, target: this.routingService.linkToDomain(this.item.domainId)})
           }
           if (viewOptions.length > 0) {
             optionState.push(viewOptions)
@@ -145,29 +147,16 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     )
   }
 
+  /**
+   * The "View X" options are no longer reported here - they navigate via their own [navTarget]
+   * link (see loadAvailableOptions()/organisationTarget()/systemTarget()), so only the remaining
+   * (non-navigating) actions are handled.
+   */
   handleOption(event: CheckboxOptionState) {
     if (event[StatementOptionsButtonComponent.EXPORT_XML]) {
       this.export.emit({ item: this.item, format: 'xml' })
     } else if (event[StatementOptionsButtonComponent.EXPORT_PDF]) {
       this.export.emit({ item: this.item, format: 'pdf' })
-    } else if (event[StatementOptionsButtonComponent.VIEW_COMMUNITY]) {
-      this.routingService.recordViewReturnTarget()
-      this.toCommunity()
-    } else if (event[StatementOptionsButtonComponent.VIEW_ORGANISATION]) {
-      this.routingService.recordViewReturnTarget()
-      this.toOrganisation()
-    } else if (event[StatementOptionsButtonComponent.VIEW_SYSTEM]) {
-      this.routingService.recordViewReturnTarget()
-      this.toSystem()
-    } else if (event[StatementOptionsButtonComponent.VIEW_DOMAIN]) {
-      this.routingService.recordViewReturnTarget()
-      this.toDomain()
-    } else if (event[StatementOptionsButtonComponent.VIEW_SPECIFICATION]) {
-      this.routingService.recordViewReturnTarget()
-      this.toSpecification()
-    } else if (event[StatementOptionsButtonComponent.VIEW_ACTOR]) {
-      this.routingService.recordViewReturnTarget()
-      this.toActor()
     } else if (event[StatementOptionsButtonComponent.COPY_BADGE_URL]) {
       this.pending = true
       this.conformanceService.copyBadgeURL(this.item.systemId, this.item.actorId, this.snapshotId).subscribe(() => {
@@ -184,37 +173,33 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     }
   }
 
-  private toCommunity() {
-    this.routingService.toCommunity(this.communityId!)
+  /**
+   * Called for the "View X" options (which navigate via their own [navTarget]) so the "return to
+   * source" location can still be recorded before leaving this page - guarded to a plain
+   * (unmodified, primary-button) click since a modified click opens the destination in a new
+   * tab/window rather than navigating away from this one.
+   */
+  optionNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
+    }
   }
 
-  private toOrganisation() {
+  private organisationTarget(): NavigationTarget {
     if (this.organisationId == this.dataService.vendor!.id) {
       // Own organisation
-      this.routingService.toOwnOrganisationDetails()
+      return this.routingService.linkToOwnOrganisationDetails()
     } else {
-      this.routingService.toOrganisationDetails(this.communityId!, this.organisationId!)
+      return this.routingService.linkToOrganisationDetails(this.communityId!, this.organisationId!)
     }
   }
 
-  private toSystem() {
+  private systemTarget(): NavigationTarget {
     if (this.organisationId == this.dataService.vendor!.id) {
-      this.routingService.toOwnSystemDetails(this.item.systemId)
+      return this.routingService.linkToOwnSystemDetails(this.item.systemId)
     } else {
-      this.routingService.toSystemDetails(this.communityId!, this.organisationId!, this.item.systemId)
+      return this.routingService.linkToSystemDetails(this.communityId!, this.organisationId!, this.item.systemId)
     }
-  }
-
-  private toActor() {
-    this.routingService.toActor(this.item.domainId, this.item.specificationId, this.item.actorId)
-  }
-
-  private toSpecification() {
-    this.routingService.toSpecification(this.item.domainId, this.item.specificationId)
-  }
-
-  private toDomain() {
-    this.routingService.toDomain(this.item.domainId)
   }
 
   protected readonly Constants = Constants;

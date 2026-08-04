@@ -149,6 +149,7 @@
                                     (selectionChanged)="onStatementSelect($event)"
                                     (export)="onExportConformanceItem($event)"
                                     (testStatusOpened)="manageTestStatusOpened($event)"
+                                    (navigating)="onStatementNavigating($event)"
                                 ></app-conformance-statement-items-display>
                             </div>
                         }
@@ -176,7 +177,8 @@
                                              (searchChange)="listViewSearching($event)"
                                              (exportChange)="listViewExportChange($event)"
                                              (filterLoading)="onFilterLoading($event)"
-                                             (select)="onStatementSelectFromListView($event)"></app-conformance-statement-table>
+                                             [rowTarget]="listViewStatementRowTarget"
+                                             (navigating)="onStatementNavigating($event)"></app-conformance-statement-table>
         }
     </div>
 </div>

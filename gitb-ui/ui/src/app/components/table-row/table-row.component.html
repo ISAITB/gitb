@@ -62,34 +62,43 @@
     <ng-template [ngTemplateOutlet]="columnCell" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-template>
 }
 
+<ng-template #cellContent let-item let-col="col">
+    @if (col.iconFn) {
+        <span class="d-flex">
+        @if (col.iconTooltipFn != undefined) {
+            <i [ngClass]="col.iconFn!(item.data)" tooltipClass="shortTooltip" [ngbTooltip]="col.iconTooltipFn!(item.data)"></i>
+        } @else {
+            <i [ngClass]="col.iconFn!(item.data)"></i>
+        }
+        </span>
+    } @else {
+        @if (item.boolean) {
+            @if (item.isHiddenFlag) {
+                @if (item.data) {
+                    <app-hidden-icon></app-hidden-icon>
+                }
+            } @else {
+                <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
+            }
+        } @else if (item.data != undefined && col.tag === true) {
+            <app-tag [label]="col.tagIcon" [icon]="true" [tooltipText]="col.tagTooltip" [value]="item.data" [inTable]="true"></app-tag>
+        } @else if (item.data != undefined && col.tagData === true) {
+            <app-tags-display [tags]="item.data"></app-tags-display>
+        } @else {
+            {{item.data}}
+        }
+    }
+</ng-template>
 <ng-template #columnCell let-item let-col="col">
     <td class="{{item.class}}">
-        <div class="cell-content">
-            @if (col.iconFn) {
-                <span class="d-flex">
-                @if (col.iconTooltipFn != undefined) {
-                    <i [ngClass]="col.iconFn!(item.data)" tooltipClass="shortTooltip" [ngbTooltip]="col.iconTooltipFn!(item.data)"></i>
-                } @else {
-                    <i [ngClass]="col.iconFn!(item.data)"></i>
-                }
-                </span>
-            } @else {
-                @if (item.boolean) {
-                    @if (item.isHiddenFlag) {
-                        @if (item.data) {
-                            <app-hidden-icon></app-hidden-icon>
-                        }
-                    } @else {
-                        <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
-                    }
-                } @else if (item.data != undefined && col.tag === true) {
-                    <app-tag [label]="col.tagIcon" [icon]="true" [tooltipText]="col.tagTooltip" [value]="item.data" [inTable]="true"></app-tag>
-                } @else if (item.data != undefined && col.tagData === true) {
-                    <app-tags-display [tags]="item.data"></app-tags-display>
-                } @else {
-                    {{item.data}}
-                }
-            }
-        </div>
+        @if (target) {
+            <a class="cell-content plain-link" [navTarget]="target" (click)="cellClicked($event);$event.stopPropagation()">
+                <ng-container [ngTemplateOutlet]="cellContent" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-container>
+            </a>
+        } @else {
+            <div class="cell-content">
+                <ng-container [ngTemplateOutlet]="cellContent" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-container>
+            </div>
+        }
     </td>
 </ng-template>

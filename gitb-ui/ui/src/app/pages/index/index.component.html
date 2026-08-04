@@ -37,25 +37,25 @@
             <div class="page-root" [class.disable-events]="logoutInProgress">
                 @if (dataService.showNavigationControls) {
                     <div class="page-menu">
-                        <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home"
+                        <app-menu-item [target]="routingService.linkToHome()" [type]="MenuItem.home" label="Home"
                                        [icon]="Constants.BUTTON_ICON.LANDING_PAGE" [expanded]="dataService.menuVisibility"></app-menu-item>
                         @if (dataService.showSystemAdminMenu || dataService.showCommunityAdminMenu) {
                             <app-menu-group label="Administration" [expanded]="dataService.menuVisibility"></app-menu-group>
-                            <app-menu-item (click)="routingService.toConformanceDashboard()"
+                            <app-menu-item [target]="routingService.linkToConformanceDashboard()"
                                            [type]="MenuItem.conformanceDashboard" label="Conformance dashboard"
                                            [icon]="Constants.BUTTON_ICON.CONFORMANCE_DASHBOARD"
                                            [expanded]="dataService.menuVisibility"></app-menu-item>
-                            <app-menu-item (click)="routingService.toSessionDashboard()"
+                            <app-menu-item [target]="routingService.linkToSessionDashboard()"
                                            [type]="MenuItem.sessionDashboard" label="Session dashboard"
                                            [icon]="Constants.BUTTON_ICON.SESSION_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
-                            <app-menu-item (click)="toDomainManagement()" [type]="MenuItem.domainManagement"
+                            <app-menu-item [target]="domainManagementTarget()" [type]="MenuItem.domainManagement"
                                            [label]="dataService.labelDomain() +' management'"
                                            [icon]="Constants.BUTTON_ICON.DOMAIN"
                                            [expanded]="dataService.menuVisibility"></app-menu-item>
-                            <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)"
+                            <app-menu-item [target]="communityManagementTarget()"
                                            [type]="MenuItem.communityManagement" label="Community management"
                                            [icon]="Constants.BUTTON_ICON.COMMUNITY_MANAGEMENT" [expanded]="dataService.menuVisibility"></app-menu-item>
-                            <app-menu-item (click)="routingService.toDataManagement()" [type]="MenuItem.dataManagement"
+                            <app-menu-item [target]="routingService.linkToDataManagement()" [type]="MenuItem.dataManagement"
                                            label="Data management"
                                            [expanded]="dataService.menuVisibility">
                                 <ng-template>
@@ -69,31 +69,31 @@
                             </app-menu-item>
                             @if (dataService.showSystemAdminMenu || dataService.showCommunityAdminMenu) {
                                 @if (dataService.showSystemAdminMenu) {
-                                    <app-menu-item (click)="routingService.toSystemAdministration()"
+                                    <app-menu-item [target]="routingService.linkToSystemAdministration()"
                                                    [type]="MenuItem.systemAdministration" label="System administration"
                                                    [icon]="Constants.BUTTON_ICON.SYSTEM_ADMINISTRATION" [expanded]="dataService.menuVisibility"></app-menu-item>
                                 }
-                                <app-menu-item (click)="routingService.toServiceHealthDashboard()"
+                                <app-menu-item [target]="routingService.linkToServiceHealthDashboard()"
                                                [type]="MenuItem.serviceHealthDashboard" label="Service health"
                                                [icon]="Constants.BUTTON_ICON.HEALTH_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
                             }
                         }
                         @if (dataService.showCommunityViewMenu) {
                             <app-menu-group label="My community" [expanded]="dataService.menuVisibility"></app-menu-group>
-                            <app-menu-item (click)="routingService.toCommunitySessionDashboard()"
+                            <app-menu-item [target]="routingService.linkToCommunitySessionDashboard()"
                                            [type]="MenuItem.communitySessionDashboard" label="Community test sessions"
                                            [icon]="Constants.BUTTON_ICON.SESSION_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
                         }
                         <app-menu-group label="My tests" [expanded]="dataService.menuVisibility"></app-menu-group>
-                        <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)"
+                        <app-menu-item [target]="routingService.linkToOwnConformanceStatements(dataService.vendor?.id ?? -1)"
                                        [type]="MenuItem.myConformanceStatements"
                                        label="My conformance statements"
                                        [icon]="Constants.BUTTON_ICON.CONFORMANCE_STATEMENT" [expanded]="dataService.menuVisibility"></app-menu-item>
-                        <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)"
+                        <app-menu-item [target]="routingService.linkToTestHistory(dataService.vendor?.id ?? -1)"
                                        [type]="MenuItem.myTestSessions"
                                        label="My test sessions"
                                        [icon]="Constants.BUTTON_ICON.MY_SESSION_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
-                        <app-menu-item (click)="routingService.toOwnOrganisationDetails()"
+                        <app-menu-item [target]="routingService.linkToOwnOrganisationDetails()"
                                        [type]="MenuItem.myOrganisation"
                                        [label]="'My '+dataService.labelOrganisationLower()"
                                        [icon]="Constants.BUTTON_ICON.ORGANISATION"

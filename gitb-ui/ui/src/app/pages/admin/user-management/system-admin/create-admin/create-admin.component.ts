@@ -56,6 +56,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   }
 
   ngOnInit(): void {
+    this.routingService.systemConfigurationBreadcrumbs()
     this.isSSO = this.dataService.configuration.ssoEnabled
   }
 

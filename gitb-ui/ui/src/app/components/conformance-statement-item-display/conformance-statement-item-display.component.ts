@@ -32,6 +32,8 @@ import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
 import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {RoutingService} from '../../services/routing.service';
+import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -65,6 +67,8 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() selected = new EventEmitter<number>()
   @Output() testStatusOpened = new EventEmitter<TestStatusBaseApi>()
+  /** Emitted when a leaf item's link is clicked (see leafTarget()), so a root consumer can still run a pre-navigation side effect (e.g. recording a "return to source" location). */
+  @Output() navigating = new EventEmitter<MouseEvent>()
 
   @ViewChild('itemsComponent') itemsComponents?: ConformanceStatementItemsDisplayComponentApi
   @ViewChild("testStatusDisplay") testStatusDisplay?: TestStatusBaseApi
@@ -92,7 +96,8 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   parentItemOptions?: CheckboxOption[][]
 
   constructor(
-    public readonly dataService: DataService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService
   ) { super() }
 
   documentEscape(): void {
@@ -206,6 +211,37 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
       }
     }
     return undefined
+  }
+
+  /**
+   * A leaf item (no children, or a group whose children are all hidden - see clickHeader()) whose
+   * click currently navigates to the conformance statement detail page (as opposed to toggling a
+   * bulk-selection checkbox - see the withCheck input, e.g. used when picking actors to create
+   * statements for) is rendered as a real link, with this as its target. Returns undefined for
+   * group/parent entries (which expand/collapse instead) and whenever this component is used in a
+   * bulk-selection context (withCheck), matching the two branches of clickHeader().
+   */
+  leafTarget(): NavigationTarget|undefined {
+    if (this.withCheck || (this.hasChildren && !this.allChildrenHidden)) {
+      return undefined
+    }
+    if (this.organisationId == undefined || this.systemId == undefined || this.actorId == undefined) {
+      return undefined
+    }
+    if (this.communityId == undefined) {
+      return this.routingService.linkToOwnConformanceStatement(this.organisationId, this.systemId, this.actorId, this.snapshotId)
+    } else {
+      return this.routingService.linkToConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId, this.snapshotId)
+    }
+  }
+
+  leafClicked(event: MouseEvent) {
+    this.dataService.signalButtonPopup(undefined) // Call to make sure an open options popup is always closed
+    this.navigating.emit(event)
+  }
+
+  propagateNavigating(event: MouseEvent) {
+    this.navigating.emit(event)
   }
 
   clickHeader() {

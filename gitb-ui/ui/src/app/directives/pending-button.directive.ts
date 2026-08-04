@@ -17,7 +17,7 @@ import {AfterViewInit, Directive, ElementRef, Input, Renderer2} from '@angular/c
 import {Constants} from '../common/constants';
 
 @Directive({
-    selector: 'button[pending], button[labelIcon]',
+    selector: 'button[pending], button[labelIcon], a[pending], a[labelIcon]',
     standalone: false
 })
 export class PendingButtonDirective implements AfterViewInit {
@@ -31,11 +31,14 @@ export class PendingButtonDirective implements AfterViewInit {
   private labelIconSpan: any
   private originalContent: any
   private rendered = false
+  private readonly isAnchor: boolean
 
   constructor(
     private readonly renderer: Renderer2,
     private readonly elementRef: ElementRef
-  ) { }
+  ) {
+    this.isAnchor = this.elementRef.nativeElement.tagName === 'A'
+  }
 
   ngAfterViewInit(): void {
     this.rendered = true
@@ -83,7 +86,7 @@ export class PendingButtonDirective implements AfterViewInit {
   private applyStatus() {
     if (this.rendered) {
       if (this._disable) {
-        this.renderer.setAttribute(this.elementRef.nativeElement, 'disabled', 'disabled')
+        this.setDisabledState(true)
       }
       if (this._pending) {
         // this.renderer.addClass(this.elementRef.nativeElement, 'pending')
@@ -91,7 +94,7 @@ export class PendingButtonDirective implements AfterViewInit {
           this.renderer.addClass(this.labelIconSpan, 'hidden')
         }
         this.renderer.removeClass(this.pendingSpan, 'hidden')
-        this.renderer.setAttribute(this.elementRef.nativeElement, 'disabled', 'disabled')
+        this.setDisabledState(true)
         if (this.icon) {
           // Hide the original content
           this.renderer.addClass(this.originalContent, 'hidden')
@@ -107,8 +110,35 @@ export class PendingButtonDirective implements AfterViewInit {
           this.renderer.removeClass(this.originalContent, 'hidden')
         }
         if (!this._disable) {
-          this.renderer.removeAttribute(this.elementRef.nativeElement, 'disabled')
+          this.setDisabledState(false)
         }
+      }
+    }
+  }
+
+  /**
+   * The `disabled` attribute only has an effect on form controls, not on `<a>` elements (which is
+   * what navigation controls converted to links use). For anchors we instead mirror Bootstrap's
+   * own disabled-link convention: a `.disabled` class (which, combined with `.btn`/`.dropdown-item`
+   * etc., already sets `pointer-events: none`), plus `aria-disabled` and removal from the tab order
+   * for assistive tech and keyboard users.
+   */
+  private setDisabledState(disabled: boolean) {
+    if (this.isAnchor) {
+      if (disabled) {
+        this.renderer.addClass(this.elementRef.nativeElement, 'disabled')
+        this.renderer.setAttribute(this.elementRef.nativeElement, 'aria-disabled', 'true')
+        this.renderer.setAttribute(this.elementRef.nativeElement, 'tabindex', '-1')
+      } else {
+        this.renderer.removeClass(this.elementRef.nativeElement, 'disabled')
+        this.renderer.removeAttribute(this.elementRef.nativeElement, 'aria-disabled')
+        this.renderer.removeAttribute(this.elementRef.nativeElement, 'tabindex')
+      }
+    } else {
+      if (disabled) {
+        this.renderer.setAttribute(this.elementRef.nativeElement, 'disabled', 'disabled')
+      } else {
+        this.renderer.removeAttribute(this.elementRef.nativeElement, 'disabled')
       }
     }
   }

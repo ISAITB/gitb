@@ -26,6 +26,7 @@ import {CommunityLimited} from '../../../types/community-limited';
 import {UsageTipService} from '../../../services/usage-tip.service';
 import {BaseComponent} from '../../base-component.component';
 import {DisplayState} from '../../../types/display-state';
+import {NavigationTarget} from '../../../types/navigation-target';
 
 /** Persisted search/paging state for the Communities list - restored when returning here (e.g. via
  * Back from a community's detail page). */
@@ -56,7 +57,7 @@ export class UserManagementComponent extends BaseComponent implements OnInit, Af
   constructor(
     private readonly dataService: DataService,
     private readonly communityService: CommunityService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly usageTipService: UsageTipService
   ) { super() }
 
@@ -93,14 +94,10 @@ export class UserManagementComponent extends BaseComponent implements OnInit, Af
     }
   }
 
-  communitySelect(community: Community) {
-    this.routingService.toCommunity(community.id)
+  communityRowTarget = (community: Community): NavigationTarget => {
+    return this.routingService.linkToCommunity(community.id)
   }
 
-
-  createCommunity() {
-    this.routingService.toCreateCommunity()
-  }
 
   loadCommunities(pagingInfo: PagingEvent) {
     if (this.communityStatus.status == Constants.STATUS.FINISHED) {

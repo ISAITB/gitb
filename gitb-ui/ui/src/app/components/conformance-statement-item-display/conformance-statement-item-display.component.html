@@ -23,11 +23,12 @@
                 (export)="onExport($event)"
                 (selected)="childSelected($event)"
                 (testStatusOpened)="manageAndPropagateTestStatusOpened($event)"
+                (navigating)="propagateNavigating($event)"
             ></app-conformance-statement-items-display>
         }
     } @else {
         <div class="item-container" [class.shade]="shade">
-            <div class="item-header" (click)="clickHeader();$event.stopPropagation()" [class.actionable]="expandable || withCheck" [class.wrapDescriptions]="wrapDescriptions">
+            <ng-template #headerContent>
                 <div class="item-header-title">
                     @if (expandable && hasChildren && !allChildrenHidden) {
                         <div class="item-icon"><app-collapsing-icon [isCollapsed]="item.collapsed!" [asDiv]="true"></app-collapsing-icon></div>
@@ -67,7 +68,7 @@
                             </div>
                         }
                         @if (updateTime) {
-                            <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
+                            <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="Last update time" [value]="updateTime" (click)="$event.stopPropagation();$event.preventDefault()"></app-tag>
                         }
                         @if (counters) {
                             <div class="item-counters">
@@ -95,7 +96,16 @@
                         }
                     </div>
                 }
-            </div>
+            </ng-template>
+            @if (leafTarget(); as target) {
+                <a class="item-header actionable plain-link" [class.wrapDescriptions]="wrapDescriptions" [navTarget]="target" (click)="leafClicked($event);$event.stopPropagation()">
+                    <ng-container [ngTemplateOutlet]="headerContent"></ng-container>
+                </a>
+            } @else {
+                <div class="item-header" (click)="clickHeader();$event.stopPropagation()" [class.actionable]="expandable || withCheck" [class.wrapDescriptions]="wrapDescriptions">
+                    <ng-container [ngTemplateOutlet]="headerContent"></ng-container>
+                </div>
+            }
             @if (item.items && item.items.length > 0) {
                 <div [ngbCollapse]="item.collapsed!" [animation]="expandable && animated" (shown)="expanded()" (hidden)="collapses()">
                     <div class="item-content-container item-content">
@@ -121,6 +131,7 @@
                             (export)="onExport($event)"
                             (selected)="childSelected($event)"
                             (testStatusOpened)="manageAndPropagateTestStatusOpened($event)"
+                            (navigating)="propagateNavigating($event)"
                         ></app-conformance-statement-items-display>
                     </div>
                 </div>

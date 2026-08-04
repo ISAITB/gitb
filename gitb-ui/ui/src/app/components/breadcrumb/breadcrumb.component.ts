@@ -22,6 +22,7 @@ import {BreadcrumbService} from 'src/app/services/breadcrumb.service';
 import {BreadcrumbLabelRequest} from 'src/app/types/breadcrumb-label-request';
 import {Subscription} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-breadcrumb',
@@ -51,7 +52,8 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     this.homeCrumb = {
       label: 'Home',
       type: BreadcrumbType.home,
-      action: () => this.routingService.toHome()
+      action: () => this.routingService.toHome(),
+      target: this.routingService.linkToHome()
     }
     this.breadcrumbSubscription = this.dataService.onBreadcrumbChange$.subscribe((info) => {
       setTimeout(() => {
@@ -168,10 +170,15 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     }
   }
 
-  breadcrumbClicked(crumb: BreadcrumbItem) {
-    if (crumb.action) {
+  /**
+   * Navigation itself is now handled by the crumb's own [navTarget] (a real router link) - this
+   * only clears display state, and only for a plain (unmodified, primary-button) click: a
+   * ctrl/cmd/shift/alt click or middle-click still fires this "click" handler even though the
+   * crumb opens in a new tab/window rather than navigating away from the current one.
+   */
+  breadcrumbClicked(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
       this.dataService.clearAllDisplayStates()
-      crumb.action()
     }
   }
 

@@ -17,7 +17,7 @@
                     <app-multi-select-filter class="flex-grow-1" [(ngModel)]="community.domain" [config]="domainSelectionConfig" (apply)="domainChanged()"></app-multi-select-filter>
                 </div>
                 <div class="col-auto">
-                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" [disable]="community.domainId == undefined" (click)="viewDomain()">View</button>
+                    <a [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" [disable]="community.domainId == undefined" [navTarget]="viewDomainTarget()" (click)="optionNavigating($event)">View</a>
                 </div>
             </div>
         </div>
@@ -239,7 +239,7 @@
                                     <app-multi-select-filter class="flex-grow-1" [config]="selfRegDefaultOrganisationSelectionConfig" (apply)="selfRegDefaultOrganisationSelected($event)"></app-multi-select-filter>
                                 </div>
                                 <div class="col-auto">
-                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" [disable]="community.selfRegDefaultOrganisation == undefined" (click)="viewSelfRegDefaultOrganisation()">View</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" [disable]="community.selfRegDefaultOrganisation == undefined" [navTarget]="viewSelfRegDefaultOrganisationTarget()" (click)="optionNavigating($event)">View</a>
                                 </div>
                             </div>
                         </div>
