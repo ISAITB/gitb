@@ -1335,4 +1335,28 @@
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-66010</vulnerabilityName>
     </suppress>
+    <suppress>
+        <!-- CVE relates to MySQL Connector/Net. -->
+        <notes><![CDATA[
+    file name: mysql-connector-j-9.7.0.jar
+    ]]></notes>
+        <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
+        <cve>CVE-2026-60193</cve>
+    </suppress>
+    <suppress>
+        <!-- CVE relates to MySQL Connector/Net. -->
+        <notes><![CDATA[
+    file name: mysql-connector-j-9.7.0.jar
+    ]]></notes>
+        <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
+        <cve>CVE-2026-60192</cve>
+    </suppress>
+    <suppress>
+        <!-- CVE relates to MySQL Connector/Net. -->
+        <notes><![CDATA[
+    file name: mysql-connector-j-9.7.0.jar
+    ]]></notes>
+        <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
+        <cve>CVE-2026-60317</cve>
+    </suppress>
 </suppressions>
