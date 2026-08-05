@@ -148,6 +148,20 @@ a.scroll-to-top.visible {
 	position: relative;
 }
 
+html {
+	background-color: var(--itb-footer-background-color);
+}
+
+.page.index {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+	min-height: 100dvh;
+	& > .child {
+		flex: 1 0 auto;
+	}
+}
+
 .page-root {
 	.page-with-margins {
 		margin: @page-content-margin-under-root
@@ -504,11 +518,18 @@ div.non-padded-alert div.alert {
     background-color: var(--itb-footer-background-color);
     border-top-color: var(--itb-footer-border-color);
     font-size: 0.9em;
-    min-height: 60px;
 	display: flex;
+	flex: 0 0 auto;
 	border-top-width: 4px;
 	border-top-style: solid;
-    .container, .version-div .footer-links {
+    .container {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    .version-div .footer-links {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
