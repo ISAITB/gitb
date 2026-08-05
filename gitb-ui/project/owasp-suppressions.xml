@@ -1359,4 +1359,36 @@
         <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
         <cve>CVE-2026-60317</cve>
     </suppress>
+    <suppress>
+        <!-- CVEs with low risk of exploit due to the stated preconditions. -->
+        <notes><![CDATA[
+    file name: mysql-connector-j-9.7.0.jar
+    ]]></notes>
+        <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
+        <cve>CVE-2026-60586</cve>
+    </suppress>
+    <suppress>
+        <!-- CVEs with low risk of exploit due to the stated preconditions. -->
+        <notes><![CDATA[
+    file name: mysql-connector-j-9.7.0.jar
+    ]]></notes>
+        <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
+        <cve>CVE-2026-60623</cve>
+    </suppress>
+    <suppress>
+        <!-- CVEs with low risk of exploit due to the stated preconditions. -->
+        <notes><![CDATA[
+    file name: mysql-connector-j-9.7.0.jar
+    ]]></notes>
+        <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
+        <cve>CVE-2026-60624</cve>
+    </suppress>
+    <suppress>
+        <!-- CVEs with low risk of exploit due to the stated preconditions. -->
+        <notes><![CDATA[
+    file name: mysql-connector-j-9.7.0.jar
+    ]]></notes>
+        <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
+        <cve>CVE-2026-61082</cve>
+    </suppress>
 </suppressions>
