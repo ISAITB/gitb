@@ -469,6 +469,7 @@ GET     /api/rest/tests/status                                   @controllers.re
 POST    /api/rest/tests/status                                   @controllers.rest.TestAutomationService.status()
 GET     /api/rest/tests/report/:sessionId                        @controllers.rest.TestAutomationService.report(sessionId: String)
 POST    /api/rest/testsuite/deploy                               @controllers.rest.TestSuiteAutomationService.deploy()
+POST    /api/rest/testsuite/validate                             @controllers.rest.TestSuiteAutomationService.validate()
 POST    /api/rest/testsuite/undeploy                             @controllers.rest.TestSuiteAutomationService.undeploy()
 POST    /api/rest/testsuite/deployShared                         @controllers.rest.TestSuiteAutomationService.deployShared()
 POST    /api/rest/testsuite/undeployShared                       @controllers.rest.TestSuiteAutomationService.undeployShared()

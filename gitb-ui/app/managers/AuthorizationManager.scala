@@ -216,6 +216,22 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
+  private def restApiEnabledAndValidDevelopmentKeyDefined(request: RequestWithAttributes[_]): Future[Boolean] = {
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
+      if (apiKey.isDefined) {
+        // Check to see that the API key is the development API key.
+        systemConfigurationManager.getSystemConfigurationAsync(Constants.RestApiDevelopmentKey).map { developmentApiKey =>
+          developmentApiKey.flatMap(_.parameter).isDefined && developmentApiKey.get.parameter.get == apiKey.get
+        }
+      } else {
+        Future.successful(false)
+      }
+    } else {
+      Future.successful(false)
+    }
+  }
+
   def canManageActorThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = restApiEnabledAndValidCommunityKeyDefined(request)
     check.map(setAuthResult(request, _, "You are not allowed to manage actors through the automation API"))
@@ -365,6 +381,24 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = restApiEnabledAndValidCommunityKeyDefined(request)
     check.map(setAuthResult(request, _, "You are not allowed to manage test suites through the automation API"))
+  }
+
+  def canValidateTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    // Accept the development, community or master API key - validation is read-only and has no side-effects.
+    val check = restApiEnabledAndValidDevelopmentKeyDefined(request).flatMap { validDevelopmentKey =>
+      if (validDevelopmentKey) {
+        Future.successful(true)
+      } else {
+        restApiEnabledAndValidCommunityKeyDefined(request).flatMap { validCommunityKey =>
+          if (validCommunityKey) {
+            Future.successful(true)
+          } else {
+            restApiEnabledAndValidMasterKeyDefined(request)
+          }
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "You are not allowed to validate test suites through the automation API"))
   }
 
   def canSelfRegister(request: RequestWithAttributes[_], communityId: Long, selfRegToken: Option[String], templateId: Option[Long]): Future[Boolean] = {

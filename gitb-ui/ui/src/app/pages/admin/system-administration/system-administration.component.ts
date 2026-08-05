@@ -201,6 +201,8 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   restApiEndpointLimitsEnabled = false
   restApiAdminKey!: string
   updateRestApiAdminKeyPending = false
+  restApiDevelopmentKey!: string
+  updateRestApiDevelopmentKeyPending = false
 
   // Demo account
   demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
@@ -357,6 +359,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           case Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY:
             // REST API admin key.
             this.restApiAdminKey = configItem.parameter!
+            break
+          case Constants.SYSTEM_CONFIG.REST_API_DEVELOPMENT_KEY:
+            // REST API development key.
+            this.restApiDevelopmentKey = configItem.parameter!
             break
           case Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED:
             // Self registration.
@@ -1068,6 +1074,22 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         }
       }).add(() => {
         this.updateRestApiAdminKeyPending = false
+      })
+    })
+  }
+
+  updateRestApiDevelopmentKey() {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for the development API key?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
+    .subscribe(() => {
+      this.updateRestApiDevelopmentKeyPending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_DEVELOPMENT_KEY)
+      .subscribe((data) => {
+        if (data?.parameter) {
+          this.restApiDevelopmentKey = data.parameter
+          this.popupService.success("API key updated.")
+        }
+      }).add(() => {
+        this.updateRestApiDevelopmentKeyPending = false
       })
     })
   }

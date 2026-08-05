@@ -65,7 +65,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
   private final val editableSystemConfigurationTypes = Set(
-    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
+    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiDevelopmentKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
     Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips,
     Constants.TestServiceCallbacks, Constants.ReportSettings
@@ -403,6 +403,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       Some(JsonUtil.jsRestApiLimits(rateApiLimits.get, withDescriptions = false).toString())
     } else if (name == Constants.RestApiAdminKey && providedValue.isEmpty) {
       Some(CryptoUtil.generateApiKey())
+    } else if (name == Constants.RestApiDevelopmentKey && providedValue.isEmpty) {
+      Some(CryptoUtil.generateApiKey())
     } else if (name == Constants.UsageTips && providedValue.isDefined) {
       var config = JsonUtil.parseJsUsageTipsConfiguration(providedValue.get)
       if (!config.enabled) {
@@ -446,6 +448,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             Configurations.AUTOMATION_API_MASTER_KEY = value
             DBIO.successful(value.map(_ => {
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiAdminKey, value, None), defaultSetting = false, environmentSetting = false)
+            }))
+          case Constants.RestApiDevelopmentKey =>
+            Configurations.AUTOMATION_API_DEVELOPMENT_KEY = value
+            repositoryUtils.updateDevelopmentApiKeyFile(value)
+            DBIO.successful(value.map(_ => {
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiDevelopmentKey, value, None), defaultSetting = false, environmentSetting = false)
             }))
           case Constants.RestApiRateLimits =>
             val settings = rateApiLimits match {

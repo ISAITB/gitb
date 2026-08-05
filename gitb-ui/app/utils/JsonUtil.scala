@@ -1385,6 +1385,19 @@ object JsonUtil {
     (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite, showIdentifiers), archiveSource)
   }
 
+  def parseJsTestSuiteValidateRequest(jsonConfig: JsValue): models.automation.TestSuiteArchiveSource = {
+    val testSuiteBase64 = (jsonConfig \ "testSuite").asOpt[String]
+    val testSuiteUri = (jsonConfig \ "testSuiteUri").asOpt[String]
+    (testSuiteBase64, testSuiteUri) match {
+      case (Some(base64), None) => models.automation.Base64ArchiveSource(base64)
+      case (None, Some(uri))   => models.automation.UriArchiveSource(uri)
+      case (None, None) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Either 'testSuite' (base64) or 'testSuiteUri' must be provided.")
+      case (Some(_), Some(_)) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Only one of 'testSuite' (base64) or 'testSuiteUri' may be provided, not both.")
+    }
+  }
+
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): TestSuiteUndeployRequest = {
     val specification = if (sharedTestSuite) {
       None
@@ -3196,16 +3209,13 @@ object JsonUtil {
     testCaseArray
   }
 
-  def jsTestSuiteDeployInfo(resultWithKeys: TestSuiteUploadResultWithApiKeys, showIdentifiers: Boolean):JsObject = {
+  /** Splits a TAR validation report's items into errors/warnings/messages JSON arrays, omitting arrays that end up empty. */
+  private def jsValidationReportItems(validationReport: Option[TAR], extraMessages: JsArray = Json.arr()): (JsArray, JsArray, JsArray) = {
     var errors = Json.arr()
     var warnings = Json.arr()
-    var messages = Json.arr()
-    if (resultWithKeys.result.existsForSpecs.nonEmpty) {
-      // Non-shared test suite that we tried to deploy to a specification with a matching (by identifier) shared test suite.
-      messages = messages.append(Json.obj("description" -> "The specification contains a shared test suite with the same identifier. Deployment was skipped."))
-    }
-    if (resultWithKeys.result.validationReport.exists(_.getReports != null)) {
-      resultWithKeys.result.validationReport.get.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
+    var messages = extraMessages
+    if (validationReport.exists(_.getReports != null)) {
+      validationReport.get.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
         var itemJson = Json.obj("description" -> item.getValue.asInstanceOf[BAR].getDescription)
         if (item.getValue.asInstanceOf[BAR].getLocation != null) {
           itemJson = itemJson.+("location", JsString(item.getValue.asInstanceOf[BAR].getLocation))
@@ -3219,18 +3229,42 @@ object JsonUtil {
         }
       })
     }
-    var json = Json.obj(
-      "completed" -> resultWithKeys.result.success
-    )
+    (errors, warnings, messages)
+  }
+
+  private def withValidationReportItems(json: JsObject, errors: JsArray, warnings: JsArray, messages: JsArray): JsObject = {
+    var result = json
     if (errors.value.nonEmpty) {
-      json = json.+("errors", errors)
+      result = result.+("errors", errors)
     }
     if (warnings.value.nonEmpty) {
-      json = json.+("warnings", warnings)
+      result = result.+("warnings", warnings)
     }
     if (messages.value.nonEmpty) {
-      json = json.+("messages", messages)
+      result = result.+("messages", messages)
     }
+    result
+  }
+
+  def jsTestSuiteValidationInfo(validationReport: TAR): JsObject = {
+    val (errors, warnings, messages) = jsValidationReportItems(Some(validationReport))
+    withValidationReportItems(
+      Json.obj("valid" -> (validationReport.getCounters.getNrOfErrors.longValue() == 0)),
+      errors, warnings, messages
+    )
+  }
+
+  def jsTestSuiteDeployInfo(resultWithKeys: TestSuiteUploadResultWithApiKeys, showIdentifiers: Boolean):JsObject = {
+    var extraMessages = Json.arr()
+    if (resultWithKeys.result.existsForSpecs.nonEmpty) {
+      // Non-shared test suite that we tried to deploy to a specification with a matching (by identifier) shared test suite.
+      extraMessages = extraMessages.append(Json.obj("description" -> "The specification contains a shared test suite with the same identifier. Deployment was skipped."))
+    }
+    val (errors, warnings, messages) = jsValidationReportItems(resultWithKeys.result.validationReport, extraMessages)
+    var json = withValidationReportItems(
+      Json.obj("completed" -> resultWithKeys.result.success),
+      errors, warnings, messages
+    )
     // API key identifiers.
     if (showIdentifiers && resultWithKeys.testSuiteIdentifier.isDefined) {
       var identifiers = Json.obj(

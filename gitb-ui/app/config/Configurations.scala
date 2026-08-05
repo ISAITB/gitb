@@ -224,6 +224,7 @@ object Configurations {
   var API_PUBLIC_PREFIX = ""
   var AUTOMATION_API_ENABLED = false
   var AUTOMATION_API_MASTER_KEY: Option[String] = None
+  var AUTOMATION_API_DEVELOPMENT_KEY: Option[String] = None
   var BUILD_TIMESTAMP = ""
 
   val TESTSUITE_DEPLOY_ALLOWED_URIS_NAME = "TESTSUITE_DEPLOY_ALLOWED_URIS"
@@ -656,6 +657,11 @@ object Configurations {
       val masterApiKey = fromEnv("AUTOMATION_API_MASTER_KEY", conf.getString("masterApiKey"))
       if (StringUtils.isNotBlank(masterApiKey)) {
         AUTOMATION_API_MASTER_KEY = Some(masterApiKey.trim)
+      }
+      // Development API key
+      val developmentApiKey = fromEnv("AUTOMATION_API_DEVELOPMENT_KEY", conf.getString("developmentApiKey"))
+      if (StringUtils.isNotBlank(developmentApiKey)) {
+        AUTOMATION_API_DEVELOPMENT_KEY = Some(developmentApiKey.trim)
       }
       // Session cookie
       SESSION_COOKIE_SECURE = fromEnv("SESSION_SECURE", conf.getString("play.http.session.secure")).toBoolean

@@ -499,6 +499,27 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		new File(getTempFolder(), "openapi.json")
 	}
 
+	def getDevelopmentApiKeyFile(): File = {
+		new File(getRepositoryPath(), "development-api-key.txt")
+	}
+
+	/**
+	 * Persist (or remove) the development API key file on the repository volume.
+	 * <p/>
+	 * The file is only ever written when running in development mode, to keep this file system location free of
+	 * secrets on production instances. If the instance is not (or no longer) in development mode, any existing
+	 * file is removed instead.
+	 */
+	def updateDevelopmentApiKeyFile(value: Option[String]): Unit = {
+		val keyFile = getDevelopmentApiKeyFile()
+		if (value.isDefined && Configurations.TESTBED_MODE == Constants.DevelopmentMode) {
+			Files.createDirectories(keyFile.getParentFile.toPath)
+			Files.writeString(keyFile.toPath, value.get, Charset.forName("UTF-8"))
+		} else {
+			FileUtils.deleteQuietly(keyFile)
+		}
+	}
+
 	def getTempArchivedSessionWorkspaceFolder(): File = {
 		new File(getTempFolder(), "session_archive")
 	}

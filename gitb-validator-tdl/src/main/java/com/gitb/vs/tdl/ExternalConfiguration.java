@@ -31,6 +31,7 @@ public class ExternalConfiguration {
     private Set<String> containerDataTypes = new HashSet<>();
     private Set<String> containedDataTypes = new HashSet<>();
     private Set<String> acceptedMimeTypes = new HashSet<>();
+    private boolean checkExternalReferences = true;
 
     public Map<String, MessagingHandlerConfiguration> getEmbeddedMessagingHandlers() {
         return embeddedMessagingHandlers;
@@ -102,6 +103,21 @@ public class ExternalConfiguration {
 
     public void setAcceptedMimeTypes(Set<String> acceptedMimeTypes) {
         this.acceptedMimeTypes = acceptedMimeTypes;
+    }
+
+    /**
+     * Whether external actor and domain parameter references should be checked against the sets provided
+     * through {@link #getExternalActorIds()} and {@link #getExternalParameters()}.
+     * <p/>
+     * When {@code false}, no domain/actor context is assumed to be available. Such references are not
+     * reported as errors or warnings but are instead aggregated and reported once as INFO-level findings.
+     */
+    public boolean isCheckExternalReferences() {
+        return checkExternalReferences;
+    }
+
+    public void setCheckExternalReferences(boolean checkExternalReferences) {
+        this.checkExternalReferences = checkExternalReferences;
     }
 
     public static class MessagingHandlerConfiguration extends BasicConfiguration {

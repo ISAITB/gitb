@@ -41,6 +41,10 @@
     {
       "name": "Test suites",
       "description": "Operations on test suites."
+    },
+    {
+      "name": "Development tools",
+      "description": "Read-only operations intended for use while developing and testing Test Bed content, e.g. by automated tools and AI agents."
     }
   ],
   "paths": {
@@ -3782,6 +3786,79 @@
         }
       }
     },
+    "/testsuite/validate": {
+      "post": {
+        "tags": [
+          "Test suites",
+          "Development tools"
+        ],
+        "summary": "Validate a test suite without deploying it.",
+        "description": "Runs the full test suite validation used at deployment time, without deploying the test suite or otherwise affecting the Test Bed's state. As no target specification is provided, references to external actors and domain parameters are not checked against a specific domain; they are instead reported as information messages listing what the test suite expects to be available at runtime.",
+        "security": [
+          {
+            "DevelopmentApiKeyAuth": []
+          },
+          {
+            "CommunityApiKeyAuth": []
+          },
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The test suite archive to validate.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSuiteValidateViaBase64Request"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSuiteValidateViaFileRequest"
+              },
+              "encoding": {
+                "testSuite": {
+                  "contentType": "application/zip"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test suite validated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestSuiteValidationResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/testsuite/deployShared": {
       "post": {
         "tags": [
@@ -4338,6 +4415,73 @@
             ]
           }
         ]
+      },
+      "TestSuiteValidateViaFileRequest": {
+        "description": "Information on the test suite to validate when the call is made as a multipart form submission.",
+        "type": "object",
+        "properties": {
+          "testSuite": {
+            "description": "The test suite archive to validate.",
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "required": [
+          "testSuite"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteValidateViaBase64Request": {
+        "description": "Information on the test suite to validate when the call is made as JSON. Exactly one of 'testSuite' (base64-encoded archive) or 'testSuiteUri' (remote URI) must be provided.",
+        "type": "object",
+        "properties": {
+          "testSuite": {
+            "description": "The test suite archive to validate provided as a Base64-encoded string. Mutually exclusive with 'testSuiteUri'.",
+            "type": "string",
+            "format": "base64"
+          },
+          "testSuiteUri": {
+            "description": "The URI from which to read the test suite archive. The server will fetch the archive from this address. Mutually exclusive with 'testSuite'.",
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TestSuiteValidationResponse": {
+        "description": "Response for the test suite validate operation.",
+        "type": "object",
+        "properties": {
+          "valid": {
+            "description": "Whether or not the test suite is valid (i.e. no errors were found). Warnings do not affect this flag.",
+            "type": "boolean"
+          },
+          "errors": {
+            "description": "The list of errors resulting from the test suite's validation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteValidationReportItem"
+            }
+          },
+          "warnings": {
+            "description": "The list of warnings resulting from the test suite's validation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteValidationReportItem"
+            }
+          },
+          "messages": {
+            "description": "The list of information messages resulting from the test suite's validation. This includes references made by the test suite to external actors and domain parameters, which are not checked against a specific domain by this operation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteValidationReportItem"
+            }
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "additionalProperties": false
       },
       "SharedTestSuiteDeployViaFileRequest": {
         "description": "Information on the shared test suite to deploy when the call is made as a multipart form submission.",
@@ -6771,6 +6915,12 @@
       },
       "MasterApiKeyAuth": {
         "description": "The API key to identify as the system administrator to perform administrative tasks.",
+        "type": "apiKey",
+        "in": "header",
+        "name": "ITB_API_KEY"
+      },
+      "DevelopmentApiKeyAuth": {
+        "description": "The always-available API key intended for read-only development operations (e.g. test suite validation), typically used by automated tools and AI agents. Unlike other API keys this does not need to be created beforehand: it is generated automatically and can be managed from the Test Bed's system administration screen. When the Test Bed is running in development mode it is additionally persisted as a file named 'development-api-key.txt' at the root of the Test Bed's repository volume, allowing it to be looked up without accessing the Test Bed's UI.",
         "type": "apiKey",
         "in": "header",
         "name": "ITB_API_KEY"

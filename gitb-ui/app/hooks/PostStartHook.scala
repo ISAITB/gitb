@@ -212,6 +212,21 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
             Future.successful(())
           }
         }
+        // Development API key.
+        _ <- {
+          val restApiDevelopmentKey = persistedConfigs.find(config => config.config.name == Constants.RestApiDevelopmentKey).map(_.config)
+          val existingValue = restApiDevelopmentKey.flatMap(_.parameter)
+          if (existingValue.isEmpty) {
+            // Not yet seeded - create it (this also synchronises the key file with the current operation mode).
+            val initialApiKeyValue = Configurations.AUTOMATION_API_DEVELOPMENT_KEY.getOrElse(CryptoUtil.generateApiKey())
+            systemConfigurationManager.updateSystemParameter(Constants.RestApiDevelopmentKey, Some(initialApiKeyValue))
+          } else {
+            // Already seeded - still (re)synchronise the key file, as the operation mode may have changed since it was last written.
+            Configurations.AUTOMATION_API_DEVELOPMENT_KEY = existingValue
+            repositoryUtils.updateDevelopmentApiKeyFile(existingValue)
+            Future.successful(())
+          }
+        }
         // Rate limits.
         _ <- {
           val restApiLimitsConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits).map(_.config)

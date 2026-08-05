@@ -547,6 +547,26 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		} yield report
 	}
 
+	/**
+	 * Validate a test suite archive with no domain or specification context, and hence no side-effects.
+	 * <p/>
+	 * Unlike [[validateTestSuite]] this performs no domain parameter or actor lookups. External actor and
+	 * domain parameter references are not checked against a target instance; they are instead reported once
+	 * each as INFO-level findings (see [[com.gitb.vs.tdl.ExternalConfiguration#isCheckExternalReferences]]).
+	 */
+	def validateTestSuiteArchive(tempTestSuiteArchive: File): Future[TAR] = {
+		import scala.jdk.CollectionConverters._
+		Future.successful {
+			TestSuiteValidationAdapter.getInstance().doValidation(
+				new FileSource(tempTestSuiteArchive),
+				Set.empty[String].asJava,
+				Set.empty[String].asJava,
+				repositoryUtils.getTmpValidationFolder().getAbsolutePath,
+				false
+			)
+		}
+	}
+
 	private def testSuiteDefinesExistingActors(specification: Long, actorIdentifiers: List[String]): DBIO[Int] = {
 		PersistenceSchema.actors
 		  .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)

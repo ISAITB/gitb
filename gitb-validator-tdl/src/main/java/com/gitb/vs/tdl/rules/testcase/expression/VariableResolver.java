@@ -165,7 +165,8 @@ public class VariableResolver implements XPathVariableResolver {
                     }
                 }
                 if (Utils.DOMAIN_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
-                    if (!provider.getContext().getExternalConfiguration().getExternalParameters().contains(entry.getValue().containerExpression)) {
+                    if (!provider.getContext().getExternalConfiguration().isCheckExternalReferences()
+                            || !provider.getContext().getExternalConfiguration().getExternalParameters().contains(entry.getValue().containerExpression)) {
                         provider.getContext().recordCustomDomainParameter(entry.getValue().containerExpression);
                     }
                 }

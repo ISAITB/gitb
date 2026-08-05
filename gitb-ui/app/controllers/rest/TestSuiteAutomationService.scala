@@ -22,7 +22,7 @@ import exceptions.ErrorCodes
 import managers.ratelimit.RateLimitManager
 import managers.{AuthorizationManager, RemoteArchiveFetcher, SpecificationManager, TestSuiteManager}
 import models.TestCaseDeploymentAction
-import models.automation.{Base64ArchiveSource, TestSuiteDeployRequest, UriArchiveSource}
+import models.automation.{Base64ArchiveSource, TestSuiteArchiveSource, TestSuiteDeployRequest, UriArchiveSource}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import play.api.mvc._
@@ -47,6 +47,25 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                             remoteArchiveFetcher: RemoteArchiveFetcher)
                                            (implicit ec: ExecutionContext) extends BaseAutomationService(cc, rateLimitManager) {
 
+  /**
+   * Scan the given archive for viruses if virus scanning is enabled.
+   *
+   * @return A bad request result if the scan found the archive to be infected, [[None]] otherwise (including when scanning is disabled).
+   */
+  private def scanForVirus(testSuiteArchive: File): Option[Result] = {
+    var response: Option[Result] = None
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+      Using.resource(Files.newInputStream(testSuiteArchive.toPath)) { stream =>
+        val scanResult = virusScanner.scan(stream)
+        if (!ClamAVClient.isCleanReply(scanResult)) {
+          response = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan."))
+        }
+      }
+    }
+    response
+  }
+
   private def deployInternal(input: TestSuiteDeployRequest, testSuiteArchive: File, request: Request[AnyContent]): Future[Result] = {
     val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
     specificationManager.getSpecificationInfoByApiKeys(input.specification, communityKey).flatMap { ids =>
@@ -59,25 +78,26 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
         response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "No domain could be identified based on the provided API key.")
       }
       if (response == null) {
-        if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-          Using.resource(Files.newInputStream(testSuiteArchive.toPath)) { stream =>
-            val scanResult = virusScanner.scan(stream)
-            if (!ClamAVClient.isCleanReply(scanResult)) {
-              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
+        scanForVirus(testSuiteArchive) match {
+          case Some(virusResponse) => Future.successful(virusResponse)
+          case None =>
+            testSuiteManager.deployTestSuiteFromApi(ids.get._1, ids.get._2, input, testSuiteArchive).map { result =>
+              ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteDeployInfo(result, input.showIdentifiers).toString)
             }
-          }
-        }
-        if (response == null) {
-          testSuiteManager.deployTestSuiteFromApi(ids.get._1, ids.get._2, input, testSuiteArchive).map { result =>
-            ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteDeployInfo(result, input.showIdentifiers).toString)
-          }
-        } else {
-          Future.successful(response)
         }
       } else {
         Future.successful(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Specification could not be determined from provided API keys."))
       }
+    }
+  }
+
+  private def validateInternal(testSuiteArchive: File): Future[Result] = {
+    scanForVirus(testSuiteArchive) match {
+      case Some(virusResponse) => Future.successful(virusResponse)
+      case None =>
+        testSuiteManager.validateTestSuiteArchive(testSuiteArchive).map { report =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteValidationInfo(report).toString)
+        }
     }
   }
 
@@ -186,6 +206,66 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deployShared: Action[AnyContent] = authorizedAction.async { request =>
     handleDeploy(request, PostEndpoint("/testsuite/deployShared"), sharedTestSuite = true)
+  }
+
+  private def handleValidateMultipart(request: RequestWithAttributes[AnyContent], signature: EndpointSignature) = {
+    (for {
+      _ <- authorizationManager.canValidateTestSuitesThroughAutomationApi(request)
+      rateResult <- checkRateLimit(request, signature)
+      result <- {
+        rateResult match {
+          case Some(errorResponse) => Future.successful(errorResponse)
+          case None =>
+            val uploadedFile = request.body.asMultipartFormData.get.file("testSuite")
+            if (uploadedFile.isDefined) {
+              validateInternal(uploadedFile.get.ref)
+            } else {
+              Future.successful(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Test suite archive was not provided. Expected a file part named 'testSuite'."))
+            }
+        }
+      }
+    } yield result)
+      .recover {
+        handleException(_)
+      }
+      .andThen { _ =>
+        if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+      }
+  }
+
+  private def handleValidateJson(request: RequestWithAttributes[AnyContent], signature: EndpointSignature) = {
+    processAsJson(request, signature, () => authorizationManager.canValidateTestSuitesThroughAutomationApi(request), { body =>
+      val archiveSource: TestSuiteArchiveSource = JsonUtil.parseJsTestSuiteValidateRequest(body)
+      archiveSource match {
+        case Base64ArchiveSource(base64) =>
+          val testSuiteFileName = "ts_" + RandomStringUtils.secure.next(10, false, true) + ".zip"
+          val testSuiteFile = Paths.get(
+            repositoryUtils.getTempFolder().getAbsolutePath,
+            RandomStringUtils.secure.next(10, false, true),
+            testSuiteFileName
+          )
+          testSuiteFile.toFile.getParentFile.mkdirs()
+          Files.write(testSuiteFile, Base64.getDecoder.decode(base64))
+          validateInternal(testSuiteFile.toFile).andThen { _ =>
+            FileUtils.deleteQuietly(testSuiteFile.toFile.getParentFile)
+          }
+        case UriArchiveSource(uri) =>
+          remoteArchiveFetcher.fetchToTempFile(uri).flatMap { tempFile =>
+            validateInternal(tempFile).andThen { _ =>
+              FileUtils.deleteQuietly(tempFile.getParentFile)
+            }
+          }
+      }
+    })
+  }
+
+  def validate: Action[AnyContent] = authorizedAction.async { request =>
+    val signature = PostEndpoint("/testsuite/validate")
+    if (request.body.asMultipartFormData.isDefined) {
+      handleValidateMultipart(request, signature)
+    } else {
+      handleValidateJson(request, signature)
+    }
   }
 
   private def handleUndeploy(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, sharedTestSuite: Boolean): Future[Result] = {

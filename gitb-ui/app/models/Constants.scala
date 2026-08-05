@@ -28,6 +28,7 @@ object Constants {
   val SessionAliveTime = "session_alive_time"
   val RestApiEnabled = "rest_api_enabled"
   val RestApiAdminKey = "rest_api_admin_key"
+  val RestApiDevelopmentKey = "rest_api_development_key"
   val RestApiRateLimits = "rest_api_rate_limits"
   val SelfRegistrationEnabled = "self_registration_enabled"
   val MasterPassword = "master_password"

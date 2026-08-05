@@ -537,7 +537,9 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void finalise() {
         super.finalise();
-        reportCustomPropertyUsage(ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE, context.getCustomDomainParametersUsed());
+        reportCustomPropertyUsage(
+                context.getExternalConfiguration().isCheckExternalReferences() ? ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE : ErrorCode.EXTERNAL_PARAMETER_REFERENCES_NOT_CHECKED,
+                context.getCustomDomainParametersUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ORGANISATION_VARIABLE, context.getCustomOrganisationPropertiesUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_SYSTEM_VARIABLE, context.getCustomSystemPropertiesUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ACTOR_VARIABLE, context.getCustomActorParametersUsed());

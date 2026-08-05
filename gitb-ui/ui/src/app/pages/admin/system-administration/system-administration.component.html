@@ -453,6 +453,17 @@
                                                     <div class="col-auto" app-tooltip tbTooltip="This is the API key to use as an authorisation header when calling operations reserved to the Test Bed administrator."></div>
                                                 </div>
                                                 <div class="row pt-3">
+                                                    <label class="col-3 col-form-label text-end" for="restApiDevelopmentKey">Development API key:</label>
+                                                    <div class="col-8 col-md-5">
+                                                        <app-api-key-text idName="restApiDevelopmentKey" name="restApiDevelopmentKey"
+                                                                          [key]="restApiDevelopmentKey"
+                                                                          [supportUpdate]="true"
+                                                                          [updatePending]="updateRestApiDevelopmentKeyPending"
+                                                                          (update)="updateRestApiDevelopmentKey()"></app-api-key-text>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="This API key can be used to authorise read-only development operations (e.g. test suite validation) and is intended for use by automated tools and AI agents. While running in development mode it is also written to a file named 'development-api-key.txt' at the root of the Test Bed's repository, allowing it to be looked up without UI access."></div>
+                                                </div>
+                                                <div class="row pt-3">
                                                     <label class="col-3 col-form-label text-end pt-0" for="restApiLimitsEnabled">Restrict API usage:</label>
                                                     <div class="col-7">
                                                         <div class="form-check">

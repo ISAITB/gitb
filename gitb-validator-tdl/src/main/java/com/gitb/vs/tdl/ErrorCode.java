@@ -173,7 +173,9 @@ public enum ErrorCode {
     MISSING_ACTOR_REFERENCE_IN_TRANSACTION(             "TDL-136", "Test case [%s] defines a btxn step with missing actor references. This is allowed only when the test case defines at most two actors.", ERROR, false),
     HANDLER_TIMEOUT_DEFINED_WHEN_USING_TRANSACTION(     "TDL-137", "%s [%s] defines a %s step with a transaction reference (txnId) and handler timeout (handlerTimeout). When using transactions, handler timeouts not declared on the level of the transaction are ignored.", WARNING, true),
     POTENTIALLY_INVALID_ACTOR_VARIABLE(                 "TDL-138", "References are made to custom actor properties %s. Ensure these will be defined at runtime.", INFO),
-    INVALID_MULTIPLE_ATTRIBUTE(                         "TDL-139", "%s [%s] defines a user interaction request with a [multiple] attribute that defines neither a [options] attribute (for a multiple selection), neither has [inputType] set to [UPLOAD] (for a multiple file upload). The [multiple] attribute will be ignored.", WARNING, true)
+    INVALID_MULTIPLE_ATTRIBUTE(                         "TDL-139", "%s [%s] defines a user interaction request with a [multiple] attribute that defines neither a [options] attribute (for a multiple selection), neither has [inputType] set to [UPLOAD] (for a multiple file upload). The [multiple] attribute will be ignored.", WARNING, true),
+    EXTERNAL_ACTOR_REFERENCES_NOT_CHECKED(              "TDL-140", "References are made to external actors %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO),
+    EXTERNAL_PARAMETER_REFERENCES_NOT_CHECKED(          "TDL-141", "References are made to domain parameters %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO)
     ;
 
     private final String code;
