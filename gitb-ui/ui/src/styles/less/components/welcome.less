@@ -1,0 +1,186 @@
+/*
+ * Copyright (C) 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+/*
+ * Welcome (index) page: login/option cards and the message panel.
+ * Mirrors the spacing above the welcome text (@page-content-margin's 35px)
+ * below it too, so the interactive section is framed symmetrically.
+ */
+@import "../_common.less";
+
+.welcome-text {
+	padding-bottom: 35px;
+}
+
+.hybrid-wrap {
+	/* Cards are icon | title+rule+description | chevron, laid out as three
+	 * columns. Icon and chevron are top-aligned and fixed-size, so once a
+	 * description wraps to extra lines the added height shows up as empty
+	 * space beneath them rather than stretching either element. */
+	.h-card {
+		display: flex;
+		align-items: flex-start;
+		gap: 22px;
+		text-align: left;
+		text-decoration: none;
+		cursor: pointer;
+		width: 100%;
+		background: @white;
+		border: 1px solid @gray-dark-1;
+		border-radius: 0.75rem;
+		padding: 26px 28px;
+		box-shadow: @box-shadow-card;
+		transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+		&:hover, &:focus-visible {
+			transform: translateY(-3px);
+			box-shadow: @box-shadow-card-hover;
+			border-color: var(--itb-welcome-login-color);
+			outline: none;
+		}
+		&:focus-visible {
+			box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
+		}
+		.h-icon {
+			width: 56px;
+			height: 56px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.5rem;
+			flex: 0 0 auto;
+			background: color-mix(in srgb, var(--itb-welcome-login-color) 20%, @white);
+			color: var(--itb-welcome-login-color);
+		}
+		.h-body {
+			flex: 1 1 auto;
+			min-width: 0;
+			display: flex;
+			flex-direction: column;
+		}
+		.h-title {
+			font-size: 1.125rem;
+			font-weight: 700;
+			color: var(--itb-welcome-option-label-color);
+		}
+		.h-rule {
+			border-top: 1px solid @gray-dark-1;
+			margin: 18px 0;
+		}
+		.h-desc {
+			display: block;
+			color: var(--itb-welcome-option-label-color);
+			font-size: 0.875rem;
+			line-height: 1.6;
+		}
+		.h-chevron {
+			flex: 0 0 auto;
+			color: var(--itb-welcome-option-label-color);
+			font-size: 1.125rem;
+			padding-top: 3px;
+		}
+		&.primary {
+			background: var(--itb-welcome-login-color);
+			border-color: var(--itb-welcome-login-color);
+			.h-title, .h-chevron {
+				color: var(--itb-welcome-login-label-color);
+			}
+			.h-desc {
+				color: color-mix(in srgb, var(--itb-welcome-login-label-color) 85%, transparent);
+			}
+			.h-rule {
+				border-top: 1px solid color-mix(in srgb, var(--itb-welcome-login-label-color) 30%, transparent);
+			}
+			.h-icon {
+				background: color-mix(in srgb, var(--itb-welcome-login-label-color) 20%, transparent);
+				color: var(--itb-welcome-login-label-color);
+			}
+		}
+	}
+
+	.hybrid-cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+		gap: 20px;
+		margin-top: 20px;
+	}
+
+	.hybrid-sep {
+		border: none;
+        border-top: 1px solid @gray-dark-1;
+		margin: 20px 0;
+	}
+
+	/* Single rounded info panel: one shared icon (same slot/size as a card's
+	 * icon) on the left, and one title+rule+text column per active message
+	 * on the right, separated by a vertical rule. Icon and columns are
+	 * top-aligned, so a short message (e.g. only the privacy note) leaves
+	 * empty space beside it rather than stretching to fill the row. */
+	.msg-panel {
+		display: flex;
+		gap: 22px;
+		align-items: flex-start;
+		background: var(--bs-info-bg-subtle);
+		border: 1px solid var(--bs-info-border-subtle);
+		color: var(--bs-info-text-emphasis);
+		border-radius: 0.75rem;
+		padding: 26px 28px;
+		box-shadow: @box-shadow-card;
+
+		.msg-icon {
+			width: 56px;
+			height: 56px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.5rem;
+			flex: 0 0 auto;
+			background: var(--bs-info-border-subtle);
+			color: var(--bs-info-text-emphasis);
+		}
+		.msg-panel-segments {
+			display: flex;
+			flex-wrap: wrap;
+			flex: 1 1 auto;
+			gap: 22px 0;
+		}
+		.msg-seg {
+			flex: 1 1 200px;
+			padding: 0 24px;
+			&:first-child {
+				padding-left: 0;
+			}
+			.seg-title {
+				display: block;
+				font-weight: 700;
+				font-size: 1.125rem;
+			}
+			.seg-rule {
+				display: block;
+				border-top: 1px solid var(--bs-info-border-subtle);
+				margin: 14px 0;
+			}
+			.seg-text {
+				font-size: 0.875rem;
+				line-height: 1.55;
+			}
+		}
+		a {
+			color: var(--bs-info-text-emphasis);
+			text-decoration: underline;
+		}
+	}
+}

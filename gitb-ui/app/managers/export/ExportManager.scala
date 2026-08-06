@@ -816,6 +816,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedTheme.setSecondaryButtonLabelColor(theme.secondaryButtonLabelColor)
               exportedTheme.setSecondaryButtonHoverColor(theme.secondaryButtonHoverColor)
               exportedTheme.setSecondaryButtonActiveColor(theme.secondaryButtonActiveColor)
+              exportedTheme.setWelcomeLoginColor(theme.welcomeLoginColor)
+              exportedTheme.setWelcomeLoginLabelColor(theme.welcomeLoginLabelColor)
+              exportedTheme.setWelcomeOptionLabelColor(theme.welcomeOptionLabelColor)
               exportedThemes.getTheme.add(exportedTheme)
             }
             exportedSettings.setThemes(exportedThemes)

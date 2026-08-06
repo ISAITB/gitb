@@ -47,6 +47,9 @@ export interface Theme {
     secondaryButtonLabelColor: string,
     secondaryButtonHoverColor: string,
     secondaryButtonActiveColor: string,
+    welcomeLoginColor: string,
+    welcomeLoginLabelColor: string,
+    welcomeOptionLabelColor: string,
 
     headerLogoFile?: FileData
     footerLogoFile?: FileData

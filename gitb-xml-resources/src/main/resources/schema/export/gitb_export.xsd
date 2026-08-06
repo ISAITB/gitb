@@ -996,6 +996,9 @@
                     <xsd:element name="secondaryButtonLabelColor" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="secondaryButtonHoverColor" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="secondaryButtonActiveColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="welcomeLoginColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="welcomeLoginLabelColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="welcomeOptionLabelColor" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="active" type="xsd:boolean" default="false"/>
             </xsd:extension>

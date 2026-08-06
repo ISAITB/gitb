@@ -981,6 +981,9 @@ object ParameterExtractor {
         ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_LABEL_COLOR),
         secondaryButtonHoverColor,
         secondaryButtonActiveColor,
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_LOGIN_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_LOGIN_LABEL_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_OPTION_LABEL_COLOR),
       ))
       if (!theme.get.footerLogoDisplay.equals("inherit") && !theme.get.footerLogoDisplay.equals("none")) {
         resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Unexpected value for footer logo display."))

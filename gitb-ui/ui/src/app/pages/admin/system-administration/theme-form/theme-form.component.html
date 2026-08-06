@@ -157,6 +157,30 @@
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Welcome login"
+                        tooltipText="The background colour used for the main login card, as well as the highlight colour for secondary login option cards."
+                        [(ngModel)]="theme.welcomeLoginColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Welcome login label"
+                        tooltipText="The colour used for texts and icons in the welcome page's main login card."
+                        [(ngModel)]="theme.welcomeLoginLabelColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Welcome option label"
+                        tooltipText="The colour used for texts and icons in the welcome page's secondary login option cards (when available)."
+                        [(ngModel)]="theme.welcomeOptionLabelColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
             </div>
         </div>
     </div>

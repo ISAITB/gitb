@@ -80,7 +80,10 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
       secondaryButtonColor: referenceTheme.secondaryButtonColor,
       secondaryButtonLabelColor: referenceTheme.secondaryButtonLabelColor,
       secondaryButtonHoverColor: referenceTheme.secondaryButtonHoverColor,
-      secondaryButtonActiveColor: referenceTheme.secondaryButtonActiveColor
+      secondaryButtonActiveColor: referenceTheme.secondaryButtonActiveColor,
+      welcomeLoginColor: referenceTheme.welcomeLoginColor,
+      welcomeLoginLabelColor: referenceTheme.welcomeLoginLabelColor,
+      welcomeOptionLabelColor: referenceTheme.welcomeOptionLabelColor
     }
     this.originalPrimaryButtonColor = this.theme.primaryButtonColor
     this.originalSecondaryButtonColor = this.theme.secondaryButtonColor

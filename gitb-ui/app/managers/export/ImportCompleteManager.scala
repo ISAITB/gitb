@@ -645,14 +645,17 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelTheme(idToUse: Option[Long], data: com.gitb.xml.export.Theme): models.theme.Theme = {
+    val primaryButtonColour = Option(data.getPrimaryButtonColor).getOrElse("#337ab7")
+    val primaryButtonLabelColour = Option(data.getPrimaryButtonLabelColor).getOrElse("#FFFFFF")
     models.theme.Theme(idToUse.getOrElse(0L), data.getKey, Option(data.getDescription), data.isActive, custom = true,
       data.getSeparatorTitleColor, data.getModalTitleColor, data.getTableTitleColor, data.getCardTitleColor,
       data.getPageTitleColor, data.getHeadingColor, data.getTabLinkColor, data.getFooterTextColor,
       data.getHeaderBackgroundColor, data.getHeaderBorderColor, data.getHeaderSeparatorColor, data.getHeaderLogoPath,
       data.getFooterBackgroundColor, data.getFooterBorderColor, data.getFooterLogoPath, data.getFooterLogoDisplay, data.getFaviconPath,
       // Provide default values matching Bootstrap 5
-      Option(data.getPrimaryButtonColor).getOrElse("#337ab7"), Option(data.getPrimaryButtonLabelColor).getOrElse("#FFFFFF"), Option(data.getPrimaryButtonHoverColor).getOrElse("#2b689c"), Option(data.getPrimaryButtonActiveColor).getOrElse("#296292"),
-      Option(data.getSecondaryButtonColor).getOrElse("#6c757d"), Option(data.getSecondaryButtonLabelColor).getOrElse("#FFFFFF"), Option(data.getSecondaryButtonHoverColor).getOrElse("#5c636a"), Option(data.getSecondaryButtonActiveColor).getOrElse("#565e64")
+      primaryButtonColour, primaryButtonLabelColour, Option(data.getPrimaryButtonHoverColor).getOrElse("#2b689c"), Option(data.getPrimaryButtonActiveColor).getOrElse("#296292"),
+      Option(data.getSecondaryButtonColor).getOrElse("#6c757d"), Option(data.getSecondaryButtonLabelColor).getOrElse("#FFFFFF"), Option(data.getSecondaryButtonHoverColor).getOrElse("#5c636a"), Option(data.getSecondaryButtonActiveColor).getOrElse("#565e64"),
+      Option(data.getWelcomeLoginColor).getOrElse(primaryButtonColour), Option(data.getWelcomeLoginLabelColor).getOrElse(primaryButtonLabelColour), Option(data.getWelcomeOptionLabelColor).getOrElse("#777777")
     )
   }
 

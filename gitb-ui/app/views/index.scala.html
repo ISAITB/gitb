@@ -40,50 +40,86 @@
 						<div class="row">
 							<div class="col-12">
 								<div class="welcome-text">@Html(config.welcomeText)</div>
-								<div style="padding-top:20px">
-									<div style="display:flex; align-items:center;">
-										<div>
-											<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px"><span class="mini-tab"><i class="fa-solid fa-arrow-right-to-bracket"></i></span>Click to log in</button>
-										</div>
-										<div class="ms-4">
-											@if(config.ssoEnabled) {
-											   @if(config.demosEnabled || config.registrationEnabled) {
-											<p><b class="me-2">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
-											   } else {
-											<p class="mb-0"><b class="me-2">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
-											   }
-											}
-											@if(config.demosEnabled && config.registrationEnabled) {
-											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a>.</p>
-											} else {@if(config.demosEnabled && !config.registrationEnabled) {
-											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</p>
-											} else {@if(!config.demosEnabled && config.registrationEnabled) {
-											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</p>
-											} else {@if(!config.ssoEnabled) {
-											<p class="mb-0"><b class="me-2">New to the Test Bed?</b>Contact your administrator to create your account.</p>
-											}}}}
-										</div>
+								<div class="hybrid-wrap">
+									<a href="#" id="loginOption" class="h-card primary">
+										<span class="h-icon"><i class="fa-solid fa-arrow-right-to-bracket"></i></span>
+										<span class="h-body">
+											<span class="h-title">Log in</span>
+											<span class="h-rule"></span>
+											<span class="h-desc">Already have an account? Click to log in, run tests, review reports and manage your configuration.</span>
+										</span>
+										<i class="fa-solid fa-chevron-right h-chevron"></i>
+									</a>
+									@if(config.ssoEnabled || config.registrationEnabled || config.demosEnabled) {
+									<div class="hybrid-cards">
+										@if(config.ssoEnabled) {
+										<a href="#" id="linkOption" class="h-card">
+											<span class="h-icon"><i class="fa-solid fa-user-check"></i></span>
+											<span class="h-body">
+												<span class="h-title">Confirm new role</span>
+												<span class="h-rule"></span>
+												<span class="h-desc">Assigned a new role by an administrator? Click to confirm the role assignment and start using it.</span>
+											</span>
+											<i class="fa-solid fa-chevron-right h-chevron"></i>
+										</a>
+										}
+										@if(config.registrationEnabled) {
+										<a href="#" id="registerOption" class="h-card">
+											<span class="h-icon"><i class="fa-solid fa-user-plus"></i></span>
+											<span class="h-body">
+												<span class="h-title">Register with community</span>
+												<span class="h-rule"></span>
+												<span class="h-desc">Want to register with a public community? Click to provide your information and create your account.</span>
+											</span>
+											<i class="fa-solid fa-chevron-right h-chevron"></i>
+										</a>
+										}
+										@if(config.demosEnabled) {
+										<a href="#" id="demoOption" class="h-card">
+											<span class="h-icon"><i class="fa-solid fa-flask"></i></span>
+											<span class="h-body">
+												<span class="h-title">Try out our demos</span>
+												<span class="h-rule"></span>
+												<span class="h-desc">Interested in seeing how the Test Bed works? Click to explore curated demos with no need for an account.</span>
+											</span>
+											<i class="fa-solid fa-chevron-right h-chevron"></i>
+										</a>
+										}
 									</div>
-								</div>
-								<div class="alert alert-info rounded padded mt-3 mb-0">
-									@if(config.ssoEnabled) {
-										@if(config.ssoType == models.Constants.SsoTypeEcas) {
-											<div class="alert-section">
-												To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.
-											</div>
-										}
-										@if(config.inMigrationPeriod) {
-											<div class="alert-section">
-												If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.
-											</div>
-										}
 									}
-									<div class="alert-section">
-										<span class="alert-label">Privacy note</span>
-										<span>By connecting you consent to the use of cookies to manage your session.</span>
-										@if(config.hasDefaultLegalNotice) {
-											<span>Please refer to our <a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">legal notice</a> for more information.</span>
-										}
+									<hr class="hybrid-sep"/>
+									<div class="msg-panel">
+										<div class="msg-icon"><i class="fa-solid fa-info"></i></div>
+										<div class="msg-panel-segments">
+											@if(!config.ssoEnabled && !config.registrationEnabled && !config.demosEnabled) {
+											<div class="msg-seg">
+												<span class="seg-title">New user</span>
+												<span class="seg-rule"></span>
+												<div class="seg-text">If you are a new user please contact your administrator. Once your account is created you will be able to connect and start using the Test Bed.</div>
+											</div>
+											}
+											@if(config.ssoEnabled) {
+												@if(config.ssoType == models.Constants.SsoTypeEcas) {
+												<div class="msg-seg">
+													<span class="seg-title">EU Login</span>
+													<span class="seg-rule"></span>
+													<div class="seg-text">To connect you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</div>
+												</div>
+												}
+												@if(config.inMigrationPeriod) {
+												<div class="msg-seg">
+													<span class="seg-title">Account migration</span>
+													<span class="seg-rule"></span>
+													<div class="seg-text">If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</div>
+												</div>
+												}
+											}
+											<div class="msg-seg">
+												<span class="seg-title">Privacy note</span>
+												<span class="seg-rule"></span>
+												<div class="seg-text">By connecting you consent to the use of cookies to manage your session.@if(config.hasDefaultLegalNotice) { Please refer to our <a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">legal notice</a> for more information.}</div>
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -134,7 +170,7 @@
 							<div class="modal-title">Legal Notice</div>
 						</div>
 						<div class="modal-body html-modal">
-							<div id="content">
+							<div id="content" class="no-margin-on-last-p">
 								@Html(config.defaultLegalNotice)
 							</div>
 						</div>
