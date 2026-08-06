@@ -896,5 +896,13 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-59888</vulnerabilityName>
-    </suppress>    
+    </suppress>
+    <suppress>
+        <!-- Related to example application that is not included. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-11.0.24.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-66299</cve>
+    </suppress>
 </suppressions>
