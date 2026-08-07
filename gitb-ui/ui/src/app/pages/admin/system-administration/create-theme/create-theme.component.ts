@@ -18,7 +18,6 @@ import {RoutingService} from 'src/app/services/routing.service';
 import {Theme} from 'src/app/types/theme';
 import {ActivatedRoute} from '@angular/router';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
-import {Observable, of} from 'rxjs';
 import {SystemConfigurationService} from 'src/app/services/system-configuration.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {DataService} from 'src/app/services/data.service';
@@ -37,6 +36,7 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
   theme!: Theme
   referenceThemeId!: number
   savePending = false
+  activatePending = false
   validation = new ValidationState()
 
   constructor(
@@ -91,36 +91,49 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
   }
 
   saveDisabled() {
-    return this.savePending || !this.textProvided(this.theme.key)
+    return this.savePending || this.activatePending || !this.textProvided(this.theme.key)
   }
 
   save() {
     if (!this.saveDisabled()) {
-      let proceed: Observable<boolean>
-      if (this.theme.active) {
-        proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
-      } else {
-        proceed = of(true)
-      }
-      proceed.subscribe((confirmed) => {
-        if (confirmed) {
-          this.savePending = true
+      this.savePending = true
+      this.processButtonColors(this.theme)
+      this.validation.clearErrors()
+      this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
+        .subscribe((error) => {
+          if (this.isErrorDescription(error)) {
+            this.validation.applyError(error)
+          } else {
+            this.popupService.success("Theme created.")
+            this.back()
+          }
+        })
+        .add(() => {
+          this.savePending = false
+        })
+    }
+  }
+
+  activate() {
+    if (!this.saveDisabled()) {
+      this.confirmationDialogService.confirm("Confirm activation", "You are about to change the currently active theme. Are you sure you want to proceed?", "Activate", "Cancel", Constants.BUTTON_ICON.ACTIVATE)
+      .subscribe((proceed) => {
+        if (proceed) {
+          this.activatePending = true
           this.processButtonColors(this.theme)
           this.validation.clearErrors()
-          this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
+          this.systemConfigurationService.createTheme({...this.theme, active: true}, this.referenceThemeId)
             .subscribe((error) => {
               if (this.isErrorDescription(error)) {
                 this.validation.applyError(error)
               } else {
-                this.popupService.success("Theme created.")
-                if (this.theme.active) {
-                  this.dataService.refreshCss()
-                }
+                this.popupService.success("Theme created and activated.")
+                this.dataService.refreshCss()
                 this.back()
               }
             })
             .add(() => {
-              this.savePending = false
+              this.activatePending = false
             })
         }
       })

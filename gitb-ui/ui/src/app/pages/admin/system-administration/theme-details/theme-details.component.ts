@@ -25,11 +25,13 @@ import {Observable, of} from 'rxjs';
 import {DataService} from 'src/app/services/data.service';
 import {BaseThemeFormComponent} from '../base-theme-form.component';
 import {ValidationState} from 'src/app/types/validation-state';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {ErrorDescription} from 'src/app/types/error-description';
 
 @Component({
     selector: 'app-theme-details',
     templateUrl: './theme-details.component.html',
-    styles: [],
+    styleUrls: ['./theme-details.component.less'],
     standalone: false
 })
 export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnInit {
@@ -37,9 +39,9 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   themeId!: number
   theme!: Theme
   savePending = false
+  activatePending = false
   deletePending = false
   copyPending = false
-  initiallyActive!: boolean
   validation = new ValidationState()
 
   constructor(
@@ -56,79 +58,95 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
     this.theme = this.route.snapshot.data['theme'] as Theme
     this.originalPrimaryButtonColor = this.theme.primaryButtonColor
     this.originalSecondaryButtonColor = this.theme.secondaryButtonColor
-    this.initiallyActive = this.theme.active
     this.routingService.systemThemeBreadcrumbs(this.themeId, this.theme.key)
   }
 
-  private confirmActiveChange() {
-    return this.confirmationDialogService.confirm("Active theme change", "You are about the change the currently active theme. Are you sure you want to proceed?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
+  anyPending() {
+    return this.savePending || this.activatePending || this.deletePending || this.copyPending
   }
 
   saveDisabled() {
-    return this.copyPending || this.deletePending || this.savePending || (this.theme.custom && !this.textProvided(this.theme.key))
+    return this.anyPending() || !this.textProvided(this.theme.key)
   }
 
-  saveOrActivate() {
-    if (!this.saveDisabled()) {
-      if (this.theme.custom) {
-        this.save()
-      } else if (!this.theme.active) {
-        this.activate()
-      }
-    }
+  activateDisabled() {
+    return this.anyPending() || (this.theme.custom && !this.textProvided(this.theme.key))
+  }
+
+  private afterSave() {
+    this.originalPrimaryButtonColor = this.theme.primaryButtonColor
+    this.originalSecondaryButtonColor = this.theme.secondaryButtonColor
+    this.dataService.breadcrumbUpdate({id: this.themeId, type: BreadcrumbType.theme, label: this.theme.key})
   }
 
   save() {
-    let proceedObservable: Observable<boolean>
-    if (this.initiallyActive && !this.theme.active || !this.initiallyActive && this.theme.active) {
-      proceedObservable = this.confirmActiveChange()
-    } else {
-      proceedObservable = of(true)
-    }
-    proceedObservable.subscribe((proceed) => {
-      if (proceed) {
-        this.savePending = true
-        this.processButtonColors(this.theme)
-        this.validation.clearErrors()
-        this.systemConfigurationService.updateTheme(this.theme)
-        .subscribe((error) => {
-          if (this.isErrorDescription(error)) {
-            this.validation.applyError(error)
-          } else {
-            this.popupService.success("Theme updated.")
-            if (this.initiallyActive || this.theme.active) {
-              this.dataService.refreshCss()
-            }
-            this.back()
-          }
-        })
-        .add(() => {
-          this.savePending = false
-        })
+    if (this.theme.custom && !this.saveDisabled()) {
+      let proceedObservable: Observable<boolean>
+      if (this.theme.active) {
+        proceedObservable = this.confirmationDialogService.confirm("Confirm update", "You are about to save changes to the currently active theme. Are you sure you want to proceed?", "Save", "Cancel", Constants.BUTTON_ICON.SAVE)
+      } else {
+        proceedObservable = of(true)
       }
-    })
+      proceedObservable.subscribe((proceed) => {
+        if (proceed) {
+          this.savePending = true
+          this.processButtonColors(this.theme)
+          this.validation.clearErrors()
+          this.systemConfigurationService.updateTheme(this.theme)
+          .subscribe((error) => {
+            if (this.isErrorDescription(error)) {
+              this.validation.applyError(error)
+            } else {
+              this.popupService.success("Theme updated.")
+              if (this.theme.active) {
+                this.dataService.refreshCss()
+              }
+              this.afterSave()
+            }
+          })
+          .add(() => {
+            this.savePending = false
+          })
+        }
+      })
+    }
   }
 
   activate() {
-    this.confirmActiveChange().subscribe((proceed) => {
-      if (proceed) {
-        this.savePending = true
-        this.systemConfigurationService.activateTheme(this.themeId)
-        .subscribe(() => {
-          this.popupService.success("Theme activated.")
-          this.dataService.refreshCss()
-          this.back()
-        })
-        .add(() => {
-          this.savePending = false
-        })
-      }
-    })
+    if (!this.activateDisabled()) {
+      this.confirmationDialogService.confirm("Confirm activation", "You are about to change the currently active theme. Are you sure you want to proceed?", "Activate", "Cancel", Constants.BUTTON_ICON.ACTIVATE)
+      .subscribe((proceed) => {
+        if (proceed) {
+          this.activatePending = true
+          let resultObservable: Observable<ErrorDescription|void>
+          if (this.theme.custom) {
+            this.processButtonColors(this.theme)
+            this.validation.clearErrors()
+            resultObservable = this.systemConfigurationService.updateTheme({...this.theme, active: true})
+          } else {
+            resultObservable = this.systemConfigurationService.activateTheme(this.themeId)
+          }
+          resultObservable.subscribe((error) => {
+            if (this.isErrorDescription(error)) {
+              this.validation.applyError(error)
+            } else {
+              this.theme.active = true
+              this.popupService.success("Theme activated.")
+              this.dataService.refreshCss()
+              this.afterSave()
+            }
+          })
+          .add(() => {
+            this.activatePending = false
+          })
+        }
+      })
+    }
   }
 
   delete() {
     let message: string
-    if (this.initiallyActive) {
+    if (this.theme.active) {
       message = "This is the currently active theme. Are you sure you want to delete it?"
     } else {
       message = "Are you sure you want to delete this theme?"
@@ -139,7 +157,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
       this.systemConfigurationService.deleteTheme(this.themeId)
       .subscribe(() => {
         this.popupService.success("Theme deleted.")
-        if (this.initiallyActive) {
+        if (this.theme.active) {
           this.dataService.refreshCss()
         }
         this.back()
