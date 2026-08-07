@@ -172,6 +172,22 @@
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Info alert background"
+                        tooltipText="The background colour used for info-level alert boxes, notification popups and the welcome page's info panel."
+                        [(ngModel)]="theme.alertInfoBackgroundColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Info alert text"
+                        tooltipText="The colour used for texts and icons in info-level alert boxes, notification popups and the welcome page's info panel."
+                        [(ngModel)]="theme.alertInfoTextColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
             </div>
         </div>
     </div>

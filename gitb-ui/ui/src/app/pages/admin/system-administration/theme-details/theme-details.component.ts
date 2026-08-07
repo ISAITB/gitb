@@ -58,6 +58,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
     this.theme = this.route.snapshot.data['theme'] as Theme
     this.originalPrimaryButtonColor = this.theme.primaryButtonColor
     this.originalSecondaryButtonColor = this.theme.secondaryButtonColor
+    this.originalAlertInfoBackgroundColor = this.theme.alertInfoBackgroundColor
     this.routingService.systemThemeBreadcrumbs(this.themeId, this.theme.key)
   }
 
@@ -76,6 +77,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   private afterSave() {
     this.originalPrimaryButtonColor = this.theme.primaryButtonColor
     this.originalSecondaryButtonColor = this.theme.secondaryButtonColor
+    this.originalAlertInfoBackgroundColor = this.theme.alertInfoBackgroundColor
     this.dataService.breadcrumbUpdate({id: this.themeId, type: BreadcrumbType.theme, label: this.theme.key})
   }
 
@@ -91,6 +93,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
         if (proceed) {
           this.savePending = true
           this.processButtonColors(this.theme)
+          this.processAlertColors(this.theme)
           this.validation.clearErrors()
           this.systemConfigurationService.updateTheme(this.theme)
           .subscribe((error) => {
@@ -121,6 +124,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
           let resultObservable: Observable<ErrorDescription|void>
           if (this.theme.custom) {
             this.processButtonColors(this.theme)
+            this.processAlertColors(this.theme)
             this.validation.clearErrors()
             resultObservable = this.systemConfigurationService.updateTheme({...this.theme, active: true})
           } else {

@@ -1026,7 +1026,10 @@ object PersistenceSchema {
     def welcomeLoginColor = column[String] ("welcome_login_color")
     def welcomeLoginLabelColor = column[String] ("welcome_login_label_color")
     def welcomeOptionLabelColor = column[String] ("welcome_option_label_color")
-    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: primaryButtonColor :: primaryButtonLabelColor :: primaryButtonHoverColor :: primaryButtonActiveColor :: secondaryButtonColor :: secondaryButtonLabelColor :: secondaryButtonHoverColor :: secondaryButtonActiveColor :: welcomeLoginColor :: welcomeLoginLabelColor :: welcomeOptionLabelColor :: HNil).mapTo[Theme]
+    def alertInfoBackgroundColor = column[String] ("alert_info_background_color")
+    def alertInfoTextColor = column[String] ("alert_info_text_color")
+    def alertInfoBorderColor = column[String] ("alert_info_border_color")
+    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: primaryButtonColor :: primaryButtonLabelColor :: primaryButtonHoverColor :: primaryButtonActiveColor :: secondaryButtonColor :: secondaryButtonLabelColor :: secondaryButtonHoverColor :: secondaryButtonActiveColor :: welcomeLoginColor :: welcomeLoginLabelColor :: welcomeOptionLabelColor :: alertInfoBackgroundColor :: alertInfoTextColor :: alertInfoBorderColor :: HNil).mapTo[Theme]
   }
   val themes = TableQuery[ThemesTable]
   val insertTheme = themes returning themes.map(_.id)

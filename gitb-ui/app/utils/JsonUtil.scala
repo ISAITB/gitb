@@ -94,7 +94,10 @@ object JsonUtil {
       "secondaryButtonActiveColor" -> theme.secondaryButtonActiveColor,
       "welcomeLoginColor" -> theme.welcomeLoginColor,
       "welcomeLoginLabelColor" -> theme.welcomeLoginLabelColor,
-      "welcomeOptionLabelColor" -> theme.welcomeOptionLabelColor
+      "welcomeOptionLabelColor" -> theme.welcomeOptionLabelColor,
+      "alertInfoBackgroundColor" -> theme.alertInfoBackgroundColor,
+      "alertInfoTextColor" -> theme.alertInfoTextColor,
+      "alertInfoBorderColor" -> theme.alertInfoBorderColor
     )
   }
 

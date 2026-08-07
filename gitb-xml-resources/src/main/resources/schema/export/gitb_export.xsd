@@ -999,6 +999,9 @@
                     <xsd:element name="welcomeLoginColor" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="welcomeLoginLabelColor" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="welcomeOptionLabelColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="alertInfoBackgroundColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="alertInfoTextColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="alertInfoBorderColor" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="active" type="xsd:boolean" default="false"/>
             </xsd:extension>

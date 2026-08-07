@@ -143,7 +143,10 @@ export class SystemConfigurationService {
       secondaryButtonActiveColor: theme.secondaryButtonActiveColor,
       welcomeLoginColor: theme.welcomeLoginColor,
       welcomeLoginLabelColor: theme.welcomeLoginLabelColor,
-      welcomeOptionLabelColor: theme.welcomeOptionLabelColor
+      welcomeOptionLabelColor: theme.welcomeOptionLabelColor,
+      alertInfoBackgroundColor: theme.alertInfoBackgroundColor,
+      alertInfoTextColor: theme.alertInfoTextColor,
+      alertInfoBorderColor: theme.alertInfoBorderColor
     }
     let files: FileParam[]|undefined
     if (theme.headerLogoFile?.file || theme.footerLogoFile?.file || theme.faviconFile?.file) {

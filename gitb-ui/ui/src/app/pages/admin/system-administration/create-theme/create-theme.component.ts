@@ -83,10 +83,14 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
       secondaryButtonActiveColor: referenceTheme.secondaryButtonActiveColor,
       welcomeLoginColor: referenceTheme.welcomeLoginColor,
       welcomeLoginLabelColor: referenceTheme.welcomeLoginLabelColor,
-      welcomeOptionLabelColor: referenceTheme.welcomeOptionLabelColor
+      welcomeOptionLabelColor: referenceTheme.welcomeOptionLabelColor,
+      alertInfoBackgroundColor: referenceTheme.alertInfoBackgroundColor,
+      alertInfoTextColor: referenceTheme.alertInfoTextColor,
+      alertInfoBorderColor: referenceTheme.alertInfoBorderColor
     }
     this.originalPrimaryButtonColor = this.theme.primaryButtonColor
     this.originalSecondaryButtonColor = this.theme.secondaryButtonColor
+    this.originalAlertInfoBackgroundColor = this.theme.alertInfoBackgroundColor
     this.routingService.systemConfigurationBreadcrumbs()
   }
 
@@ -98,6 +102,7 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
     if (!this.saveDisabled()) {
       this.savePending = true
       this.processButtonColors(this.theme)
+      this.processAlertColors(this.theme)
       this.validation.clearErrors()
       this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
         .subscribe((error) => {
@@ -121,6 +126,7 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
         if (proceed) {
           this.activatePending = true
           this.processButtonColors(this.theme)
+          this.processAlertColors(this.theme)
           this.validation.clearErrors()
           this.systemConfigurationService.createTheme({...this.theme, active: true}, this.referenceThemeId)
             .subscribe((error) => {

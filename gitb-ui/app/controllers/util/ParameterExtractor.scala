@@ -898,6 +898,15 @@ object ParameterExtractor {
     "#%02x%02x%02x".formatted(color.getRed, color.getGreen, color.getBlue)
   }
 
+  private def blendColors(base: String, towards: String, ratio: Double): String = {
+    val baseColor = Color.decode(base)
+    val towardsColor = Color.decode(towards)
+    val red = Math.round(baseColor.getRed + (towardsColor.getRed - baseColor.getRed) * ratio).toInt
+    val green = Math.round(baseColor.getGreen + (towardsColor.getGreen - baseColor.getGreen) * ratio).toInt
+    val blue = Math.round(baseColor.getBlue + (towardsColor.getBlue - baseColor.getBlue) * ratio).toInt
+    "#%02x%02x%02x".formatted(red, green, blue)
+  }
+
   def extractTheme(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], themeIdToUse: Option[Long] = None): (Option[Theme], Option[ThemeFiles], Option[Result]) = {
     val files = ParameterExtractor.extractFiles(request)
     var resultToReturn: Option[Result] = None
@@ -939,6 +948,9 @@ object ParameterExtractor {
       val secondaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_COLOR)
       var secondaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_HOVER_COLOR)
       var secondaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_ACTIVE_COLOR)
+      val alertInfoBackgroundColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ALERT_INFO_BACKGROUND_COLOR)
+      val alertInfoTextColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ALERT_INFO_TEXT_COLOR)
+      var alertInfoBorderColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ALERT_INFO_BORDER_COLOR)
       if (primaryButtonColor == primaryButtonHoverColor || primaryButtonColor == primaryButtonActiveColor) {
         primaryButtonHoverColor = darkenColor(primaryButtonColor)
         primaryButtonActiveColor = primaryButtonHoverColor
@@ -946,6 +958,9 @@ object ParameterExtractor {
       if (secondaryButtonColor == secondaryButtonHoverColor || secondaryButtonColor == secondaryButtonActiveColor) {
         secondaryButtonHoverColor = darkenColor(secondaryButtonColor)
         secondaryButtonActiveColor = secondaryButtonHoverColor
+      }
+      if (alertInfoBackgroundColor == alertInfoBorderColor) {
+        alertInfoBorderColor = blendColors(alertInfoBackgroundColor, alertInfoTextColor, 0.15)
       }
       theme = Some(Theme(
         themeIdToUse.getOrElse(0L),
@@ -984,6 +999,9 @@ object ParameterExtractor {
         ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_LOGIN_COLOR),
         ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_LOGIN_LABEL_COLOR),
         ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_OPTION_LABEL_COLOR),
+        alertInfoBackgroundColor,
+        alertInfoTextColor,
+        alertInfoBorderColor,
       ))
       if (!theme.get.footerLogoDisplay.equals("inherit") && !theme.get.footerLogoDisplay.equals("none")) {
         resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Unexpected value for footer logo display."))

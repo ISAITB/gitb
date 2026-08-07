@@ -819,6 +819,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedTheme.setWelcomeLoginColor(theme.welcomeLoginColor)
               exportedTheme.setWelcomeLoginLabelColor(theme.welcomeLoginLabelColor)
               exportedTheme.setWelcomeOptionLabelColor(theme.welcomeOptionLabelColor)
+              exportedTheme.setAlertInfoBackgroundColor(theme.alertInfoBackgroundColor)
+              exportedTheme.setAlertInfoTextColor(theme.alertInfoTextColor)
+              exportedTheme.setAlertInfoBorderColor(theme.alertInfoBorderColor)
               exportedThemes.getTheme.add(exportedTheme)
             }
             exportedSettings.setThemes(exportedThemes)

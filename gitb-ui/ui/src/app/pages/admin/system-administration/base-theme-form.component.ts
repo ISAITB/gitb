@@ -20,6 +20,7 @@ export abstract class BaseThemeFormComponent extends BaseComponent {
 
   originalPrimaryButtonColor?: string
   originalSecondaryButtonColor?: string
+  originalAlertInfoBackgroundColor?: string
 
   protected processButtonColors(theme: Theme) {
     if (theme.primaryButtonColor != this.originalPrimaryButtonColor) {
@@ -29,6 +30,12 @@ export abstract class BaseThemeFormComponent extends BaseComponent {
     if (theme.secondaryButtonColor != this.originalSecondaryButtonColor) {
       theme.secondaryButtonHoverColor = theme.secondaryButtonColor
       theme.secondaryButtonActiveColor = theme.secondaryButtonColor
+    }
+  }
+
+  protected processAlertColors(theme: Theme) {
+    if (theme.alertInfoBackgroundColor != this.originalAlertInfoBackgroundColor) {
+      theme.alertInfoBorderColor = theme.alertInfoBackgroundColor
     }
   }
 

@@ -199,6 +199,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       "  --itb-welcome-login-color: " + themeToUse.welcomeLoginColor + ";\n" +
       "  --itb-welcome-login-label-color: " + themeToUse.welcomeLoginLabelColor + ";\n" +
       "  --itb-welcome-option-label-color: " + themeToUse.welcomeOptionLabelColor + ";\n" +
+      "  --itb-alert-info-background-color: " + themeToUse.alertInfoBackgroundColor + ";\n" +
+      "  --itb-alert-info-text-color: " + themeToUse.alertInfoTextColor + ";\n" +
+      "  --itb-alert-info-border-color: " + themeToUse.alertInfoBorderColor + ";\n" +
       "}"
     activeThemeCss = Some(cssContent)
     activeThemeFavicon = Some(themeToUse.faviconPath)
@@ -871,7 +874,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             x.footerBorderColor :: x.footerLogoPath :: x.footerLogoDisplay :: x.faviconPath ::
             x.primaryButtonColor :: x.primaryButtonLabelColor :: x.primaryButtonHoverColor :: x.primaryButtonActiveColor ::
             x.secondaryButtonColor :: x.secondaryButtonLabelColor :: x.secondaryButtonHoverColor :: x.secondaryButtonActiveColor ::
-            x.welcomeLoginColor :: x.welcomeLoginLabelColor :: x.welcomeOptionLabelColor :: HNil
+            x.welcomeLoginColor :: x.welcomeLoginLabelColor :: x.welcomeOptionLabelColor ::
+            x.alertInfoBackgroundColor :: x.alertInfoTextColor :: x.alertInfoBorderColor :: HNil
           ).update(
             theme.key :: theme.description :: newActiveStatus :: theme.separatorTitleColor :: theme.modalTitleColor :: theme.tableTitleColor :: theme.cardTitleColor ::
             theme.pageTitleColor :: theme.headingColor :: theme.tabLinkColor :: theme.footerTextColor :: theme.headerBackgroundColor ::
@@ -879,7 +883,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             theme.footerBorderColor :: footerPathToUse :: theme.footerLogoDisplay :: faviconPathToUse ::
             theme.primaryButtonColor :: theme.primaryButtonLabelColor :: theme.primaryButtonHoverColor :: theme.primaryButtonActiveColor ::
             theme.secondaryButtonColor :: theme.secondaryButtonLabelColor :: theme.secondaryButtonHoverColor :: theme.secondaryButtonActiveColor ::
-            theme.welcomeLoginColor :: theme.welcomeLoginLabelColor :: theme.welcomeOptionLabelColor :: HNil
+            theme.welcomeLoginColor :: theme.welcomeLoginLabelColor :: theme.welcomeOptionLabelColor ::
+            theme.alertInfoBackgroundColor :: theme.alertInfoTextColor :: theme.alertInfoBorderColor :: HNil
           ).map(_ => Some(headerPathToUse, footerPathToUse, faviconPathToUse))
         } else {
           DBIO.successful(None)

@@ -655,7 +655,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       // Provide default values matching Bootstrap 5
       primaryButtonColour, primaryButtonLabelColour, Option(data.getPrimaryButtonHoverColor).getOrElse("#2b689c"), Option(data.getPrimaryButtonActiveColor).getOrElse("#296292"),
       Option(data.getSecondaryButtonColor).getOrElse("#6c757d"), Option(data.getSecondaryButtonLabelColor).getOrElse("#FFFFFF"), Option(data.getSecondaryButtonHoverColor).getOrElse("#5c636a"), Option(data.getSecondaryButtonActiveColor).getOrElse("#565e64"),
-      Option(data.getWelcomeLoginColor).getOrElse(primaryButtonColour), Option(data.getWelcomeLoginLabelColor).getOrElse(primaryButtonLabelColour), Option(data.getWelcomeOptionLabelColor).getOrElse("#777777")
+      Option(data.getWelcomeLoginColor).getOrElse(primaryButtonColour), Option(data.getWelcomeLoginLabelColor).getOrElse(primaryButtonLabelColour), Option(data.getWelcomeOptionLabelColor).getOrElse("#777777"),
+      Option(data.getAlertInfoBackgroundColor).getOrElse("#d9edf7"), Option(data.getAlertInfoTextColor).getOrElse("#005885"), Option(data.getAlertInfoBorderColor).getOrElse("#bddded")
     )
   }
 

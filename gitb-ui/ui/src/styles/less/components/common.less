@@ -502,8 +502,15 @@ div.table-container {
 }
 .alert {
     &.alert-info {
+        --bs-alert-color: var(--itb-alert-info-text-color);
+        --bs-alert-bg: var(--itb-alert-info-background-color);
+        --bs-alert-border-color: var(--itb-alert-info-border-color);
+        --bs-alert-link-color: var(--itb-alert-info-text-color);
         .alert-label {
-            background-color: @blue-info-border;
+            background-color: var(--itb-alert-info-border-color);
+        }
+        .border-info-subtle {
+            border-color: var(--itb-alert-info-border-color) !important;
         }
     }
     .alert-label {

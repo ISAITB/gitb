@@ -50,6 +50,9 @@ export interface Theme {
     welcomeLoginColor: string,
     welcomeLoginLabelColor: string,
     welcomeOptionLabelColor: string,
+    alertInfoBackgroundColor: string,
+    alertInfoTextColor: string,
+    alertInfoBorderColor: string,
 
     headerLogoFile?: FileData
     footerLogoFile?: FileData
