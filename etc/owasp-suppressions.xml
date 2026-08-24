@@ -905,4 +905,108 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
         <cve>CVE-2026-66299</cve>
     </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-66909</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-68079</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-61466</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-63687</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-65583</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-57817</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-57818</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-54225</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-57819</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-64958</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-65432</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: cxf-core-4.2.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/.*@.*$</packageUrl>
+        <cve>CVE-2026-68481</cve>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: tika-core-3.2.3.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tika/.*@.*$</packageUrl>
+        <cve>CVE-2026-66755</cve>
+    </suppress>
 </suppressions>
