@@ -719,4 +719,20 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-10532</vulnerabilityName>
     </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.11.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-75838</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.11.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-75838</vulnerabilityName>
+    </suppress>
 </suppressions>
