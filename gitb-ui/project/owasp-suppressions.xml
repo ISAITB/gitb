@@ -1391,4 +1391,20 @@
         <sha1>4e6e3e8765e4a9d0609744b3e8fe75afe1b98cba</sha1>
         <cve>CVE-2026-61082</cve>
     </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.11.jar: swagger-ui-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-75838</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Suppressed vulnerability as non-applicable. -->
+        <notes><![CDATA[
+    file name: swagger-ui-5.32.11.jar: swagger-ui-es-bundle.js
+    ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-75838</vulnerabilityName>
+    </suppress>
 </suppressions>
