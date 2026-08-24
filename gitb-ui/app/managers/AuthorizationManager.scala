@@ -48,6 +48,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      landingPageManager: LandingPageManager,
                                      legalNoticeManager: LegalNoticeManager,
                                      triggerManager: TriggerManager,
+                                     testFlagManager: TestFlagManager,
                                      communityResourceManager: CommunityResourceManager,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
@@ -1611,6 +1612,58 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canManageTriggers(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
+  }
+
+  def canManageTestFlag(request: RequestWithAttributes[_], testFlagId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      val load = () => { testFlagManager.getCommunityId(testFlagId) }
+      canManageCommunityArtifact(request, userInfo, load)
+    }
+  }
+
+  def canManageTestFlags(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canManageCommunity(request, communityId)
+  }
+
+  /** Only the Test Bed administrator receives the all-communities test flag login cache - other roles
+   * get their own community's flags as part of the regular community-for-login payload. */
+  def canViewAllCommunityTestFlags(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  /** Whether the requester may set (or clear, if newFlagId is empty) a test session's flag. An admin-only
+   * flag can only be touched by administrators - this applies both to the flag currently set on the
+   * session (it cannot be replaced/cleared by an organisation user, even to set a non-admin-only flag)
+   * and to the flag being newly assigned (an organisation user cannot set an admin-only flag). The new
+   * flag (if any) must also belong to the same community as the session. */
+  def canSetTestSessionFlag(request: RequestWithAttributes[_], sessionId: String, newFlagId: Option[Long]): Future[Boolean] = {
+    testResultManager.getFlagInfoForTestSession(sessionId).flatMap {
+      case Some((_, currentFlagId, Some(communityId))) =>
+        val currentFlagAdminOnlyFut = currentFlagId match {
+          case Some(id) => testFlagManager.getTestFlagById(id).map(_.adminOnly)
+          case None => Future.successful(false)
+        }
+        val newFlagFut = newFlagId match {
+          case Some(id) => testFlagManager.getTestFlagById(id).map(Some(_))
+          case None => Future.successful(None)
+        }
+        for {
+          currentAdminOnly <- currentFlagAdminOnlyFut
+          newFlag <- newFlagFut
+          allowed <- {
+            if (newFlagId.isDefined && (newFlag.isEmpty || newFlag.get.community != communityId)) {
+              // The referenced flag doesn't exist or belongs to a different community.
+              Future.successful(false)
+            } else {
+              val requiresAdmin = currentAdminOnly || newFlag.exists(_.adminOnly)
+              canManageTestSession(request, sessionId, requireAdmin = requiresAdmin, requireOwnTestSessionIfNotAdmin = true)
+            }
+          }
+        } yield allowed
+      case _ =>
+        // No recorded session, or a session without a community (community has since been deleted).
+        Future.successful(false)
+    }
   }
 
   def canManageCommunityResource(request: RequestWithAttributes[_], resourceId: Long): Future[Boolean] = {

@@ -321,4 +321,11 @@ object ParameterNames {
   val OUTPUT = "output"
   val ALLOWED = "allowed"
 
+  val COLOUR = "colour"
+  val PUBLIC_NAME = "publicName"
+  val PUBLIC_COLOUR = "publicColour"
+  val FLAG_ID = "flag_id"
+  val FLAG_IDS = "flag_ids"
+  val INCLUDE_UNFLAGGED = "include_unflagged"
+
 }

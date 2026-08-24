@@ -20,7 +20,7 @@ import controllers.CommunityService.SelfRegistrationInfo
 import controllers.util.ParameterExtractor.{optionalLongBodyParameter, requiredBodyParameter}
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
-import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
+import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager, TestFlagManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models._
 import org.apache.commons.io.FileUtils
@@ -68,6 +68,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
                                   cc: ControllerComponents,
                                   communityManager: CommunityManager,
                                   organisationManager: OrganizationManager,
+                                  testFlagManager: TestFlagManager,
                                   authorizationManager: AuthorizationManager,
                                   authenticationManager: AuthenticationManager)
                                  (implicit ec: ExecutionContext) extends AbstractController(cc) {
@@ -496,6 +497,21 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewOwnCommunity(request).flatMap { _ =>
       communityManager.getCommunityInfoForLogin(userId).map { communityInfo =>
         val json: String = JsonUtil.jsCommunityInfoForLogin(communityInfo).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  /**
+    * All communities' test flags for the Test Bed administrator's login cache (the session dashboard has
+    * no single "community in scope" to lazily key a per-community fetch off). Returns an empty result if
+    * the total flag count exceeds the configured safety cap - the client then falls back to fetching a
+    * specific community's flags on demand once one is in scope.
+    */
+  def getAllCommunityTestFlags: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewAllCommunityTestFlags(request).flatMap { _ =>
+      testFlagManager.getAllTestFlagsForAdminLogin.map { flagsByCommunity =>
+        val json: String = JsonUtil.jsAllCommunityTestFlagsForAdminLogin(flagsByCommunity.getOrElse(Map.empty)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }

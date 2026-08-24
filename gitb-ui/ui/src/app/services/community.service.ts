@@ -36,6 +36,7 @@ import {SearchResult} from '../types/search-result';
 import {CommunityLimited} from '../types/community-limited';
 import {UserPreferences} from '../types/user-preferences';
 import {TagData} from '../types/tag-data';
+import {CommunityTestFlags} from '../types/community-test-flags';
 
 @Injectable({
   providedIn: 'root'
@@ -88,6 +89,14 @@ export class CommunityService {
   getUserCommunity() {
     return this.restService.get<Community>({
       path: ROUTES.controllers.CommunityService.getUserCommunity().url,
+      authenticate: true
+    })
+  }
+
+  /** All communities' test flags, for the Test Bed administrator's login cache. */
+  getAllCommunityTestFlags() {
+    return this.restService.get<CommunityTestFlags[]>({
+      path: ROUTES.controllers.CommunityService.getAllCommunityTestFlags().url,
       authenticate: true
     })
   }

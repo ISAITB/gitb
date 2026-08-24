@@ -13,13 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EntityWithId } from "./entity-with-id"
+import { TestFlagForUser } from './test-flag-for-user';
 
-export interface IdLabel extends EntityWithId {
+/** One community's test flags, as returned in the Test Bed administrator's all-communities login cache. */
+export interface CommunityTestFlags {
 
-    label: string
-    icon?: string
-    /** Optional colour override for `icon` (e.g. a flag's configured colour). */
-    iconColour?: string
+    communityId: number
+    flags: TestFlagForUser[]
 
 }

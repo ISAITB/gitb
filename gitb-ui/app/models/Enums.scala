@@ -85,7 +85,7 @@ object Enums {
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
     Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme,
     DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration, SystemResource,
-    TestService = Value
+    TestService, TestFlag = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {

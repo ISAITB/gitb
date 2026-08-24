@@ -210,29 +210,30 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
   }
 
   private def loadSystemSettingsImportPreviewData(): Future[SystemSettingsImportPreviewData] = {
-    loadSystemResourceMap().zip(
-      loadThemeMap().zip(
-        loadSystemAdministratorMap().zip(
-          loadDefaultLandingPages().zip(
-            loadDefaultLegalNotices().zip(
-              loadDefaultErrorTemplates().zip(
-                loadSystemSettings()
-              )
-            )
-          )
-        )
-      )
-    ).map { results =>
-      SystemSettingsImportPreviewData(
-        resourceMap = results._1,
-        themeMap = results._2._1,
-        systemAdministrators = results._2._2._1,
-        defaultLandingPages = results._2._2._2._1,
-        defaultLegalNotices = results._2._2._2._2._1,
-        defaultErrorTemplates = results._2._2._2._2._2._1,
-        systemSettings = results._2._2._2._2._2._2
-      )
-    }
+    val fResourceMap = loadSystemResourceMap()
+    val fThemeMap = loadThemeMap()
+    val fSystemAdministrators = loadSystemAdministratorMap()
+    val fDefaultLandingPages = loadDefaultLandingPages()
+    val fDefaultLegalNotices = loadDefaultLegalNotices()
+    val fDefaultErrorTemplates = loadDefaultErrorTemplates()
+    val fSystemSettings = loadSystemSettings()
+    for {
+      resourceMap <- fResourceMap
+      themeMap <- fThemeMap
+      systemAdministrators <- fSystemAdministrators
+      defaultLandingPages <- fDefaultLandingPages
+      defaultLegalNotices <- fDefaultLegalNotices
+      defaultErrorTemplates <- fDefaultErrorTemplates
+      systemSettings <- fSystemSettings
+    } yield SystemSettingsImportPreviewData(
+      resourceMap = resourceMap,
+      themeMap = themeMap,
+      systemAdministrators = systemAdministrators,
+      defaultLandingPages = defaultLandingPages,
+      defaultLegalNotices = defaultLegalNotices,
+      defaultErrorTemplates = defaultErrorTemplates,
+      systemSettings = systemSettings
+    )
   }
 
   private def toMutable[A, B](map: Map[A, B]): mutable.Map[A, B] = {
@@ -492,7 +493,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
      * Prepare the futures to load the data.
      */
     // Administrators.
-    val administrators = exportManager.loadCommunityAdministrators(community.id).map { results =>
+    val fAdministrators = exportManager.loadCommunityAdministrators(community.id).map { results =>
       val targetAdministratorsMap = mutable.Map[String, models.Users]()
       results.foreach { x =>
         targetAdministratorsMap += (x.email -> x)
@@ -500,7 +501,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetAdministratorsMap.toMap
     }
     // Organisation properties.
-    val organisationProperties = exportManager.loadOrganisationProperties(community.id).map { results =>
+    val fOrganisationProperties = exportManager.loadOrganisationProperties(community.id).map { results =>
       val targetOrganisationPropertyMap = mutable.Map[String, OrganisationParameters]()
       val targetOrganisationPropertyIdMap = mutable.Map[Long, OrganisationParameters]()
       results.foreach { x =>
@@ -510,7 +511,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       (targetOrganisationPropertyMap.toMap, targetOrganisationPropertyIdMap.toMap)
     }
     // System properties.
-    val systemProperties = exportManager.loadSystemProperties(community.id).map { results =>
+    val fSystemProperties = exportManager.loadSystemProperties(community.id).map { results =>
       val targetSystemPropertyMap = mutable.Map[String, SystemParameters]()
       val targetSystemPropertyIdMap = mutable.Map[Long, SystemParameters]()
       results.foreach { x =>
@@ -520,7 +521,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       (targetSystemPropertyMap.toMap, targetSystemPropertyIdMap.toMap)
     }
     // Custom labels.
-    val customLabels = communityManager.getCommunityLabels(community.id).map { results =>
+    val fCustomLabels = communityManager.getCommunityLabels(community.id).map { results =>
       val targetCustomLabelMap = mutable.Map[LabelType, models.CommunityLabels]()
       results.foreach { x =>
         targetCustomLabelMap += (LabelType.apply(x.labelType) -> x)
@@ -528,7 +529,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetCustomLabelMap.toMap
     }
     // Landing pages.
-    val landingPages = DB.run(
+    val fLandingPages = DB.run(
       PersistenceSchema.landingPages
         .filter(_.community === community.id)
         .map(x => (x.name, x.id))
@@ -541,7 +542,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetLandingPageMap.view.mapValues(_.toList).toMap
     }
     // Legal notices.
-    val legalNotices = DB.run(
+    val fLegalNotices = DB.run(
       PersistenceSchema.legalNotices
         .filter(_.community === community.id)
         .map(x => (x.name, x.id))
@@ -554,7 +555,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetLegalNoticeMap.view.mapValues(_.toList).toMap
     }
     // Error templates.
-    val errorTemplates = DB.run(
+    val fErrorTemplates = DB.run(
       PersistenceSchema.errorTemplates
         .filter(_.community === community.id)
         .map(x => (x.name, x.id))
@@ -567,7 +568,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetErrorTemplateMap.view.mapValues(_.toList).toMap
     }
     // Triggers.
-    val triggers = DB.run(
+    val fTriggers = DB.run(
       PersistenceSchema.triggers
         .filter(_.community === community.id)
         .map(x => (x.name, x.id))
@@ -579,8 +580,21 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       }
       targetTriggerMap.view.mapValues(_.toList).toMap
     }
+    // Test flags.
+    val fTestFlags = DB.run(
+      PersistenceSchema.testFlags
+        .filter(_.community === community.id)
+        .map(x => (x.name, x.id))
+        .result
+    ).map { results =>
+      val targetTestFlagMap = mutable.Map[String, ListBuffer[Long]]()
+      results.foreach { x =>
+        targetTestFlagMap.getOrElseUpdate(x._1, new ListBuffer[Long]()) += x._2
+      }
+      targetTestFlagMap.view.mapValues(_.toList).toMap
+    }
     // Resources.
-    val resources = DB.run(
+    val fResources = DB.run(
       PersistenceSchema.communityResources
         .filter(_.community === community.id)
         .map(x => (x.name, x.id))
@@ -593,7 +607,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetResourceMap.view.mapValues(_.toList).toMap
     }
     // Organisations.
-    val organisations = exportManager.loadOrganisations(community.id).map { results =>
+    val fOrganisations = exportManager.loadOrganisations(community.id).map { results =>
       val targetOrganisationMap = mutable.Map[String, mutable.ListBuffer[models.Organizations]]()
       results.foreach { x =>
         targetOrganisationMap.getOrElseUpdate(x.shortname, new ListBuffer[Organizations]()) += x
@@ -601,7 +615,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetOrganisationMap.view.mapValues(_.toList).toMap
     }
     // Users.
-    val users = exportManager.loadOrganisationUserMap(community.id).map { results =>
+    val fUsers = exportManager.loadOrganisationUserMap(community.id).map { results =>
       val targetOrganisationUserMap = mutable.Map[Long, mutable.Map[String, models.Users]]()
       results.foreach { x =>
         targetOrganisationUserMap += (x._1 -> listBufferToNameMap(x._2, { u => u.email }))
@@ -609,7 +623,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetOrganisationUserMap.view.mapValues(_.toMap).toMap
     }
     // Organisation property values.
-    val organisationPropertyValues = DB.run(
+    val fOrganisationPropertyValues = DB.run(
       PersistenceSchema.organisationParameterValues
         .join(PersistenceSchema.organizations).on(_.organisation === _.id)
         .join(PersistenceSchema.organisationParameters).on(_._1.parameter === _.id)
@@ -625,7 +639,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetOrganisationPropertyValueMap.view.mapValues(_.toMap).toMap
     }
     // Systems
-    val systems = exportManager.loadOrganisationSystemMap(community.id).map { results =>
+    val fSystems = exportManager.loadOrganisationSystemMap(community.id).map { results =>
       val targetSystemMap = mutable.Map[Long, mutable.Map[String, ListBuffer[models.Systems]]]()
       results.foreach { x =>
         targetSystemMap += (x._1 -> listBufferToNonUniqueNameMap(x._2, { s => s.shortname }))
@@ -633,7 +647,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetSystemMap.view.mapValues(_.view.mapValues(_.toList).toMap).toMap
     }
     // System property values.
-    val systemPropertyValues = DB.run(
+    val fSystemPropertyValues = DB.run(
       PersistenceSchema.systemParameterValues
         .join(PersistenceSchema.systems).on(_.system === _.id)
         .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
@@ -650,7 +664,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetSystemPropertyValueMap.view.mapValues(_.toMap).toMap
     }
     // Statements.
-    val statements = exportManager.loadSystemStatementsMap(community.id, community.domain).map { results =>
+    val fStatements = exportManager.loadSystemStatementsMap(community.id, community.domain).map { results =>
       val targetStatementMap = mutable.Map[Long, mutable.Map[Long, (models.Specifications, models.Actors)]]() // System to [actor_DB_ID] to (specification, actor)]    WAS: System to [actor name to (specification name, actor)]
       results.foreach { x =>
         val statements = targetStatementMap.getOrElseUpdate(x._1, mutable.Map[Long, (models.Specifications, models.Actors)]())
@@ -661,7 +675,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       targetStatementMap.view.mapValues(_.toMap).toMap
     }
     // Statement configurations.
-    val statementConfigurations = exportManager.loadSystemConfigurationsMap(community).map { results =>
+    val fStatementConfigurations = exportManager.loadSystemConfigurationsMap(community).map { results =>
       val targetStatementConfigurationMap = mutable.Map[String, mutable.Map[String, models.Configs]]() // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID] to Parameter name to Configs
       results.foreach { x =>
         // [actor ID]_[endpoint ID]_[System ID]_[Parameter ID]
@@ -669,95 +683,75 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       }
       targetStatementConfigurationMap.view.mapValues(_.toMap).toMap
     }
-    /*
-     * Load the data using zip to load in parallel (where possible).
-     */
     for {
-      results <- {
-        administrators.zip(
-          organisationProperties.zip(
-            systemProperties.zip(
-              customLabels.zip(
-                landingPages.zip(
-                  legalNotices.zip(
-                    errorTemplates.zip(
-                      triggers.zip(
-                        resources.zip(
-                          organisations
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      }
+      administrators                <- fAdministrators
+      organisationPropertiesResult  <- fOrganisationProperties
+      systemPropertiesResult        <- fSystemProperties
+      customLabels                  <- fCustomLabels
+      landingPages                  <- fLandingPages
+      legalNotices                  <- fLegalNotices
+      errorTemplates                <- fErrorTemplates
+      triggers                      <- fTriggers
+      testFlagMap                   <- fTestFlags
+      resources                     <- fResources
+      organisations                 <- fOrganisations
       // Load dependent data
       data <- {
-        val administrators = results._1
-        val organisationProperties = results._2._1._1
-        val organisationPropertyIds = results._2._1._2
-        val systemProperties = results._2._2._1._1
-        val systemPropertyIds = results._2._2._1._2
-        val customLabels = results._2._2._2._1
-        val landingPages = results._2._2._2._2._1
-        val legalNotices = results._2._2._2._2._2._1
-        val errorTemplates = results._2._2._2._2._2._2._1
-        val triggers = results._2._2._2._2._2._2._2._1
-        val resources = results._2._2._2._2._2._2._2._2._1
-        val organisations = results._2._2._2._2._2._2._2._2._2
-        // Load dependent data
+        val organisationProperties = organisationPropertiesResult._1
+        val organisationPropertyIds = organisationPropertiesResult._2
+        val systemProperties = systemPropertiesResult._1
+        val systemPropertyIds = systemPropertiesResult._2
+        // The underlying futures (fUsers, fOrganisationPropertyValues, fSystems, fSystemPropertyValues,
+        // fStatements, fStatementConfigurations) were all already started eagerly above, alongside the
+        // rest - this only decides whether to await and use their results, or discard them, now that we
+        // know if there are any organisations/properties/systems to begin with.
         val usersTask = if (organisations.nonEmpty) {
-          users.map(Some(_))
+          fUsers.map(Some(_))
         } else {
           Future.successful(None)
         }
         val organisationPropertyValuesTask = if (organisations.nonEmpty && organisationProperties.nonEmpty) {
-          organisationPropertyValues.map(Some(_))
+          fOrganisationPropertyValues.map(Some(_))
         } else {
           Future.successful(None)
         }
         val systemsTask = if (organisations.nonEmpty) {
-          systems.flatMap { systems =>
+          fSystems.flatMap { systems =>
             val systemPropertyTask = if (systems.nonEmpty && systemProperties.nonEmpty) {
-              systemPropertyValues.map(Some(_))
+              fSystemPropertyValues.map(Some(_))
             } else {
               Future.successful(None)
             }
             val statementTask = if (systems.nonEmpty && domainImportInfo.targetActorToSpecificationMap.nonEmpty) {
-              statements.map(Some(_))
+              fStatements.map(Some(_))
             } else {
               Future.successful(None)
             }
             val statementConfigurationsTask = if (systems.nonEmpty && domainImportInfo.targetActorToSpecificationMap.nonEmpty && domainImportInfo.targetEndpointParameterIdMap.nonEmpty) {
-              statementConfigurations.map(Some(_))
+              fStatementConfigurations.map(Some(_))
             } else {
               Future.successful(None)
             }
-            systemPropertyTask.zip(
-              statementTask.zip(
-                statementConfigurationsTask
-              )
-            ).map { result =>
-              (Some(systems), result._1, result._2._1, result._2._2)
-            }
+            for {
+              systemPropertyValuesOpt <- systemPropertyTask
+              statementsOpt <- statementTask
+              statementConfigurationsOpt <- statementConfigurationsTask
+            } yield (Some(systems), systemPropertyValuesOpt, statementsOpt, statementConfigurationsOpt)
           }
         } else {
           Future.successful((None, None, None, None))
         }
-        usersTask.zip(
-          organisationPropertyValuesTask.zip(
-            systemsTask
-          )
-        ).map { results =>
-          val users = results._1.getOrElse(Map.empty[Long, Map[String, Users]])
-          val organisationPropertyValues = results._2._1.getOrElse(Map.empty[Long, Map[String, OrganisationParameterValues]])
-          val systems = results._2._2._1.getOrElse(Map.empty[Long, Map[String, List[Systems]]])
-          val systemPropertyValues = results._2._2._2.getOrElse(Map.empty[Long, Map[String, SystemParameterValues]])
-          val statements = results._2._2._3.getOrElse(Map.empty[Long, Map[Long, (Specifications, Actors)]])
-          val statementConfigurations = results._2._2._4.getOrElse(Map.empty[String, Map[String, Configs]])
+        for {
+          usersOpt <- usersTask
+          organisationPropertyValuesOpt <- organisationPropertyValuesTask
+          systemsResult <- systemsTask
+        } yield {
+          val users = usersOpt.getOrElse(Map.empty[Long, Map[String, Users]])
+          val organisationPropertyValues = organisationPropertyValuesOpt.getOrElse(Map.empty[Long, Map[String, OrganisationParameterValues]])
+          val systems = systemsResult._1.getOrElse(Map.empty[Long, Map[String, List[Systems]]])
+          val systemPropertyValues = systemsResult._2.getOrElse(Map.empty[Long, Map[String, SystemParameterValues]])
+          val statements = systemsResult._3.getOrElse(Map.empty[Long, Map[Long, (Specifications, Actors)]])
+          val statementConfigurations = systemsResult._4.getOrElse(Map.empty[String, Map[String, Configs]])
           // Return the final data to use
           CommunityImportPreviewData(
             administratorMap = administrators,
@@ -770,6 +764,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
             legalNoticeMap = legalNotices,
             errorTemplateMap = errorTemplates,
             triggerMap = triggers,
+            testFlagMap = testFlagMap,
             resourceMap = resources,
             organisationMap = organisations,
             organisationUserMap = users,
@@ -789,7 +784,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
      * Prepare the futures to load the data.
      */
     // Specification groups
-    val specificationGroupMap = DB.run(
+    val fSpecificationGroupMap = DB.run(
       PersistenceSchema.specificationGroups
         .filter(_.domain === domainId)
         .result
@@ -801,7 +796,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       map.toMap
     }
     // Specifications
-    val specificationMaps = DB.run(
+    val fSpecificationMaps = DB.run(
       PersistenceSchema.specifications
         .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
         .filter(_._1.domain === domainId)
@@ -816,7 +811,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       (specificationMap.toMap, specificationIdMap.toMap)
     }
     // Shared test suites
-    val sharedTestSuiteMap = DB.run(
+    val fSharedTestSuiteMap = DB.run(
       PersistenceSchema.testSuites
         .filter(_.domain === domainId)
         .filter(_.shared)
@@ -827,7 +822,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       map.toMap
     }
     // Specification test suites
-    val specificationTestSuiteMap = exportManager.loadSpecificationTestSuiteMap(domainId).map { results =>
+    val fSpecificationTestSuiteMap = exportManager.loadSpecificationTestSuiteMap(domainId).map { results =>
       val map = mutable.Map[Long, mutable.Map[String, models.TestSuites]]()
       results.foreach { x =>
         map += (x._1 -> listBufferToNameMap(x._2, { t => t.identifier }))
@@ -835,7 +830,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       map.view.mapValues(_.toMap).toMap
     }
     // Specification actors
-    val specificationActorMap = exportManager.loadSpecificationActorMap(domainId).map { results =>
+    val fSpecificationActorMap = exportManager.loadSpecificationActorMap(domainId).map { results =>
       val map = mutable.Map[Long, mutable.Map[String, models.Actors]]()
       results.foreach { x =>
         map += (x._1 -> listBufferToNameMap(x._2, { a => a.actorId }))
@@ -843,7 +838,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       map.view.mapValues(_.toMap).toMap
     }
     // Actor endpoints
-    val actorEndpointMap = exportManager.loadActorEndpointMap(domainId).map { results =>
+    val fActorEndpointMap = exportManager.loadActorEndpointMap(domainId).map { results =>
       val map = mutable.Map[Long, mutable.Map[String, models.Endpoints]]()
       results.foreach { x =>
         map += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
@@ -851,7 +846,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       map.view.mapValues(_.toMap).toMap
     }
     // Endpoint parameters
-    val endpointParameterMap = exportManager.loadEndpointParameterMap(domainId).map { results =>
+    val fEndpointParameterMap = exportManager.loadEndpointParameterMap(domainId).map { results =>
       val map = mutable.Map[Long, mutable.Map[String, models.Parameters]]()
       results.foreach { x =>
         map += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
@@ -859,7 +854,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       map.view.mapValues(_.toMap).toMap
     }
     // Domain parameters
-    val domainParameterMap = DB.run(
+    val fDomainParameterMap = DB.run(
       PersistenceSchema.domainParameters
         .filter(_.domain === domainId)
         .result
@@ -871,7 +866,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       map.toMap
     }
     // Test services
-    val testServicesMap = DB.run(
+    val fTestServicesMap = DB.run(
       PersistenceSchema.testServices
         .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
         .filter(_._2.domain === domainId)
@@ -883,39 +878,28 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       }
       map.toMap
     }
-    /*
-     * Load the data using zip to load in parallel.
-     */
-    specificationGroupMap.zip(
-      specificationMaps.zip(
-        sharedTestSuiteMap.zip(
-          specificationTestSuiteMap.zip(
-            specificationActorMap.zip(
-              actorEndpointMap.zip(
-                endpointParameterMap.zip(
-                  domainParameterMap.zip(
-                    testServicesMap
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    ).map { results =>
-      DomainImportPreviewData(
-        specificationGroupMap =       results._1,
-        specificationMap =            results._2._1._1,
-        specificationIdMap =          results._2._1._2,
-        domainTestSuiteMap =          results._2._2._1,
-        specificationTestSuiteMap =   results._2._2._2._1,
-        specificationActorMap =       results._2._2._2._2._1,
-        actorEndpointMap =            results._2._2._2._2._2._1,
-        endpointParameterMap =        results._2._2._2._2._2._2._1,
-        domainParametersMap =         results._2._2._2._2._2._2._2._1,
-        testServicesMap =             results._2._2._2._2._2._2._2._2
-      )
-    }
+    for {
+      specificationGroupMap     <- fSpecificationGroupMap
+      specificationMaps         <- fSpecificationMaps
+      sharedTestSuiteMap        <- fSharedTestSuiteMap
+      specificationTestSuiteMap <- fSpecificationTestSuiteMap
+      specificationActorMap     <- fSpecificationActorMap
+      actorEndpointMap          <- fActorEndpointMap
+      endpointParameterMap      <- fEndpointParameterMap
+      domainParameterMap        <- fDomainParameterMap
+      testServicesMap           <- fTestServicesMap
+    } yield DomainImportPreviewData(
+      specificationGroupMap      = specificationGroupMap,
+      specificationMap           = specificationMaps._1,
+      specificationIdMap         = specificationMaps._2,
+      domainTestSuiteMap         = sharedTestSuiteMap,
+      specificationTestSuiteMap  = specificationTestSuiteMap,
+      specificationActorMap      = specificationActorMap,
+      actorEndpointMap           = actorEndpointMap,
+      endpointParameterMap       = endpointParameterMap,
+      domainParametersMap        = domainParameterMap,
+      testServicesMap            = testServicesMap
+    )
   }
 
   private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings, linkedToCommunity: Boolean): Future[(DomainImportInfo, Option[ImportItem])] = {
@@ -1317,6 +1301,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
         val targetLegalNoticeMap = toMutableOfLists(data.map(_.legalNoticeMap))
         val targetErrorTemplateMap = toMutableOfLists(data.map(_.errorTemplateMap))
         val targetTriggerMap = toMutableOfLists(data.map(_.triggerMap))
+        val targetTestFlagMap = toMutableOfLists(data.map(_.testFlagMap))
         val targetResourceMap = toMutableOfLists(data.map(_.resourceMap))
         val targetOrganisationMap = toMutableOfLists(data.map(_.organisationMap))
         val targetOrganisationPropertyValueMap = toMutableOfMaps(data.map(_.organisationPropertiesValueMap))
@@ -1485,6 +1470,26 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
               new ImportItem(Some(exportedTrigger.getName), ImportItemType.Trigger, ImportItemMatch.Both, Some(targetTrigger.get.toString), Some(exportedTrigger.getId), importItemCommunity)
             } else {
               new ImportItem(Some(exportedTrigger.getName), ImportItemType.Trigger, ImportItemMatch.ArchiveOnly, None, Some(exportedTrigger.getId), importItemCommunity)
+            }
+          }
+        }
+        // Test flags.
+        if (importTargets.hasTestFlags) {
+          exportedCommunity.getTestFlags.getTestFlag.asScala.foreach { exportedTestFlag =>
+            var targetTestFlag: Option[Long] = None
+            if (targetCommunity.isDefined) {
+              val foundContent = targetTestFlagMap.get(exportedTestFlag.getName)
+              if (foundContent.isDefined && foundContent.get.nonEmpty) {
+                targetTestFlag = Some(foundContent.get.remove(0))
+                if (foundContent.get.isEmpty) {
+                  targetTestFlagMap.remove(exportedTestFlag.getName)
+                }
+              }
+            }
+            if (targetTestFlag.isDefined) {
+              new ImportItem(Some(exportedTestFlag.getName), ImportItemType.TestFlag, ImportItemMatch.Both, Some(targetTestFlag.get.toString), Some(exportedTestFlag.getId), importItemCommunity)
+            } else {
+              new ImportItem(Some(exportedTestFlag.getName), ImportItemType.TestFlag, ImportItemMatch.ArchiveOnly, None, Some(exportedTestFlag.getId), importItemCommunity)
             }
           }
         }
@@ -1686,6 +1691,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
         targetTriggerMap.foreach { entry =>
           entry._2.foreach { x =>
             new ImportItem(Some(entry._1), ImportItemType.Trigger, ImportItemMatch.DBOnly, Some(x.toString), None, importItemCommunity)
+          }
+        }
+        targetTestFlagMap.foreach { entry =>
+          entry._2.foreach { x =>
+            new ImportItem(Some(entry._1), ImportItemType.TestFlag, ImportItemMatch.DBOnly, Some(x.toString), None, importItemCommunity)
           }
         }
         targetResourceMap.foreach { entry =>

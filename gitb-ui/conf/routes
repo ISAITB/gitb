@@ -45,6 +45,7 @@ GET     /api/vendor/users                       @controllers.AccountService.getV
 POST    /api/user/register                      @controllers.AccountService.registerUser()
 GET     /api/user/profile                       @controllers.AccountService.getUserProfile()
 GET     /api/user/community                     @controllers.CommunityService.getUserCommunity()
+GET     /api/communities/testflags/all           @controllers.CommunityService.getAllCommunityTestFlags()
 POST    /api/user/profile                       @controllers.AccountService.updateUserProfile()
 POST    /api/user/preference/menuCollapsed       @controllers.AccountService.updatePreferenceForMenuCollapsed()
 POST    /api/user/preference/statementsCollapsed @controllers.AccountService.updatePreferenceForStatementsCollapsed()
@@ -246,6 +247,9 @@ GET     /api/triggers/:id                       @controllers.TriggerService.getT
 DELETE  /api/triggers/:id                       @controllers.TriggerService.deleteTrigger(id : Long)
 POST    /api/triggers/:id                       @controllers.TriggerService.updateTrigger(id : Long)
 POST    /api/triggers/:id/clearStatus           @controllers.TriggerService.clearStatus(id : Long)
+
+DELETE  /api/testflags/:id                      @controllers.TestFlagService.deleteTestFlag(id : Long)
+POST    /api/testflags/:id                      @controllers.TestFlagService.updateTestFlag(id : Long)
 POST    /api/trigger/test                       @controllers.TriggerService.testTriggerEndpoint()
 POST    /api/trigger/previewTriggerCall         @controllers.TriggerService.previewTriggerCall()
 POST    /api/trigger/testTriggerCall            @controllers.TriggerService.testTriggerCall()
@@ -305,6 +309,11 @@ GET     /api/communities/errortemplates/search/:id @controllers.ErrorTemplateSer
 POST    /api/communities/errortemplates/create  @controllers.ErrorTemplateService.createErrorTemplate()
 GET     /api/communities/triggers/:id           @controllers.TriggerService.getTriggersByCommunity(id: Long)
 POST    /api/communities/triggers/create        @controllers.TriggerService.createTrigger()
+GET     /api/communities/testflags/:id          @controllers.TestFlagService.getTestFlagsByCommunity(id: Long)
+GET     /api/communities/testflags/all/:id      @controllers.TestFlagService.getAllTestFlagsByCommunity(id: Long)
+POST    /api/communities/testflags/create       @controllers.TestFlagService.createTestFlag()
+POST    /api/communities/testflags/order/:id    @controllers.TestFlagService.orderTestFlags(id: Long)
+POST    /api/communities/testflags/orderreset/:id @controllers.TestFlagService.resetTestFlagOrder(id: Long)
 GET     /api/communities/admins/all             @controllers.UserService.getCommunityAdministrators()
 POST    /api/communities/admins/create          @controllers.UserService.createCommunityAdmin()
 POST    /api/communities/admins/create          @controllers.UserService.createCommunityAdmin()
@@ -357,6 +366,7 @@ POST  /api/tests/stopAllOrganisation          @controllers.TestService.stopAllOr
 GET   /api/tests/comment/:sessionId           @controllers.TestService.getTestSessionComments(sessionId: String)
 POST  /api/tests/comment/user/:sessionId      @controllers.TestService.updateTestSessionUserComment(sessionId: String)
 POST  /api/tests/comment/admin/:sessionId     @controllers.TestService.updateTestSessionAdminComment(sessionId: String)
+POST  /api/tests/flag/:sessionId              @controllers.TestService.setTestSessionFlag(sessionId: String)
 
 # WebSocket management API
 GET   /api/ws                                 @controllers.WebSocketService.socket

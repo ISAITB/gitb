@@ -24,6 +24,7 @@ export interface TestResult extends TestResultMinimal{
     startTime: string,
     endTime?: string,
     tpl?: string,
-    obsolete: boolean
+    obsolete: boolean,
+    flagId?: number
 
 }

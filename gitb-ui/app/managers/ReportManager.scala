@@ -164,7 +164,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             sessionId, Some(systemId), Some(system._1), Some(system._2), Some(organisation._1),
             Some(organisation._2), Some(communityName), Some(testCaseId), Some(testCaseName), Some(testSuite.id), Some(testSuite.shortname),
             Some(actorId), Some(actorName), Some(specification.id), Some(specificationName), Some(specification.domain), Some(domainName),
-            initialStatus, startTime, None, None)
+            initialStatus, startTime, None, None, None)
         }
         // Insert TPL definition.
         _ <- PersistenceSchema.testResultDefinitions += TestResultDefinition(sessionId, presentation)

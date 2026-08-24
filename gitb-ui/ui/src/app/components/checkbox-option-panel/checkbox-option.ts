@@ -21,6 +21,8 @@ export interface CheckboxOption {
     label: string
     default: boolean
     iconClass?: string
+    /** Optional colour override for the icon (e.g. a flag's configured colour). */
+    iconColour?: string
     disabled?: boolean
     /** Set only for single-selection options that navigate (e.g. "View system"), so the option is rendered as a real link. */
     target?: NavigationTarget

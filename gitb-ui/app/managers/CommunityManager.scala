@@ -39,6 +39,7 @@ import scala.language.postfixOps
 class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   communityResourceManager: CommunityResourceManager,
                                   triggerHelper: TriggerHelper,
+                                  testFlagManager: TestFlagManager,
                                   testResultManager: TestResultManager,
                                   organizationManager: OrganizationManager,
                                   landingPageManager: LandingPageManager,
@@ -328,15 +329,17 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run {
       for {
         // Community and domain
-        community <- PersistenceSchema.users
+        communityAndRole <- PersistenceSchema.users
           .join(PersistenceSchema.organizations).on(_.organization === _.id)
           .join(PersistenceSchema.communities).on(_._2.community === _.id)
           .joinLeft(PersistenceSchema.domains).on(_._2.domain === _.id)
           .filter(_._1._1._1.id === userId)
-          .map(x => (x._2, x._1._2))
+          .map(x => (x._2, x._1._2, x._1._1._1.role))
           .result
           .head
-          .map(result => new Community(result._2, result._1, None))
+          .map(result => (new Community(result._2, result._1, None), result._3))
+        community = communityAndRole._1
+        role = communityAndRole._2
         // Labels
         labels <- getCommunityLabelsInternal(community.id).map(_.toList)
         // Report settings
@@ -346,7 +349,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           .result
           .headOption
           .map(_.getOrElse(false))
-      } yield CommunityInfoForLogin(community, labels, statementDocumentationReportEnabled)
+        // Flags
+        flags <- PersistenceSchema.testFlags.filter(_.community === community.id).sortBy(x => (x.displayOrder.asc, x.name.asc)).result.map(_.toList)
+      } yield (community, labels, statementDocumentationReportEnabled, flags, role)
+    }.map { case (community, labels, statementDocumentationReportEnabled, flags, role) =>
+      val isAdmin = role == models.Enums.UserRole.CommunityAdmin.id.toShort
+      CommunityInfoForLogin(community, labels, statementDocumentationReportEnabled, flags, isAdmin)
     }
   }
 
@@ -788,6 +796,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- legalNoticeManager.deleteLegalNoticeByCommunity(communityId)
       _ <- errorTemplateManager.deleteErrorTemplateByCommunity(communityId)
       _ <- triggerHelper.deleteTriggersByCommunity(communityId)
+      _ <- testFlagManager.deleteTestFlagsByCommunity(communityId)
       _ <- testResultManager.updateForDeletedCommunity(communityId)
       _ <- deleteConformanceCertificateSettings(communityId)
       _ <- deleteConformanceOverviewCertificateSettings(communityId)

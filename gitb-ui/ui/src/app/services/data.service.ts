@@ -48,6 +48,8 @@ import {EndpointParameter} from '../types/endpoint-parameter';
 import {CookieOptions, CookieService} from 'ngx-cookie-service';
 import {LocationData} from '../types/location-data';
 import {TagData} from '../types/tag-data';
+import {TestFlagForUser} from '../types/test-flag-for-user';
+import {CommunityTestFlags} from '../types/community-test-flags';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
 import {MenuItemStatusChange} from '../types/menu-item-status-change';
 import {MenuItem} from '../types/menu-item.enum';
@@ -66,6 +68,9 @@ export class DataService {
   public user?: User
   public vendor?: Organisation
   public community?: Community
+  /** Test Bed administrator only - every community's test flags, loaded once at login (see profile-resolver.ts).
+   * For other roles the current community's flags are already carried on `community.testFlags`. */
+  public allCommunityTestFlags?: CommunityTestFlags[]
   public labels?: {[key: number]: TypedLabelConfig}
   public isSystemAdmin = false
   public isVendorUser = false
@@ -312,6 +317,53 @@ export class DataService {
 
   signalCommunityUpdated() {
     this.onCommunityLoaded.next()
+  }
+
+  setAllCommunityTestFlags(data: CommunityTestFlags[]) {
+    this.allCommunityTestFlags = data
+  }
+
+  /**
+   * The test flags applicable for the given community, from whichever login-time cache applies to the
+   * current role - empty if the community defines none (or, for the Test Bed administrator, if the id
+   * is unknown or wasn't included in the all-communities cache, e.g. because the cap described on
+   * `allCommunityTestFlags` was exceeded at login).
+   */
+  /** Resolves a single flag's cached name/colour by id, for display (tag, column) purposes - `undefined`
+   * if unknown (e.g. cache miss, or the flag was since deleted). */
+  getTestFlag(communityId: number|undefined, flagId: number|undefined): TestFlagForUser|undefined {
+    if (flagId == undefined) return undefined
+    return this.getApplicableTestFlags(communityId).find(f => f.id == flagId)
+  }
+
+  getApplicableTestFlags(communityId?: number): TestFlagForUser[] {
+    if (this.isSystemAdmin) {
+      if (communityId == undefined || this.allCommunityTestFlags == undefined) return []
+      return this.allCommunityTestFlags.find(c => c.communityId == communityId)?.flags ?? []
+    } else {
+      return this.community?.testFlags ?? []
+    }
+  }
+
+  /**
+   * Updates the cached test flags for a community after an admin creates/edits/deletes/reorders flags
+   * in the community details management tab - mirroring the refresh-what-we-cached-at-login pattern
+   * used elsewhere (e.g. `cacheCommunityTags`). A no-op if the given community isn't the one currently
+   * cached (own community, or - for the Test Bed administrator - not part of the all-communities cache).
+   */
+  updateCachedTestFlagsForCommunity(communityId: number, flags: TestFlagForUser[]) {
+    if (this.isSystemAdmin) {
+      if (this.allCommunityTestFlags != undefined) {
+        const existingIndex = this.allCommunityTestFlags.findIndex(c => c.communityId == communityId)
+        if (existingIndex >= 0) {
+          this.allCommunityTestFlags[existingIndex] = { communityId: communityId, flags: flags }
+        } else {
+          this.allCommunityTestFlags.push({ communityId: communityId, flags: flags })
+        }
+      }
+    } else if (this.community?.id == communityId) {
+      this.community.testFlags = flags
+    }
   }
 
   createLabels(customLabels?: TypedLabelConfig[]): {[key: number]: TypedLabelConfig} {

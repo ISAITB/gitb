@@ -1,0 +1,10 @@
+@if (visible) {
+    <app-checkbox-option-panel
+        label="Flag"
+        [labelIcon]="Constants.BUTTON_ICON.SNAPSHOT"
+        [singleSelection]="true"
+        [options]="options"
+        [pending]="pending"
+        (updated)="optionSelected($event)">
+    </app-checkbox-option-panel>
+}

@@ -42,6 +42,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                                domainParameterManager: DomainParameterManager,
                                communityResourceManager: CommunityResourceManager,
                                triggerManager: TriggerManager,
+                               testFlagManager: TestFlagManager,
                                communityManager: CommunityManager,
                                testSuiteManager: TestSuiteManager,
                                landingPageManager: LandingPageManager,
@@ -1021,6 +1022,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           () => errorTemplateManager.getErrorTemplatesByCommunity(communityId))
         val fTriggers = loadIfApplicable(exportSettings.triggers,
           () => triggerManager.getTriggerAndDataByCommunityId(communityId))
+        val fTestFlags = loadIfApplicable(exportSettings.testFlags,
+          () => testFlagManager.getAllTestFlagsByCommunity(communityId))
         val fResources = loadIfApplicable(exportSettings.resources,
           () => communityResourceManager.getCommunityResources(communityId))
         val fOrganisations = loadIfApplicable(exportSettings.organisations,
@@ -1056,6 +1059,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           legalNotices                  <- fLegalNotices
           errorTemplates                <- fErrorTemplates
           triggers                      <- fTriggers
+          testFlags                     <- fTestFlags
           resources                     <- fResources
           organisations                 <- fOrganisations
           organisationUserMap           <- fOrganisationUserMap
@@ -1083,6 +1087,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           legalNotices                  = legalNotices,
           errorTemplates                = errorTemplates,
           triggers                      = triggers,
+          testFlags                     = testFlags,
           resources                     = resources,
           organisations                 = organisations,
           organisationUserMap           = organisationUserMap,
@@ -1732,6 +1737,25 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 }
               }
               communityData.getTriggers.getTrigger.add(exportedTrigger)
+            }
+          }
+        }
+        // Test flags
+        if (exportSettings.testFlags) {
+          val testFlags = data.testFlags.get
+          if (testFlags.nonEmpty) {
+            communityData.setTestFlags(new com.gitb.xml.export.TestFlags)
+            testFlags.foreach { testFlag =>
+              val exportedTestFlag = new com.gitb.xml.export.TestFlag
+              exportedTestFlag.setId(toId(idSequence.next()))
+              exportedTestFlag.setName(testFlag.name)
+              exportedTestFlag.setDescription(testFlag.description.orNull)
+              exportedTestFlag.setColour(testFlag.colour)
+              exportedTestFlag.setPublicName(testFlag.publicName.orNull)
+              exportedTestFlag.setPublicColour(testFlag.publicColour.orNull)
+              exportedTestFlag.setAdminOnly(testFlag.adminOnly)
+              exportedTestFlag.setDisplayOrder(testFlag.displayOrder.toInt)
+              communityData.getTestFlags.getTestFlag.add(exportedTestFlag)
             }
           }
         }

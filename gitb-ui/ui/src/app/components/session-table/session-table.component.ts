@@ -52,6 +52,7 @@ import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {CheckboxOptionPanelComponent} from '../checkbox-option-panel/checkbox-option-panel.component';
 import {SessionInfoPanelApi} from '../session-info-panel/session-info-panel-api';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 
 @Component({
     selector: '[app-session-table]',
@@ -78,6 +79,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
   @ViewChildren("sessionContainer") sessionContainers?: QueryList<ElementRef>
   @ViewChildren("testSessionPresentationComponent") testSessionPresentationComponents?: QueryList<TestSessionPresentationComponent>
   @ViewChildren("sessionInfoPanel") sessionInfoPanels?: QueryList<SessionInfoPanelApi>
+  @ViewChildren("sessionFlagControl") sessionFlagControls?: QueryList<CheckBoxOptionPanelComponentApi>
 
   Constants = Constants
   columnCount = 0
@@ -147,12 +149,14 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
     super.clickRegistered(event)
     this.columnChooserPanel?.documentClick(event)
     this.sessionInfoPanels?.forEach(panel => panel.documentClick(event))
+    this.sessionFlagControls?.forEach(panel => panel.documentClick(event))
   }
 
   override escapeRegistered() {
     super.escapeRegistered()
     this.columnChooserPanel?.documentEscape()
     this.sessionInfoPanels?.forEach(panel => panel.documentEscape())
+    this.sessionFlagControls?.forEach(panel => panel.documentEscape())
   }
 
   /**
@@ -479,6 +483,22 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
       });
     }).add(() => {
       row.commentsPending = false
+    })
+  }
+
+  flagPending: {[key: string]: boolean} = {}
+
+  onFlagChanged(row: TestResultForDisplay, flagId: number|undefined) {
+    this.flagPending[row.session] = true
+    this.testService.setTestSessionFlag(row.session, flagId).subscribe(() => {
+      row.flagId = flagId
+      const flag = this.dataService.getTestFlag(row.communityId, flagId)
+      row.flagDisplay = flag ? { colour: flag.colour, name: flag.name } : undefined
+      // The row's own Flag column cell data was precomputed when the row was (re)rendered - refresh it
+      // now so the (collapsed) table row's icon reflects the just-changed flag immediately.
+      this.tableRowComponents?.forEach((component) => component.refreshData())
+    }).add(() => {
+      this.flagPending[row.session] = false
     })
   }
 

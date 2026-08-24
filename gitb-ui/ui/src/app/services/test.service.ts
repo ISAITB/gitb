@@ -272,4 +272,15 @@ export class TestService {
     })
   }
 
+  /** Sets (or, with flagId undefined, clears) the flag on a completed test session. */
+  setTestSessionFlag(sessionId: string, flagId: number|undefined) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.TestService.setTestSessionFlag(sessionId).url,
+      data: {
+        flag_id: flagId
+      },
+      authenticate: true
+    })
+  }
+
 }

@@ -34,6 +34,8 @@ export interface TestResultSearchCriteria {
   sessionId?: string,
   hasComments?: boolean,
   commentText?: string,
+  flagIds?: number[],
+  includeUnflagged?: boolean,
   organisationProperties?: CustomProperty[],
   systemProperties?: CustomProperty[],
   activeSortColumn?: string,

@@ -41,6 +41,8 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   enableSelectAll?: boolean
   textDecorator?: (item: T) => string
   iconField?: string
+  /** Optional field name for a per-item colour override applied to `iconField`'s icon. */
+  iconColourField?: string
   // Ids of available items that should be followed by a separator (unless the item is the last visible one).
   placeholderItemIds?: Set<number>
 

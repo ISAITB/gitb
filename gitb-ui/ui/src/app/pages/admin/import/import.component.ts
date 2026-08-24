@@ -221,6 +221,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy,
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ERROR_TEMPLATE] = 'Error templates'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.TRIGGER] = 'Webhooks'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.RESOURCE] = 'Resources'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.TEST_FLAG] = 'Test flags'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION] = this.dataService.labelOrganisations()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION_USER] = 'Users'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION_PROPERTY_VALUE] = 'Custom ' + this.dataService.labelOrganisationLower() + ' property values'

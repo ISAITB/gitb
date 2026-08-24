@@ -48,6 +48,7 @@ import {EntityWithId} from 'src/app/types/entity-with-id';
 import {Utils} from '../../common/utils';
 import {DateRange} from '../date-range/date-range';
 import {TextFilterComponentApi} from '../text-filter/text-filter-component-api';
+import {TestFlagForUser} from 'src/app/types/test-flag-for-user';
 
 @Component({
     selector: 'app-test-filter',
@@ -116,6 +117,14 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
   applicableCommunityId?: number
   names: {[key: string]: string} = {}
 
+  /** Sentinel id for the "Unflagged" filter entry - safely outside real (positive, auto-increment) flag ids. */
+  private static readonly UNFLAGGED_ID = -1
+  /** Maps a flag filter option's id to the real flag ids it represents - for organisation users this
+   * groups flags that resolve to the same (name, colour) presentation under one representative id
+   * (the first flag in the group); for administrators it's always a single-element identity mapping. */
+  flagGroupMap: {[id: number]: number[]} = {}
+  showFlagFilter = false
+
   initialised = false
   showOrganisationProperties = false
   showSystemProperties = false
@@ -150,6 +159,7 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
     this.names[Constants.FILTER_TYPE.SYSTEM_PROPERTY] = this.dataService.labelSystem() + ' properties'
     this.names[Constants.FILTER_TYPE.TEST_CASE] = 'Test case'
     this.names[Constants.FILTER_TYPE.TEST_SUITE] = 'Test suite'
+    this.names[Constants.FILTER_TYPE.FLAG] = 'Flag'
     if (this.filterState.names != undefined) {
       for (let filter in this.filterState.names) {
         if (this.filterState.names[filter] != undefined) {
@@ -173,6 +183,8 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
     this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
     this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', iconField: 'icon', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
+    this.initialiseIfDefined(Constants.FILTER_TYPE.FLAG, { name: Constants.FILTER_TYPE.FLAG, textField: 'label', iconField: 'icon', iconColourField: 'iconColour', loader: this.loadTestFlags.bind(this), clearItems: new EventEmitter(), replaceItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
+    this.refreshFlagFilter()
     if (this.commands) {
       this.commands.subscribe((command) => {
         this.handleCommand(command)
@@ -514,6 +526,7 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
     } else {
       this.applicableCommunityId = undefined
     }
+    this.refreshFlagFilter()
     this.loadingStatus.emit(true)
     this.resetCustomProperties().subscribe(() => {
       this.completeInitialisation()
@@ -594,6 +607,20 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
         else if (value == 1) return Constants.TEST_CASE_RESULT.FAILURE
         else return Constants.TEST_CASE_RESULT.UNDEFINED
       })
+    }
+    const flagValues = this.filterValue(Constants.FILTER_TYPE.FLAG)
+    if (flagValues) {
+      const realFlagIds: number[] = []
+      let includeUnflagged = false
+      for (const value of flagValues) {
+        if (value == TestFilterComponent.UNFLAGGED_ID) {
+          includeUnflagged = true
+        } else {
+          realFlagIds.push(...(this.flagGroupMap[value] ?? [value]))
+        }
+      }
+      filters[Constants.FILTER_TYPE.FLAG] = realFlagIds
+      filters.includeUnflagged = includeUnflagged
     }
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
@@ -677,6 +704,7 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
     this.clearFilter(Constants.FILTER_TYPE.ORGANISATION)
     this.clearFilter(Constants.FILTER_TYPE.SYSTEM)
     this.clearFilter(Constants.FILTER_TYPE.RESULT)
+    this.clearFilter(Constants.FILTER_TYPE.FLAG)
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       this.startDateModel = undefined
     }
@@ -684,6 +712,7 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
       this.endDateModel = undefined
     }
     this.resetApplicableCommunityId()
+    this.refreshFlagFilter()
     this.organisationProperties = []
     this.systemProperties = []
     this.availableOrganisationProperties = []
@@ -791,6 +820,63 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
       { id: 1, label: "Failure", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE) },
       { id: 2, label: "Incomplete", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED) }
     ])
+  }
+
+  /** Recomputes flag filter visibility and options for the current applicableCommunityId - called
+   * whenever that changes (initial setup, and the Community filter narrowing to a single community
+   * for the Test Bed administrator). Only visible if the user has any (settable or admin-set) flags
+   * applicable in that community - matching the same DataService.getApplicableTestFlags used
+   * elsewhere for the flag assignment control and column. */
+  private refreshFlagFilter() {
+    const wasVisible = this.showFlagFilter
+    this.showFlagFilter = this.dataService.getApplicableTestFlags(this.applicableCommunityId).length > 0
+    if (this.filterDefined(Constants.FILTER_TYPE.FLAG) && (this.showFlagFilter || wasVisible)) {
+      this.filterDropdownSettings[Constants.FILTER_TYPE.FLAG].replaceItems!.emit(this.buildFlagFilterOptions())
+    }
+  }
+
+  private buildFlagFilterOptions(): IdLabel[] {
+    this.flagGroupMap = {}
+    // getApplicableTestFlags() returns flags already ordered by their configured display order (the
+    // server sorts by displayOrder then name) - preserved here rather than re-sorted, so the filter
+    // options follow that same order (grouping below uses a Map, which preserves first-occurrence
+    // insertion order too).
+    const flags = this.dataService.getApplicableTestFlags(this.applicableCommunityId)
+    const isAdminView = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin
+    const options: IdLabel[] = []
+    if (isAdminView) {
+      for (const flag of flags) {
+        this.flagGroupMap[flag.id] = [flag.id]
+        options.push({ id: flag.id, label: flag.name, icon: Constants.BUTTON_ICON.SNAPSHOT, iconColour: flag.colour })
+      }
+    } else {
+      // Group flags resolving to the same (name, colour) presentation under one representative entry.
+      const groupsByPresentation = new Map<string, TestFlagForUser[]>()
+      for (const flag of flags) {
+        const key = flag.name + '|' + flag.colour
+        const group = groupsByPresentation.get(key)
+        if (group) group.push(flag)
+        else groupsByPresentation.set(key, [flag])
+      }
+      for (const group of groupsByPresentation.values()) {
+        const representative = group[0]
+        this.flagGroupMap[representative.id] = group.map(f => f.id)
+        options.push({ id: representative.id, label: representative.name, icon: Constants.BUTTON_ICON.SNAPSHOT, iconColour: representative.colour })
+      }
+    }
+    options.push({ id: TestFilterComponent.UNFLAGGED_ID, label: 'Unflagged', icon: Constants.BUTTON_ICON.UNFLAGGED })
+    return options
+  }
+
+  private loadTestFlags(): Observable<IdLabel[]> {
+    return of(this.buildFlagFilterOptions())
+  }
+
+  flagsChanged(update: FilterUpdate<IdLabel>) {
+    this.filterValues[Constants.FILTER_TYPE.FLAG] = update.values
+    if (update.applyFilters) {
+      this.applyFilters()
+    }
   }
 
   addOrganisationProperty() {

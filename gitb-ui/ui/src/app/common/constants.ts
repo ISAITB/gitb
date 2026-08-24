@@ -84,6 +84,7 @@ export class Constants {
     EXPAND: 'fa-solid fa-angles-down',
     FILTER: 'fa-solid fa-filter',
     FILTER_CLEAR: 'fa-solid fa-filter-circle-xmark',
+    FLAG: 'fa-solid fa-flag',
     GO: 'fa-solid fa-arrow-right',
     GO_IN_NEW_TAB: 'fa-solid fa-arrow-up-right-from-square',
     HEALTH_DASHBOARD: 'fa-solid fa-heart-pulse',
@@ -153,6 +154,7 @@ export class Constants {
     TIME: 'fa-solid fa-clock',
     TODAY: 'fa-solid fa-calendar-day',
     TRIGGER: 'fa-solid fa-bolt',
+    UNFLAGGED: 'fa-solid fa-ban',
     UNGROUP: 'fa-solid fa-arrow-up-from-bracket',
     USER: 'fa-solid fa-user',
     USER_ADMIN: 'fa-solid fa-user-shield',
@@ -188,6 +190,7 @@ export class Constants {
 		ORGANISATION_PROPERTY: 'org_property',
 		SYSTEM_PROPERTY: 'sys_property',
 		SPECIFICATION_GROUP: 'specification_group',
+		FLAG: 'flag',
 	}
 
 	public static readonly ORDER = {
@@ -435,7 +438,8 @@ export class Constants {
 		SYSTEM_ADMINISTRATOR: 31,
 		SYSTEM_CONFIGURATION: 32,
     SYSTEM_RESOURCE: 33,
-    TEST_SERVICE: 34
+    TEST_SERVICE: 34,
+    TEST_FLAG: 35
 	}
 
 	public static readonly IMPORT_ITEM_MATCH = {
@@ -491,7 +495,8 @@ export class Constants {
       LEGAL_NOTICES: 3,
       ERROR_TEMPLATES: 4,
       TRIGGERS: 5,
-      RESOURCES: 6
+      RESOURCES: 6,
+      TEST_FLAGS: 7
     },
     ORGANISATION: {
       SYSTEMS: 0,

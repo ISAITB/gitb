@@ -51,6 +51,7 @@
                     <xsd:element name="legalNotices" type="LegalNotices" minOccurs="0"/>
                     <xsd:element name="errorTemplates" type="ErrorTemplates" minOccurs="0"/>
                     <xsd:element name="triggers" type="Triggers" minOccurs="0"/>
+                    <xsd:element name="testFlags" type="TestFlags" minOccurs="0"/>
                     <xsd:element name="resources" type="CommunityResources" minOccurs="0"/>
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
@@ -322,6 +323,26 @@
         <xsd:sequence>
             <xsd:element name="trigger" type="Trigger" maxOccurs="unbounded"/>
         </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TestFlags">
+        <xsd:sequence>
+            <xsd:element name="testFlag" type="TestFlag" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TestFlag">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="colour" type="xsd:string"/>
+                    <xsd:element name="publicName" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="publicColour" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="adminOnly" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="displayOrder" type="xsd:int"/>
+            </xsd:extension>
+        </xsd:complexContent>
     </xsd:complexType>
     <xsd:complexType name="CommunityResources">
         <xsd:sequence>

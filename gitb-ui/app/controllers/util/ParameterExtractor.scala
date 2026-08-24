@@ -22,7 +22,7 @@ import controllers.util.ParameterNames
 import models.automation.TestServiceSearchCriteria
 import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestFlags, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
@@ -773,6 +773,18 @@ object ParameterExtractor {
     val name = requiredBodyParameter(paramMap, ParameterNames.NAME)
     val description = optionalBodyParameter(paramMap, ParameterNames.DESCRIPTION)
     CommunityResources(0L, name, description, communityId)
+  }
+
+  def extractTestFlagInfo(request:Request[AnyContent], testFlagId: Option[Long]): TestFlags = {
+    val name = requiredBodyParameter(request, ParameterNames.NAME)
+    val description = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+    val colour = requiredBodyParameter(request, ParameterNames.COLOUR)
+    val publicName = optionalBodyParameter(request, ParameterNames.PUBLIC_NAME)
+    val publicColour = optionalBodyParameter(request, ParameterNames.PUBLIC_COLOUR)
+    val adminOnly = requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
+    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    // displayOrder is ignored on create (auto-assigned as the next value) and untouched on update.
+    TestFlags(testFlagId.getOrElse(0L), name, description, colour, publicName, publicColour, adminOnly, 0.toShort, communityId)
   }
 
   def extractTriggerInfo(request:Request[AnyContent], triggerId: Option[Long]): Trigger = {

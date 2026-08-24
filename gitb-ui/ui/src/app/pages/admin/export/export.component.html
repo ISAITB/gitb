@@ -135,6 +135,10 @@
                                                             <label class="form-check-label" for="settingsResources">Resources</label>
                                                         </div>
                                                         <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="checkbox" id="settingsTestFlags" name="settingsTestFlags" [(ngModel)]="settings.testFlags" [disabled]="allCommunityData">
+                                                            <label class="form-check-label" for="settingsTestFlags">Test flags</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
                                                             <input class="form-check-input" type="checkbox" id="settingsCertificateSettings" name="settingsCertificateSettings" [(ngModel)]="settings.certificateSettings" [disabled]="allCommunityData">
                                                             <label class="form-check-label" for="settingsCertificateSettings">Report settings</label>
                                                         </div>

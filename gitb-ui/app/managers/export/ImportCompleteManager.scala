@@ -58,6 +58,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       domainManager: DomainManager,
                                       triggerManager: TriggerManager,
                                       triggerHelper: TriggerHelper,
+                                      testFlagManager: TestFlagManager,
                                       exportManager: ExportManager,
                                       communityManager: CommunityManager,
                                       specificationManager: SpecificationManager,
@@ -131,23 +132,20 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def loadExistingDeletionsData(ctx: ImportContext): Future[ImportContext] = {
+    val fDomains = loadIfApplicable(ctx.importTargets.hasDomain,
+      () => DB.run(PersistenceSchema.domains.map(_.id).result)
+    )
+    val fCommunities = loadIfApplicable(ctx.importTargets.hasCommunity,
+      () => DB.run(PersistenceSchema.communities.map(_.id).result)
+    )
     for {
-      ctx <- {
-        loadIfApplicable(ctx.importTargets.hasDomain,
-          () => DB.run(PersistenceSchema.domains.map(_.id).result)
-        ).zip(
-          loadIfApplicable(ctx.importTargets.hasCommunity,
-            () => DB.run(PersistenceSchema.communities.map(_.id).result)
-          )
-        ).map { results =>
-          val domains = results._1
-          val communities = results._2
-          domains.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString))
-          communities.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Community) += x.toString))
-          ctx
-        }
-      }
-    } yield ctx
+      domains <- fDomains
+      communities <- fCommunities
+    } yield {
+      domains.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString))
+      communities.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Community) += x.toString))
+      ctx
+    }
   }
 
   def completeDeletionsImport(exportedDeletions: com.gitb.xml.export.Deletions, importSettings: ImportSettings, importItems: List[ImportItem]): Future[Unit] = {
@@ -872,6 +870,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     models.CommunityResources(0L, data.getName, Option(data.getDescription), communityId)
   }
 
+  private def toModelTestFlag(modelTestFlagId: Option[Long], data: com.gitb.xml.export.TestFlag, communityId: Long): models.TestFlags = {
+    models.TestFlags(modelTestFlagId.getOrElse(0L), data.getName, Option(data.getDescription), data.getColour,
+      Option(data.getPublicName), Option(data.getPublicColour), data.isAdminOnly, data.getDisplayOrder.toShort, communityId)
+  }
+
   private def toModelSystemAdministrator(data: com.gitb.xml.export.SystemAdministrator, userId: Option[Long], organisationId: Long, importSettings: ImportSettings): models.Users = {
     toModelUser(data, userId, Enums.UserRole.SystemAdmin.id.toShort, organisationId, importSettings)
   }
@@ -1158,65 +1161,56 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def loadExistingSystemSettingsData(canManageSettings: Boolean, ctx: ImportContext): Future[(ImportContext, Option[Long])] = {
     if (canManageSettings) {
+      // System resources
+      val fSystemResources = loadIfApplicable(ctx.importTargets.hasSystemResources,
+        () => DB.run(PersistenceSchema.communityResources.filter(_.community === Constants.DefaultCommunityId).map(_.id).result)
+      )
+      // Themes
+      val fThemes = loadIfApplicable(ctx.importTargets.hasThemes,
+        () => DB.run(PersistenceSchema.themes.filter(_.custom === true).map(_.id).result)
+      )
+      // Default landing pages
+      val fDefaultLandingPages = loadIfApplicable(ctx.importTargets.hasDefaultLandingPages,
+        () => DB.run(PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
+      )
+      // Default legal notices
+      val fDefaultLegalNotices = loadIfApplicable(ctx.importTargets.hasDefaultLegalNotices,
+        () => DB.run(PersistenceSchema.legalNotices.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
+      )
+      // Default error templates
+      val fDefaultErrorTemplates = loadIfApplicable(ctx.importTargets.hasDefaultErrorTemplates,
+        () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
+      )
+      // System administrators
+      val fSystemAdministrators = loadIfApplicable(!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasSystemAdministrators,
+        () => exportManager.loadSystemAdministrators()
+      )
+      // System configurations
+      val fSystemConfigurations = loadIfApplicable(ctx.importTargets.hasSystemConfigurations,
+        () => systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
+      )
       for {
-        // Load existing values.
-        systemAdminOrganisationId <- {
-          // System resources
-          loadIfApplicable(ctx.importTargets.hasSystemResources,
-            () => DB.run(PersistenceSchema.communityResources.filter(_.community === Constants.DefaultCommunityId).map(_.id).result)
-          ).zip(
-            // Themes
-            loadIfApplicable(ctx.importTargets.hasThemes,
-              () => DB.run(PersistenceSchema.themes.filter(_.custom === true).map(_.id).result)
-            )
-          ).zip(
-            // Default landing pages
-            loadIfApplicable(ctx.importTargets.hasDefaultLandingPages,
-              () => DB.run(PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
-            )
-          ).zip(
-            // Default legal notices
-            loadIfApplicable(ctx.importTargets.hasDefaultLegalNotices,
-              () => DB.run(PersistenceSchema.legalNotices.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
-            )
-          ).zip(
-            // Default error templates
-            loadIfApplicable(ctx.importTargets.hasDefaultErrorTemplates,
-              () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
-            )
-          ).zip(
-            // System administrators
-            loadIfApplicable(!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasSystemAdministrators,
-              () => exportManager.loadSystemAdministrators()
-            )
-          ).zip(
-            // System configurations
-            loadIfApplicable(ctx.importTargets.hasSystemConfigurations,
-              () => systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
-            )
-          ).map { results =>
-            val systemResources = results._1._1._1._1._1._1
-            val themes = results._1._1._1._1._1._2
-            val defaultLandingPages = results._1._1._1._1._2
-            val defaultLegalNotices = results._1._1._1._2
-            val defaultErrorTemplates = results._1._1._2
-            val systemAdministrators = results._1._2
-            val systemConfigurations = results._2
-            var systemAdminOrganisationId: Option[Long] = None
-            systemResources.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemResource) += x.toString))
-            themes.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Theme) += x.toString))
-            defaultLandingPages.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultLandingPage) += x.toString))
-            defaultLegalNotices.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultLegalNotice) += x.toString))
-            defaultErrorTemplates.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultErrorTemplate) += x.toString))
-            systemAdministrators.foreach(admins => {
-              admins.foreach(x => ctx.existingIds.map(ImportItemType.SystemAdministrator) += x.id.toString)
-              systemAdminOrganisationId = admins.headOption.map(_.organization)
-            })
-            systemConfigurations.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemConfiguration) += x.config.name))
-            systemAdminOrganisationId
-          }
-        }
-      } yield (ctx, systemAdminOrganisationId)
+        systemResources <- fSystemResources
+        themes <- fThemes
+        defaultLandingPages <- fDefaultLandingPages
+        defaultLegalNotices <- fDefaultLegalNotices
+        defaultErrorTemplates <- fDefaultErrorTemplates
+        systemAdministrators <- fSystemAdministrators
+        systemConfigurations <- fSystemConfigurations
+      } yield {
+        var systemAdminOrganisationId: Option[Long] = None
+        systemResources.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemResource) += x.toString))
+        themes.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Theme) += x.toString))
+        defaultLandingPages.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultLandingPage) += x.toString))
+        defaultLegalNotices.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultLegalNotice) += x.toString))
+        defaultErrorTemplates.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultErrorTemplate) += x.toString))
+        systemAdministrators.foreach(admins => {
+          admins.foreach(x => ctx.existingIds.map(ImportItemType.SystemAdministrator) += x.id.toString)
+          systemAdminOrganisationId = admins.headOption.map(_.organization)
+        })
+        systemConfigurations.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemConfiguration) += x.config.name))
+        (ctx, systemAdminOrganisationId)
+      }
     } else {
       Future.successful((ctx, None))
     }
@@ -1466,91 +1460,84 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   private def loadExistingDomainData(ctx: ImportContext, domainId: Long): Future[ImportContext] = {
     // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
     // Domain
-    DB.run(
+    val fDomain = DB.run(
       PersistenceSchema.domains.filter(_.id === domainId).map(_.id).result.headOption
-    ).zip(
-      // Shared test suites
-      loadIfApplicable(ctx.importTargets.hasTestSuites,
-        () => DB.run(PersistenceSchema.testSuites
+    )
+    // Shared test suites
+    val fSharedTestSuites = loadIfApplicable(ctx.importTargets.hasTestSuites,
+      () => DB.run(PersistenceSchema.testSuites
+        .filter(_.domain === domainId)
+        .filter(_.shared)
+        .map(_.id)
+        .result
+      )
+    )
+    // Specifications
+    val fSpecifications = loadIfApplicable(ctx.importTargets.hasSpecifications,
+      () => DB.run(PersistenceSchema.specifications.filter(_.domain === domainId).map(_.id).result)
+    )
+    // Specification groups
+    val fSpecificationGroups = loadIfApplicable(ctx.importTargets.hasSpecifications,
+      () => DB.run(PersistenceSchema.specificationGroups.filter(_.domain === domainId).map(_.id).result)
+    )
+    // Test suites
+    val fTestSuites = loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasTestSuites,
+      () => DB.run(PersistenceSchema.testSuites
+        .join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
+        .filter(_._1.domain === domainId)
+        .map(_._1.id)
+        .result
+      )
+    )
+    // Actors
+    val fActors = loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors,
+      () => DB.run(PersistenceSchema.actors
           .filter(_.domain === domainId)
-          .filter(_.shared)
           .map(_.id)
           .result
-        )
       )
-    ).zip(
-      // Specifications
-      loadIfApplicable(ctx.importTargets.hasSpecifications,
-        () => DB.run(PersistenceSchema.specifications.filter(_.domain === domainId).map(_.id).result)
+    )
+    // Endpoints
+    val fEndpoints = loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors && ctx.importTargets.hasEndpoints,
+      () => DB.run(PersistenceSchema.endpoints
+        .join(PersistenceSchema.actors).on(_.actor === _.id)
+        .filter(_._2.domain === domainId)
+        .map(_._1.id)
+        .result
       )
-    ).zip(
-      // Specification groups
-      loadIfApplicable(ctx.importTargets.hasSpecifications,
-        () => DB.run(PersistenceSchema.specificationGroups.filter(_.domain === domainId).map(_.id).result)
-      )
-    ).zip(
-      // Test suites
-      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasTestSuites,
-        () => DB.run(PersistenceSchema.testSuites
-          .join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
-          .filter(_._1.domain === domainId)
-          .map(_._1.id)
-          .result
-        )
-      )
-    ).zip(
-      // Actors
-      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors,
-        () => DB.run(PersistenceSchema.actors
-            .filter(_.domain === domainId)
-            .map(_.id)
-            .result
-        )
-      )
-    ).zip(
-      // Endpoints
-      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors && ctx.importTargets.hasEndpoints,
-        () => DB.run(PersistenceSchema.endpoints
-          .join(PersistenceSchema.actors).on(_.actor === _.id)
+    )
+    // Endpoint parameters
+    val fEndpointParameters = loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors && ctx.importTargets.hasEndpoints && ctx.importTargets.hasEndpointParameters,
+      () => DB.run(PersistenceSchema.parameters
+          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+          .join(PersistenceSchema.actors).on(_._2.actor === _.id)
           .filter(_._2.domain === domainId)
-          .map(_._1.id)
+          .map(_._1._1.id)
           .result
-        )
       )
-    ).zip(
-      // Endpoint parameters
-      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors && ctx.importTargets.hasEndpoints && ctx.importTargets.hasEndpointParameters,
-        () => DB.run(PersistenceSchema.parameters
-            .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-            .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-            .filter(_._2.domain === domainId)
-            .map(_._1._1.id)
-            .result
-        )
-      )
-    ).zip(
-      // Domain parameters
-      loadIfApplicable(ctx.importTargets.hasDomainParameters,
-        () => DB.run(PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result)
-      )
-    ).zip(
-      // Test services
-      loadIfApplicable(ctx.importTargets.hasTestServices,
-        () => DB.run(PersistenceSchema.testServices
-          .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
-          .filter(_._2.domain === domainId).map(_._1.id).result)
-      )
-    ).map { results =>
-      val domain =              results._1._1._1._1._1._1._1._1._1
-      val sharedTestSuites =    results._1._1._1._1._1._1._1._1._2
-      val specifications =      results._1._1._1._1._1._1._1._2
-      val specificationGroups = results._1._1._1._1._1._1._2
-      val testSuites =          results._1._1._1._1._1._2
-      val actors =              results._1._1._1._1._2
-      val endpoints =           results._1._1._1._2
-      val endpointParameters =  results._1._1._2
-      val domainParameters =    results._1._2
-      val testServices =        results._2
+    )
+    // Domain parameters
+    val fDomainParameters = loadIfApplicable(ctx.importTargets.hasDomainParameters,
+      () => DB.run(PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result)
+    )
+    // Test services
+    val fTestServices = loadIfApplicable(ctx.importTargets.hasTestServices,
+      () => DB.run(PersistenceSchema.testServices
+        .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+        .filter(_._2.domain === domainId).map(_._1.id).result)
+    )
+    for {
+      domain              <- fDomain
+      sharedTestSuites    <- fSharedTestSuites
+      specifications      <- fSpecifications
+      specificationGroups <- fSpecificationGroups
+      testSuites          <- fTestSuites
+      actors              <- fActors
+      endpoints           <- fEndpoints
+      endpointParameters  <- fEndpointParameters
+      domainParameters    <- fDomainParameters
+      testServices        <- fTestServices
+    } yield {
       domain.foreach(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString)
       sharedTestSuites.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestSuite) += x.toString))
       specifications.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Specification) += x.toString))
@@ -2124,155 +2111,146 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def loadExistingCommunityData(ctx: ImportContext, communityId: Long, domainId: Option[Long]): Future[ImportContext] = {
     // Labels
-    loadIfApplicable(ctx.importTargets.hasCustomLabels,
+    val fLabels = loadIfApplicable(ctx.importTargets.hasCustomLabels,
       () => DB.run(PersistenceSchema.communityLabels.filter(_.community === communityId).map(x => (x.community, x.labelType)).result)
-    ).zip(
-      // Organisation properties
-      loadIfApplicable(ctx.importTargets.hasOrganisationProperties,
-        () => DB.run(PersistenceSchema.organisationParameters.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // System properties
-      loadIfApplicable(ctx.importTargets.hasSystemProperties,
-        () => DB.run(PersistenceSchema.systemParameters.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // Landing pages
-      loadIfApplicable(ctx.importTargets.hasLandingPages,
-        () => DB.run(PersistenceSchema.landingPages.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // Legal notices
-      loadIfApplicable(ctx.importTargets.hasLegalNotices,
-        () => DB.run(PersistenceSchema.legalNotices.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // Error templates
-      loadIfApplicable(ctx.importTargets.hasErrorTemplates,
-        () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // Triggers
-      loadIfApplicable(ctx.importTargets.hasTriggers,
-        () => DB.run(PersistenceSchema.triggers.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // Resources
-      loadIfApplicable(ctx.importTargets.hasResources,
-        () => DB.run(PersistenceSchema.communityResources.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // Administrators
-      loadIfApplicable(!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators,
-        () => DB.run(PersistenceSchema.users
-            .join(PersistenceSchema.organizations).on(_.organization === _.id)
-            .filter(_._2.community === communityId)
-            .filter(_._2.adminOrganization === true)
-            .filter(_._1.role === UserRole.CommunityAdmin.id.toShort)
-            .map(_._1.id)
-            .result
-        )
-      )
-    ).zip(
-      // Organisations
-      loadIfApplicable(ctx.importTargets.hasOrganisations,
-        () => DB.run(PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).result)
-      )
-    ).zip(
-      // Organisation users
-      loadIfApplicable(ctx.importTargets.hasOrganisations && !Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasOrganisationUsers,
-        () => DB.run(PersistenceSchema.users
-            .join(PersistenceSchema.organizations).on(_.organization === _.id)
-            .filter(_._2.adminOrganization === false)
-            .filter(_._2.community === communityId)
-            .map(_._1.id)
-            .result
-        )
-      )
-    ).zip(
-      // Organisation property values
-      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasOrganisationPropertyValues,
-        () => DB.run(PersistenceSchema.organisationParameterValues
-            .join(PersistenceSchema.organizations).on(_.organisation === _.id)
-            .filter(_._2.adminOrganization === false)
-            .filter(_._2.community === communityId)
-            .map(x => (x._2.id, x._1.parameter)) // Organisation ID, ParameterID
-            .result
-        )
-      )
-    ).zip(
-      // Systems
-      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems,
-        () => DB.run(PersistenceSchema.systems
-            .join(PersistenceSchema.organizations).on(_.owner === _.id)
-            .filter(_._2.adminOrganization === false)
-            .filter(_._2.community === communityId)
-            .map(_._1.id)
-            .result
-        )
-      )
-    ).zip(
-      // System property values
-      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasSystemPropertyValues,
-        () => DB.run(
-          PersistenceSchema.systemParameterValues
-            .join(PersistenceSchema.systems).on(_.system === _.id)
-            .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
-            .filter(_._2.adminOrganization === false)
-            .filter(_._2.community === communityId)
-            .map(x => (x._1._2.id, x._1._1.parameter)) // System ID, Parameter ID
-            .result
-        )
-      )
-    ).zip(
-      // Statements
-      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasStatements,
-        () => DB.run(PersistenceSchema.systemImplementsActors
-          .join(PersistenceSchema.systems).on(_.systemId === _.id)
-          .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
-          .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
-          .join(PersistenceSchema.specificationHasActors).on(_._2.id === _.actorId)
-          .join(PersistenceSchema.specifications).on(_._2.specId === _.id)
-          .filter(_._1._1._1._2.adminOrganization === false)
-          .filter(_._1._1._1._2.community === communityId)
-          .filterOpt(domainId)((q, id) => q._2.domain === id)
-          .map(x => (x._1._1._1._1._1.systemId, x._1._1._1._1._1.actorId)) // System ID, Actor ID
+    )
+    // Organisation properties
+    val fOrganisationProperties = loadIfApplicable(ctx.importTargets.hasOrganisationProperties,
+      () => DB.run(PersistenceSchema.organisationParameters.filter(_.community === communityId).map(_.id).result)
+    )
+    // System properties
+    val fSystemProperties = loadIfApplicable(ctx.importTargets.hasSystemProperties,
+      () => DB.run(PersistenceSchema.systemParameters.filter(_.community === communityId).map(_.id).result)
+    )
+    // Landing pages
+    val fLandingPages = loadIfApplicable(ctx.importTargets.hasLandingPages,
+      () => DB.run(PersistenceSchema.landingPages.filter(_.community === communityId).map(_.id).result)
+    )
+    // Legal notices
+    val fLegalNotices = loadIfApplicable(ctx.importTargets.hasLegalNotices,
+      () => DB.run(PersistenceSchema.legalNotices.filter(_.community === communityId).map(_.id).result)
+    )
+    // Error templates
+    val fErrorTemplates = loadIfApplicable(ctx.importTargets.hasErrorTemplates,
+      () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === communityId).map(_.id).result)
+    )
+    // Triggers
+    val fTriggers = loadIfApplicable(ctx.importTargets.hasTriggers,
+      () => DB.run(PersistenceSchema.triggers.filter(_.community === communityId).map(_.id).result)
+    )
+    // Resources
+    val fResources = loadIfApplicable(ctx.importTargets.hasResources,
+      () => DB.run(PersistenceSchema.communityResources.filter(_.community === communityId).map(_.id).result)
+    )
+    // Administrators
+    val fAdministrators = loadIfApplicable(!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators,
+      () => DB.run(PersistenceSchema.users
+          .join(PersistenceSchema.organizations).on(_.organization === _.id)
+          .filter(_._2.community === communityId)
+          .filter(_._2.adminOrganization === true)
+          .filter(_._1.role === UserRole.CommunityAdmin.id.toShort)
+          .map(_._1.id)
           .result
-        )
       )
-    ).zip(
-      // Statement configurations
-      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasStatements && ctx.importTargets.hasStatementConfigurations,
-        () => DB.run(PersistenceSchema.configs
-          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-          .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-          .join(PersistenceSchema.systems).on(_._1._1.system === _.id)
+    )
+    // Organisations
+    val fOrganisations = loadIfApplicable(ctx.importTargets.hasOrganisations,
+      () => DB.run(PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).result)
+    )
+    // Organisation users
+    val fOrganisationUsers = loadIfApplicable(ctx.importTargets.hasOrganisations && !Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasOrganisationUsers,
+      () => DB.run(PersistenceSchema.users
+          .join(PersistenceSchema.organizations).on(_.organization === _.id)
+          .filter(_._2.adminOrganization === false)
+          .filter(_._2.community === communityId)
+          .map(_._1.id)
+          .result
+      )
+    )
+    // Organisation property values
+    val fOrganisationPropertyValues = loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasOrganisationPropertyValues,
+      () => DB.run(PersistenceSchema.organisationParameterValues
+          .join(PersistenceSchema.organizations).on(_.organisation === _.id)
+          .filter(_._2.adminOrganization === false)
+          .filter(_._2.community === communityId)
+          .map(x => (x._2.id, x._1.parameter)) // Organisation ID, ParameterID
+          .result
+      )
+    )
+    // Systems
+    val fSystems = loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems,
+      () => DB.run(PersistenceSchema.systems
+          .join(PersistenceSchema.organizations).on(_.owner === _.id)
+          .filter(_._2.adminOrganization === false)
+          .filter(_._2.community === communityId)
+          .map(_._1.id)
+          .result
+      )
+    )
+    // System property values
+    val fSystemPropertyValues = loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasSystemPropertyValues,
+      () => DB.run(
+        PersistenceSchema.systemParameterValues
+          .join(PersistenceSchema.systems).on(_.system === _.id)
           .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
           .filter(_._2.adminOrganization === false)
           .filter(_._2.community === communityId)
-          .filterOpt(domainId)((q, id) => q._1._1._2.domain === id)
-          .map(x => (x._1._1._2.id, x._1._1._1._2.id, x._1._2.id, x._1._1._1._1.parameter)) // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
+          .map(x => (x._1._2.id, x._1._1.parameter)) // System ID, Parameter ID
           .result
-        )
       )
-    ).map { results =>
-      val labels =                     results._1._1._1._1._1._1._1._1._1._1._1._1._1._1._1
-      val organisationProperties =     results._1._1._1._1._1._1._1._1._1._1._1._1._1._1._2
-      val systemProperties =           results._1._1._1._1._1._1._1._1._1._1._1._1._1._2
-      val landingPages =               results._1._1._1._1._1._1._1._1._1._1._1._1._2
-      val legalNotices =               results._1._1._1._1._1._1._1._1._1._1._1._2
-      val errorTemplates =             results._1._1._1._1._1._1._1._1._1._1._2
-      val triggers =                   results._1._1._1._1._1._1._1._1._1._2
-      val resources =                  results._1._1._1._1._1._1._1._1._2
-      val administrators =             results._1._1._1._1._1._1._1._2
-      val organisations =              results._1._1._1._1._1._1._2
-      val organisationUsers =          results._1._1._1._1._1._2
-      val organisationPropertyValues = results._1._1._1._1._2
-      val systems =                    results._1._1._1._2
-      val systemPropertyValues =       results._1._1._2
-      val statements =                 results._1._2
-      val statementConfigurations =    results._2
-
+    )
+    // Statements
+    val fStatements = loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasStatements,
+      () => DB.run(PersistenceSchema.systemImplementsActors
+        .join(PersistenceSchema.systems).on(_.systemId === _.id)
+        .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+        .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
+        .join(PersistenceSchema.specificationHasActors).on(_._2.id === _.actorId)
+        .join(PersistenceSchema.specifications).on(_._2.specId === _.id)
+        .filter(_._1._1._1._2.adminOrganization === false)
+        .filter(_._1._1._1._2.community === communityId)
+        .filterOpt(domainId)((q, id) => q._2.domain === id)
+        .map(x => (x._1._1._1._1._1.systemId, x._1._1._1._1._1.actorId)) // System ID, Actor ID
+        .result
+      )
+    )
+    // Statement configurations
+    val fStatementConfigurations = loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasStatements && ctx.importTargets.hasStatementConfigurations,
+      () => DB.run(PersistenceSchema.configs
+        .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+        .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+        .join(PersistenceSchema.systems).on(_._1._1.system === _.id)
+        .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+        .filter(_._2.adminOrganization === false)
+        .filter(_._2.community === communityId)
+        .filterOpt(domainId)((q, id) => q._1._1._2.domain === id)
+        .map(x => (x._1._1._2.id, x._1._1._1._2.id, x._1._2.id, x._1._1._1._1.parameter)) // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
+        .result
+      )
+    )
+    // Test flags
+    val fTestFlags = loadIfApplicable(ctx.importTargets.hasTestFlags,
+      () => DB.run(PersistenceSchema.testFlags.filter(_.community === communityId).map(_.id).result)
+    )
+    for {
+      labels                     <- fLabels
+      organisationProperties     <- fOrganisationProperties
+      systemProperties           <- fSystemProperties
+      landingPages                <- fLandingPages
+      legalNotices                <- fLegalNotices
+      errorTemplates               <- fErrorTemplates
+      triggers                     <- fTriggers
+      resources                    <- fResources
+      administrators               <- fAdministrators
+      organisations                <- fOrganisations
+      organisationUsers            <- fOrganisationUsers
+      organisationPropertyValues   <- fOrganisationPropertyValues
+      systems                      <- fSystems
+      systemPropertyValues         <- fSystemPropertyValues
+      statements                   <- fStatements
+      statementConfigurations      <- fStatementConfigurations
+      testFlags                    <- fTestFlags
+    } yield {
       // Add the community
       ctx.existingIds.map(ImportItemType.Community) += communityId.toString
       // Add the community-related data
@@ -2283,6 +2261,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       legalNotices.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.LegalNotice) += x.toString))
       errorTemplates.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.ErrorTemplate) += x.toString))
       triggers.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Trigger) += x.toString))
+      testFlags.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestFlag) += x.toString))
       resources.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.CommunityResource) += x.toString))
       administrators.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Administrator) += x.toString))
       organisations.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Organisation) += x.toString))
@@ -2812,6 +2791,32 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             processRemaining(ImportItemType.Trigger, ctx,
               (targetKey: String, _: ImportItem) => {
                 triggerHelper.deleteTriggerInternal(targetKey.toLong)
+              }
+            )
+          }
+          // Test flags
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getTestFlags != null) {
+              exportedCommunity.getTestFlags.getTestFlag.asScala.foreach { exportedContent =>
+                dbActions += processFromArchive(ImportItemType.TestFlag, exportedContent, exportedContent.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.TestFlag, item: ImportItem) => {
+                      testFlagManager.createTestFlagInternal(toModelTestFlag(None, data, item.parentItem.get.targetKey.get.toLong))
+                    },
+                    (data: com.gitb.xml.export.TestFlag, targetKey: String, item: ImportItem) => {
+                      testFlagManager.updateTestFlagInternal(toModelTestFlag(Some(targetKey.toLong), data, item.parentItem.get.targetKey.get.toLong))
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.TestFlag, ctx,
+              (targetKey: String, _: ImportItem) => {
+                testFlagManager.deleteTestFlagInternal(targetKey.toLong)
               }
             )
           }

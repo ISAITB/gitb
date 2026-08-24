@@ -13,13 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EntityWithId } from "./entity-with-id"
+/** Full record - used only in the community details "Test flags" management tab. */
+export interface TestFlag {
 
-export interface IdLabel extends EntityWithId {
-
-    label: string
-    icon?: string
-    /** Optional colour override for `icon` (e.g. a flag's configured colour). */
-    iconColour?: string
+    id: number
+    name: string
+    description?: string
+    colour: string
+    publicName?: string
+    publicColour?: string
+    adminOnly: boolean
+    displayOrder: number
+    community: number
 
 }

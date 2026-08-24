@@ -15,4 +15,4 @@
 
 package models
 
-case class CommunityInfoForLogin(community: Community, labels: List[CommunityLabels], statementDocumentationReportEnabled: Boolean)
+case class CommunityInfoForLogin(community: Community, labels: List[CommunityLabels], statementDocumentationReportEnabled: Boolean, testFlags: List[TestFlags], isAdmin: Boolean)

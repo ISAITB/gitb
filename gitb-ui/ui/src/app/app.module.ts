@@ -77,6 +77,9 @@ import {DomainFormComponent} from './pages/admin/domain-management/domain/domain
 import {
   CreateEditDomainParameterModalComponent
 } from './modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
+import {
+  CreateEditTestFlagModalComponent
+} from './modals/create-edit-test-flag-modal/create-edit-test-flag-modal.component';
 import {TestSuiteUploadModalComponent} from './modals/test-suite-upload-modal/test-suite-upload-modal.component';
 import {
   CreateSpecificationComponent
@@ -190,6 +193,7 @@ import {ReportFileNameExpressionComponent} from './components/report-file-name-e
 import {TestResultRatioComponent} from './components/test-result-ratio/test-result-ratio.component';
 import {PrescriptionLevelComponent} from './components/prescription-level/prescription-level.component';
 import {CheckboxOptionPanelComponent} from './components/checkbox-option-panel/checkbox-option-panel.component';
+import {SessionFlagControlComponent} from './components/session-flag-control/session-flag-control.component';
 import {SessionInfoPanelComponent} from './components/session-info-panel/session-info-panel.component';
 import {SessionColumnPreferencesComponent} from './components/session-column-preferences/session-column-preferences.component';
 import {MenuItemComponent} from './pages/index/menu-item/menu-item.component';
@@ -365,6 +369,7 @@ import { TestResultCommentsModalComponent } from './modals/test-result-comments-
     DomainDetailsComponent,
     DomainFormComponent,
     CreateEditDomainParameterModalComponent,
+    CreateEditTestFlagModalComponent,
     TestSuiteUploadModalComponent,
     CreateSpecificationComponent,
     SpecificationDetailsComponent,
@@ -445,6 +450,7 @@ import { TestResultCommentsModalComponent } from './modals/test-result-comments-
     TestResultRatioComponent,
     PrescriptionLevelComponent,
     CheckboxOptionPanelComponent,
+    SessionFlagControlComponent,
     SessionInfoPanelComponent,
     SessionColumnPreferencesComponent,
     MenuItemComponent,

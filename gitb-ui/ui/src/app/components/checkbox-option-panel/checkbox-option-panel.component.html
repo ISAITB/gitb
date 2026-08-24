@@ -13,18 +13,18 @@
                             @if (option.target) {
                                 <a class="col-12 itemContainer plain-link" [navTarget]="option.target" (click)="handleClick(option, $event); $event.stopPropagation()">
                                     <div class="d-flex">
-                                        <div class="optionLabel">@if (option.iconClass) { <div class="optionIcon"><i [ngClass]="option.iconClass!"></i></div> } <div>{{option.label}}</div></div>
+                                        <div class="optionLabel">@if (option.iconClass) { <div class="optionIcon"><i [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i></div> } <div>{{option.label}}</div></div>
                                     </div>
                                 </a>
                             } @else {
                                 <div class="col-12 itemContainer" (click)="handleClick(option); $event.stopPropagation()">
                                     <div class="d-flex">
                                         @if (singleSelection) {
-                                            <div class="optionLabel">@if (option.iconClass) { <div class="optionIcon"><i [ngClass]="option.iconClass!"></i></div> } <div>{{option.label}}</div></div>
+                                            <div class="optionLabel">@if (option.iconClass) { <div class="optionIcon"><i [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i></div> } <div>{{option.label}}</div></div>
                                         } @else {
                                             <input class="form-check-input" type="checkbox" [attr.id]="'option-'+index1+'-'+index2" [attr.name]="'option-'+index1+'-'+index2" [(ngModel)]="currentState[option.key]" (ngModelChange)="updated.emit(currentState)" [disabled]="option.disabled || false">
                                             <label class="form-check-label disable-select" [attr.for]="'option-'+index1+'-'+index2" [class.text-muted]="option.disabled">
-                                                <span class="optionLabel">@if (option.iconClass) { <i class="optionIcon" [ngClass]="option.iconClass!"></i> } {{option.label}}</span>
+                                                <span class="optionLabel">@if (option.iconClass) { <i class="optionIcon" [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i> } {{option.label}}</span>
                                             </label>
                                         }
                                     </div>

@@ -18,6 +18,7 @@ export interface ExportSettings {
   landingPages: boolean
   errorTemplates: boolean
   triggers: boolean
+  testFlags: boolean
   resources: boolean
   legalNotices: boolean
   certificateSettings: boolean

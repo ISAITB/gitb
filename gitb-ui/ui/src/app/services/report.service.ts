@@ -180,6 +180,12 @@ export class ReportService {
       if (criteria.commentText !== undefined) {
         params.comment_text = criteria.commentText
       }
+      if (criteria.flagIds !== undefined && criteria.flagIds.length > 0) {
+        params.flag_ids = criteria.flagIds.join(',')
+      }
+      if (criteria.includeUnflagged !== undefined) {
+        params.include_unflagged = criteria.includeUnflagged
+      }
     }
     return params
   }

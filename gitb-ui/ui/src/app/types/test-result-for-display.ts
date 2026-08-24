@@ -39,6 +39,10 @@ export interface TestResultForDisplay extends SessionData {
     optionPending?: boolean,
     checked?: boolean,
     communityId?: number
+    flagId?: number
+    /** Precomputed (colour, name) for the optional "Flag" column - avoids a lookup in the column's
+     * render functions, which only ever receive a single field's value (see session-columns.service.ts). */
+    flagDisplay?: {colour: string, name: string}
 
     commentsPending?: boolean
     commentsLoaded?: boolean

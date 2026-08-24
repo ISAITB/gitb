@@ -69,11 +69,16 @@ export class ProfileResolver {
   }
 
   private loadAuthenticatedData(): Observable<any> {
-    return forkJoin([
-      this.loadUserData(),
-      this.loadOrganisation(),
-      this.loadCommunity()
-    ]);
+    // The role must be known before we can decide whether to load the Test Bed administrator's
+    // all-communities test flag cache, so that one load is sequenced after loadUserData() - the other
+    // two keep running in parallel exactly as before.
+    return this.loadUserData().pipe(
+      switchMap(() => forkJoin([
+        this.loadOrganisation(),
+        this.loadCommunity(),
+        this.loadAllCommunityTestFlagsIfNeeded()
+      ]))
+    );
   }
 
   private loadUserData(): Observable<any> {
@@ -110,6 +115,19 @@ export class ProfileResolver {
     }
     return this.communityService.getUserCommunity().pipe(
       tap(data => this.dataService.setCommunity(data))
+    );
+  }
+
+  /** Only the Test Bed administrator receives the all-communities test flag cache - the session
+   * dashboard has no single "community in scope" to lazily key a per-community fetch off (see
+   * DataService.getApplicableTestFlags). Other roles get their own community's flags as part of the
+   * regular loadCommunity() call above. */
+  private loadAllCommunityTestFlagsIfNeeded(): Observable<any> {
+    if (!this.dataService.isSystemAdmin || this.dataService.allCommunityTestFlags != undefined) {
+      return of(void 0);
+    }
+    return this.communityService.getAllCommunityTestFlags().pipe(
+      tap(data => this.dataService.setAllCommunityTestFlags(data))
     );
   }
 

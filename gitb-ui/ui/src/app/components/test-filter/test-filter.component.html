@@ -79,7 +79,7 @@
           }
         </div>
       }
-      @if (filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION) || filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+      @if (filterDefined(Constants.FILTER_TYPE.RESULT) || (showFlagFilter && filterDefined(Constants.FILTER_TYPE.FLAG)) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION) || filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
         <div class="filterRow">
           @if (filterDefined(Constants.FILTER_TYPE.SYSTEM)) {
             <div class="filterCell">
@@ -94,6 +94,14 @@
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.RESULT]}}</span></div>
               <div class="filterValue">
                 <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.RESULT]" [typeahead]="false" (apply)="resultsChanged($event)"></app-multi-select-filter>
+              </div>
+            </div>
+          }
+          @if (showFlagFilter && filterDefined(Constants.FILTER_TYPE.FLAG)) {
+            <div class="filterCell">
+              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.FLAG]}}</span></div>
+              <div class="filterValue">
+                <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.FLAG]" [typeahead]="false" (apply)="flagsChanged($event)"></app-multi-select-filter>
               </div>
             </div>
           }

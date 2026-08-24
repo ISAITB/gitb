@@ -377,7 +377,10 @@ object PersistenceSchema {
 	  def startTime = column[Timestamp]("start_time")
 	  def endTime = column[Option[Timestamp]]("end_time", O.SqlType("TIMESTAMP"))
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
-    def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, outputMessage) <> (TestResult.tupled, TestResult.unapply)
+    def flagId = column[Option[Long]]("flag_id")
+    // HList-based mapping (rather than tuple + tupled/unapply) since this now has 22 columns, which is
+    // right at Scala's Tuple/Function arity limit and runs into Slick Shape resolution issues there.
+    def * = (testSessionId :: sutId :: sut :: organizationId :: organization :: communityId :: community :: testCaseId :: testCase :: testSuiteId :: testSuite :: actorId :: actor :: specificationId :: specification :: domainId :: domain :: result :: startTime :: endTime :: outputMessage :: flagId :: HNil).mapTo[TestResult]
   }
   val testResults = TableQuery[TestResultsTable]
 
@@ -734,6 +737,21 @@ object PersistenceSchema {
   }
   val triggers = TableQuery[TriggersTable]
   val insertTriggers = triggers returning triggers.map(_.id)
+
+  class TestFlagsTable(tag: Tag) extends Table[TestFlags](tag, "TestFlags") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def colour = column[String]("colour")
+    def publicName = column[Option[String]]("public_name")
+    def publicColour = column[Option[String]]("public_colour")
+    def adminOnly = column[Boolean]("admin_only")
+    def displayOrder = column[Short]("display_order")
+    def community = column[Long]("community")
+    def * = (id, name, description, colour, publicName, publicColour, adminOnly, displayOrder, community) <> (TestFlags.tupled, TestFlags.unapply)
+  }
+  val testFlags = TableQuery[TestFlagsTable]
+  val insertTestFlags = testFlags returning testFlags.map(_.id)
 
   class TriggerDataTable(tag: Tag) extends Table[TriggerData](tag, "TriggerData") {
     def dataType = column[Short]("data_type")

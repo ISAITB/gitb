@@ -55,6 +55,9 @@ object ImportTargets {
       if (community.getTriggers != null && !community.getTriggers.getTrigger.isEmpty) {
         result.hasTriggers = true
       }
+      if (community.getTestFlags != null && !community.getTestFlags.getTestFlag.isEmpty) {
+        result.hasTestFlags = true
+      }
       if (community.getResources != null && !community.getResources.getResource.isEmpty) {
         result.hasResources = true
       }
@@ -125,6 +128,7 @@ object ImportTargets {
         case ImportItemType.LegalNotice => targets.hasLegalNotices = true
         case ImportItemType.ErrorTemplate => targets.hasErrorTemplates = true
         case ImportItemType.Trigger => targets.hasTriggers = true
+        case ImportItemType.TestFlag => targets.hasTestFlags = true
         case ImportItemType.CommunityResource => targets.hasResources = true
         case ImportItemType.Organisation  => targets.hasOrganisations = true
         case ImportItemType.OrganisationUser => targets.hasOrganisationUsers = true
@@ -250,6 +254,7 @@ class ImportTargets {
   var hasLegalNotices: Boolean = false
   var hasErrorTemplates: Boolean = false
   var hasTriggers: Boolean = false
+  var hasTestFlags: Boolean = false
   var hasResources: Boolean = false
   var hasAdministrators: Boolean = false
   var hasOrganisations: Boolean = false

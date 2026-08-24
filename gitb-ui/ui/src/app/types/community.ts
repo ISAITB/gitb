@@ -19,6 +19,7 @@ import {CommunityLimited} from './community-limited';
 import {Organisation} from './organisation.type';
 import {UserPreferences} from './user-preferences';
 import {TagData} from './tag-data';
+import {TestFlagForUser} from './test-flag-for-user';
 
 export interface Community extends CommunityLimited {
 
@@ -54,6 +55,7 @@ export interface Community extends CommunityLimited {
   preferences?: UserPreferences
   tags?: TagData[]
   statementDocumentationReportEnabled?: boolean
+  testFlags?: TestFlagForUser[]
 
   sameDescriptionAsDomain: boolean;
   activeDescription?: string;

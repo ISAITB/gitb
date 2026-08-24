@@ -74,6 +74,12 @@
                                             }
                                         </div>
                                     </div>
+                                    @if (testCaseFlagId[testCase.id] != undefined) {
+                                        @let flag = dataService.getTestFlag(sessionCommunityId(), testCaseFlagId[testCase.id]);
+                                        @if (flag) {
+                                            <app-tag [icon]="true" [label]="Constants.BUTTON_ICON.SNAPSHOT" [iconColour]="flag.colour" [value]="flag.name"></app-tag>
+                                        }
+                                    }
                                 </div>
                                 @if (stepsOfTests[testCase.id] != undefined && !dataService.configuration.preparingForShutdown) {
                                     <div class="session-table-operations btn-toolbar">
@@ -118,6 +124,14 @@
                                                 </span>
                                             </button>
                                         </div>
+                                        @if (exportEnabled(testCase)) {
+                                            <app-session-flag-control #sessionFlagControl
+                                                [communityId]="sessionCommunityId()"
+                                                [currentFlagId]="testCaseFlagId[testCase.id]"
+                                                [pending]="testCaseFlagPending[testCase.id]"
+                                                (flagChanged)="onFlagChanged(testCase, $event)">
+                                            </app-session-flag-control>
+                                        }
                                         <div class="position-relative">
                                             <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
                                                 <span class="mini-tab label-icon"><i [class]="Constants.BUTTON_ICON.VIEW_LOG"></i></span>View log

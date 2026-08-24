@@ -110,6 +110,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   testCaseWithOpenLogView?: number
   testCaseOperationPending: {[key: number]: boolean} = {}
   testCaseCommentsPending: {[key: number]: boolean} = {}
+  testCaseFlagId: {[key: number]: number|undefined} = {}
+  testCaseFlagPending: {[key: number]: boolean} = {}
 
   actor?: string
   session?: string
@@ -143,6 +145,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   ]
   @ViewChild("testOptionsControl") testOptionsControl?: CheckBoxOptionPanelComponentApi
   @ViewChildren("outputMessageDisplayComponent") outputMessageDisplayComponents?: QueryList<OutputMessageDisplayApi>
+  @ViewChildren("sessionFlagControl") sessionFlagControls?: QueryList<CheckBoxOptionPanelComponentApi>
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -241,6 +244,10 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     this.stepsOfTests = {}
     this.interactionStepsOfTests = {}
     this.actorInfoOfTests = {}
+    // Flag state is per test session, not per test case - a session's flag must not survive into the
+    // newly prepared session that "Reset" creates for the same test case id.
+    this.testCaseFlagId = {}
+    this.testCaseFlagPending = {}
     this.actor = undefined
     this.session = undefined
     this.simulatedConfigs = undefined
@@ -1342,6 +1349,25 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }
   }
 
+  /** The community whose flags apply to the running tests: the route's communityId when the Test Bed
+   * administrator is executing tests for a community's organisation, otherwise the current user's own
+   * community. A Test Bed administrator running tests for their own organisation has neither (no route
+   * communityId, no own community), so this correctly resolves to undefined - never taking flags. */
+  sessionCommunityId(): number|undefined {
+    return this.communityId ?? this.dataService.community?.id
+  }
+
+  onFlagChanged(testCase: ConformanceTestCase, flagId: number|undefined) {
+    if (testCase.sessionId) {
+      this.testCaseFlagPending[testCase.id] = true
+      this.testService.setTestSessionFlag(testCase.sessionId, flagId).subscribe(() => {
+        this.testCaseFlagId[testCase.id] = flagId
+      }).add(() => {
+        this.testCaseFlagPending[testCase.id] = false
+      })
+    }
+  }
+
   viewComments(testCase: ConformanceTestCase) {
     if (testCase.sessionId) {
       this.testCaseCommentsPending[testCase.id] = true
@@ -1372,11 +1398,13 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   @HostListener('document:click', ['$event'])
   clickRegistered(event: Event) {
     this.testOptionsControl?.documentClick(event)
+    this.sessionFlagControls?.forEach(control => control.documentClick(event))
   }
 
   @HostListener('document:keyup.escape')
   escapeRegistered() {
     this.testOptionsControl?.documentEscape()
+    this.sessionFlagControls?.forEach(control => control.documentEscape())
   }
 
 }

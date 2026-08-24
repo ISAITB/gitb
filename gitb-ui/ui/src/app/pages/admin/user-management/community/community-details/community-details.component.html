@@ -233,6 +233,100 @@
                     ></app-resource-management-tab>
                 </ng-template>
             </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.TEST_FLAGS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.FLAG" text="Test flags"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Test flags -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                @if (!managingTestFlagOrder) {
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTestFlag()">Create flag</button>
+                                }
+                                @if (testFlags.length > 1) {
+                                    <div class="btn-group" ngbDropdown>
+                                        @if (managingTestFlagOrder) {
+                                            <button [pending]="testFlagOrderSaving" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="button" class="btn btn-secondary" (click)="saveTestFlagOrder()">Save test flag order</button>
+                                        } @else {
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.SORT" class="btn btn-secondary" (click)="manageTestFlagOrder()">Manage flag order</button>
+                                        }
+                                        <button id="button-test-flag-order" type="button" ngbDropdownToggle [disabled]="testFlagOrderSaving" class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Reset flag order</span>
+                                        </button>
+                                        <div id="dropdown-test-flag-order" ngbDropdownMenu aria-labelledby="button-test-flag-order">
+                                            <button ngbDropdownItem type="button" (click)="resetTestFlagOrder()">Reset flag order</button>
+                                        </div>
+                                    </div>
+                                    @if (managingTestFlagOrder) {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelManageTestFlagOrder()">Cancel</button>
+                                    }
+                                }
+                                @if (!managingTestFlagOrder) {
+                                    <div class="btn input-switch">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="showPublicTestFlagInfo" [ngModel]="showPublicTestFlagInfo" (ngModelChange)="togglePublicTestFlagInfo()">
+                                            <label class="form-check-label" for="showPublicTestFlagInfo">Public display</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        @if (managingTestFlagOrder) {
+                            <div class="form-table table-container rounded mb-0">
+                                <table class="table table-directive">
+                                    <thead>
+                                        <tr>
+                                            <th><div class="cell-content">Flag</div></th>
+                                            <th><div class="cell-content">Description</div></th>
+                                            <th class="th-min centered"></th>
+                                            <th class="th-min"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropTestFlag($event)" [class.dragging]="dragOngoingTestFlags">
+                                        @for (flag of testFlags; track flag.id) {
+                                            <tr class="drag-table-row" cdkDrag (cdkDragStarted)="dragOngoingTestFlags = true" (cdkDragEnded)="dragOngoingTestFlags = false" cdkDragPreviewContainer="parent">
+                                                <td class="drag-preview"><div class="cell-content d-flex align-items-center gap-2"><i [class]="Constants.BUTTON_ICON.SNAPSHOT" [style.color]="flag.flagDisplay.colour"></i><span>{{flag.flagDisplay.name}}</span></div></td>
+                                                <td><div class="cell-content">{{flag.description}}</div></td>
+                                                <td class="th-min centered">
+                                                    <div class="cell-content">
+                                                        @if (flag.adminOnly) {
+                                                            <div class="ms-4 me-2">
+                                                                <i [class]="Constants.BUTTON_ICON.USER_ADMIN" ngbTooltip="Flag that can only be set by administrators." tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"></i>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="drag-handle">
+                                                    <div class="cell-content">
+                                                        <button cdkDragHandle class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.REORDER"></i></span></button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        } @else {
+                            <div class="card">
+                                <div #testFlagsTable table-directive
+                                     [columns]="testFlagColumns"
+                                     [data]="testFlags"
+                                     noDataMessage="No flags found"
+                                     [loadingStatus]="testFlagStatus"
+                                     [contentRefreshing]="testFlagsRefreshing"
+                                     (pageNavigation)="doTestFlagPaging($event)"
+                                     [allowSelect]="true"
+                                     [persistentSelection]="false"
+                                     (onSelect)="openTestFlagModal($event)"
+                                     [refreshRows]="testFlagsRefreshRows"
+                                     [supportPaging]="true">
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </ng-template>
+            </li>
         </ul>
         <div [ngbNavOutlet]="tabs"></div>
     </div>

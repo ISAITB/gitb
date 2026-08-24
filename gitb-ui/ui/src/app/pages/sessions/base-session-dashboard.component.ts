@@ -90,7 +90,7 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.COMMENTS ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.FLAG, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.COMMENTS ],
     updatePending: false,
     updateDisabled: false
   }
@@ -361,6 +361,8 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
       searchCriteria.testSuiteIds = filterData[Constants.FILTER_TYPE.TEST_SUITE]
       searchCriteria.testCaseIds = filterData[Constants.FILTER_TYPE.TEST_CASE]
       searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
+      searchCriteria.flagIds = filterData[Constants.FILTER_TYPE.FLAG]
+      searchCriteria.includeUnflagged = filterData.includeUnflagged
       searchCriteria.startTimeBeginStr = filterData.startTimeBeginStr
       searchCriteria.startTimeEndStr = filterData.startTimeEndStr
       searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
@@ -892,6 +894,9 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
     displayedResult.endTime = loadedResult.result.endTime
     displayedResult.result = loadedResult.result.result
     displayedResult.obsolete = loadedResult.result.obsolete
+    displayedResult.flagId = loadedResult.result.flagId
+    const flag = this.dataService.getTestFlag(displayedResult.communityId, displayedResult.flagId)
+    displayedResult.flagDisplay = flag ? { colour: flag.colour, name: flag.name } : undefined
     if (displayedResult.diagramState && loadedResult.result.outputMessage) {
       displayedResult.diagramState.outputMessage = loadedResult.result.outputMessage
       displayedResult.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(loadedResult.result.result)

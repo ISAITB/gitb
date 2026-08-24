@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EntityWithId } from "./entity-with-id"
+package models
 
-export interface IdLabel extends EntityWithId {
+case class TestFlags(id: Long, name: String, description: Option[String], colour: String, publicName: Option[String], publicColour: Option[String], adminOnly: Boolean, displayOrder: Short, community: Long) {
 
-    label: string
-    icon?: string
-    /** Optional colour override for `icon` (e.g. a flag's configured colour). */
-    iconColour?: string
+  /** The name shown to organisation users - falls back to the internal name when no public override is set. */
+  def effectiveName: String = publicName.getOrElse(name)
+
+  /** The colour shown to organisation users - falls back to the internal colour when no public override is set. */
+  def effectiveColour: String = publicColour.getOrElse(colour)
 
 }

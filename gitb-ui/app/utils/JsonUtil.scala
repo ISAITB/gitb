@@ -909,6 +909,7 @@ object JsonUtil {
     if (communityInfo.statementDocumentationReportEnabled) {
       json = json.+("statementDocumentationReportEnabled" -> JsBoolean(communityInfo.statementDocumentationReportEnabled))
     }
+    json = json.+("testFlags" -> jsTestFlagsForUser(communityInfo.testFlags, communityInfo.isAdmin))
     json
   }
 
@@ -2080,6 +2081,7 @@ object JsonUtil {
     settings.errorTemplates = (jsonConfig \ "errorTemplates").as[Boolean]
     settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
     settings.triggers = (jsonConfig \ "triggers").as[Boolean]
+    settings.testFlags = (jsonConfig \ "testFlags").as[Boolean]
     settings.resources = (jsonConfig \ "resources").as[Boolean]
     settings.certificateSettings = (jsonConfig \ "certificateSettings").as[Boolean]
     settings.customLabels = (jsonConfig \ "customLabels").as[Boolean]
@@ -2415,7 +2417,8 @@ object JsonUtil {
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
       "tpl"       -> (if(tpl.isDefined) tpl.get else JsNull),
       "outputMessage" -> (if (withOutputMessage && testResult.outputMessage.isDefined) testResult.outputMessage.get else JsNull),
-      "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
+      "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true),
+      "flagId"    -> (if (testResult.flagId.isDefined) testResult.flagId.get else JsNull)
     )
     json
   }
@@ -2897,6 +2900,75 @@ object JsonUtil {
     var json = Json.arr()
     list.foreach { landingPage =>
       json = json.append(jsLandingPage(landingPage))
+    }
+    json
+  }
+
+  /** Full record, for the community details management tab (create/edit form, table listing). */
+  def jsTestFlag(testFlag: TestFlags): JsObject = {
+    Json.obj(
+      "id" -> testFlag.id,
+      "name" -> testFlag.name,
+      "description" -> (if (testFlag.description.isDefined) testFlag.description.get else JsNull),
+      "colour" -> testFlag.colour,
+      "publicName" -> (if (testFlag.publicName.isDefined) testFlag.publicName.get else JsNull),
+      "publicColour" -> (if (testFlag.publicColour.isDefined) testFlag.publicColour.get else JsNull),
+      "adminOnly" -> testFlag.adminOnly,
+      "displayOrder" -> testFlag.displayOrder,
+      "community" -> testFlag.community
+    )
+  }
+
+  def jsTestFlags(list: Iterable[TestFlags]): JsArray = {
+    var json = Json.arr()
+    list.foreach { testFlag =>
+      json = json.append(jsTestFlag(testFlag))
+    }
+    json
+  }
+
+  /** Minimal record for the client-side login cache. For administrators (Test Bed or community) this
+   * carries the internal name/colour. For organisation users the effective (public-or-fallback-to-
+   * internal) name/colour is used instead - so an organisation user's browser never receives a
+   * community's internal-only flag naming. `adminOnly` is included for every role and every flag
+   * (including admin-only ones) since an admin-only flag, once set on a session, is still shown
+   * read-only to organisation users - only the *assignment* control needs to filter admin-only flags
+   * out client-side; display (tag, column, filter) applies to all flags regardless. */
+  def jsTestFlagForUser(testFlag: TestFlags, isAdmin: Boolean): JsObject = {
+    if (isAdmin) {
+      Json.obj(
+        "id" -> testFlag.id,
+        "name" -> testFlag.name,
+        "colour" -> testFlag.colour,
+        "adminOnly" -> testFlag.adminOnly
+      )
+    } else {
+      Json.obj(
+        "id" -> testFlag.id,
+        "name" -> testFlag.effectiveName,
+        "colour" -> testFlag.effectiveColour,
+        "adminOnly" -> testFlag.adminOnly
+      )
+    }
+  }
+
+  def jsTestFlagsForUser(list: Iterable[TestFlags], isAdmin: Boolean): JsArray = {
+    var json = Json.arr()
+    list.foreach { testFlag =>
+      json = json.append(jsTestFlagForUser(testFlag, isAdmin))
+    }
+    json
+  }
+
+  /** The Test Bed administrator's all-communities login cache - always the admin view (every flag,
+   * internal name/colour) since the Test Bed administrator has full access to every community. */
+  def jsAllCommunityTestFlagsForAdminLogin(flagsByCommunity: Map[Long, List[TestFlags]]): JsArray = {
+    var json = Json.arr()
+    flagsByCommunity.foreach { case (communityId, flags) =>
+      json = json.append(Json.obj(
+        "communityId" -> communityId,
+        "flags" -> jsTestFlagsForUser(flags, isAdmin = true)
+      ))
     }
     json
   }

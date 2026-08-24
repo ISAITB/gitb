@@ -31,10 +31,14 @@ export enum SessionColumnCase {
 /** Column state for a given context. MUST = always shown. NA = never shown. ON/OFF = user-adaptable. */
 type ColState = 'MUST' | 'ON' | 'OFF' | 'NA'
 
-/** Column IDs for the four adaptable column groups (WHAT and WHO). */
+/** Column IDs for the adaptable column groups (WHAT, WHO, and the optional FLAG column). */
 export const WHAT_COLUMNS = ['domain', 'specification', 'actor', 'testSuite', 'testCase'] as const
 export const WHO_COLUMNS  = ['community', 'organization', 'system'] as const
-export type ColumnId = typeof WHAT_COLUMNS[number] | typeof WHO_COLUMNS[number]
+/** A single-entry group for the optional "Flag" column - kept separate from WHAT/WHO since it's not
+ * part of either group's "at least one selected" requirement, and (unlike them) only ever renders in
+ * the completed-sessions table regardless of whether it's toggled on for the active one too. */
+export const FLAG_COLUMNS = ['flag'] as const
+export type ColumnId = typeof WHAT_COLUMNS[number] | typeof WHO_COLUMNS[number] | typeof FLAG_COLUMNS[number]
 
 export function isOwnCase(c: SessionColumnCase): boolean {
   return c === SessionColumnCase.Own
@@ -59,12 +63,16 @@ export class SessionColumnsService {
       case 'community':     return (!own && isSystemAdmin) ? 'OFF' : 'NA'
       case 'organization':  return own ? 'NA' : 'ON'
       case 'system':        return own ? 'ON' : 'OFF'
+      // Flag - always offered as a toggle, off by default (niche feature); rendering itself is
+      // additionally restricted to the completed-sessions table in buildTableColumns, and to
+      // communities that actually define flags via the row's own precomputed flagDisplay value.
+      case 'flag':           return 'OFF'
     }
   }
 
   /** Returns the set of adaptable column IDs applicable for the given context (state ON or OFF). */
   adaptableColumns(columnCase: SessionColumnCase, isSystemAdmin: boolean): ColumnId[] {
-    const all: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS]
+    const all: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS, ...FLAG_COLUMNS]
     return all.filter(id => {
       const s = this.getColumnState(id, columnCase, isSystemAdmin)
       return s === 'ON' || s === 'OFF'
@@ -115,8 +123,9 @@ export class SessionColumnsService {
     const active = new Set(this.activeIds(storedValue, columnCase, isSystemAdmin))
     const cols: TableColumnDefinition[] = []
 
-    const allAdaptable: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS]
+    const allAdaptable: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS, ...FLAG_COLUMNS]
     for (const id of allAdaptable) {
+      if (id === 'flag' && !completed) continue // flags only ever apply to completed sessions
       const state = this.getColumnState(id, columnCase, isSystemAdmin)
       if (state === 'NA' || state === 'MUST') continue
       if (!active.has(id)) continue
@@ -152,6 +161,7 @@ export class SessionColumnsService {
 
     const whatOptions: CheckboxOption[] = []
     const whoOptions:  CheckboxOption[] = []
+    const flagOptions: CheckboxOption[] = []
 
     for (const id of WHAT_COLUMNS) {
       const state = this.getColumnState(id, columnCase, isSystemAdmin)
@@ -162,6 +172,11 @@ export class SessionColumnsService {
       const state = this.getColumnState(id, columnCase, isSystemAdmin)
       if (state === 'NA' || state === 'MUST') continue
       whoOptions.push({ key: id, label: this.columnLabel(id), default: activeSet.has(id) })
+    }
+    for (const id of FLAG_COLUMNS) {
+      const state = this.getColumnState(id, columnCase, isSystemAdmin)
+      if (state === 'NA' || state === 'MUST') continue
+      flagOptions.push({ key: id, label: this.columnLabel(id), default: activeSet.has(id) })
     }
 
     // Disabled-last-in-group: if only one WHAT/WHO is checked, that one cannot be unchecked.
@@ -181,6 +196,7 @@ export class SessionColumnsService {
     const groups: CheckboxOption[][] = []
     if (whatOptions.length > 0) groups.push(whatOptions)
     if (whoOptions.length > 0) groups.push(whoOptions)
+    if (flagOptions.length > 0) groups.push(flagOptions)
     return groups
   }
 
@@ -195,6 +211,7 @@ export class SessionColumnsService {
       case 'community':     return 'Community'
       case 'organization':  return this.dataService.labelOrganisation()
       case 'system':        return this.dataService.labelSystem()
+      case 'flag':          return 'Flag'
       default:              return id
     }
   }
@@ -217,6 +234,16 @@ export class SessionColumnsService {
         return { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true }
       case 'system':
         return { field: 'system', title: this.dataService.labelSystem(), sortable: true }
+      case 'flag':
+        // The row's flagDisplay is precomputed (colour + name) since iconFn/iconColourFn/iconTooltipFn
+        // only ever receive this one column's field value, not the whole row (see
+        // BaseSessionDashboardComponent.applyCompletedDataToTestSession).
+        return {
+          field: 'flagDisplay', title: 'Flag', headerClass: 'th-min centered', cellClass: 'td-min centered',
+          iconFn: (data?: {colour: string, name: string}) => data ? Constants.BUTTON_ICON.SNAPSHOT : '',
+          iconColourFn: (data?: {colour: string, name: string}) => data?.colour ?? '',
+          iconTooltipFn: (data?: {colour: string, name: string}) => data?.name ?? ''
+        }
     }
   }
 

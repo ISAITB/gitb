@@ -91,6 +91,8 @@ export class SessionColumnPreferencesComponent implements OnChanges {
   }
 
   optionInvalid(option: CheckboxOption): boolean {
+    // The Flag column belongs to neither group's "at least one selected" requirement.
+    if (option.key === 'flag') return false
     return this.isWhatColumn(option.key) ? this.whatInvalid : this.whoInvalid
   }
 

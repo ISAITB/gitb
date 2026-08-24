@@ -149,6 +149,12 @@
                                                 </span>
                                                 </button>
                                             </div>
+                                            <app-session-flag-control #sessionFlagControl
+                                                [communityId]="row.communityId"
+                                                [currentFlagId]="row.flagId"
+                                                [pending]="flagPending[row.session]"
+                                                (flagChanged)="onFlagChanged(row, $event)">
+                                            </app-session-flag-control>
                                         }
                                         @if (showNavigationControls) {
                                             <!-- Copy link -->
@@ -193,7 +199,15 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <app-session-info-panel #sessionInfoPanel [row]="row"></app-session-info-panel>
+                                            <div class="session-table-extra-info">
+                                                @if (row.flagId != undefined) {
+                                                    @let flag = dataService.getTestFlag(row.communityId, row.flagId);
+                                                    @if (flag) {
+                                                        <app-tag [icon]="true" [label]="Constants.BUTTON_ICON.SNAPSHOT" [iconColour]="flag.colour" [value]="flag.name"></app-tag>
+                                                    }
+                                                }
+                                                <app-session-info-panel #sessionInfoPanel [row]="row"></app-session-info-panel>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">

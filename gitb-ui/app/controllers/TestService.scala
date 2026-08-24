@@ -381,4 +381,13 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def setTestSessionFlag(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    val flagId = ParameterExtractor.optionalBodyParameter(request, ParameterNames.FLAG_ID).map(_.toLong)
+    authorizationManager.canSetTestSessionFlag(request, sessionId, flagId).flatMap { _ =>
+      testResultManager.setTestSessionFlag(sessionId, flagId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
 }

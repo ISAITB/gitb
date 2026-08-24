@@ -42,7 +42,7 @@
     @if (label) {
         <div class="tag-label">
             @if (icon) {
-                <span class="tag-label-icon"><i [ngClass]="label"></i></span>
+                <span class="tag-label-icon"><i [ngClass]="label" [style.color]="iconColour"></i></span>
             } @else {
                 <span class="tag-label-text">{{label}}</span>
             }

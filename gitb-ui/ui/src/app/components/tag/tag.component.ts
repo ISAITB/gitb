@@ -30,6 +30,8 @@ export class TagComponent implements OnInit {
   @Input() tooltipText?: string
   @Input() foreground?: string
   @Input() background?: string
+  /** Colour override for the label icon only (e.g. a flag's configured colour), independent of `foreground`. */
+  @Input() iconColour?: string
   @Input() styleClass?: string
   @Input() editable? = false
   @Input() icon? = false
