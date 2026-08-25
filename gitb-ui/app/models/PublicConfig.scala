@@ -36,7 +36,7 @@ class PublicConfig(
   _releaseInfoEnabled: Boolean,
   _releaseInfoLink: String,
   _welcomeText: String,
-  _welcomeTitle: String,
+  _welcomeTexts: WelcomeTexts,
   _internalContextPath: String,
   _restAPI: Option[String],
   _ssoType: String) {
@@ -61,7 +61,7 @@ class PublicConfig(
   var releaseInfoEnabled: Boolean = _releaseInfoEnabled
   var releaseInfoLink: String = _releaseInfoLink
   var welcomeText: String = _welcomeText
-  var welcomeTitle: String = _welcomeTitle
+  var welcomeTexts: WelcomeTexts = _welcomeTexts
   var internalContextPath: String = _internalContextPath
   var restApi: Option[String] = _restAPI
   var ssoType: String = _ssoType

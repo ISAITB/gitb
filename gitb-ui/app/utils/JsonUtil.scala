@@ -1824,12 +1824,8 @@ object JsonUtil {
   }
 
   def parseJsSystemConfigurations(json: String): Iterable[SystemConfigurations] = {
-    Json.parse(json).as[JsArray].value.map { value =>
-      SystemConfigurations(
-        (value \ "name").as[String],
-        (value \ "value").asOpt[String],
-        None
-      )
+    Json.parse(json).as[JsObject].fields.map { case (name, value) =>
+      SystemConfigurations(name, value.asOpt[String], None)
     }
   }
 
@@ -2762,7 +2758,7 @@ object JsonUtil {
       "hasDefaultLegalNotice" -> hasDefaultLegalNotice,
       "conformanceStatementReportMaxTestCases" -> Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES,
       "headerNameAuthenticationCookiePath" -> Configurations.HEADER_NAME_AUTHENTICATION_COOKIE_PATH,
-      "welcomePageTitle" -> Configurations.WELCOME_TITLE,
+      "welcomePageTitle" -> Configurations.WELCOME_TEXTS.title,
       "preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN,
       "dateFormat" -> Configurations.DATE_FORMAT_DATE,
       "dateTimeFormat" -> Configurations.DATE_FORMAT_DATETIME
@@ -3916,6 +3912,43 @@ object JsonUtil {
       dateFormat = dateFormats.flatMap(obj => (obj \ "date").asOpt[String]),
       dateTimeFormat = dateFormats.flatMap(obj => (obj \ "dateTime").asOpt[String]),
       dateFileFormat = dateFormats.flatMap(obj => (obj \ "dateFile").asOpt[String])
+    )
+  }
+
+  def jsWelcomeTexts(texts: WelcomeTexts): JsObject = {
+    Json.obj(
+      "title" -> JsString(texts.title),
+      "logInCardTitle" -> JsString(texts.logInCardTitle),
+      "logInCardContent" -> JsString(texts.logInCardContent),
+      "confirmRoleCardTitle" -> JsString(texts.confirmRoleCardTitle),
+      "confirmRoleCardContent" -> JsString(texts.confirmRoleCardContent),
+      "registerCardTitle" -> JsString(texts.registerCardTitle),
+      "registerCardContent" -> JsString(texts.registerCardContent),
+      "demoCardTitle" -> JsString(texts.demoCardTitle),
+      "demoCardContent" -> JsString(texts.demoCardContent)
+    )
+  }
+
+  /**
+   * Parses a persisted welcome page texts JSON value, falling back to the built-in default for any
+   * property that is missing or blank. This means a partial JSON value (e.g. one written by a
+   * migration, or predating a text added after it was last saved) always yields a complete result.
+   */
+  def parseJsWelcomeTexts(jsonString: String): WelcomeTexts = {
+    val json = Json.parse(jsonString)
+    def textOrDefault(propertyName: String, default: String): String = {
+      (json \ propertyName).asOpt[String].filter(StringUtils.isNotBlank).getOrElse(default)
+    }
+    WelcomeTexts(
+      title = textOrDefault("title", WelcomeTexts.TitleDefault),
+      logInCardTitle = textOrDefault("logInCardTitle", WelcomeTexts.LogInCardTitleDefault),
+      logInCardContent = textOrDefault("logInCardContent", WelcomeTexts.LogInCardContentDefault),
+      confirmRoleCardTitle = textOrDefault("confirmRoleCardTitle", WelcomeTexts.ConfirmRoleCardTitleDefault),
+      confirmRoleCardContent = textOrDefault("confirmRoleCardContent", WelcomeTexts.ConfirmRoleCardContentDefault),
+      registerCardTitle = textOrDefault("registerCardTitle", WelcomeTexts.RegisterCardTitleDefault),
+      registerCardContent = textOrDefault("registerCardContent", WelcomeTexts.RegisterCardContentDefault),
+      demoCardTitle = textOrDefault("demoCardTitle", WelcomeTexts.DemoCardTitleDefault),
+      demoCardContent = textOrDefault("demoCardContent", WelcomeTexts.DemoCardContentDefault)
     )
   }
 

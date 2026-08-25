@@ -18,7 +18,7 @@ package config
 import authentication.ecas.AuthenticationLevel
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
-import models.{Constants, ReportSettings, UsageTipsConfiguration}
+import models.{Constants, ReportSettings, UsageTipsConfiguration, WelcomeTexts}
 import models.Enums.ReportType
 import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.LoggerFactory
@@ -232,8 +232,7 @@ object Configurations {
 
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
-  val WELCOME_TITLE_DEFAULT = "Welcome to the Interoperability Test Bed"
-  var WELCOME_TITLE: String = WELCOME_TITLE_DEFAULT
+  var WELCOME_TEXTS: WelcomeTexts = WelcomeTexts.defaultConfiguration()
 
   var SESSION_COOKIE_SECURE: Boolean = false
 

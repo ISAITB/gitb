@@ -67,7 +67,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiDevelopmentKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips,
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTexts, Constants.StartupWizard, Constants.UsageTips,
     Constants.TestServiceCallbacks, Constants.ReportSettings
   )
   // Configuration types whose value changes need to be pushed eagerly to the test engine (gitb-srv).
@@ -275,7 +275,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val startupWizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard)
         val usageTipsConfig = persistedConfigs.find(config => config.config.name == Constants.UsageTips)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
-        val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
+        val welcomeTextsConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTexts)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
         val testEngineCallbacksConfig = persistedConfigs.find(config => config.config.name == Constants.TestServiceCallbacks)
@@ -307,8 +307,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         if (welcomeMessageConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
         }
-        if (welcomeTitleConfig.isEmpty) {
-          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
+        if (welcomeTextsConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTexts, Some(JsonUtil.jsWelcomeTexts(WelcomeTexts.defaultConfiguration()).toString()), None), defaultSetting = true, environmentSetting = false)
+        } else if (welcomeTextsConfig.get.config.parameter.isDefined) {
+          // Always re-serialize through jsWelcomeTexts (rather than passing the persisted JSON through
+          // as-is) so that every text is always reported, even for a partial value (e.g. one written by
+          // the V154 migration, or predating a text added after it was last saved).
+          val backfilledTexts = JsonUtil.parseJsWelcomeTexts(welcomeTextsConfig.get.config.parameter.get)
+          persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.WelcomeTexts) :+
+            SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTexts, Some(JsonUtil.jsWelcomeTexts(backfilledTexts).toString()), None), defaultSetting = false, environmentSetting = false)
         }
         if (emailSettingsConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
@@ -425,6 +432,10 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       } else {
         None
       }
+    } else if (name == Constants.WelcomeTexts && providedValue.isDefined) {
+      // Parse and re-serialize so that what is stored is always a complete set of texts (any missing
+      // or blank property is backfilled with its built-in default).
+      Some(JsonUtil.jsWelcomeTexts(JsonUtil.parseJsWelcomeTexts(providedValue.get)).toString())
     } else {
       providedValue
     }
@@ -433,11 +444,18 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime || name == Constants.ReportSettings) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeTexts || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime || name == Constants.ReportSettings) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
           }
+        } else if ((name == Constants.WelcomeMessage || name == Constants.WelcomeTexts) && value.isEmpty) {
+          // Reverting a welcome page setting that was never customised (e.g. because only the other
+          // one of the message/texts pair was): nothing to record. Inserting a row with a NULL
+          // parameter here would make getEditableSystemConfigurationValues treat the setting as
+          // persisted but unset, so the built-in defaults would stop being reported to the admin UI -
+          // reachable since the "Custom welcome page content" section resets both settings together.
+          DBIO.successful(0)
         } else {
           PersistenceSchema.systemConfigurations += SystemConfigurations(name, value, None)
         }
@@ -508,14 +526,14 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
               ))
             }
-          case Constants.WelcomeTitle =>
+          case Constants.WelcomeTexts =>
             if (value.isDefined) {
-              Configurations.WELCOME_TITLE = value.get
+              Configurations.WELCOME_TEXTS = JsonUtil.parseJsWelcomeTexts(value.get)
               DBIO.successful(None)
             } else {
-              Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
+              Configurations.WELCOME_TEXTS = WelcomeTexts.defaultConfiguration()
               DBIO.successful(Some(
-                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTexts, Some(JsonUtil.jsWelcomeTexts(Configurations.WELCOME_TEXTS).toString()), None), defaultSetting = true, environmentSetting = false)
               ))
             }
           case Constants.AccountRetentionPeriod =>

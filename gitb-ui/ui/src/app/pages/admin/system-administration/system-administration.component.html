@@ -26,25 +26,51 @@
                     <div class="configContainer">
                         <app-configuration-entry
                             configTitle="Custom welcome page content"
-                            configDescription="Display a custom title and message on the Test Bed's welcome page."
+                            configDescription="Display a custom title, message and option card texts on the Test Bed's welcome page."
                             [(status)]="welcomePageStatus"
                         >
                             <form>
-                                <div class="row mb-3">
-                                    <div class="col-6 minimum-width-text">
-                                        <div class="input-group">
-                                            <span class="input-group-text">Title</span>
-                                            <input type="text" id="welcomePageTitle" name="welcomePageTitle" class="form-control" [(ngModel)]="welcomePageTitle">
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="welcomePageOverride" name="welcomePageOverride" [(ngModel)]="welcomePageOverride">
+                                            <label class="form-check-label" for="welcomePageOverride">Override default content?</label>
                                         </div>
                                     </div>
                                 </div>
-                                <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
-                                <div class="row mt-3">
-                                    <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                <div [ngbCollapse]="!welcomePageOverride" [animation]="true">
+                                    <div class="pt-3">
+                                        <div class="form-container">
+                                            <app-form-section sectionTitle="Welcome message">
+                                                <div class="row pt-3">
+                                                    <div class="col-12">
+                                                        <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                                </div>
+                                            </app-form-section>
+                                            <app-form-section sectionTitle="Section texts" [marginBefore]="true">
+                                                @for (info of welcomeTextInfos; track info.key) {
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" [attr.for]="info.id">* {{info.label}}:</label>
+                                                        <div class="col-8 col-xl-6">
+                                                            <input type="text" class="form-control" [id]="info.id" [name]="info.id" [(ngModel)]="welcomePageTexts[info.key]">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip [tbTooltip]="info.tooltip"></div>
+                                                    </div>
+                                                }
+                                            </app-form-section>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="btn-toolbar mt-3">
-                                    <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage) || !textProvided(welcomePageTitle)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
-                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                                <div class="row mt-3">
+                                    <div class="col-auto">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="welcomePageStatus.pending || (welcomePageOverride && !welcomePageTextsOk())" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </app-configuration-entry>

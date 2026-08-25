@@ -66,6 +66,9 @@ import {RestApiEndpointBasic} from '../../../types/rest-api-endpoint-basic';
 import {ReportSettings} from '../../../types/report-settings';
 import {REPORT_TYPE_INFOS} from '../../../types/report-type-info';
 import {TimeZoneInfo} from '../../../types/time-zone-info';
+import {WelcomeTexts} from '../../../types/welcome-texts';
+import {ConfigurationValue} from '../../../types/configuration-value';
+import {WELCOME_TEXT_INFOS} from '../../../types/welcome-text-info';
 import {ConfigurationEntryComponentApi} from './configuration-entry/configuration-entry-component-api';
 
 @Component({
@@ -224,9 +227,13 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   // Welcome page
   welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
-  welcomePageResetPending = false
   welcomePageMessage?: string
-  welcomePageTitle?: string
+  welcomePageTexts: WelcomeTexts = {}
+  welcomeTextInfos = WELCOME_TEXT_INFOS
+  // Whether the welcome page form sections are shown and, on Save, whether the current values are
+  // persisted (checked) or the persisted settings are deleted (unchecked). Initialised from whether
+  // content is currently customised, but toggling it alone does not persist anything until saved.
+  welcomePageOverride = false
 
   // Email settings
   emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
@@ -318,8 +325,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.resourceActions = this.createResourceActions()
     // Load system configuration values.
     this.systemConfigurationService.getConfigurationValues().subscribe((data) => {
-      let welcomeMessageConfig: SystemConfiguration|undefined
-      let welcomeTitleConfig: SystemConfiguration|undefined
+      const welcomeConfigs: SystemConfiguration[] = []
       data.forEach(configItem => {
         switch (configItem.name) {
           case Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD:
@@ -388,24 +394,9 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             this.usageTipsStatus.fromDefault = configItem.default
             break
           case Constants.SYSTEM_CONFIG.WELCOME_MESSAGE:
-            // Welcome page message.
-            if (configItem.parameter) {
-              this.welcomePageMessage = configItem.parameter
-              welcomeMessageConfig = configItem
-            }
-            this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
-            this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
-            this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
-            break
-          case Constants.SYSTEM_CONFIG.WELCOME_TITLE:
-            // Welcome page title
-            if (configItem.parameter) {
-              this.welcomePageTitle = configItem.parameter
-              welcomeTitleConfig = configItem
-            }
-            this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
-            this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
-            this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
+          case Constants.SYSTEM_CONFIG.WELCOME_TEXTS:
+            // Welcome page message and texts (status is computed once both have been collected).
+            welcomeConfigs.push(configItem)
             break
           case Constants.SYSTEM_CONFIG.EMAIL_SETTINGS:
             // Email settings.
@@ -436,10 +427,33 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             console.warn(`Unknown system configuration [${configItem.name}]`)
         }
       })
+      this.applyWelcomePageConfigs(welcomeConfigs)
     }).add(() => {
       this.configValuesPending = false
     })
     this.routingService.systemConfigurationBreadcrumbs()
+  }
+
+  /**
+   * Applies the welcome message and welcome texts configuration items, and derives the aggregate
+   * status (fromDefault/fromEnv/enabled) for the "Custom welcome page content" section from both of
+   * them together. Used both when configuration values are first loaded and after a reset to default.
+   */
+  private applyWelcomePageConfigs(configs: SystemConfiguration[]) {
+    configs.forEach((configItem) => {
+      if (configItem.parameter) {
+        if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE) {
+          this.welcomePageMessage = configItem.parameter
+        } else if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TEXTS) {
+          this.welcomePageTexts = JSON.parse(configItem.parameter)
+        }
+      }
+    })
+    const complete = configs.length == 2
+    this.welcomePageStatus.fromEnv = complete && configs.every((configItem) => configItem.environment)
+    this.welcomePageStatus.fromDefault = complete && configs.every((configItem) => configItem.default)
+    this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
+    this.welcomePageOverride = this.welcomePageStatus.enabled
   }
 
   private parseSslProtocols(values: string[]|undefined): SslProtocol[]|undefined {
@@ -1134,46 +1148,45 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
   }
 
+  welcomePageTextsOk(): boolean {
+    return this.textProvided(this.welcomePageMessage) &&
+      this.welcomeTextInfos.every((info) => this.textProvided(this.welcomePageTexts[info.key]))
+  }
+
+  /**
+   * Saves the welcome page content. When "Override default content?" is checked this persists the
+   * current message and texts; when unchecked this deletes the persisted settings (equivalent to a
+   * reset to default), since there is otherwise no way to distinguish "not yet overridden" from
+   * "explicitly reverted" once custom values have been set.
+   */
   saveWelcomePage() {
-    if (this.textProvided(this.welcomePageMessage) && this.textProvided(this.welcomePageTitle)) {
-      this.welcomePageStatus.pending = true
-      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, value: this.welcomePageMessage }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE, value: this.welcomePageTitle } ])
-      .subscribe(() => {
-        this.welcomePageStatus.collapsed = true
+    if (this.welcomePageOverride && !this.welcomePageTextsOk()) {
+      return
+    }
+    this.welcomePageStatus.pending = true
+    const values: ConfigurationValue[] = this.welcomePageOverride ? [
+      { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, value: this.welcomePageMessage },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_TEXTS, value: JSON.stringify(this.welcomePageTexts) }
+    ] : [
+      { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_TEXTS }
+    ]
+    this.systemConfigurationService.updateConfigurationValues(values)
+    .subscribe((appliedValues) => {
+      if (this.welcomePageOverride) {
         this.welcomePageStatus.enabled = true
         this.welcomePageStatus.fromDefault = false
         this.welcomePageStatus.fromEnv = false
         this.popupService.success('Welcome page content set.')
-      }).add(() => {
-        this.welcomePageStatus.pending = false
-      })
-    }
-  }
-
-  resetWelcomePage() {
-    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page content to its default?", "Reset", "Cancel", Constants.BUTTON_ICON.RESET)
-    .subscribe(() => {
-      this.welcomePageResetPending = true
-      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE } ])
-      .subscribe((appliedValues) => {
+      } else {
         if (appliedValues) {
-          const message = appliedValues.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
-          if (message != undefined) {
-            this.welcomePageMessage = message.parameter
-          }
-          const title = appliedValues.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
-          if (title != undefined) {
-            this.welcomePageTitle = title.parameter
-          }
-          this.welcomePageStatus.fromEnv = message != undefined && message.environment && title != undefined && title.environment
-          this.welcomePageStatus.fromDefault = message != undefined && message.default && title != undefined && title.default
-          this.welcomePageStatus.enabled = false
+          this.applyWelcomePageConfigs(appliedValues)
         }
-        this.welcomePageStatus.collapsed = true
         this.popupService.success('Welcome page content reset to default.')
-      }).add(() => {
-        this.welcomePageResetPending = false
-      })
+      }
+      this.welcomePageStatus.collapsed = true
+    }).add(() => {
+      this.welcomePageStatus.pending = false
     })
   }
 

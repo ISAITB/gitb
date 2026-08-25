@@ -441,7 +441,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       case Constants.SelfRegistrationEnabled => "Self-registration"
       case Constants.DemoAccount => "Demo account"
       case Constants.WelcomeMessage => "Custom welcome page message"
-      case Constants.WelcomeTitle => "Custom welcome page title"
+      case Constants.WelcomeTexts => "Custom welcome page texts"
       case Constants.AccountRetentionPeriod => "Inactive account retention period"
       case Constants.EmailSettings => "Email settings"
       case Constants.SoftwareVersionCheck => "Software version check settings"

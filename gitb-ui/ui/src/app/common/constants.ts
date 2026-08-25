@@ -588,7 +588,7 @@ export class Constants {
 		ACCOUNT_RETENTION_PERIOD: 'account_retention_period',
 		EMAIL_SETTINGS: 'email_settings',
     SOFTWARE_VERSION_CHECK: 'software_version_check',
-    WELCOME_TITLE: 'welcome_title',
+    WELCOME_TEXTS: 'welcome_texts',
     STARTUP_WIZARD: 'startup_wizard',
     USAGE_TIPS: 'usage_tips',
     TEST_SERVICE_CALLBACKS: 'test_service_callbacks',

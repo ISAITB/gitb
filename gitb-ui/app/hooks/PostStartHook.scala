@@ -24,7 +24,7 @@ import managers._
 import managers.export.ImportCompleteManager
 import managers.ratelimit.RateLimitManager
 import models.Enums.UserRole
-import models.{Constants, ReportSettings, RestApiLimits}
+import models.{Constants, ReportSettings, RestApiLimits, WelcomeTexts}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
@@ -291,14 +291,12 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           }
           Future.successful(())
         }
-        // Welcome page title.
+        // Welcome page texts.
         _ <- {
-          val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle).map(_.config)
-          if (welcomeTitleConfig.nonEmpty && welcomeTitleConfig.get.parameter.nonEmpty) {
-            Configurations.WELCOME_TITLE = welcomeTitleConfig.get.parameter.get
-          } else {
-            Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
-          }
+          val welcomeTextsConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTexts).map(_.config)
+          Configurations.WELCOME_TEXTS = welcomeTextsConfig.flatMap(_.parameter)
+            .map(JsonUtil.parseJsWelcomeTexts)
+            .getOrElse(WelcomeTexts.defaultConfiguration())
           Future.successful(())
         }
         // Email settings.

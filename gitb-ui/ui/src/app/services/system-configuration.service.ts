@@ -42,14 +42,11 @@ export class SystemConfigurationService {
   }
 
   updateConfigurationValues(values: ConfigurationValue[]) {
-    const configs: ConfigurationValue[] = []
-    values.forEach(value => {
-      if (value.value == undefined) {
-        configs.push({ name: value.name })
-      } else {
-        configs.push({ name: value.name, value: value.value })
-      }
-    })
+    // Keyed by configuration name (rather than an array) so the backend's input sanitizer can treat
+    // individual configuration values differently (e.g. skip the blacklist check for rich-text values
+    // that are separately sanitised, such as the welcome page message).
+    const configs: {[key: string]: string|null} = {}
+    values.forEach(value => configs[value.name] = value.value ?? null)
     return this.restService.post<SystemConfiguration[]|undefined>({
       path: ROUTES.controllers.SystemConfigurationService.updateConfigurationValues().url,
       data: {
