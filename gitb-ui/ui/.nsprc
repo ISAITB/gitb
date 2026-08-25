@@ -194,5 +194,29 @@
   "1124241": {
     "active": true,
     "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1138538": {
+    "active": true,
+    "notes": "Transitive dependencies that are not exploitable."
+  },
+  "1138097": {
+    "active": true,
+    "notes": "Transitive dependencies that are not exploitable."
+  },
+  "1138099": {
+    "active": true,
+    "notes": "Transitive dependencies that are not exploitable."
+  },
+  "1138100": {
+    "active": true,
+    "notes": "Transitive dependencies that are not exploitable."
+  },
+  "1138101": {
+    "active": true,
+    "notes": "Transitive dependencies that are not exploitable."
+  },
+  "1138113": {
+    "active": true,
+    "notes": "Transitive dependencies that are not exploitable."
   }
 }
