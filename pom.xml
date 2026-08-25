@@ -233,12 +233,14 @@
                             <licenseMerge>Eclipse Distribution License - v1.0|EDL 1.0|Eclipse Distribution License - v 1.0</licenseMerge>
                             <licenseMerge>Eclipse Public License - v1.0|Eclipse Public License - v 1.0</licenseMerge>
                             <licenseMerge>Eclipse Public License - v2.0|EPL 2.0|EPL-2.0|Eclipse Public License 2.0</licenseMerge>
-                            <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception</licenseMerge>
+                            <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception|CDDL/GPLv2+CE</licenseMerge>
                             <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|LGPL-2.1-only|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
-                            <licenseMerge>The 3-Clause BSD License|BSD-3-Clause</licenseMerge>
+                            <licenseMerge>The 3-Clause BSD License|BSD-3-Clause|BSD 3-Clause License</licenseMerge>
                             <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
+                            <licenseMerge>The 0-Clause BSD License|BSD</licenseMerge>
                             <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
                             <licenseMerge>Mozilla Public License Version 1.1|MPL 1.1</licenseMerge>
+                            <licenseMerge>Mozilla Public License Version 2.0|Mozilla Public License, Version 2.0|Mozilla Public License 2.0 (MPL-2.0)|</licenseMerge>
                             <licenseMerge>European Union Public Licence (EUPL) Version 1.2</licenseMerge>
                         </licenseMerges>
                         <includedLicenses>
@@ -252,6 +254,7 @@
                             <includedLicense>European Union Public Licence (EUPL) Version 1.2</includedLicense>
                             <includedLicense>The 3-Clause BSD License</includedLicense>
                             <includedLicense>The 2-Clause BSD License</includedLicense>
+                            <includedLicense>The 0-Clause BSD License</includedLicense>
                             <includedLicense>Mozilla Public License Version 2.0</includedLicense>
                             <includedLicense>Common Public License 1.0</includedLicense>
                             <includedLicense>CUP Parser Generator Copyright Notice, License, and Disclaimer</includedLicense>
