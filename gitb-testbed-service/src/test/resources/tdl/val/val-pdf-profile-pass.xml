@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-pdf-profile-pass" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>PdfValidator profile validation - PDF/A-1B conformant document</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <verify handler="PdfValidator" desc="PDF/A-1B conformant document against PDFA_1B">
+            <input name="content">$content</input>
+            <input name="profiles">'PDFA_1B'</input>
+        </verify>
+    </steps>
+</testcase>

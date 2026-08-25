@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-pdf-profiles-list" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>PdfValidator profile validation - profiles provided as a list with mixed single/comma-separated elements</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="profileList" append="true">'PDFA_1B'</assign>
+        <assign to="profileList" append="true">'PDFA_2B,PDFUA_1'</assign>
+        <!-- The document conforms to PDFA_1B only - the other two profiles fail - overall FAILURE. -->
+        <verify handler="PdfValidator" desc="profiles provided as a list, one element itself comma-separated">
+            <input name="content">$content</input>
+            <input name="profiles">$profileList</input>
+        </verify>
+    </steps>
+</testcase>

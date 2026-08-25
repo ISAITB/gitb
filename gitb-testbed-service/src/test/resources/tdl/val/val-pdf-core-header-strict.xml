@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-pdf-core-header-strict" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>PdfValidator core parse - out-of-range header version, with strictMode</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <verify handler="PdfValidator" desc="out-of-range PDF header version reported as an error">
+            <input name="content">$content</input>
+            <input name="strictMode">true()</input>
+        </verify>
+    </steps>
+</testcase>

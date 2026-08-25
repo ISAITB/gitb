@@ -15,8 +15,14 @@
 
 package com.gitb.tbs;
 
+import com.gitb.core.AnyContent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.util.List;
 
 import static com.gitb.tbs.TdlTestHelper.*;
 
@@ -46,7 +52,29 @@ class ValidationHandlersTest extends BaseIntegrationTest {
                 "val-xmlmatch-match",
                 "val-xmlmatch-nomatch",
                 "val-stop-on-error",
-                "val-continue-after-fail"
+                "val-continue-after-fail",
+                "val-pdf-core-valid",
+                "val-pdf-core-damaged-lenient",
+                "val-pdf-core-damaged-strict",
+                "val-pdf-unparseable",
+                "val-pdf-encrypted-no-password",
+                "val-pdf-encrypted-with-password",
+                "val-pdf-profile-pass",
+                "val-pdf-profile-fail",
+                "val-pdf-profiles-multiple",
+                "val-pdf-profiles-list",
+                "val-pdf-profiles-invalid",
+                "val-pdf-profiles-case",
+                "val-pdf-core-header-lenient",
+                "val-pdf-core-header-strict",
+                "val-pdf-core-xref-lenient",
+                "val-pdf-core-xref-strict",
+                "val-pdf-core-pages-lenient",
+                "val-pdf-core-pages-strict",
+                "val-pdf-core-content-lenient",
+                "val-pdf-core-content-strict",
+                "val-pdf-core-object-lenient",
+                "val-pdf-core-object-strict"
         }) {
             stubTdl(id, "tdl/val/" + id + ".xml");
         }
@@ -160,5 +188,135 @@ class ValidationHandlersTest extends BaseIntegrationTest {
     @Test
     void continueAfterFail() throws Exception {
         assertFailed(run("val-continue-after-fail"));
+    }
+
+    // PdfValidator tests
+
+    @Test
+    void pdfCoreValid() throws Exception {
+        assertSuccess(run("val-pdf-core-valid", null, pdfInput("plain.pdf")));
+    }
+
+    @Test
+    void pdfCoreDamagedLenient() throws Exception {
+        assertSuccess(run("val-pdf-core-damaged-lenient", null, pdfInput("damaged.pdf")));
+    }
+
+    @Test
+    void pdfCoreDamagedStrict() throws Exception {
+        assertFailed(run("val-pdf-core-damaged-strict", null, pdfInput("damaged.pdf")));
+    }
+
+    @Test
+    void pdfUnparseable() throws Exception {
+        assertFailed(run("val-pdf-unparseable"));
+    }
+
+    @Test
+    void pdfEncryptedNoPassword() throws Exception {
+        assertFailed(run("val-pdf-encrypted-no-password", null, pdfInput("encrypted.pdf")));
+    }
+
+    @Test
+    void pdfEncryptedWithPassword() throws Exception {
+        assertSuccess(run("val-pdf-encrypted-with-password", null, pdfInput("encrypted.pdf")));
+    }
+
+    @Test
+    void pdfProfilePass() throws Exception {
+        assertSuccess(run("val-pdf-profile-pass", null, pdfInput("pdfa-1b.pdf")));
+    }
+
+    @Test
+    void pdfProfileFail() throws Exception {
+        assertFailed(run("val-pdf-profile-fail", null, pdfInput("plain.pdf")));
+    }
+
+    @Test
+    void pdfProfilesMultiple() throws Exception {
+        assertFailed(run("val-pdf-profiles-multiple", null, pdfInput("pdfa-1b.pdf")));
+    }
+
+    @Test
+    void pdfProfilesList() throws Exception {
+        assertFailed(run("val-pdf-profiles-list", null, pdfInput("pdfa-1b.pdf")));
+    }
+
+    @Test
+    void pdfProfilesInvalid() throws Exception {
+        run("val-pdf-profiles-invalid", null, pdfInput("pdfa-1b.pdf"))
+                .assertSuccess()
+                .assertLogs(List.of("Ignoring unknown PDF conformance profile [NOT_A_PROFILE]"));
+    }
+
+    @Test
+    void pdfProfilesCase() throws Exception {
+        assertSuccess(run("val-pdf-profiles-case", null, pdfInput("pdfa-1b.pdf")));
+    }
+
+    // CORE-* rule reachability tests: each rule below has a fixture crafted to trigger exactly that
+    // rule (verified independently against the real PdfValidator before being added here), asserted
+    // via strictMode - only that rule's finding can turn a lenient (SUCCESS) result into FAILURE.
+
+    @Test
+    void pdfCoreHeaderLenient() throws Exception {
+        assertSuccess(run("val-pdf-core-header-lenient", null, pdfInput("bad-header-version.pdf")));
+    }
+
+    @Test
+    void pdfCoreHeaderStrict() throws Exception {
+        assertFailed(run("val-pdf-core-header-strict", null, pdfInput("bad-header-version.pdf")));
+    }
+
+    @Test
+    void pdfCoreXrefLenient() throws Exception {
+        assertSuccess(run("val-pdf-core-xref-lenient", null, pdfInput("bad-xref-line.pdf")));
+    }
+
+    @Test
+    void pdfCoreXrefStrict() throws Exception {
+        assertFailed(run("val-pdf-core-xref-strict", null, pdfInput("bad-xref-line.pdf")));
+    }
+
+    @Test
+    void pdfCorePagesLenient() throws Exception {
+        assertSuccess(run("val-pdf-core-pages-lenient", null, pdfInput("zero-pages.pdf")));
+    }
+
+    @Test
+    void pdfCorePagesStrict() throws Exception {
+        assertFailed(run("val-pdf-core-pages-strict", null, pdfInput("zero-pages.pdf")));
+    }
+
+    @Test
+    void pdfCoreContentLenient() throws Exception {
+        assertSuccess(run("val-pdf-core-content-lenient", null, pdfInput("bad-content.pdf")));
+    }
+
+    @Test
+    void pdfCoreContentStrict() throws Exception {
+        assertFailed(run("val-pdf-core-content-strict", null, pdfInput("bad-content.pdf")));
+    }
+
+    @Test
+    void pdfCoreObjectLenient() throws Exception {
+        assertSuccess(run("val-pdf-core-object-lenient", null, pdfInput("warning-object.pdf")));
+    }
+
+    @Test
+    void pdfCoreObjectStrict() throws Exception {
+        assertFailed(run("val-pdf-core-object-strict", null, pdfInput("warning-object.pdf")));
+    }
+
+    private List<AnyContent> pdfInput(String fixtureFileName) {
+        String resourcePath = "pdf/" + fixtureFileName;
+        try (InputStream is = ValidationHandlersTest.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                throw new IllegalArgumentException("Classpath resource not found: " + resourcePath);
+            }
+            return List.of(binaryInput("content", is.readAllBytes()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

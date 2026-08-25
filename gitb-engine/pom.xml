@@ -139,5 +139,13 @@
 			<groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
 			<artifactId>owasp-java-html-sanitizer</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.verapdf</groupId>
+			<artifactId>validation-model</artifactId>
+		</dependency>
 	</dependencies>
 </project>

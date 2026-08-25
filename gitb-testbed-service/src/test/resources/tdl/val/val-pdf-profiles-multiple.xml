@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-pdf-profiles-multiple" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>PdfValidator profile validation - comma-separated profiles in a single string</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- The document conforms to PDFA_1B but not PDFUA_1 (no tagged structure) - overall FAILURE. -->
+        <verify handler="PdfValidator" desc="two profiles requested via one comma-separated string">
+            <input name="content">$content</input>
+            <input name="profiles">'PDFA_1B, PDFUA_1'</input>
+        </verify>
+    </steps>
+</testcase>

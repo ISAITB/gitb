@@ -107,6 +107,15 @@ public class TdlTestHelper {
         return input;
     }
 
+    public static AnyContent binaryInput(String name, byte[] value) {
+        AnyContent input = new AnyContent();
+        input.setName(name);
+        input.setValue(java.util.Base64.getEncoder().encodeToString(value));
+        input.setType("binary");
+        input.setEmbeddingMethod(ValueEmbeddingEnumeration.BASE_64);
+        return input;
+    }
+
     private static List<ActorConfiguration> buildConfigurations(String apiKey) {
         List<ActorConfiguration> configs = new ArrayList<>();
         ActorConfiguration sutConfig = new ActorConfiguration();

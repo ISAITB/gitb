@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-pdf-core-object-strict" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>PdfValidator core parse - corrupted endobj terminator, with strictMode</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <verify handler="PdfValidator" desc="corrupted object terminator reported as an error">
+            <input name="content">$content</input>
+            <input name="strictMode">true()</input>
+        </verify>
+    </steps>
+</testcase>
