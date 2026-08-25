@@ -110,5 +110,85 @@
     "1120138": {
         "active": true,
         "notes": "Non-exploitable vulnerability from transitive dependency."
+    },
+    "1120802": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1120803": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1120813": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124022": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124233": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124234": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124235": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124236": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124237": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124238": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124239": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124240": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1124241": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1138538": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1122162": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1138097": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1138099": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1138100": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1138101": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
+    },
+    "1138113": {
+        "active": true,
+        "notes": "Relates to transitive dependency that is non-exploitable."
     }
 }
