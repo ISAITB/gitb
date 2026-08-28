@@ -1,0 +1,13 @@
+<div class="app-pill" [class.shaded]="shaded" [style.max-width]="maxWidth ? maxWidth+'px' : null">
+    @if (title) {
+        <span class="pill-title">{{ title }}</span>
+    }
+    <span class="pill-text">{{ text }}</span>
+    @if (actionPending) {
+        <span class="pill-pending"><i [class]="Constants.BUTTON_ICON.PENDING_SMALL"></i></span>
+    } @else if (actionIcon) {
+        <span class="pill-action" (click)="actionClicked($event)" tooltipClass="shortTooltip" container="body" [ngbTooltip]="actionTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+            <i [class]="actionIcon"></i>
+        </span>
+    }
+</div>

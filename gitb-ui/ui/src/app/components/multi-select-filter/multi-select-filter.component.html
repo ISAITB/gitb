@@ -1,10 +1,10 @@
 <div class="filterContainer">
-    <button #filterControl [attr.id]="id" (mousedown)="controlMouseDown($event)" (click)="controlClicked()" type="button" [ngClass]="config.showAsFormControl == true?['form-select']:['btn', 'btn-secondary', 'dropdown-toggle']" class="filterControl" [class.open]="formVisible" [disabled]="pending || disable">
+    <button #filterControl [attr.id]="id" (mousedown)="controlMouseDown($event)" (click)="controlClicked()" type="button" [ngClass]="config.showAsFormControl == true?['form-select']:['btn', 'btn-secondary', 'dropdown-toggle']" class="filterControl" [class.open]="formVisible" [class.constrained]="!!config.maxWidth" [disabled]="pending || disable" [style.max-width]="config.maxWidth?(config.maxWidth+'px'):null">
         <div class="button-label w-100 align-items-center">
             @if (pending) {
                 <app-pending-block></app-pending-block>
             }
-            <div class="button-label-text" [style.max-width]="config.maxWidth?(config.maxWidth+'px'):null">
+            <div class="button-label-text">
                 @if (config.filterLabelIcon != undefined) {
                     <span class="mini-tab">
                         <i [class]="config.filterLabelIcon"></i>

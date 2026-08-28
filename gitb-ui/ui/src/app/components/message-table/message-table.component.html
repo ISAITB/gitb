@@ -1,0 +1,109 @@
+<div class="table-container rounded">
+    <table class="table table-directive messages-table">
+        <colgroup>
+            @if (hasImportantMessage) {
+                <col class="important-col">
+            }
+            <col class="check-col">
+            <col class="peer-col">
+            <col class="message-col">
+            <col class="date-col" [style.width.px]="dateColWidth">
+            <col class="actions-col">
+        </colgroup>
+        <thead>
+            <tr>
+                @if (hasImportantMessage) {
+                    <th class="important-col centered"></th>
+                }
+                <th class="check-col">
+                    @if (hasRows) {
+                        <div class="cell-content">
+                            <input type="checkbox" class="form-check-input" [checked]="allChecked" [indeterminate]="someChecked" (change)="toggleAllChecked()">
+                        </div>
+                    }
+                </th>
+                <th class="peer-col sortable" (click)="headerClicked('peer')">
+                    <div class="cell-content">
+                        {{ peerColumnTitle }}
+                        @if (sortColumn == 'peer') {
+                            <span class="ms-1"><i class="fa" [ngClass]="{'fa-caret-down': sortOrder == 'desc', 'fa-caret-up': sortOrder == 'asc'}"></i></span>
+                        }
+                    </div>
+                </th>
+                <th class="message-col">
+                    <div class="cell-content">Message</div>
+                </th>
+                <th class="date-col sortable" (click)="headerClicked('date')">
+                    <div class="cell-content">
+                        Date
+                        @if (sortColumn == 'date') {
+                            <span class="ms-1"><i class="fa" [ngClass]="{'fa-caret-down': sortOrder == 'desc', 'fa-caret-up': sortOrder == 'asc'}"></i></span>
+                        }
+                    </div>
+                </th>
+                <th class="actions-col"></th>
+            </tr>
+        </thead>
+        <tbody [class.disable-events]="contentRefreshing">
+            @if (loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED) {
+                <tr>
+                    <td [attr.colspan]="hasImportantMessage ? 6 : 5" class="td-data-loading">
+                        <div class="cell-content"><app-pending-block></app-pending-block></div>
+                    </td>
+                </tr>
+            } @else if (!data || data.length == 0) {
+                <tr>
+                    <td [attr.colspan]="hasImportantMessage ? 6 : 5" class="td-no-data">
+                        <div class="cell-content"><span>No messages found</span></div>
+                    </td>
+                </tr>
+            } @else {
+                @for (row of data; track row.id) {
+                    <tr class="message-row selectable" [class.unread]="mode == 'received' && row.read === false" [class.selected]="row.id == selectedId" (click)="selectRow(row)">
+                        @if (hasImportantMessage) {
+                            <td class="important-col centered">
+                                <div class="cell-content">
+                                    @if (row.important) {
+                                        <i class="important-icon" [class]="Constants.BUTTON_ICON.MESSAGE_IMPORTANT" tooltipClass="shortTooltip" container="body" ngbTooltip="Important" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"></i>
+                                    }
+                                </div>
+                            </td>
+                        }
+                        <td class="check-col" (click)="$event.stopPropagation()">
+                            <div class="cell-content">
+                                <input type="checkbox" class="form-check-input" [(ngModel)]="row.checked" (change)="onCheckChange()">
+                            </div>
+                        </td>
+                        <td class="peer-col">
+                            <div class="cell-content truncate" [class.bold]="mode == 'received' && row.read === false">{{ peerLabel(row) }}</div>
+                        </td>
+                        <td class="message-col">
+                            <div class="cell-content truncate">
+                                <span [class.bold]="mode == 'received' && row.read === false">{{ row.subject || '(no subject)' }}</span>@if (row.bodyPreview) {<span class="separator">|</span><span class="preview">{{ row.bodyPreview }}</span>}
+                            </div>
+                        </td>
+                        <td class="date-col">
+                            <div class="cell-content date-cell">
+                                <span #dateSample class="date-measure"><app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="row.date" [inTable]="true"></app-tag></span>
+                            </div>
+                        </td>
+                        <td class="actions-col" (click)="$event.stopPropagation()">
+                            <div class="cell-content">
+                                <app-checkbox-option-panel #rowOptionsPanel
+                                    label="Options"
+                                    [icon]="Constants.BUTTON_ICON.ACTIONS"
+                                    placement="left"
+                                    [smallButton]="true"
+                                    [pending]="row.actionPending || false"
+                                    [optionProvider]="rowOptionsFactory(row)"
+                                    [singleSelection]="true"
+                                    (updated)="onRowOption(row, $event)"></app-checkbox-option-panel>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <app-paging-controls #pagingControls [refreshing]="contentRefreshing" (navigation)="pageNavigation.emit($event)"></app-paging-controls>
+</div>

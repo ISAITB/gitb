@@ -753,6 +753,37 @@ object PersistenceSchema {
   val testFlags = TableQuery[TestFlagsTable]
   val insertTestFlags = testFlags returning testFlags.map(_.id)
 
+  class MessagesTable(tag: Tag) extends Table[Messages](tag, "Messages") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def subject = column[Option[String]]("subject")
+    def body = column[Option[String]]("body", O.SqlType("TEXT"))
+    def bodyText = column[Option[String]]("body_text", O.SqlType("TEXT"))
+    def createdAt = column[Timestamp]("created_at", O.SqlType("TIMESTAMP"))
+    def deletedBySenderAt = column[Option[Timestamp]]("deleted_by_sender_at", O.SqlType("TIMESTAMP"))
+    def parentMessageId = column[Option[Long]]("parent_message_id")
+    def threadId = column[Long]("thread_id")
+    def senderId = column[Option[Long]]("sender_id")
+    def senderNameSnapshot = column[String]("sender_name_snapshot")
+    def senderUserId = column[Option[Long]]("sender_user_id")
+    def important = column[Boolean]("important")
+    def * = (id, subject, body, bodyText, createdAt, deletedBySenderAt, parentMessageId, threadId, senderId, senderNameSnapshot, senderUserId, important) <> (Messages.tupled, Messages.unapply)
+  }
+  val messages = TableQuery[MessagesTable]
+  val insertMessage = messages returning messages.map(_.id)
+
+  class MessageRecipientsTable(tag: Tag) extends Table[MessageRecipients](tag, "MessageRecipients") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def messageId = column[Long]("message_id")
+    def recipientId = column[Option[Long]]("recipient_id")
+    def recipientNameSnapshot = column[String]("recipient_name_snapshot")
+    def deliveredAt = column[Timestamp]("delivered_at", O.SqlType("TIMESTAMP"))
+    def readAt = column[Option[Timestamp]]("read_at", O.SqlType("TIMESTAMP"))
+    def deletedByRecipientAt = column[Option[Timestamp]]("deleted_by_recipient_at", O.SqlType("TIMESTAMP"))
+    def * = (id, messageId, recipientId, recipientNameSnapshot, deliveredAt, readAt, deletedByRecipientAt) <> (MessageRecipients.tupled, MessageRecipients.unapply)
+  }
+  val messageRecipients = TableQuery[MessageRecipientsTable]
+  val insertMessageRecipient = messageRecipients returning messageRecipients.map(_.id)
+
   class TriggerDataTable(tag: Tag) extends Table[TriggerData](tag, "TriggerData") {
     def dataType = column[Short]("data_type")
     def dataId = column[Long]("data_id")

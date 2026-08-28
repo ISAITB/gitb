@@ -15,6 +15,14 @@
 
 @import '../../../styles/less/_common.less';
 
+.input-group {
+    min-width: 240px;
+}
+.selection-custom-options {
+    .input-group {
+        min-width: inherit;
+    }
+}
 @media (max-width: 500px) {
     .selection-panel {
         .selection-preset-options {

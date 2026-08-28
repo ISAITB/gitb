@@ -20,7 +20,7 @@ import com.gitb.utils.HmacUtils
 import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
-import models.Enums.{SelfRegistrationType, UserRole}
+import models.Enums.{MessageTargetType, SelfRegistrationType, UserRole}
 import models._
 import org.pac4j.core.context.WebContext
 import org.slf4j.{Logger, LoggerFactory}
@@ -1960,6 +1960,85 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewOwnOrganisation(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkIsAuthenticated(request)
+  }
+
+  /** Every message read is scoped to the requester's own organisation inside MessageManager, so no
+   * per-message ownership check is needed here - only that the caller is authenticated. */
+  def canViewOwnMessages(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkIsAuthenticated(request)
+  }
+
+  /** Read/unread and delete mutations are scoped to the requester's own organisation in the manager's
+   * WHERE clauses, so a forged message id can never affect another organisation's data - only
+   * authentication is checked here. */
+  def canManageOwnMessages(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkIsAuthenticated(request)
+  }
+
+  /** The actual security boundary for who a message may be sent to. Each recipient descriptor is checked
+   * against the caller's role: an organisation user/admin may only address their own organisation or a
+   * community's administrators (their own community, unless unspecified); a community administrator may
+   * additionally address all members or a specific organisation of their own community, and the Test Bed
+   * administrators; the Test Bed administrator may address anything. MessageManager.resolveTargets later
+   * expands these (already-authorised) descriptors into concrete organisation ids. */
+  def canSendMessage(request: RequestWithAttributes[_], targets: List[MessageTarget]): Future[Boolean] = {
+    val check = if (targets.isEmpty) {
+      Future.successful(false)
+    } else {
+      getUser(getRequestUserId(request)).flatMap { userInfo =>
+        if (isTestBedAdmin(userInfo)) {
+          Future.successful(true)
+        } else if (userInfo.organization.isEmpty) {
+          Future.successful(false)
+        } else {
+          val ownCommunityId = userInfo.organization.get.community
+          if (isCommunityAdmin(userInfo)) {
+            areTargetsAllowedForCommunityAdmin(targets, ownCommunityId)
+          } else if (isOrganisationAdmin(userInfo) || userInfo.role == UserRole.VendorUser.id.toShort) {
+            Future.successful(targets.forall(isTargetAllowedForOrganisationUser(_, ownCommunityId)))
+          } else {
+            Future.successful(false)
+          }
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot send a message to the requested recipients"))
+  }
+
+  private def isTargetAllowedForOrganisationUser(target: MessageTarget, ownCommunityId: Long): Boolean = {
+    MessageTargetType.apply(target.targetType) match {
+      case MessageTargetType.OwnOrganisation => true
+      case MessageTargetType.CommunityAdmin => target.communityId.forall(_ == ownCommunityId)
+      case _ => false
+    }
+  }
+
+  /** Authorises the whole recipient list in a single DB round trip regardless of how many targets it
+   * contains, replacing a per-target lookup: the group/admin target types (AllCommunityMembers,
+   * CommunityAdmin, TestBedAdmin) are pure predicates that need no query, so only the Organisation
+   * targets' ids are collected and checked together via organizationManager.areAllInCommunity. An
+   * Organisation target without an organisationId still fails immediately, as it did before. */
+  private def areTargetsAllowedForCommunityAdmin(targets: List[MessageTarget], ownCommunityId: Long): Future[Boolean] = {
+    val organisationIds = scala.collection.mutable.Set[Long]()
+    val allowedWithoutQuery = targets.forall { target =>
+      MessageTargetType.apply(target.targetType) match {
+        case MessageTargetType.AllCommunityMembers | MessageTargetType.CommunityAdmin =>
+          target.communityId.forall(_ == ownCommunityId)
+        case MessageTargetType.TestBedAdmin =>
+          true
+        case MessageTargetType.Organisation =>
+          target.organisationId match {
+            case Some(orgId) => organisationIds += orgId; true
+            case None => false
+          }
+        case _ => false
+      }
+    }
+    if (!allowedWithoutQuery) {
+      Future.successful(false)
+    } else {
+      organizationManager.areAllInCommunity(organisationIds.toSet, ownCommunityId)
+    }
   }
 
   def canUpdateConformanceCertificateSettings(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {

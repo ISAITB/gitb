@@ -32,6 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class UserManager @Inject() (accountManager: AccountManager,
                              userPreferenceManager: UserPreferenceManager,
+                             messageManager: MessageManager,
                              dbConfigProvider: DatabaseConfigProvider)
                             (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -324,6 +325,7 @@ class UserManager @Inject() (accountManager: AccountManager,
       {
         for {
           _ <- userPreferenceManager.deletePreferencesForUser(userId)
+          _ <- messageManager.clearUserReferences(Seq(userId))
           _ <- PersistenceSchema.users.filter(_.id === userId).delete
         } yield ()
       }.transactionally

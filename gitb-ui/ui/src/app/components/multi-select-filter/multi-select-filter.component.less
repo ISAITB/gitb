@@ -35,6 +35,20 @@
             text-overflow: ellipsis;
         }
     }
+
+    // Under a hard max-width (config.maxWidth), .button-label otherwise refuses to shrink below its
+    // content's natural width (flex items default to min-width:auto) - the label overflows the clipped
+    // button box, pushing the caret (Bootstrap's ::after pseudo-element, a sibling flex item of
+    // .button-label) flush against the edge and visually eating the right padding. Scoped to maxWidth
+    // usages only - every other usage of this heavily-reused component is unaffected.
+    &.constrained {
+        .button-label {
+            min-width: 0;
+        }
+        &::after {
+            flex-shrink: 0;
+        }
+    }
 }
 .filterForm {
     border-radius: @border-radius;

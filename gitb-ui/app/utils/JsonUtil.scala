@@ -2923,6 +2923,124 @@ object JsonUtil {
     json
   }
 
+  def parseJsMessageTargets(json: String): List[MessageTarget] = {
+    val jsArray = Json.parse(json).as[JsArray].value
+    var list: List[MessageTarget] = List()
+    jsArray.foreach { jsonTarget =>
+      list ::= MessageTarget(
+        (jsonTarget \ "targetType").as[Short],
+        (jsonTarget \ "communityId").asOpt[Long],
+        (jsonTarget \ "organisationId").asOpt[Long]
+      )
+    }
+    list
+  }
+
+  def jsReceivedMessage(message: ReceivedMessageListItem): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "bodyPreview" -> (if (message.bodyPreview.isDefined) message.bodyPreview.get else JsNull),
+      "senderName" -> message.senderName,
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "read" -> message.read,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+    )
+  }
+
+  def jsReceivedMessages(list: Iterable[ReceivedMessageListItem]): JsArray = {
+    var json = Json.arr()
+    list.foreach { message =>
+      json = json.append(jsReceivedMessage(message))
+    }
+    json
+  }
+
+  def jsSentMessage(message: SentMessageListItem): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "bodyPreview" -> (if (message.bodyPreview.isDefined) message.bodyPreview.get else JsNull),
+      "recipientName" -> message.recipientName,
+      "recipientCount" -> message.recipientCount,
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+    )
+  }
+
+  def jsSentMessages(list: Iterable[SentMessageListItem]): JsArray = {
+    var json = Json.arr()
+    list.foreach { message =>
+      json = json.append(jsSentMessage(message))
+    }
+    json
+  }
+
+  def jsReceivedMessageDetail(message: ReceivedMessageDetail): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "body" -> (if (message.body.isDefined) message.body.get else JsNull),
+      "senderName" -> message.senderName,
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+    )
+  }
+
+  def jsSentMessageDetail(message: SentMessageDetail): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "body" -> (if (message.body.isDefined) message.body.get else JsNull),
+      "recipientCount" -> message.recipientCount,
+      "singleRecipientName" -> (if (message.singleRecipientName.isDefined) message.singleRecipientName.get else JsNull),
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+    )
+  }
+
+  def jsMessageRecipientNames(names: Iterable[String]): JsArray = {
+    var json = Json.arr()
+    names.foreach { name =>
+      json = json.append(JsString(name))
+    }
+    json
+  }
+
+  def jsMessageChainItem(item: MessageChainItem): JsObject = {
+    Json.obj(
+      "id" -> item.id,
+      "subject" -> (if (item.subject.isDefined) item.subject.get else JsNull),
+      "bodyPreview" -> (if (item.bodyPreview.isDefined) item.bodyPreview.get else JsNull),
+      "body" -> (if (item.body.isDefined) item.body.get else JsNull),
+      "date" -> TimeUtil.serializeTimestamp(item.date),
+      "important" -> item.important,
+      "senderName" -> item.senderName
+    )
+  }
+
+  def jsMessageChain(list: Iterable[MessageChainItem]): JsArray = {
+    var json = Json.arr()
+    list.foreach { item =>
+      json = json.append(jsMessageChainItem(item))
+    }
+    json
+  }
+
+  def jsReplyTargetInfo(info: ReplyTargetInfo): JsObject = {
+    Json.obj(
+      "targetType" -> (if (info.targetType.isDefined) info.targetType.get else JsNull),
+      "communityId" -> (if (info.communityId.isDefined) info.communityId.get else JsNull),
+      "communityName" -> (if (info.communityName.isDefined) info.communityName.get else JsNull),
+      "organisationId" -> (if (info.organisationId.isDefined) info.organisationId.get else JsNull),
+      "organisationName" -> (if (info.organisationName.isDefined) info.organisationName.get else JsNull)
+    )
+  }
+
   /** Minimal record for the client-side login cache. For administrators (Test Bed or community) this
    * carries the internal name/colour. For organisation users the effective (public-or-fallback-to-
    * internal) name/colour is used instead - so an organisation user's browser never receives a

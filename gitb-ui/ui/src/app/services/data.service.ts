@@ -93,6 +93,10 @@ export class DataService {
   public homePageType: number = Constants.HOME_PAGE_TYPE.LANDING_PAGE
   public sessionColumnPrefs: {[key: string]: string} = {}
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
+  // Id of the post-login "You have unread messages." popup notification (see IndexComponent.
+  // handlePostUserLoad), so that MessagesComponent - a different component - can close it
+  // programmatically when the user visits "My messages", not just clear the menu badge.
+  public unreadMessagesNotificationId: string|null = null
 
   private onBannerChangeSource = new Subject<string>()
   public onBannerChange$ = this.onBannerChangeSource.asObservable()

@@ -17,6 +17,10 @@ export enum MenuItemStatus {
 
   None,
   Warning,
-  Error
+  Error,
+  // Appended last (not alphabetically/logically ordered before Error) - these numeric values are
+  // serialised into the menuItemStatusMap sessionStorage entry (see IndexComponent), so existing
+  // values must not shift.
+  Info
 
 }

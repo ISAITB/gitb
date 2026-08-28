@@ -91,6 +91,38 @@ export class ConfirmationDialogService {
     return result
   }
 
+  /** A three-way variant (e.g. "Cancel" / "Discard draft" / "Resume draft") for the rare cases where a
+   * plain confirm/cancel pair isn't enough. Button order in the footer is close, middle, action (left to
+   * right) - the action button is the rightmost/primary one. */
+  confirmThreeWay(headerText: string, bodyText: string, actionButtonText: string, middleButtonText: string, closeButtonText: string, actionButtonIcon?: string, middleButtonIcon?: string, closeButtonIcon?: string): Observable<'action'|'middle'|'cancel'> {
+    const result = new ReplaySubject<'action'|'middle'|'cancel'>(1)
+    const modal = this.modalService.open(ConfirmationComponent)
+    const modalInstance = modal.componentInstance as ConfirmationComponent
+    modalInstance.headerText = headerText
+    modalInstance.bodyText = bodyText
+    modalInstance.actionButtonText = actionButtonText
+    modalInstance.closeButtonText = closeButtonText
+    modalInstance.middleButtonText = middleButtonText
+    modalInstance.actionButtonIcon = actionButtonIcon
+    modalInstance.closeButtonIcon = closeButtonIcon
+    modalInstance.middleButtonIcon = middleButtonIcon
+    modalInstance.oneButton = false
+    modal.result.then((r: boolean|string) => {
+      if (r === true) {
+        result.next('action')
+      } else if (r === 'middle') {
+        result.next('middle')
+      } else {
+        result.next('cancel')
+      }
+      result.complete()
+    }).catch(() => {
+      result.next('cancel')
+      result.complete()
+    })
+    return result
+  }
+
   rejected(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean, actionButtonIcon?: string, closeButtonIcon?: string): Observable<void> {
     const result = new ReplaySubject<void>(1)
     this.confirm(headerText, bodyText, actionButtonText, closeButtonText, actionButtonIcon, closeButtonIcon, sameStyles, false).subscribe((choice: boolean) => {

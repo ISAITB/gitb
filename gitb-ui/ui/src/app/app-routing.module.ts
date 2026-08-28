@@ -59,6 +59,7 @@ import {UserManagementComponent} from './pages/admin/user-management/user-manage
 import {HomeComponent} from './pages/home/home.component';
 import {IndexComponent} from './pages/index/index.component';
 import {LoginComponent} from './pages/login/login.component';
+import {MessagesComponent} from './pages/settings/messages/messages.component';
 import {OrganisationComponent} from './pages/settings/organisation/organisation.component';
 import {PasswordComponent} from './pages/settings/password/password.component';
 import {ProfileComponent} from './pages/settings/profile/profile.component';
@@ -129,6 +130,8 @@ const routes: Routes = [
           { path: 'organisation/user/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: UserDetailsComponent },
           { path: 'organisation/system/create', component: CreateSystemComponent },
           { path: 'organisation/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent, resolve: { canEditOwnSystem: EditOwnSystemResolver } },
+          // My messages
+          { path: 'messages', component: MessagesComponent },
           // Change password
           { path: 'password', component: PasswordComponent },
         ]

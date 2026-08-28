@@ -67,6 +67,8 @@ export class RoutingService {
       this.dataService.changePage({ menuItem: MenuItem.myProfile })
     } else if (url.startsWith('/settings/organisation')) {
       this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+    } else if (url.startsWith('/settings/messages')) {
+      this.dataService.changePage({ menuItem: MenuItem.myMessages })
     } else if (url.startsWith('/settings/password')) {
       this.dataService.changePage({ menuItem: MenuItem.changePassword })
     } else if (url.startsWith('/admin/sessions')) {
@@ -329,6 +331,13 @@ export class RoutingService {
   }
   toOwnOrganisationDetails(tab?: number, viewProperties?: boolean) {
     return this.navigate(this.linkToOwnOrganisationDetails(tab, viewProperties))
+  }
+
+  linkToMyMessages(): NavigationTarget {
+    return { commands: ['settings', 'messages'] }
+  }
+  toMyMessages() {
+    return this.navigate(this.linkToMyMessages())
   }
 
   linkToOrganisationDetails(communityId: number, organisationId: number, tab?: number, viewProperties?: boolean): NavigationTarget {
@@ -1079,6 +1088,12 @@ export class RoutingService {
 
   testHistoryBreadcrumbs(organisationId: number): BreadcrumbItem[] {
     const crumbs = [{ type: BreadcrumbType.ownTestHistory, label: 'My test sessions', action: (() => this.toTestHistory(organisationId)), target: this.linkToTestHistory(organisationId) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  myMessagesBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.myMessages, label: 'My messages', action: (() => this.toMyMessages()), target: this.linkToMyMessages() }]
     this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }

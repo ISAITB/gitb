@@ -1,0 +1,126 @@
+<div #messagesPage class="page messages">
+    <div class="card mb-0">
+        <div class="card-header">
+            <div class="card-title">{{ sentView ? 'Sent messages' : 'Received messages' }}</div>
+            <div class="btn-toolbar">
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [pending]="contentRefreshing" (click)="refresh()">Refresh</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.MESSAGE_NEW" class="btn btn-secondary" (click)="newMessage()">New message</button>
+            </div>
+            <div class="extra-control-container">
+                <div class="btn input-switch me-0">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="splitViewToggle" [(ngModel)]="splitView" (change)="toggleSplitView()">
+                        <label class="form-check-label" for="splitViewToggle">Split view</label>
+                    </div>
+                </div>
+                <div class="btn input-switch me-0">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="sentViewToggle" [(ngModel)]="sentView" (change)="toggleView()">
+                        <label class="form-check-label" for="sentViewToggle">Sent messages</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body" [class.split-view]="splitView">
+            <div #controlsContainer class="controls" [class.wrapped]="controlsWrapped" [class.not-wrapped]="!controlsWrapped">
+                @if (controlsWrapped) {
+                    <div class="controls-divider" [style.top.px]="dividerTop"></div>
+                }
+                <div #searchControls class="searchControls btn-toolbar">
+                    <div class="text-filter">
+                        <app-text-filter name="messageFilter" [width]="300" [placeholder]="'Search messages...'" [(ngModel)]="filterText" (apply)="applyTextFilter()"></app-text-filter>
+                    </div>
+                    <div class="date-filter">
+                        <app-date-range [(ngModel)]="dateRange" (ngModelChange)="dateRangeChanged()"></app-date-range>
+                    </div>
+                    <div class="status-filter">
+                        <app-checkbox-option-panel #showMessagesFilter
+                            label="Show..."
+                            [labelIcon]="Constants.BUTTON_ICON.FILTER"
+                            [options]="sentView ? sentStatusOptions : statusOptions"
+                            (updated)="filterByStatus($event)"></app-checkbox-option-panel>
+                    </div>
+                    @if (isOrganisationUser || isCommunityAdminRole) {
+                        @if (peerFilterConfig) {
+                            <div class="peer-filter">
+                                <!-- The direction-keyed @if/@else (rather than a single always-rendered tag) forces the
+                                     control to be recreated whenever the view direction toggles - MultiSelectFilterComponent
+                                     only reads config.filterLabel once, in its own ngOnInit, so a same-instance config swap
+                                     would leave the "Sent by.../Sent to..." button text stale. -->
+                                @if (sentView) {
+                                    <app-multi-select-filter [config]="peerFilterConfig" (apply)="peerFilterChanged($event)"></app-multi-select-filter>
+                                } @else {
+                                    <app-multi-select-filter [config]="peerFilterConfig" (apply)="peerFilterChanged($event)"></app-multi-select-filter>
+                                }
+                            </div>
+                        }
+                    } @else if (isTestBedAdminRole) {
+                        @if (peerFilterConfig1) {
+                            <div class="peer-filter">
+                                @if (sentView) {
+                                    <app-multi-select-filter [config]="peerFilterConfig1" (apply)="peerFilter1Changed($event)"></app-multi-select-filter>
+                                } @else {
+                                    <app-multi-select-filter [config]="peerFilterConfig1" (apply)="peerFilter1Changed($event)"></app-multi-select-filter>
+                                }
+                            </div>
+                        }
+                        @if (peerFilterShowStage2 && peerFilterConfig2) {
+                            <div class="peer-filter">
+                                @if (sentView) {
+                                    <app-multi-select-filter [config]="peerFilterConfig2" (apply)="peerFilter2Changed($event)"></app-multi-select-filter>
+                                } @else {
+                                    <app-multi-select-filter [config]="peerFilterConfig2" (apply)="peerFilter2Changed($event)"></app-multi-select-filter>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+                @if (hasChecked()) {
+                    <div #actionControls class="extra-control-container">
+                        <div class="btn-toolbar">
+                            @if (showReply()) {
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPLY" class="btn btn-secondary" [pending]="replyPending" (click)="replyChecked()">Reply</button>
+                            }
+                            @if (showMarkRead()) {
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.MESSAGE_READ" class="btn btn-secondary" [pending]="markReadPending" (click)="markCheckedRead(true)">Mark read</button>
+                            }
+                            @if (showMarkUnread()) {
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.MESSAGE_UNREAD" class="btn btn-secondary" [pending]="markUnreadPending" (click)="markCheckedRead(false)">Mark unread</button>
+                            }
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-secondary" [pending]="deletePending" (click)="deleteChecked()">Delete</button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div #tableArea class="table-area" [style.height.px]="splitView ? splitTableHeight : null">
+                <app-message-table #messageTable
+                    [data]="messages"
+                    [mode]="sentView ? 'sent' : 'received'"
+                    [loadingStatus]="loadingStatus"
+                    [contentRefreshing]="contentRefreshing"
+                    [selectedId]="selectedDetail?.id"
+                    [sortColumn]="sortColumn"
+                    [sortOrder]="sortOrder"
+                    (rowSelect)="selectMessage($event)"
+                    (markRead)="markOneRead($event)"
+                    (deleteOne)="deleteOne($event)"
+                    (replyOne)="reply($event.id, $event.subject)"
+                    (checkChange)="onCheckChange()"
+                    (sortChange)="sortChanged($event)"
+                    (pageNavigation)="doPaging($event)"></app-message-table>
+            </div>
+            @if (splitView) {
+                <div #splitDivider class="split-divider" (mousedown)="onDividerMouseDown($event)">
+                    <div class="split-divider-top"></div>
+                    <div class="split-divider-bottom"></div>
+                </div>
+            }
+            <div class="message-detail-container" [style.min-height.px]="splitView ? splitDetailHeight : null">
+                <app-message-detail [mode]="sentView ? 'sent' : 'received'" [detail]="selectedDetail" [chain]="selectedChain" [loading]="detailLoading" [actionPending]="detailActionPending"
+                    (replyRequested)="replyToSelected()"
+                    (markReadRequested)="toggleSelectedRead()"
+                    (deleteRequested)="deleteSelected()"></app-message-detail>
+            </div>
+        </div>
+    </div>
+</div>

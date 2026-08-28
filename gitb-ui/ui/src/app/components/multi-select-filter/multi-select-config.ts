@@ -45,5 +45,9 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   iconColourField?: string
   // Ids of available items that should be followed by a separator (unless the item is the last visible one).
   placeholderItemIds?: Set<number>
+  /** Multi-selection only, off by default (existing filter callers keep the plain "(N)" summary). When
+   *  set, a single selected item shows its own text instead of "(1)", and more than one shows
+   *  "(N <countLabel>)" instead of "(N)" - e.g. countLabel: 'recipients' -> "(3 recipients)". */
+  countLabel?: string
 
 }

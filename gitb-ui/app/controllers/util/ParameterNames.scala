@@ -328,4 +328,16 @@ object ParameterNames {
   val FLAG_IDS = "flag_ids"
   val INCLUDE_UNFLAGGED = "include_unflagged"
 
+  val SUBJECT = "subject"
+  val BODY = "body"
+  val IMPORTANT = "important"
+  val RECIPIENTS = "recipients"
+  val SHOW_READ = "show_read"
+  val SHOW_UNREAD = "show_unread"
+  val SHOW_IMPORTANT = "show_important"
+  val READ = "read"
+  val SENT = "sent"
+  val PARENT_MESSAGE_ID = "parent_message_id"
+  val PEER_TARGETS = "peer_targets"
+
 }

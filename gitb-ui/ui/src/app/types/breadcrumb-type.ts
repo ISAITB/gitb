@@ -61,5 +61,6 @@ export enum BreadcrumbType {
     conformanceSnapshot,
     communitySessions,
     serviceHealthDashboard,
+    myMessages,
 
 }

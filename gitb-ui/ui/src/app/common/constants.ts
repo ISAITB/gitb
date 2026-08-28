@@ -57,6 +57,7 @@ export class Constants {
     CANCEL: 'fa-solid fa-xmark',
     CLIPBOARD: 'fa-solid fa-clipboard',
     COLLAPSE: 'fa-solid fa-angles-up',
+    COLLAPSE_CIRCLE: 'fa-solid fa-chevron-circle-down',
     COLUMNS: 'fa-solid fa-table-columns',
     COMMENT: 'fa-solid fa-comment',
     COMMUNITY: 'fa-solid fa-people-group',
@@ -82,6 +83,7 @@ export class Constants {
     EXECUTE: 'fa-solid fa-play',
     EXECUTION_OPTIONS: 'fa-solid fa-cog',
     EXPAND: 'fa-solid fa-angles-down',
+    EXPAND_CIRCLE: 'fa-solid fa-chevron-circle-right',
     FILTER: 'fa-solid fa-filter',
     FILTER_CLEAR: 'fa-solid fa-filter-circle-xmark',
     FLAG: 'fa-solid fa-flag',
@@ -98,6 +100,11 @@ export class Constants {
     LOGOUT: 'fa-solid fa-power-off',
     MANAGE_TESTS: 'fa-solid fa-award',
     MAXIMIZE: 'fa-solid fa-up-right-and-down-left-from-center',
+    MESSAGE: 'fa-solid fa-envelope',
+    MESSAGE_IMPORTANT: 'fa-solid fa-exclamation',
+    MESSAGE_NEW: 'fa-solid fa-pen-to-square',
+    MESSAGE_READ: 'fa-solid fa-envelope-open',
+    MESSAGE_UNREAD: 'fa-solid fa-envelope',
     MESSAGING_SERVICE: 'fa-solid fa-paper-plane',
     MINIMIZE: 'fa-solid fa-down-left-and-up-right-to-center',
     MY_SESSION_DASHBOARD: 'fa-regular fa-rectangle-list',
@@ -118,6 +125,7 @@ export class Constants {
     PROFILE: 'fa-solid fa-user-pen',
     REMOVE: 'fa-solid fa-minus',
     REORDER: 'fa-solid fa-arrows-up-down',
+    REPLY: 'fa-solid fa-reply',
     REQUIRED: 'fa-regular fa-circle-dot',
     RESET: 'fa-solid fa-arrows-rotate',
     RESOURCE: 'fa-solid fa-image',
@@ -212,6 +220,18 @@ export class Constants {
 		3 : "Domain user",
 		4 : "Test Bed administrator",
 		5 : "Community administrator"
+	}
+
+	// Mirrors models.Enums.MessageTargetType (gitb-ui backend) - values must stay in the same order.
+	public static readonly MESSAGE_TARGET_TYPE = {
+		OWN_ORGANISATION: 1,
+		COMMUNITY_ADMIN: 2,
+		TESTBED_ADMIN: 3,
+		ALL_COMMUNITY_MEMBERS: 4,
+		ORGANISATION: 5,
+		ALL_COMMUNITY_ADMINS: 6,
+		ALL_ORGANISATIONS: 7,
+		ALL_USERS: 8
 	}
 
 	public static readonly VENDOR_USER_ROLES: IdLabel[] = [

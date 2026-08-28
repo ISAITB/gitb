@@ -1,12 +1,6 @@
 <div class="custom-property-filter" [class.embedded]="embedded">
     @if (applied) {
-        <div class="custom-property-filter-container applied">
-            <div class="property-id">{{appliedName}}</div>
-            <div class="property-value">{{appliedValueLabel}}</div>
-            <div class="property-controls">
-                <div (click)="clear()" tooltipClass="shortTooltip" ngbTooltip="Remove" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.CANCEL"></i></div>
-            </div>
-        </div>
+        <app-pill [title]="appliedName" [text]="appliedValueLabel!" [shaded]="!embedded" [actionIcon]="Constants.BUTTON_ICON.CANCEL" actionTooltip="Remove" (action)="clear()"></app-pill>
     } @else {
       <div class="custom-property-filter-container non-applied">
         <div class="property-id">

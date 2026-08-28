@@ -98,6 +98,11 @@
                                        [label]="'My '+dataService.labelOrganisationLower()"
                                        [icon]="Constants.BUTTON_ICON.ORGANISATION"
                                        [expanded]="dataService.menuVisibility"></app-menu-item>
+                        <app-menu-item [target]="routingService.linkToMyMessages()"
+                                       [type]="MenuItem.myMessages"
+                                       label="My messages"
+                                       [icon]="Constants.BUTTON_ICON.MESSAGE"
+                                       [expanded]="dataService.menuVisibility"></app-menu-item>
                         <app-menu-group [expanded]="dataService.menuVisibility"></app-menu-group>
                         <app-menu-item label="Link to current page"
                                        [icon]="Constants.BUTTON_ICON.COPY_LINK"

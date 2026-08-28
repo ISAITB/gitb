@@ -27,6 +27,7 @@ export enum MenuItem {
   myConformanceStatements,
   myTestSessions,
   myOrganisation,
+  myMessages,
   systemAdministration,
   communitySessionDashboard,
   serviceHealthDashboard,

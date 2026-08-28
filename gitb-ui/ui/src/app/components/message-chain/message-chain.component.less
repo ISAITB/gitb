@@ -1,0 +1,72 @@
+@import "../../../styles/less/_common.less";
+
+.message-chain {
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    position: relative;
+
+    .message-chain-line {
+        border-left: 2px solid @gray-light;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin-top: 2px;
+        margin-left: 24px;
+        margin-bottom: 2px;
+
+        &.continues {
+            flex-grow: 1;
+            min-height: 16px;
+        }
+    }
+
+    .message-chain-item {
+        display: flex;
+        flex-direction: column;
+
+        .message-chain-header {
+            border: 1px solid @gray-light;
+            background-color: @gray-light-1;
+            border-radius: @border-radius;
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            cursor: pointer;
+
+            &.expanded {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+
+            &:hover {
+                background-color: @gray-highlight;
+            }
+
+            .message-chain-summary {
+                flex-grow: 1;
+                min-width: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+
+                .separator {
+                    margin: 0 8px;
+                    color: @gray-dark-1;
+                }
+            }
+        }
+
+        .message-chain-content {
+            padding: 15px;
+            border: 1px solid @gray-light-2;
+            border-top-width: 0;
+            border-bottom-left-radius: @border-radius;
+            border-bottom-right-radius: @border-radius;
+            background-color: @white;
+        }
+    }
+}
+.important-icon {
+    color: @error-color;
+}
+

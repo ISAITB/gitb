@@ -1,0 +1,85 @@
+@import "../../../styles/less/_common.less";
+
+.table-container {
+    border: 1px solid @gray-dark-1;
+}
+
+.date-measure {
+    display: inline-flex;
+    align-items: center;
+}
+
+.messages-table {
+    table-layout: fixed;
+    width: 100%;
+
+    .important-col {
+        width: 20px;
+        padding: 4px 2px 4px 12px;
+    }
+    .check-col { width: 32px; }
+    .peer-col { width: 20%; }
+    .message-col { width: auto; }
+    .date-col { width: 160px; }
+    .actions-col {
+        width: 60px;
+        .cell-content {
+            justify-content: right;
+        }
+    }
+
+    th.date-col, th.peer-col {
+        white-space: nowrap;
+    }
+
+    td {
+        vertical-align: middle;
+    }
+
+    .cell-content.truncate {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .cell-content.centered {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .message-col .cell-content {
+        margin-left: 20px;
+
+        .separator {
+            margin: 0 8px;
+            color: @gray-dark-1;
+        }
+
+    }
+
+    .bold {
+        font-weight: bold;
+    }
+
+    .important-icon {
+        color: @error-color;
+    }
+
+    .date-cell {
+        display: flex;
+        align-items: center;
+        min-height: 26px;
+    }
+
+    // Marks the selected row distinctly from a merely-hovered one - app.less gives both the same
+    // @gray-highlight background, so with the pointer still over a row that's just been deselected
+    // (click-to-toggle) nothing else would visibly change. An inset box-shadow (rather than a border
+    // or an extra element) paints within the cell's own padding box and adds no width of its own, so
+    // selecting a row never shifts its content. td:first-child covers both column layouts, since the
+    // "important" column is only rendered at all when at least one message on the page is flagged.
+    tr.message-row.selected td:first-child {
+        box-shadow: inset 3px 0 0 0 var(--itb-card-title-color);
+    }
+}

@@ -1,0 +1,33 @@
+@if (chain.length > 0) {
+    <div class="message-chain">
+        @if (continuesToContent && connectorPosition === 'before') {
+            <div class="message-chain-line continues"></div>
+        }
+        @for (item of chain; track item.id; let first = $first) {
+            @if (!first) {
+                <div class="message-chain-line"></div>
+            }
+            <div class="message-chain-item">
+                <div class="message-chain-header" (click)="toggle(item)" [class.expanded]="!item.collapsed">
+                    @if (item.important) {
+                        <span class="me-2" tooltipClass="shortTooltip" container="body" ngbTooltip="Important" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="important-icon" [class]="Constants.BUTTON_ICON.MESSAGE_IMPORTANT"></i></span>
+                    }
+                    <app-pill class="me-3" [text]="item.senderName" [maxWidth]="300" [shaded]="false"></app-pill>
+                    <div class="message-chain-summary">
+                        <span>{{ item.subject || '(no subject)' }}</span>@if (item.bodyPreview) {<span class="separator">|</span><span class="preview">{{ item.bodyPreview }}</span>}
+                    </div>
+                    <app-tag class="ms-3" [background]="'#FFFFFF'" [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="item.date"></app-tag>
+                    <div class="ms-3">
+                        <app-collapsing-icon [isCollapsed]="!!item.collapsed" [padded]="false"></app-collapsing-icon>
+                    </div>
+                </div>
+                <div [ngbCollapse]="!!item.collapsed" [animation]="true">
+                    <div class="message-chain-content no-margin-on-last-p" [innerHtml]="(item.body ?? '') | sanitizeHtml"></div>
+                </div>
+            </div>
+        }
+        @if (continuesToContent && connectorPosition === 'after') {
+            <div class="message-chain-line continues"></div>
+        }
+    </div>
+}

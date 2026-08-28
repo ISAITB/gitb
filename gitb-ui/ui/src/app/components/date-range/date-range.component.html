@@ -1,5 +1,5 @@
 <div #input class="input-group">
-    <input type="text" [value]="displayValue" autocomplete="off" class="form-control" [class.clickable]="true" (click)="toggle()" readonly="readonly"/>
+    <input type="text" [value]="displayValue" placeholder="Select date..." autocomplete="off" class="form-control" [class.clickable]="true" (click)="toggle()" readonly="readonly"/>
     <button class="btn btn-secondary" type="button" (click)="clear()" [disabled]="beginDate == undefined && endDate == undefined" tooltipClass="shortTooltip" container="body" ngbTooltip="Clear" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.CANCEL"></i></button>
 </div>
 <ng-template #popupTemplate>
@@ -13,7 +13,7 @@
             </div>
             <div class="selection-preset-options">
                 <div class="btn-group preset-item" ngbDropdown>
-                    <button type="button" class="btn btn-secondary" ngbDropdownToggle>Current ...</button>
+                    <button type="button" class="btn btn-secondary" ngbDropdownToggle>Current...</button>
                     <div ngbDropdownMenu aria-labelledby="button-preset-current">
                         <button ngbDropdownItem type="button" (click)="setCurrentWeek()">Week</button>
                         <button ngbDropdownItem type="button" (click)="setCurrentMonth()">Month</button>
@@ -21,7 +21,7 @@
                     </div>
                 </div>
                 <div class="btn-group preset-item" ngbDropdown>
-                    <button type="button" class="btn btn-secondary" ngbDropdownToggle>Previous ...</button>
+                    <button type="button" class="btn btn-secondary" ngbDropdownToggle>Previous...</button>
                     <div ngbDropdownMenu aria-labelledby="button-preset-previous">
                         <button ngbDropdownItem type="button" (click)="setPreviousWeek()">Week</button>
                         <button ngbDropdownItem type="button" (click)="setPreviousMonth()">Month</button>
@@ -29,7 +29,7 @@
                     </div>
                 </div>
                 <div class="btn-group preset-item" ngbDropdown>
-                    <button type="button" class="btn btn-secondary" ngbDropdownToggle>Last ...</button>
+                    <button type="button" class="btn btn-secondary" ngbDropdownToggle>Last...</button>
                     <div ngbDropdownMenu aria-labelledby="button-preset-last">
                         <button ngbDropdownItem type="button" (click)="setLastDays(7)">7 days</button>
                         <button ngbDropdownItem type="button" (click)="setLastDays(30)">30 days</button>

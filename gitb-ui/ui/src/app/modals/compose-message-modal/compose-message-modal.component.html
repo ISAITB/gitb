@@ -1,0 +1,55 @@
+<div class="modal-header">
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
+    <div class="modal-title flex-grow-1">{{ isReply?'Reply to message':'New message' }}</div>
+    <div class="btn-toolbar">
+        <div class="btn input-switch me-0">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="importantToggle" [(ngModel)]="draft.important">
+                <label class="form-check-label" for="importantToggle">
+                    <span class="mx-1"><i class="important-icon" [class]="Constants.BUTTON_ICON.MESSAGE_IMPORTANT"></i></span>
+                    Flag as important
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-body">
+    <div class="d-flex align-items-start compose-field-row">
+        <label class="compose-label" for="recipients">* To:</label>
+        <div class="flex-grow-1 recipient-row">
+            @if (isOrganisationUser || isCommunityAdminRole) {
+                <div class="recipient-col"><app-multi-select-filter [config]="recipientConfig" (apply)="recipientsChanged($event)"></app-multi-select-filter></div>
+            } @else {
+                <div class="recipient-col" [class.recipient-col-half]="showStage2"><app-multi-select-filter [config]="communityPickerConfig" (apply)="communityPickerChanged($event)"></app-multi-select-filter></div>
+                @if (showStage2 && stage2Loading) {
+                    <app-pending-block [pending]="true"></app-pending-block>
+                } @else if (showStage2) {
+                    <div class="recipient-col recipient-col-half"><app-multi-select-filter [config]="stage2Config" (apply)="stage2Changed($event)"></app-multi-select-filter></div>
+                }
+            }
+        </div>
+        <div app-tooltip class="compose-tooltip" tbTooltip="The recipient(s) of the message."></div>
+    </div>
+    <div class="d-flex align-items-start compose-field-row pt-3">
+        <label class="compose-label" for="subject">Subject:</label>
+        <div class="flex-grow-1">
+            <input type="text" class="form-control" id="subject" name="subject" maxlength="512" [(ngModel)]="draft.subject">
+        </div>
+        <div app-tooltip class="compose-tooltip" tbTooltip="The subject of the message. Providing this is advised but not mandatory."></div>
+    </div>
+    <div class="row pt-3">
+        <div class="col-12">
+            <app-editor name="body" [(ngModel)]="draft.body" [type]="'minimal'" [height]="300"></app-editor>
+        </div>
+    </div>
+    @if (isReply) {
+        <app-message-chain [chain]="chain" [continuesToContent]="true" connectorPosition="before"></app-message-chain>
+    }
+</div>
+<div class="modal-footer button-container">
+    <div class="btn-toolbar">
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.MINIMIZE" class="btn btn-secondary" (click)="minimise()">Minimise</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.SEND" [pending]="sendPending" [disable]="!canSend()" class="btn btn-secondary" (click)="sendMessage()">Send</button>
+    </div>
+</div>

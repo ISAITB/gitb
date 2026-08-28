@@ -15,11 +15,13 @@
 
 package utils;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.owasp.html.CssSchema;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.owasp.html.Sanitizers.*;
 
@@ -31,6 +33,10 @@ public class HtmlUtil {
     private static final PolicyFactory FULL_EDITOR_POLICY;
     private static final PolicyFactory MINIMAL_EDITOR_POLICY;
     private static final PolicyFactory PDF_POLICY;
+    private static final PolicyFactory TEXT_ONLY_POLICY = new HtmlPolicyBuilder().toFactory();
+
+    private static final Pattern BLOCK_BOUNDARY_PATTERN = Pattern.compile("(?i)<\\s*(?:br\\s*/?|/\\s*(?:p|div|li|tr|h[1-6]|blockquote))\\s*>");
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
     private static final PolicyFactory TABLES_EXTENDED = new HtmlPolicyBuilder()
             .allowElements("td").allowAttributes("colspan", "rowspan").onElements("td").toFactory();
@@ -87,6 +93,23 @@ public class HtmlUtil {
      */
     public static String sanitizePdfContent(String unsanitizedInput) {
         return PDF_POLICY.sanitize(unsanitizedInput);
+    }
+
+    /**
+     * Strip all HTML markup from already-sanitized editor content, producing plain text suitable for
+     * search indexing or a single-line preview (e.g. message listings).
+     *
+     * @param sanitizedInput HTML content that has already been through one of the sanitize* methods.
+     * @return Plain text, with block boundaries collapsed to single spaces and HTML entities decoded.
+     */
+    public static String toPlainText(String sanitizedInput) {
+        if (sanitizedInput == null) {
+            return null;
+        }
+        String withBoundaries = BLOCK_BOUNDARY_PATTERN.matcher(sanitizedInput).replaceAll(" ");
+        String textOnly = TEXT_ONLY_POLICY.sanitize(withBoundaries);
+        String unescaped = StringEscapeUtils.unescapeHtml4(textOnly);
+        return WHITESPACE_PATTERN.matcher(unescaped).replaceAll(" ").trim();
     }
 
 }

@@ -18,18 +18,20 @@ import {DataService} from '../../services/data.service';
 import {UserGuideService} from '../../services/user-guide.service';
 import {HtmlService} from '../../services/html.service';
 import {LegalNoticeService} from '../../services/legal-notice.service';
-import {Observable, Subscription} from 'rxjs';
+import {forkJoin, Observable, of, Subscription} from 'rxjs';
 import {AuthProviderService} from '../../services/auth-provider.service';
 import {ContactSupportComponent} from 'src/app/modals/contact-support/contact-support.component';
 import {RoutingService} from 'src/app/services/routing.service';
 import {MenuItem} from 'src/app/types/menu-item.enum';
 import {PopupService} from 'src/app/services/popup.service';
 import {HealthCheckService} from '../../services/health-check.service';
+import {MessageService} from '../../services/message.service';
 import {HealthStatus} from '../../types/health-status';
 import {MenuItemStatus} from '../../types/menu-item-status.enum';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Constants} from '../../common/constants';
 import {NavigationTarget} from 'src/app/types/navigation-target';
+import {MessageComposeService} from '../../services/message-compose.service';
 
 @Component({
     selector: 'app-index',
@@ -62,7 +64,9 @@ export class IndexComponent implements OnInit, OnDestroy {
     private readonly modalService: NgbModal,
     public readonly routingService: RoutingService,
     private readonly popupService: PopupService,
-    private readonly healthCheckService: HealthCheckService
+    private readonly healthCheckService: HealthCheckService,
+    private readonly messageService: MessageService,
+    private readonly messageComposeService: MessageComposeService
   ) {}
 
   ngOnInit(): void {
@@ -75,6 +79,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.version = this.dataService.configuration.versionNumber
     this.logoutSubscription = this.authProviderService.onLogout$.subscribe(() => {
       this.logoutInProgress = true
+      this.messageComposeService.clearDraft()
     })
     this.logoutCompleteSubscription = this.authProviderService.onLogoutComplete$.subscribe(() => {
       this.logoutInProgress = false
@@ -92,6 +97,11 @@ export class IndexComponent implements OnInit, OnDestroy {
       if (notificationId != null && this.prepareForShutdownNotificationId != null && notificationId === this.prepareForShutdownNotificationId) {
         // Needed so that if we trigger an error elsewhere that requires the notification to be displayed, we will not ignore it.
         this.prepareForShutdownNotificationId = null
+      }
+      if (notificationId != null && this.dataService.unreadMessagesNotificationId != null && notificationId === this.dataService.unreadMessagesNotificationId) {
+        // Manually dismissed before the user got to "My messages" - MessagesComponent's own close
+        // call is a safe no-op afterwards, but this keeps the stashed id from lingering regardless.
+        this.dataService.unreadMessagesNotificationId = null
       }
     })
     if (sessionStorage) {
@@ -111,25 +121,35 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   handlePostUserLoad(): void {
-    if (this.dataService.isSystemAdmin) {
-      let statusLoaded = false
-      if (sessionStorage) {
-        if (!this.userPassedLogin) {
-          // This is a refresh
-          const serialisedStatusMap = sessionStorage.getItem("menuItemStatusMap")
-          if (serialisedStatusMap) {
-            const statusMap = new Map<MenuItem, MenuItemStatus>(JSON.parse(serialisedStatusMap))
-            statusMap.forEach((value, key) => {
-              this.dataService.updateMenuItemStatus(key, value)
-            })
-            statusLoaded = true
-          }
+    // Lifted out of the (former) isSystemAdmin-only guard - the menuItemStatusMap is written for every
+    // user by the beforeunload handler in ngOnInit (it now also carries the unread-messages badge, not
+    // just the Test Bed admin's service-health badge), so every user needs to restore it on a refresh.
+    let statusLoaded = false
+    if (sessionStorage) {
+      if (!this.userPassedLogin) {
+        // This is a refresh
+        const serialisedStatusMap = sessionStorage.getItem("menuItemStatusMap")
+        if (serialisedStatusMap) {
+          const statusMap = new Map<MenuItem, MenuItemStatus>(JSON.parse(serialisedStatusMap))
+          statusMap.forEach((value, key) => {
+            this.dataService.updateMenuItemStatus(key, value)
+          })
+          statusLoaded = true
         }
-        sessionStorage.removeItem("menuItemStatusMap")
       }
-      if (!statusLoaded) {
-        this.healthCheckService.runPostLoginChecks().subscribe((status) => {
-          switch (status) {
+      sessionStorage.removeItem("menuItemStatusMap")
+    }
+    if (!statusLoaded) {
+      // Both checks are only ever run once, right after a genuine login (not a refresh - see
+      // statusLoaded above), and run in parallel rather than one after the other since they are
+      // independent. Order between the two resulting popups still matters though: .notifications-
+      // container is a bottom-anchored column-reverse flex container, so whichever popup is raised
+      // first ends up lowest - the health popup is raised first so the unread-messages popup (if any)
+      // sits above it, as specified.
+      const health$: Observable<HealthStatus|undefined> = this.dataService.isSystemAdmin ? this.healthCheckService.runPostLoginChecks() : of(undefined)
+      forkJoin([health$, this.messageService.hasUnreadMessages()]).subscribe(([health, unread]) => {
+        if (health != undefined) {
+          switch (health) {
             case HealthStatus.ERROR:
               this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Error)
               this.popupService.error("Service health errors reported.<br/>Check the health dashboard for details.", true)
@@ -141,8 +161,15 @@ export class IndexComponent implements OnInit, OnDestroy {
             default:
               this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.None)
           }
-        })
-      }
+        }
+        if (unread.unread) {
+          this.dataService.updateMenuItemStatus(MenuItem.myMessages, MenuItemStatus.Info)
+          // Stashed on DataService (not a local field, unlike prepareForShutdownNotificationId above)
+          // so MessagesComponent can close this specific popup - not just clear the badge - when the
+          // user visits "My messages".
+          this.dataService.unreadMessagesNotificationId = this.popupService.info("You have unread messages.", true)
+        }
+      })
     }
     this.handlePrepareForShutdown()
   }

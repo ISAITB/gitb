@@ -31,6 +31,8 @@ export class ConfirmationComponent implements OnInit {
   @Input() actionButtonIcon?: string
   @Input() closeButtonText = ''
   @Input() closeButtonIcon?: string
+  @Input() middleButtonText?: string
+  @Input() middleButtonIcon?: string
   @Input() sameStyles? = true
   @Input() oneButton = false
   @Input() actionClass = 'btn btn-secondary'
@@ -52,6 +54,10 @@ export class ConfirmationComponent implements OnInit {
 
   cancel() {
     this.modalRef.close(false)
+  }
+
+  middle() {
+    this.modalRef.close('middle')
   }
 
   cancelClass(): string {

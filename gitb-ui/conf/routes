@@ -250,6 +250,18 @@ POST    /api/triggers/:id/clearStatus           @controllers.TriggerService.clea
 
 DELETE  /api/testflags/:id                      @controllers.TestFlagService.deleteTestFlag(id : Long)
 POST    /api/testflags/:id                      @controllers.TestFlagService.updateTestFlag(id : Long)
+
+GET     /api/messages/received                  @controllers.MessageService.getReceivedMessages()
+GET     /api/messages/sent                      @controllers.MessageService.getSentMessages()
+GET     /api/messages/unread                    @controllers.MessageService.hasUnreadMessages()
+POST    /api/messages/create                    @controllers.MessageService.createMessage()
+POST    /api/messages/read                      @controllers.MessageService.updateMessageReadStatus()
+POST    /api/messages/delete                    @controllers.MessageService.deleteMessages()
+GET     /api/messages/:id/recipients            @controllers.MessageService.getMessageRecipients(id: Long)
+GET     /api/messages/:id/chain                 @controllers.MessageService.getMessageChain(id: Long)
+GET     /api/messages/:id/reply-target          @controllers.MessageService.getReplyTarget(id: Long)
+GET     /api/messages/:id                       @controllers.MessageService.getMessage(id: Long)
+
 POST    /api/trigger/test                       @controllers.TriggerService.testTriggerEndpoint()
 POST    /api/trigger/previewTriggerCall         @controllers.TriggerService.previewTriggerCall()
 POST    /api/trigger/testTriggerCall            @controllers.TriggerService.testTriggerCall()

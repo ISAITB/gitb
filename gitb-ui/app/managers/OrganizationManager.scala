@@ -49,6 +49,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                                      triggerHelper: TriggerHelper,
                                      automationApiHelper: AutomationApiHelper,
                                      userPreferenceManager: UserPreferenceManager,
+                                     messageManager: MessageManager,
                                      dbConfigProvider: DatabaseConfigProvider)
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -148,6 +149,25 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def getById(id: Long): Future[Option[Organizations]] = {
     DB.run(PersistenceSchema.organizations.filter(_.id === id).result.headOption)
+  }
+
+  /** Whether every id in `orgIds` identifies an organisation that belongs to `communityId` - used by
+   * AuthorizationManager.isTargetAllowedForCommunityAdmin to authorise a message's organisation targets
+   * with a single query regardless of how many targets there are. Comparing the count of matching rows
+   * to the size of `orgIds` (rather than looking for a row that ISN'T in the community) also rejects an
+   * id that matches no organisation at all, matching what a per-id getById(...).exists(...) check would
+   * have done. */
+  def areAllInCommunity(orgIds: Set[Long], communityId: Long): Future[Boolean] = {
+    if (orgIds.isEmpty) {
+      Future.successful(true)
+    } else {
+      DB.run(
+        PersistenceSchema.organizations
+          .filter(_.id inSet orgIds)
+          .filter(_.community === communityId)
+          .map(_.id).result
+      ).map(_.toSet.size == orgIds.size)
+    }
   }
 
   def getByApiKey(apiKey: String): Future[Option[Organizations]] = {
@@ -599,6 +619,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- deleteUserByOrganization(orgId)
       _ <- systemManager.deleteSystemByOrganization(orgId, onSuccess)
       _ <- deleteOrganizationParameterValues(orgId, onSuccess)
+      _ <- messageManager.clearOrganisationReferences(orgId)
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1)
       _ <- PersistenceSchema.conformanceSnapshotOrganisations.filter(_.id === orgId).map(_.id).update(orgId * -1)
       _ <- PersistenceSchema.conformanceSnapshotOrganisationProperties.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1)
@@ -622,6 +643,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     for {
       userIds <- PersistenceSchema.users.filter(_.organization === orgId).map(_.id).result
       _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+      _ <- messageManager.clearUserReferences(userIds)
       _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
     } yield ()
   }

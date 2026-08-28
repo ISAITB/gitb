@@ -1,0 +1,87 @@
+@import "../../../styles/less/_common.less";
+
+.message-detail-panel {
+    border: 1px solid @gray-dark-1;
+    border-radius: @border-radius;
+    overflow: hidden;
+    min-height: 200px;
+
+    .empty-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 200px;
+        color: @gray-dark-1;
+    }
+
+    .message-detail-header {
+        background-color: @gray-light-1;
+        padding: 8px 16px;
+        border-bottom: 1px solid @gray-dark-1;
+
+        .message-detail-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 35px;
+            gap: 15px;
+        }
+
+        .message-detail-row-separator {
+            border-top: 1px solid @gray-dark-1;
+            margin: 8px 0;
+        }
+
+        .message-detail-subject {
+            font-size: 1.1rem;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+
+        .important-icon {
+            font-size: 1.1rem;
+            color: @error-color;
+        }
+
+        .message-detail-peer {
+            flex-grow: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+
+            .peer-label {
+                font-weight: bold;
+                white-space: nowrap;
+                margin-right: 8px;
+            }
+
+            .pill-pending-icon {
+                margin-left: 10px;
+            }
+        }
+
+        .message-detail-date {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .message-detail-recipients {
+            padding-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+    }
+
+    .message-detail-content {
+        padding: 16px;
+
+        app-message-chain {
+            display: block;
+            margin-top: 8px;
+        }
+    }
+}

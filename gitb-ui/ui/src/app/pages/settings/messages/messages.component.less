@@ -1,0 +1,165 @@
+@import '../../../../styles/less/_common.less';
+
+.card-header {
+    .btn {
+        min-height: 35px;
+    }
+
+    // Only this (card-header) .extra-control-container needs the gap - the one inside .controls below
+    // carries its own separation via .controls's own column-gap and has just one child.
+    .extra-control-container {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+}
+
+// 30px on each side of the 1px vertical separator - matches what used to be
+// .extra-control-container's own margin-left + border + padding-left.
+@controls-separator-gap: 30px;
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    // flex-start (not center) is required here: calculateWrapping() detects wrapping by comparing the
+    // top edges of .searchControls and .extra-control-container - centering items of different heights
+    // on the same flex line offsets their top edges even when not actually wrapped onto separate lines.
+    align-items: flex-start;
+    // Anchors .controls-divider below, whose position is computed in JS (calculateWrapping()) rather
+    // than via CSS, since it must never participate in flex-wrap sizing - see the comment there.
+    position: relative;
+    margin-bottom: 15px;
+    // The separation between .searchControls and .extra-control-container while they share a line -
+    // expressed as a gap rather than as margin/padding/border on either item, since a flex gap only
+    // ever applies *between* items on the same line: when .extra-control-container wraps onto its own
+    // line it starts flush at the container's left edge with nothing left over to strip out, so there
+    // is no .wrapped-conditional box-model change here for calculateWrapping() to react to (see the
+    // history of that feedback loop below).
+    column-gap: (@controls-separator-gap * 2 + 1px);
+
+    .btn {
+        min-height: 35px;
+    }
+
+    // Overrides the page-level .extra-control-container rule below (which still applies unchanged to
+    // the card-header's "Sent messages" switch) - here the separation from .searchControls is carried
+    // entirely by .controls's own column-gap above.
+    .extra-control-container {
+        padding-left: 0;
+        margin-left: 0;
+        border-left: none;
+        position: relative;
+    }
+
+    // The vertical separator line, shown only while both groups still share a line. Absolutely
+    // positioned (like .controls-divider below) so it is entirely out of the flex flow and can never
+    // influence the wrap decision or either measured element's own geometry.
+    &.not-wrapped .extra-control-container::before {
+        content: '';
+        position: absolute;
+        left: -(@controls-separator-gap + 1px);
+        top: 0;
+        bottom: 0;
+        border-left: 1px solid @gray-dark-1;
+    }
+
+    .searchControls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    // Cosmetic only, and deliberately placed on .searchControls's *bottom* rather than
+    // .extra-control-container's *top*: calculateWrapping() compares the .top of both elements, and in a
+    // flex row with align-items:flex-start, an item's own top position is offset only by its own margin-top
+    // (padding/border-width/margin-bottom never move it). A margin-top on .extra-control-container here
+    // would permanently offset its measured top from .searchControls's even once both are genuinely back on
+    // the same line, making the wrapped state get stuck forever after the first wrap (confirmed by
+    // Playwright testing). margin-bottom/padding-bottom on .searchControls instead grow that line's own
+    // height (pushing the wrapped line below it down) without moving either element's own top. The
+    // divider line itself is NOT a border here (that would only span .searchControls's own width) - see
+    // .controls-divider, an out-of-flow element positioned via JS to span the full card width instead.
+    &.wrapped .searchControls {
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+
+    // Forces the action buttons to always wrap as one atomic group rather than splitting across two
+    // lines independently of the outer .controls wrap decision - at some borderline widths, letting
+    // Bootstrap's default .btn-toolbar wrapping split them gave the outer flex-wrap calculation an
+    // ambiguous "does this fit on the line" answer (unwrapped-width vs internally-wrapped-width
+    // disagreeing), which combined with the page-level ResizeObserver caused the layout to oscillate
+    // between states instead of settling.
+    .extra-control-container .btn-toolbar {
+        flex-wrap: nowrap;
+    }
+}
+
+// Purely visual - deliberately out of the flex flow (position:absolute) so it can never influence
+// .controls's flex-wrap sizing decisions or either measured element's own reported top position (see the
+// comment on &.wrapped above). Its top offset is computed in calculateWrapping() from .searchControls's
+// actual rendered bottom edge, read fresh on every measurement pass.
+.controls-divider {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px solid @gray-dark-1;
+}
+
+.extra-control-container {
+    padding-left: 30px;
+    margin-left: 30px;
+    border-left: 1px solid @gray-dark-1;
+}
+
+.peer-filter {
+    max-width: 300px;
+}
+
+.message-detail-container {
+    margin-top: 15px;
+
+    // In split view the .split-divider immediately above already carries its own vertical spacing
+    // (padding + border) - this margin stacking on top of it was pure extra height that
+    // MessagesComponent's split-height sizing model doesn't know about, so it silently pushed the
+    // card past the viewport bottom (a page scrollbar even with nothing selected). Continuous view is
+    // unaffected: this only zeroes the margin when .split-view is present.
+    .split-view & {
+        margin-top: 0;
+    }
+}
+
+// Wraps <app-message-table> unconditionally (both views) so it has something to size/scroll in split
+// view without touching the table component itself. In continuous view this is a plain block with no
+// height/overflow of its own, so the rendering is unchanged from before split view existed.
+.table-area {
+    .split-view & {
+        overflow-y: auto;
+    }
+}
+
+// The draggable boundary between the table area and the selected-message panel - only rendered in split
+// view. Full-bleed across the card body (negative margins matching the card body's own horizontal
+// padding) so the double border and its shadow run edge to edge, as specified.
+.split-divider {
+    margin: 0 calc(var(--bs-card-spacer-x) * -1);
+    box-shadow: 0 -10px 12px -6px rgba(0, 0, 0, 0.25);
+    cursor: row-resize;
+    user-select: none;
+    position: relative;
+    .split-divider-top {
+        border-top: 1px solid @gray-dark-1;
+        border-bottom: 1px solid @gray-dark-1;
+        height: 6px;
+    }
+    .split-divider-bottom {
+        height: 12px;
+    }
+    &:hover {
+        .split-divider-top {
+            border-top-color: @gray-medium;
+            border-bottom-color: @gray-medium;
+            background: @gray-highlight;
+        }
+    }
+}

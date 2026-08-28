@@ -428,6 +428,10 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
             this.filterLabel = ""
           }
         }
+      } else if (this.config.countLabel != undefined && this.selectedItems.length == 1) {
+        this.filterLabel = this.selectedItems[0][this.config.textField]
+      } else if (this.config.countLabel != undefined) {
+        this.filterLabel = "("+this.selectedItemIds.length+" "+this.config.countLabel+")"
       } else {
         this.filterLabel = "("+this.selectedItemIds.length+")"
       }

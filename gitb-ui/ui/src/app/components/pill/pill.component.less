@@ -1,0 +1,43 @@
+@import "../../../styles/less/_common.less";
+
+.app-pill {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid @gray-button;
+    background-color: @white;
+    border-radius: 50px;
+    height: 35px;
+    padding: 5px 15px;
+    max-width: 100%;
+
+    .pill-title {
+        font-weight: bold;
+        white-space: nowrap;
+        margin-right: 8px;
+        margin-top: -1px;
+    }
+
+    .pill-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: -1px;
+    }
+
+    .pill-action {
+        cursor: pointer;
+        margin-left: 15px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .pill-pending {
+        margin-left: 15px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    &.shaded {
+        background-color: @gray-light-1;
+    }
+}

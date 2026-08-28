@@ -263,4 +263,13 @@ object Enums {
     val LANDING_PAGE, CONFORMANCE_DASHBOARD = Value
   }
 
+  /** Recipient descriptors accepted by the message compose endpoint. Group targets (everything except
+   * OwnOrganisation and Organisation) are resolved to a concrete set of organisation ids server-side -
+   * see MessageManager.resolveTargets - and authorised against the sender's role - see
+   * AuthorizationManager.canSendMessage. */
+  object MessageTargetType extends Enumeration(1) {
+    type MessageTargetType = Value
+    val OwnOrganisation, CommunityAdmin, TestBedAdmin, AllCommunityMembers, Organisation, AllCommunityAdmins, AllOrganisations, AllUsers = Value
+  }
+
 }

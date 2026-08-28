@@ -1,0 +1,71 @@
+<div class="message-detail-wrapper" [class.disable-events]="loading && detail != undefined">
+    <div class="message-detail-panel">
+    @if (detail == undefined) {
+        <div class="empty-message">
+            @if (loading) {
+                <app-pending-block [pending]="true"></app-pending-block>
+                <span>Loading message...</span>
+            } @else {
+                <span>Select a message to view its content.</span>
+            }
+        </div>
+    } @else {
+        <div class="message-detail-header">
+            <div class="message-detail-row">
+                @if (detail.important) {
+                    <i class="important-icon" [class]="Constants.BUTTON_ICON.MESSAGE_IMPORTANT" tooltipClass="shortTooltip" container="body" ngbTooltip="Important" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"></i>
+                }
+                <div class="message-detail-subject">{{ detail.subject || '(no subject)' }}</div>
+                <app-checkbox-option-panel
+                    label="Options"
+                    [icon]="Constants.BUTTON_ICON.ACTIONS"
+                    placement="left"
+                    [smallButton]="true"
+                    [pending]="actionPending"
+                    [optionProvider]="optionsFactory"
+                    [singleSelection]="true"
+                    (updated)="handleOption($event)"></app-checkbox-option-panel>
+            </div>
+            <div class="message-detail-row-separator"></div>
+            <div class="message-detail-row">
+                <div class="message-detail-peer">
+                    @if (mode == 'received') {
+                        <span class="peer-label">From</span><app-pill [text]="detail.peerName" [shaded]="false"></app-pill>
+                    } @else if (detail.peerCount > 1) {
+                        <span class="peer-label">To</span><app-pill [text]="'('+detail.peerCount+' recipients)'" [shaded]="false"
+                            [actionIcon]="expanded ? Constants.BUTTON_ICON.COLLAPSE_CIRCLE : Constants.BUTTON_ICON.EXPAND_CIRCLE"
+                            [actionTooltip]="expanded ? 'Collapse' : 'Expand'"
+                            (action)="toggleRecipients()"></app-pill>
+                        @if (loadingNames) {
+                            <i class="pill-pending-icon" [class]="Constants.BUTTON_ICON.PENDING_SMALL"></i>
+                        }
+                    } @else {
+                        <span class="peer-label">To</span><app-pill [text]="detail.peerName" [shaded]="false"></app-pill>
+                    }
+                </div>
+                <div class="message-detail-date">
+                    <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="detail.date"></app-tag>
+                </div>
+            </div>
+            @if (mode == 'sent' && detail.peerCount > 1) {
+                <div [ngbCollapse]="!expanded" [animation]="true">
+                    @if (recipientNames != undefined) {
+                        <div class="message-detail-recipients">
+                            @for (name of recipientNames; track name) {
+                                <app-pill [text]="name" [shaded]="false"></app-pill>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="message-detail-content">
+            <div class="message-detail-body no-margin-on-last-p" [innerHtml]="(detail.body ?? '') | sanitizeHtml"></div>
+        </div>
+    }
+    </div>
+    @if (chain.length > 0) {
+        <app-message-chain [chain]="chain" [continuesToContent]="true" connectorPosition="before"></app-message-chain>
+    }
+</div>
+
