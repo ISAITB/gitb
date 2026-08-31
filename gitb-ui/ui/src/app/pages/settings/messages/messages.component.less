@@ -117,9 +117,9 @@
 }
 
 .message-detail-container {
-    margin-top: 15px;
+    margin-top: 16px;
 
-    // In split view the .split-divider immediately above already carries its own vertical spacing
+    // In split view the .split-view-divider immediately above already carries its own vertical spacing
     // (padding + border) - this margin stacking on top of it was pure extra height that
     // MessagesComponent's split-height sizing model doesn't know about, so it silently pushed the
     // card past the viewport bottom (a page scrollbar even with nothing selected). Continuous view is
@@ -127,39 +127,31 @@
     .split-view & {
         margin-top: 0;
     }
-}
 
-// Wraps <app-message-table> unconditionally (both views) so it has something to size/scroll in split
-// view without touching the table component itself. In continuous view this is a plain block with no
-// height/overflow of its own, so the rendering is unchanged from before split view existed.
-.table-area {
-    .split-view & {
-        overflow-y: auto;
+    // Stretches to whatever height app-split-view's secondary pane reserves, then passes that flex sizing
+    // down onto app-message-detail's host element (otherwise an unstyled inline element with no height of
+    // its own) so .message-detail-wrapper's own `flex: 1` inside it has something to size against.
+    // Deliberately NOT relying on split-view.component.less's own `.split-view-secondary > * { flex: 1 }`
+    // for the first link in that chain: this element is projected into app-split-view via <ng-content>, so
+    // it keeps *this* component's Angular view-encapsulation attribute, not app-split-view's - a plain
+    // (non ::ng-deep) rule written in app-split-view's own stylesheet never matches it. Setting `flex: 1`
+    // here instead, from this same component's stylesheet, is what actually reaches it.
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    app-message-detail {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
     }
 }
 
-// The draggable boundary between the table area and the selected-message panel - only rendered in split
-// view. Full-bleed across the card body (negative margins matching the card body's own horizontal
-// padding) so the double border and its shadow run edge to edge, as specified.
-.split-divider {
+// app-split-view's own primary pane already carries overflow-y:auto unconditionally (harmless in
+// continuous view, where it's never given a fixed height to overflow) - see split-view.component.less.
+
+// Full-bleeds app-split-view's draggable divider across the card body (negative margins matching the
+// card body's own horizontal padding) so its border and shadow run edge to edge, as specified -
+// app-split-view has no opinion of its own on what it's embedded in, so this stays here.
+::ng-deep app-split-view .split-view-divider {
     margin: 0 calc(var(--bs-card-spacer-x) * -1);
-    box-shadow: 0 -10px 12px -6px rgba(0, 0, 0, 0.25);
-    cursor: row-resize;
-    user-select: none;
-    position: relative;
-    .split-divider-top {
-        border-top: 1px solid @gray-dark-1;
-        border-bottom: 1px solid @gray-dark-1;
-        height: 6px;
-    }
-    .split-divider-bottom {
-        height: 12px;
-    }
-    &:hover {
-        .split-divider-top {
-            border-top-color: @gray-medium;
-            border-bottom-color: @gray-medium;
-            background: @gray-highlight;
-        }
-    }
 }

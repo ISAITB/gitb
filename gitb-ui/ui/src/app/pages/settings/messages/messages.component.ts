@@ -46,6 +46,7 @@ import { MessageTableComponent } from '../../../components/message-table/message
 import { PagingEvent } from '../../../components/paging-controls/paging-event';
 import { MultiSelectConfig } from '../../../components/multi-select-filter/multi-select-config';
 import { FilterUpdate } from '../../../components/test-filter/filter-update';
+import { SplitViewComponent } from '../../../components/split-view/split-view.component';
 
 @Component({
   selector: 'app-messages',
@@ -95,23 +96,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   // Seeded from the user's persisted messagesSplitView preference in ngOnInit; toggleSplitView() writes
   // it back via DataService.setMessagesSplitView so it survives reloads/logins (see account.service.ts).
   splitView = false
-  splitTableHeight = 0
-  splitDetailHeight = 0
-  // Once the user drags the divider, a data reload or viewport resize only re-clamps splitTableHeight/
-  // splitDetailHeight against the new bounds rather than recomputing the initial "fit the empty panel
-  // on screen" split from scratch.
-  private splitUserAdjusted = false
-  private dragging = false
-  private dragStartY = 0
-  private dragStartTableHeight = 0
-  private dragMoveListener?: (event: MouseEvent) => void
-  private dragUpListener?: (event: MouseEvent) => void
-  private static readonly MIN_EMPTY_DETAIL_HEIGHT = 200
   private static readonly FALLBACK_MIN_TABLE_HEIGHT = 120
-  // Matches .split-divider's own padding (messages.component.less) - dragged fully down, the table area
-  // stops this far short of the table's natural content height so the divider never ends up flush
-  // against the last row.
-  private static readonly TABLE_HEIGHT_TRAILING_GAP = 12
 
   @ViewChild('showMessagesFilter') showMessagesFilter?: CheckboxOptionPanelComponent
   @ViewChild('messageTable') messageTable?: MessageTableComponent
@@ -120,7 +105,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   @ViewChild('searchControls') searchControlsRef?: ElementRef
   @ViewChild('actionControls') actionControlsRef?: ElementRef
   @ViewChild('tableArea') tableAreaRef?: ElementRef
-  @ViewChild('splitDivider') splitDividerRef?: ElementRef
+  @ViewChild('splitViewComponent') splitViewComponent?: SplitViewComponent
 
   private messageSentSubscription?: Subscription
   private resizeObserver!: ResizeObserver
@@ -143,8 +128,8 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   ngOnInit(): void {
     this.routingService.myMessagesBreadcrumbs()
     this.sentView = this.route.snapshot.queryParamMap.get('sent') === 'true'
-    // load()'s finish() (below) already recalculates the split heights once data has loaded, which
-    // covers the initial render whether splitView starts true (from the persisted preference) or false.
+    // load()'s finish() (below) already refreshes app-split-view once data has loaded, which covers the
+    // initial render whether splitView starts true (from the persisted preference) or false.
     this.splitView = this.dataService.messagesSplitView
     this.statusOptions = [
       [
@@ -185,14 +170,12 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     // would immediately re-trigger the observer with stale/mid-reflow geometry, causing the wrapped state
     // to never settle back to "not wrapped" once triggered by a real resize.
     this.resizeObserver = new ResizeObserver(() => {
-      this.zone.run(() => {
-        this.calculateWrapping()
-        this.recalculateSplitHeights()
-      })
+      this.zone.run(() => this.calculateWrapping())
     })
     if (this.messagesPage) {
       this.resizeObserver.observe(this.messagesPage.nativeElement)
     }
+    setTimeout(() => this.splitViewComponent?.refresh())
   }
 
   ngOnDestroy(): void {
@@ -200,15 +183,6 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     if (this.resizeObserver && this.messagesPage) {
       this.resizeObserver.unobserve(this.messagesPage.nativeElement)
     }
-    this.endDividerDrag()
-  }
-
-  // The container ResizeObserver above tracks width changes (its box only grows/shrinks with the page's
-  // own layout); the vertical space available to the split view instead follows the viewport height, so
-  // a plain window resize listener is the correct signal for it.
-  @HostListener('window:resize')
-  onWindowResize() {
-    this.recalculateSplitHeights()
   }
 
   private calculateWrapping() {
@@ -227,162 +201,83 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     }
   }
 
-  toggleSplitView() {
-    this.dataService.setMessagesSplitView(this.splitView)
-    this.splitUserAdjusted = false
-    // Deferred a tick so .table-area/.split-divider (present unconditionally/only in split view
-    // respectively - the divider via @if) have actually rendered with their new geometry before being
-    // measured - the same deferral pattern used elsewhere on this page (see load()'s finish()).
-    setTimeout(() => this.recalculateSplitHeights())
-  }
-
-  /** Recomputes splitTableHeight/splitDetailHeight so their sum fills the space between the top of the
-   * table area and the bottom of the viewport (minus the divider and the card's own bottom padding) -
-   * so that with nothing selected the card ends at the viewport bottom with no page scrollbar. Called on
-   * entering split view, on data reloads, and on viewport/container resizes. Before the user has ever
-   * dragged the divider this always starts from the "just enough room for the empty detail panel" split;
-   * afterwards it only re-clamps the user's chosen split against the (possibly changed) table bounds. */
-  private recalculateSplitHeights() {
-    if (!this.splitView || !this.tableAreaRef || !this.messagesPage) return
-    const tableAreaEl: HTMLElement = this.tableAreaRef.nativeElement
-    const naturalTableHeight = this.measureNaturalTableHeight(tableAreaEl)
-    const maxTableHeight = naturalTableHeight + MessagesComponent.TABLE_HEIGHT_TRAILING_GAP
-    const minTableHeight = this.measureMinTableHeight(tableAreaEl)
-    const dividerHeight = this.splitDividerRef ? (this.splitDividerRef.nativeElement as HTMLElement).offsetHeight : 12
-    const cardBodyEl = (this.messagesPage.nativeElement as HTMLElement).querySelector('.card-body') as HTMLElement | null
-    const cardEl = (this.messagesPage.nativeElement as HTMLElement).querySelector('.card') as HTMLElement | null
-    // The space below the content flow that still needs to be inside the viewport for the card to end
-    // exactly at its bottom - the card body's own bottom padding (below its last child) plus the card's
-    // own border - not just the padding, which alone left the card a few pixels past the viewport edge.
-    // .page-root (IndexComponent's own wrapper around the routed page, see index.component.less) carries
-    // its own margin-bottom below our card - easy to miss since it's outside this component entirely,
-    // but it still sits between the card and .child's own bottom edge and has to be reserved too.
-    const pageRootEl = (this.messagesPage.nativeElement as HTMLElement).closest('.page-root') as HTMLElement | null
-    const pageRootBottomMargin = pageRootEl ? (parseFloat(getComputedStyle(pageRootEl).marginBottom) || 0) : 0
+  /** Document-relative Y that app-split-view's secondary pane should stop at - bound to its
+   * [bottomBoundary] input as a stable arrow function (see the field below) rather than computed once and
+   * written imperatively: app-split-view re-reads this on every recalculation (window resize included),
+   * since unlike the old per-page bottomOffset this now depends on where the page menu/footer actually
+   * ended up, which does change with viewport height. */
+  private contentBottom(): number {
+    if (!this.messagesPage) return window.innerHeight
+    const pageEl: HTMLElement = this.messagesPage.nativeElement
+    const cardBodyEl = pageEl.querySelector('.card-body') as HTMLElement | null
+    const cardEl = pageEl.querySelector('.card') as HTMLElement | null
+    // The card body's own bottom padding (below its last child) plus the card's own border - not just
+    // the padding, which alone left the card a few pixels past the footer's top edge.
     const cardBottomChrome = (cardBodyEl ? (parseFloat(getComputedStyle(cardBodyEl).paddingBottom) || 0) : 0)
       + (cardEl ? (parseFloat(getComputedStyle(cardEl).borderBottomWidth) || 0) : 0)
-      + pageRootBottomMargin
+    // .page-root (IndexComponent's own wrapper around the routed page, see index.component.less) carries
+    // its own margin-bottom below our card - easy to miss since it's outside this component entirely. Not
+    // sticky itself, so its own document-relative top is stable regardless of scroll position (see
+    // app-split-view's class comment for why that matters).
+    const pageRootEl = pageEl.closest('.page-root') as HTMLElement | null
+    const pageRootBottomMargin = pageRootEl ? (parseFloat(getComputedStyle(pageRootEl).marginBottom) || 0) : 0
+    const pageRootDocTop = pageRootEl ? (pageRootEl.getBoundingClientRect().top + window.scrollY) : 0
     // .page.index is a flex column (header-bar / .child / .footer-bar, see app.less) with .child set to
-    // flex:1 - so .footer-bar normally sits pinned at the viewport bottom on its own, with no JS needed,
-    // as long as .child's content doesn't outgrow the space left for it. Sizing the empty detail panel
-    // against the literal window bottom (as before) ignored that the footer still needs its own room
-    // below .child, pushing the footer off-screen even with nothing selected. footer-bar's own height is
-    // stable regardless of whether it's currently pinned in view or already pushed below the fold, so
-    // reserving it here keeps the "no scrollbar when nothing is selected" promise while still leaving the
-    // footer visible.
+    // flex:1 - so while page-root's content is shorter than the space available to .child, flex-grow
+    // stretches .child (with blank filler below page-root) to reach exactly down to the viewport bottom,
+    // and .footer-bar sits flush after it. But .page-menu (the left sidebar, see index.component.less) can
+    // be taller than the viewport by itself, in which case page-root's own content now needs more room than
+    // that available space, and .child's height instead follows page-root's own (page-root's own
+    // margin-bottom included) - pushing .footer-bar down below the fold. Taking the two possible positions'
+    // max (rather than just measuring .footer-bar's own current rect, which is exactly the self-referential
+    // measurement that produced the old shrink-loop: the footer's rect depends on how tall .page-content
+    // currently is, which is what this component is about to compute) gives the desired footer position
+    // independent of this component's own panes - "desired" because, as covered next, our own card is what
+    // actually determines which of the two applies once it's sized to reach it.
     const footerEl = document.querySelector('.footer-bar') as HTMLElement | null
     const footerHeight = footerEl ? footerEl.getBoundingClientRect().height : 0
-    const top = tableAreaEl.getBoundingClientRect().top
-    const available = Math.max(window.innerHeight - footerHeight - top - dividerHeight - cardBottomChrome, minTableHeight + MessagesComponent.MIN_EMPTY_DETAIL_HEIGHT)
-    if (!this.splitUserAdjusted) {
-      const detailHeight = MessagesComponent.MIN_EMPTY_DETAIL_HEIGHT
-      const tableHeight = this.clampHeight(available - detailHeight, minTableHeight, maxTableHeight)
-      this.splitTableHeight = tableHeight
-      this.splitDetailHeight = available - tableHeight
-    } else {
-      // Re-clamped against freshly measured bounds every time (every reload, every toggle-on, every
-      // resize) - this is what shrinks splitTableHeight back down (and grows splitDetailHeight to
-      // absorb the freed space) whenever the row count drops, e.g. after a search narrows the results.
-      this.splitTableHeight = this.clampHeight(this.splitTableHeight, minTableHeight, maxTableHeight)
-      this.splitDetailHeight = Math.max(available - this.splitTableHeight, MessagesComponent.MIN_EMPTY_DETAIL_HEIGHT)
-    }
-    // A second pass, deferred so the DOM actually reflects the heights just computed and the browser has
-    // laid out with them, corrects for any small residual page overflow this analytic budget can't fully
-    // account for (subpixel rounding, the footer's own flex-wrapped content re-wrapping narrower/taller
-    // as a vertical scrollbar appears or disappears, etc.) - see correctSplitOverflow().
-    setTimeout(() => this.correctSplitOverflow())
+    // .page-menu is position:sticky, so its own rect only reflects a viewport-relative position while
+    // scrolled into view - offsetHeight (a layout size, not a position) is used instead.
+    const pageMenuEl = pageRootEl?.querySelector('.page-menu') as HTMLElement | null
+    const menuHeight = pageMenuEl ? pageMenuEl.offsetHeight : 0
+    const desiredFooterTop = Math.max(window.innerHeight - footerHeight, pageRootDocTop + menuHeight + pageRootBottomMargin)
+    // page-content (page-root's other child, wrapping our own card) has align-self:stretch by default, so
+    // whichever of page-menu/page-content ends up taller *before* stretch is what actually determines
+    // page-root's own height - and since our own card is what we're about to size to reach desiredFooterTop,
+    // page-content (not page-menu) ends up being that taller sibling as soon as our own target exceeds
+    // menuHeight, which it does as soon as there's any meaningful vertical budget to work with. In other
+    // words, our own card's height is what determines page-root's (and so page-menu's max() aside,
+    // .footer-bar's) *true* position from this point on - so reaching desiredFooterTop exactly means sizing
+    // our card to leave room for pageRootBottomMargin *again* on top of cardBottomChrome (once for page-root
+    // itself, once for the gap from page-root's own border-box to .child's), not just once.
+    return desiredFooterTop - cardBottomChrome - pageRootBottomMargin
   }
 
-  /** Trims however many pixels the page ends up taller than the viewport once the heights from
-   * recalculateSplitHeights() are actually applied and laid out - guaranteeing no unnecessary scrollbar
-   * regardless of any subpixel/layout detail that budget's arithmetic can't fully account for on its own
-   * (e.g. an ancestor margin outside this component entirely). Skipped once a message is selected, where
-   * growing past the viewport is expected (see the "only case the viewport should be extended" rule).
-   * The overflow is taken from splitDetailHeight first (down to the empty-placeholder floor - the table
-   * already showing its full natural content is the more important thing to preserve), and only once
-   * that floor is hit does it fall back to shrinking splitTableHeight (down to the drag-up floor,
-   * growing .table-area's own internal scrollbar instead of the page's) - a genuine, unavoidable overflow
-   * is left as-is only once both floors are hit (e.g. an exceptionally short viewport). */
-  private correctSplitOverflow() {
-    if (!this.splitView || this.selectedDetail != undefined || !this.tableAreaRef) return
-    const overflow = document.documentElement.scrollHeight - window.innerHeight
-    if (overflow <= 0) return
-    const fromDetail = Math.min(overflow, Math.max(this.splitDetailHeight - MessagesComponent.MIN_EMPTY_DETAIL_HEIGHT, 0))
-    this.splitDetailHeight -= fromDetail
-    const remaining = overflow - fromDetail
-    if (remaining > 0) {
-      const minTableHeight = this.measureMinTableHeight(this.tableAreaRef.nativeElement)
-      this.splitTableHeight = Math.max(this.splitTableHeight - remaining, minTableHeight)
-    }
+  // Stable reference for the [bottomBoundary] template binding - app-split-view calls this itself on
+  // every recalculation rather than being handed a single pre-computed number, so a bound method (not
+  // a bound property re-evaluated by Angular's own change detection) is what avoids NG0100 here.
+  contentBottomProvider = () => this.contentBottom()
+
+  toggleSplitView() {
+    this.dataService.setMessagesSplitView(this.splitView)
+    this.updateMinTableHeightAndRefresh()
   }
 
-  /** The table's true current content height, independent of .table-area's own explicit pixel height
-   * (which the caller sets via splitTableHeight) - scrollHeight on an element whose own box is taller
-   * than its content returns the element's own (explicitly-set) height, not the shorter content height,
-   * so reading it directly off .table-area would never notice the table having gotten shorter (e.g.
-   * after a search narrows the results), leaving splitTableHeight stuck too tall with a visible gap
-   * below the last row. .table-container (app-message-table's own root) carries no height style of its
-   * own, so its rendered height always reflects the table's actual current content. */
-  private measureNaturalTableHeight(tableAreaEl: HTMLElement): number {
-    const contentEl = tableAreaEl.querySelector('.table-container') as HTMLElement | null
-    return contentEl ? contentEl.getBoundingClientRect().height : tableAreaEl.scrollHeight
-  }
-
-  /** The drag-up limit: the table area's own header row plus one message row - falls back to a fixed
-   * constant while the table is empty/loading (neither element is rendered yet). */
-  private measureMinTableHeight(tableAreaEl: HTMLElement): number {
-    const thead = tableAreaEl.querySelector('thead')
-    const row = tableAreaEl.querySelector('tbody tr')
-    if (thead && row) {
-      return thead.getBoundingClientRect().height + row.getBoundingClientRect().height
-    }
-    return MessagesComponent.FALLBACK_MIN_TABLE_HEIGHT
-  }
-
-  private clampHeight(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), Math.max(min, max))
-  }
-
-  onDividerMouseDown(event: MouseEvent) {
-    event.preventDefault()
-    this.dragging = true
-    this.dragStartY = event.clientY
-    this.dragStartTableHeight = this.splitTableHeight
-    document.body.style.userSelect = 'none'
-    // Registered outside the Angular zone so a drag does not run a full change-detection pass on every
-    // mousemove - onDividerMouseMove re-enters the zone itself only to write the two bound heights.
-    this.zone.runOutsideAngular(() => {
-      this.dragMoveListener = (e: MouseEvent) => this.onDividerMouseMove(e)
-      this.dragUpListener = () => this.endDividerDrag()
-      document.addEventListener('mousemove', this.dragMoveListener)
-      document.addEventListener('mouseup', this.dragUpListener)
+  /** The table's drag-up floor (its header plus one row), passed into app-split-view's
+   * [minPrimaryHeight] - falls back to a fixed constant while the table is empty/loading (neither
+   * element is rendered yet). Recomputed after every load() and split-view toggle since app-split-view
+   * has no way to introspect what its projected primary content actually looks like; deferred a tick so
+   * .table-area (present unconditionally) and its rows (present once split view is toggled on) have
+   * actually rendered with their new geometry before being measured. */
+  private updateMinTableHeightAndRefresh() {
+    setTimeout(() => {
+      if (!this.splitViewComponent) return
+      const tableAreaEl: HTMLElement | undefined = this.tableAreaRef?.nativeElement
+      const thead = tableAreaEl?.querySelector('thead')
+      const row = tableAreaEl?.querySelector('tbody tr')
+      this.splitViewComponent.minPrimaryHeight = (thead && row) ? thead.getBoundingClientRect().height + row.getBoundingClientRect().height : MessagesComponent.FALLBACK_MIN_TABLE_HEIGHT
+      this.splitViewComponent.refresh()
     })
-  }
-
-  private onDividerMouseMove(event: MouseEvent) {
-    if (!this.dragging || !this.tableAreaRef) return
-    const tableAreaEl: HTMLElement = this.tableAreaRef.nativeElement
-    const naturalTableHeight = this.measureNaturalTableHeight(tableAreaEl)
-    const maxTableHeight = naturalTableHeight + MessagesComponent.TABLE_HEIGHT_TRAILING_GAP
-    const minTableHeight = this.measureMinTableHeight(tableAreaEl)
-    const delta = event.clientY - this.dragStartY
-    const newTableHeight = this.clampHeight(this.dragStartTableHeight + delta, minTableHeight, maxTableHeight)
-    // The two heights' sum is kept constant through the drag (the divider only redistributes space
-    // between the panels, it does not change how much space is available) - a floor on the detail side
-    // only kicks in if the available budget itself is too small for it, matching recalculateSplitHeights.
-    const totalHeight = this.splitTableHeight + this.splitDetailHeight
-    this.zone.run(() => {
-      this.splitTableHeight = newTableHeight
-      this.splitDetailHeight = Math.max(totalHeight - newTableHeight, MessagesComponent.MIN_EMPTY_DETAIL_HEIGHT)
-      this.splitUserAdjusted = true
-    })
-  }
-
-  private endDividerDrag() {
-    this.dragging = false
-    document.body.style.userSelect = ''
-    if (this.dragMoveListener) { document.removeEventListener('mousemove', this.dragMoveListener); this.dragMoveListener = undefined }
-    if (this.dragUpListener) { document.removeEventListener('mouseup', this.dragUpListener); this.dragUpListener = undefined }
   }
 
   @HostListener('document:click', ['$event'])
@@ -599,10 +494,8 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     const finish = () => {
       this.loadingStatus.status = Constants.STATUS.FINISHED
       this.contentRefreshing = false
-      setTimeout(() => {
-        this.calculateWrapping()
-        this.recalculateSplitHeights()
-      })
+      setTimeout(() => this.calculateWrapping())
+      this.updateMinTableHeightAndRefresh()
     }
     if (!this.sentView) {
       this.messageService.getReceivedMessages(page, limit, this.filterText, this.showRead, this.showUnread, this.showImportant, dateAfter, dateBefore, this.sortColumn, this.sortOrder, this.peerFilterTargets)
@@ -760,7 +653,10 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   }
 
   onCheckChange() {
-    setTimeout(() => this.calculateWrapping())
+    // Showing/hiding the action toolbar (Reply/Mark read/.../Delete) changes .controls' own height, and
+    // therefore app-split-view's document-relative top - nothing else notices that on its own since
+    // neither pane's projected content changes size as a result.
+    setTimeout(() => { this.calculateWrapping(); this.splitViewComponent?.refresh() })
   }
 
   markCheckedRead(read: boolean) {

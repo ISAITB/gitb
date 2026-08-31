@@ -1,17 +1,49 @@
 @import "../../../styles/less/_common.less";
 
+.message-detail-wrapper {
+    // A flex item of its own host's containing flex column (see messages.component.less's
+    // `app-message-detail { flex: 1 }`), which in turn stretches to whatever height app-split-view's
+    // secondary pane reserves. min-height: 0 lets it shrink below its content's natural size instead of a
+    // flex item's default auto-min (which would otherwise force the wrapper, and so the pane above it, to
+    // grow to fit a tall selected message rather than letting .message-detail-panel below size itself and
+    // leave the rest of this element's own height as blank space).
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+
+    // While nothing is selected/loading, the placeholder is expected to stretch and fill this whole
+    // element (flex: 1, set below, unconditionally) - once a message is shown, the bordered panel and its
+    // reply chain should only take their own natural height, leaving everything below them as blank
+    // spacing down to whatever this element's own height is (see .content-shown below).
+}
+
 .message-detail-panel {
     border: 1px solid @gray-dark-1;
     border-radius: @border-radius;
     overflow: hidden;
-    min-height: 200px;
+    // 100px, not the panel's old 200px - agreed floor for how far the empty-state placeholder may shrink
+    // on a short viewport before the page is allowed to scroll instead (see app-split-view's
+    // minSecondaryHeight, passed in by MessagesComponent to match).
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    // Once a message is displayed, the panel (and the reply chain below it, its wrapper's other flex
+    // child) should hug their own content instead of stretching - see .message-detail-wrapper above for
+    // where the leftover space then goes.
+    .content-shown & {
+        flex: 0 0 auto;
+    }
 
     .empty-message {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        height: 200px;
+        min-height: 100px;
+        flex: 1;
         color: @gray-dark-1;
     }
 

@@ -193,6 +193,7 @@ import {ReportFileNameExpressionComponent} from './components/report-file-name-e
 import {TestResultRatioComponent} from './components/test-result-ratio/test-result-ratio.component';
 import {PrescriptionLevelComponent} from './components/prescription-level/prescription-level.component';
 import {CheckboxOptionPanelComponent} from './components/checkbox-option-panel/checkbox-option-panel.component';
+import {SplitViewComponent} from './components/split-view/split-view.component';
 import {SessionFlagControlComponent} from './components/session-flag-control/session-flag-control.component';
 import {SessionInfoPanelComponent} from './components/session-info-panel/session-info-panel.component';
 import {SessionColumnPreferencesComponent} from './components/session-column-preferences/session-column-preferences.component';
@@ -462,6 +463,7 @@ import { MessageChainComponent } from './components/message-chain/message-chain.
     TestResultRatioComponent,
     PrescriptionLevelComponent,
     CheckboxOptionPanelComponent,
+    SplitViewComponent,
     SessionFlagControlComponent,
     SessionInfoPanelComponent,
     SessionColumnPreferencesComponent,

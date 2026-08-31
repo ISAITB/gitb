@@ -1,0 +1,55 @@
+@import '../../../styles/less/_common.less';
+
+:host {
+    display: block;
+}
+
+.split-view-primary {
+    overflow-y: auto;
+}
+
+.split-view-secondary {
+    // No margin-top of its own - the gap above the secondary pane is carried by the divider's own bottom
+    // padding (.split-view-divider-bottom below) while enabled, and is the host's concern in continuous
+    // view (where the divider isn't rendered at all).
+    // display:flex column so the host's projected root element can be told to grow and fill this pane via
+    // its own `flex: 1` - reserving the space (min-height above) doesn't by itself make the projected
+    // content occupy it, or leftover space renders as a blank gap below the content's own bottom edge
+    // rather than the content growing to fill it (e.g. My Messages' empty detail placeholder stretching to
+    // the footer). That `flex: 1` has to be set by the host itself, on its own projected element, from its
+    // own stylesheet (see messages.component.less's `.message-detail-container { flex: 1 }`) rather than
+    // by a rule here: `[splitViewSecondary]`'s projected content carries the *host's* Angular
+    // view-encapsulation attribute, not this component's, so a plain (non ::ng-deep) `.split-view-secondary
+    // > *` rule written here would never match it.
+    display: flex;
+    flex-direction: column;
+}
+
+// The draggable boundary between the two panes. Full-bleed across the nearest ancestor with horizontal
+// padding is left to the host to arrange (e.g. via negative margins matching a card body's own padding)
+// since this component has no opinion on what it's embedded in.
+.split-view-divider {
+    box-shadow: 0 -10px 12px -6px rgba(0, 0, 0, 0.25);
+    cursor: row-resize;
+    user-select: none;
+    position: relative;
+    .split-view-divider-top {
+        border-top: 1px solid @gray-dark-1;
+        border-bottom: 1px solid @gray-dark-1;
+        height: 6px;
+    }
+    .split-view-divider-bottom {
+        // 16px, not the primary pane's own trailing gap (12px, PRIMARY_HEIGHT_TRAILING_GAP in the .ts) -
+        // that gap is deliberately smaller since it's measured from the table's actual last row rather
+        // than being visible whitespace of its own; this one is the visible space between the divider and
+        // whatever the secondary pane renders, agreed as 16px total.
+        height: 16px;
+    }
+    &:hover {
+        .split-view-divider-top {
+            border-top-color: @gray-medium;
+            border-bottom-color: @gray-medium;
+            background: @gray-highlight;
+        }
+    }
+}

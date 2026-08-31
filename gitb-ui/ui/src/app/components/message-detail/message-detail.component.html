@@ -1,4 +1,4 @@
-<div class="message-detail-wrapper" [class.disable-events]="loading && detail != undefined">
+<div class="message-detail-wrapper" [class.disable-events]="loading && detail != undefined" [class.content-shown]="detail != undefined">
     <div class="message-detail-panel">
     @if (detail == undefined) {
         <div class="empty-message">

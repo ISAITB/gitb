@@ -92,35 +92,31 @@
                     </div>
                 }
             </div>
-            <div #tableArea class="table-area" [style.height.px]="splitView ? splitTableHeight : null">
-                <app-message-table #messageTable
-                    [data]="messages"
-                    [mode]="sentView ? 'sent' : 'received'"
-                    [loadingStatus]="loadingStatus"
-                    [contentRefreshing]="contentRefreshing"
-                    [selectedId]="selectedDetail?.id"
-                    [sortColumn]="sortColumn"
-                    [sortOrder]="sortOrder"
-                    (rowSelect)="selectMessage($event)"
-                    (markRead)="markOneRead($event)"
-                    (deleteOne)="deleteOne($event)"
-                    (replyOne)="reply($event.id, $event.subject)"
-                    (checkChange)="onCheckChange()"
-                    (sortChange)="sortChanged($event)"
-                    (pageNavigation)="doPaging($event)"></app-message-table>
-            </div>
-            @if (splitView) {
-                <div #splitDivider class="split-divider" (mousedown)="onDividerMouseDown($event)">
-                    <div class="split-divider-top"></div>
-                    <div class="split-divider-bottom"></div>
+            <app-split-view #splitViewComponent [enabled]="splitView" [bottomBoundary]="contentBottomProvider" [minSecondaryHeight]="100">
+                <div #tableArea splitViewPrimary class="table-area">
+                    <app-message-table #messageTable
+                        [data]="messages"
+                        [mode]="sentView ? 'sent' : 'received'"
+                        [loadingStatus]="loadingStatus"
+                        [contentRefreshing]="contentRefreshing"
+                        [selectedId]="selectedDetail?.id"
+                        [sortColumn]="sortColumn"
+                        [sortOrder]="sortOrder"
+                        (rowSelect)="selectMessage($event)"
+                        (markRead)="markOneRead($event)"
+                        (deleteOne)="deleteOne($event)"
+                        (replyOne)="reply($event.id, $event.subject)"
+                        (checkChange)="onCheckChange()"
+                        (sortChange)="sortChanged($event)"
+                        (pageNavigation)="doPaging($event)"></app-message-table>
                 </div>
-            }
-            <div class="message-detail-container" [style.min-height.px]="splitView ? splitDetailHeight : null">
-                <app-message-detail [mode]="sentView ? 'sent' : 'received'" [detail]="selectedDetail" [chain]="selectedChain" [loading]="detailLoading" [actionPending]="detailActionPending"
-                    (replyRequested)="replyToSelected()"
-                    (markReadRequested)="toggleSelectedRead()"
-                    (deleteRequested)="deleteSelected()"></app-message-detail>
-            </div>
+                <div splitViewSecondary class="message-detail-container">
+                    <app-message-detail [mode]="sentView ? 'sent' : 'received'" [detail]="selectedDetail" [chain]="selectedChain" [loading]="detailLoading" [actionPending]="detailActionPending"
+                        (replyRequested)="replyToSelected()"
+                        (markReadRequested)="toggleSelectedRead()"
+                        (deleteRequested)="deleteSelected()"></app-message-detail>
+                </div>
+            </app-split-view>
         </div>
     </div>
 </div>
