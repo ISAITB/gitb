@@ -62,7 +62,7 @@
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
         <version.jaxb>4.0.8</version.jaxb>
-        <version.saxon>12.9</version.saxon>
+        <version.saxon>12.10</version.saxon>
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
