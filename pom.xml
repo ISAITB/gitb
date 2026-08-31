@@ -79,7 +79,7 @@
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.freeMarker>2.3.34</version.freeMarker>
         <version.openhtmltopdf>1.1.65</version.openhtmltopdf>
-        <version.org.jsoup>1.22.2</version.org.jsoup>
+        <version.org.jsoup>1.23.2</version.org.jsoup>
         <version.jena>6.1.0</version.jena>
         <!-- Ensure the libthrift version matches the one used within Jena. -->
         <version.libthrift>0.24.0</version.libthrift>
