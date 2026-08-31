@@ -68,7 +68,7 @@
         <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.15.1</version.commonsConfiguration>
         <version.commonsText>1.15.0</version.commonsText>
-        <version.pekko>1.6.0</version.pekko>
+        <version.pekko>1.7.0</version.pekko>
         <version.rgxgen>3.1</version.rgxgen>
         <version.saajImpl>3.0.6</version.saajImpl>
         <version.helgerCommons>12.3.2</version.helgerCommons>
