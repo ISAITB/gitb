@@ -55,6 +55,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
       homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE,
       ownSessions: '',
       allSessions: '',
+      statementsListView: false,
+      messagesSplitView: false,
     },
     tags: []
   }

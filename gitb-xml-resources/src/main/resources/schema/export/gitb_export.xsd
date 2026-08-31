@@ -805,12 +805,14 @@
     </xsd:complexType>
     <xsd:complexType name="UserPreferences">
         <xsd:sequence>
-            <xsd:element name="menuCollapsed" type="xsd:boolean" default="true"/>
-            <xsd:element name="statementsCollapsed" type="xsd:boolean" default="false"/>
-            <xsd:element name="pageSize" type="xsd:integer" default="10"/>
-            <xsd:element name="homePageType" type="HomePageType" default="LANDING_PAGE"/>
+            <xsd:element name="menuCollapsed" type="xsd:boolean" default="true" minOccurs="0"/>
+            <xsd:element name="statementsCollapsed" type="xsd:boolean" default="false" minOccurs="0"/>
+            <xsd:element name="pageSize" type="xsd:integer" default="10" minOccurs="0"/>
+            <xsd:element name="homePageType" type="HomePageType" default="LANDING_PAGE" minOccurs="0"/>
             <xsd:element name="ownSessions" type="xsd:string" default="" minOccurs="0"/>
             <xsd:element name="allSessions" type="xsd:string" default="" minOccurs="0"/>
+            <xsd:element name="statementsListView" type="xsd:boolean" default="false" minOccurs="0"/>
+            <xsd:element name="messagesSplitView" type="xsd:boolean" default="false" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
     <xsd:simpleType name="HomePageType">

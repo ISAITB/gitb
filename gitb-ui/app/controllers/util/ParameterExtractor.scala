@@ -71,6 +71,8 @@ object ParameterExtractor {
       homePageType = extractHomePageType(request),
       ownSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OWN_SESSIONS).getOrElse(""),
       allSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALL_SESSIONS).getOrElse(""),
+      statementsListView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_LIST_VIEW).getOrElse(false),
+      messagesSplitView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MESSAGES_SPLIT_VIEW).getOrElse(false),
       0L
     )
   }
@@ -84,6 +86,8 @@ object ParameterExtractor {
       homePageType = extractHomePageType(request),
       ownSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OWN_SESSIONS).getOrElse(""),
       allSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALL_SESSIONS).getOrElse(""),
+      statementsListView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_LIST_VIEW).getOrElse(false),
+      messagesSplitView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MESSAGES_SPLIT_VIEW).getOrElse(false),
       0L
     )
   }

@@ -20,13 +20,13 @@ import models.Enums.HomePageType
 object UserPreferences {
 
   def createDefault(userId: Long): UserPreferences = {
-    UserPreferences(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, HomePageType.LANDING_PAGE.id.toShort, "", "", userId)
+    UserPreferences(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, HomePageType.LANDING_PAGE.id.toShort, "", "", statementsListView = false, messagesSplitView = false, userId)
   }
 
   def fromCommunityDefaults(userId: Long, defaults: UserPreferenceDefaults): UserPreferences = {
-    UserPreferences(0L, menuCollapsed = defaults.menuCollapsed, statementsCollapsed = defaults.statementsCollapsed, defaults.pageSize, defaults.homePageType, defaults.ownSessions, defaults.allSessions, userId)
+    UserPreferences(0L, menuCollapsed = defaults.menuCollapsed, statementsCollapsed = defaults.statementsCollapsed, defaults.pageSize, defaults.homePageType, defaults.ownSessions, defaults.allSessions, statementsListView = defaults.statementsListView, messagesSplitView = defaults.messagesSplitView, userId)
   }
 
 }
 
-case class UserPreferences(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, homePageType: Short, ownSessions: String, allSessions: String, user: Long) extends UserPreferenceBase
+case class UserPreferences(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, homePageType: Short, ownSessions: String, allSessions: String, statementsListView: Boolean, messagesSplitView: Boolean, user: Long) extends UserPreferenceBase

@@ -200,6 +200,26 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def updatePreferenceForStatementsListView(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toBoolean
+      userPreferenceManager.updatePreferenceForStatementsListView(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  def updatePreferenceForMessagesSplitView(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toBoolean
+      userPreferenceManager.updatePreferenceForMessagesSplitView(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
   def updatePreferenceForPageSize(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)

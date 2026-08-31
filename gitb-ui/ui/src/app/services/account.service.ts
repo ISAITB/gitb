@@ -47,6 +47,16 @@ export class AccountService {
         this.updatePreferenceForStatementsCollapsed(!statementDetailsVisible).subscribe(() => {})
       }
     })
+    this.dataService.onStatementsListViewChange$.subscribe((listView) => {
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForStatementsListView(listView).subscribe(() => {})
+      }
+    })
+    this.dataService.onMessagesSplitViewChange$.subscribe((splitView) => {
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForMessagesSplitView(splitView).subscribe(() => {})
+      }
+    })
     this.dataService.onPageSizeChange$.subscribe((pageSize) => {
       if (!this.dataService.isDemoAccount()) {
         this.updatePreferenceForPageSize(pageSize).subscribe(() => {})
@@ -160,6 +170,8 @@ export class AccountService {
       home_page_type: preferences.homePageType,
       own_sessions: preferences.ownSessions,
       all_sessions: preferences.allSessions,
+      statements_list_view: preferences.statementsListView,
+      messages_split_view: preferences.messagesSplitView,
     }
     if (name != undefined) {
       data.user_name = name
@@ -184,6 +196,26 @@ export class AccountService {
   updatePreferenceForStatementsCollapsed(value: boolean) {
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.updatePreferenceForStatementsCollapsed().url,
+      data: {
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForStatementsListView(value: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForStatementsListView().url,
+      data: {
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForMessagesSplitView(value: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForMessagesSplitView().url,
       data: {
         value: value
       },

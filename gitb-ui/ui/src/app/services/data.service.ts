@@ -90,6 +90,8 @@ export class DataService {
   public latestPageChange?: PageChange
   public menuVisibility: boolean = false
   public conformanceStatementDetailVisibility: boolean = false
+  public statementsListView: boolean = false
+  public messagesSplitView: boolean = false
   public homePageType: number = Constants.HOME_PAGE_TYPE.LANDING_PAGE
   public sessionColumnPrefs: {[key: string]: string} = {}
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
@@ -118,6 +120,10 @@ export class DataService {
   public onMenuVisibilityChange$ = this.menuVisibilityChangeSource.asObservable()
   private conformanceStatementDetailVisibilityChangeSource = new Subject<boolean>()
   public onConformanceStatementDetailVisibilityChange$ = this.conformanceStatementDetailVisibilityChangeSource.asObservable()
+  private statementsListViewChangeSource = new Subject<boolean>()
+  public onStatementsListViewChange$ = this.statementsListViewChangeSource.asObservable()
+  private messagesSplitViewChangeSource = new Subject<boolean>()
+  public onMessagesSplitViewChange$ = this.messagesSplitViewChangeSource.asObservable()
   private sessionColumnsChangeSource = new Subject<{key: string, value: string}>()
   public onSessionColumnsChange$ = this.sessionColumnsChangeSource.asObservable()
   private preparingForShutdownSource = new ReplaySubject<boolean>(1)
@@ -230,6 +236,8 @@ export class DataService {
     this.defaultPagingTableSize = user.preferences?.pageSize??Constants.TABLE_PAGE_SIZE
     this.menuVisibility = user.preferences?.menuCollapsed === false // Collapsed by default
     this.conformanceStatementDetailVisibility = user.preferences?.statementsCollapsed !== true // Not collapsed by default
+    this.statementsListView = user.preferences?.statementsListView === true // Tree view by default
+    this.messagesSplitView = user.preferences?.messagesSplitView === true // Continuous view by default
     this.homePageType = user.preferences?.homePageType??Constants.HOME_PAGE_TYPE.LANDING_PAGE
     this.sessionColumnPrefs = {
       own_sessions: user.preferences?.ownSessions ?? '',
@@ -2087,6 +2095,20 @@ export class DataService {
     if (this.conformanceStatementDetailVisibility != visible) {
       this.conformanceStatementDetailVisibility = visible
       this.conformanceStatementDetailVisibilityChangeSource.next(visible)
+    }
+  }
+
+  setStatementsListView(listView: boolean) {
+    if (this.statementsListView != listView) {
+      this.statementsListView = listView
+      this.statementsListViewChangeSource.next(listView)
+    }
+  }
+
+  setMessagesSplitView(splitView: boolean) {
+    if (this.messagesSplitView != splitView) {
+      this.messagesSplitView = splitView
+      this.messagesSplitViewChangeSource.next(splitView)
     }
   }
 

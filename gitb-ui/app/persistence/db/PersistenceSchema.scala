@@ -1100,8 +1100,10 @@ object PersistenceSchema {
     def homePageType = column[Short]("home_page_type")
     def ownSessions = column[String]("own_sessions")
     def allSessions = column[String]("all_sessions")
+    def statementsListView = column[Boolean]("statements_list_view")
+    def messagesSplitView = column[Boolean]("messages_split_view")
     def user = column[Long] ("user")
-    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: user :: HNil).mapTo[UserPreferences]
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: statementsListView :: messagesSplitView :: user :: HNil).mapTo[UserPreferences]
   }
   val userPreferences = TableQuery[UserPreferencesTable]
 
@@ -1113,8 +1115,10 @@ object PersistenceSchema {
     def homePageType = column[Short]("home_page_type")
     def ownSessions = column[String]("own_sessions")
     def allSessions = column[String]("all_sessions")
+    def statementsListView = column[Boolean]("statements_list_view")
+    def messagesSplitView = column[Boolean]("messages_split_view")
     def community = column[Long] ("community")
-    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: community :: HNil).mapTo[UserPreferenceDefaults]
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: statementsListView :: messagesSplitView :: community :: HNil).mapTo[UserPreferenceDefaults]
   }
   val userPreferenceDefaults = TableQuery[UserPreferenceDefaultsTable]
 

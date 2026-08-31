@@ -359,10 +359,22 @@
                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, the left-side menu will be presented to users as collapsed by default."></div>
                 </label>
             </div>
-            <div class="form-check">
+            <div class="form-check pb-2">
                 <input class="form-check-input" type="checkbox" id="statementsCollapsed" name="statementsCollapsed" [(ngModel)]="community.preferences!.statementsCollapsed">
                 <label class="form-check-label" for="statementsCollapsed">Collapsed conformance statement details
                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statements will be displayed to users by default with their details collapsed."></div>
+                </label>
+            </div>
+            <div class="form-check pb-2">
+                <input class="form-check-input" type="checkbox" id="statementsListView" name="statementsListView" [(ngModel)]="community.preferences!.statementsListView">
+                <label class="form-check-label" for="statementsListView">List view for conformance statements
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statement dashboards will be presented to users as a flat list by default."></div>
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="messagesSplitView" name="messagesSplitView" [(ngModel)]="community.preferences!.messagesSplitView">
+                <label class="form-check-label" for="messagesSplitView">Split view for message lists and details
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, message lists and the details of the selected message will be presented to users as a split view by default."></div>
                 </label>
             </div>
         </div>

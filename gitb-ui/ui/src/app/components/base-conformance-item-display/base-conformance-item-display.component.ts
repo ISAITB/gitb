@@ -42,8 +42,10 @@ import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-bo
 import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 
 /** Persisted display state for the list view - kept separate from the tree view's DisplayState since
- * its data key (see listViewDisplayStateDataKey()) must be available synchronously on arrival (so
- * "is this list view active" can be decided before any async system/snapshot resolution completes). */
+ * its data key (see listViewDisplayStateDataKey()) must be available synchronously on arrival, before
+ * any async system/snapshot resolution completes (list view itself is now driven by the user's
+ * persisted statementsListView preference - this only carries the list table's filters/sort/paging so
+ * they survive a "drill into a statement and come back" hop). */
 interface ConformanceListViewDisplayState {
   filters?: {[key: string]: any}
   sortColumn?: string
@@ -109,6 +111,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     protected readonly conformanceService: ConformanceService
   ) {
     super()
+    this.listView = dataService.statementsListView
   }
 
   ngAfterViewInit(): void {
@@ -200,6 +203,10 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     this.showExport = showExport
   }
 
+  protected recordListViewPreference() {
+    this.dataService.setStatementsListView(this.listView)
+  }
+
   listViewSearching(pending: boolean) {
     setTimeout(() => {
       this.updatePending = pending
@@ -253,13 +260,16 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     }
   }
 
-  /** Restores list-view mode itself plus its filters/sort/paging - called early (synchronously in
-   * ngOnInit, before any async system/snapshot resolution), which is why its data key must rely only
+  /** Restores the list view's filters/sort/paging (list view mode itself is already set from the
+   * user's persisted statementsListView preference - see the constructor) - called early (synchronously
+   * in ngOnInit, before any async system/snapshot resolution), which is why its data key must rely only
    * on values already known at that point (see listViewDisplayStateDataKey()). */
   protected restoreListViewState() {
+    if (!this.listView) {
+      return
+    }
     const existingListViewState = this.getDisplayState<ConformanceListViewDisplayState>(this.listViewDisplayStateKey(), true)
     if (existingListViewState && existingListViewState.key == this.listViewDisplayStateDataKey()) {
-      this.listView = true
       this.restoredListViewFilters = existingListViewState.state?.filters
       this.restoredListViewSortColumn = existingListViewState.state?.sortColumn
       this.restoredListViewSortOrder = existingListViewState.state?.sortOrder

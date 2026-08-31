@@ -151,10 +151,11 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   ngAfterViewInit() {
     super.ngAfterViewInit();
     if (this.listView) {
-      // List view was already restored (see restoreListViewState(), called from ngOnInit): skip the
-      // usual "entering list view" reset (it clears the organisation/system selection and forces the
-      // latest snapshot) so the restored snapshot/selection and the table's own initial* inputs apply
-      // instead. Still set this field, needed to enable the snapshot dropdown.
+      // List view is already active (from the user's persisted statementsListView preference, or from
+      // restoreListViewState()'s filters/sort/paging restore, called from ngOnInit): skip the usual
+      // "entering list view" reset (it clears the organisation/system selection and forces the latest
+      // snapshot) so any restored snapshot/selection and the table's own initial* inputs apply instead.
+      // Still set this field, needed to enable the snapshot dropdown.
       this.selectedCommunityId = this.communityId
     } else {
       this.viewTypeToggled(true)
@@ -248,6 +249,9 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   viewTypeToggled(fromPageInit?: boolean) {
+    if (!fromPageInit) {
+      this.recordListViewPreference()
+    }
     if (this.listView) {
       this.selectedCommunityId = this.communityId
       this.selectedOrganisationId = undefined

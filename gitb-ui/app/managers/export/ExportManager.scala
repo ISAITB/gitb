@@ -971,6 +971,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       exportedUser.getPreferences.setHomePageType(toExportedHomePageType(prefs.homePageType))
       exportedUser.getPreferences.setOwnSessions(prefs.ownSessions)
       exportedUser.getPreferences.setAllSessions(prefs.allSessions)
+      exportedUser.getPreferences.setStatementsListView(prefs.statementsListView)
+      exportedUser.getPreferences.setMessagesSplitView(prefs.messagesSplitView)
     }
   }
 
@@ -1345,6 +1347,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.getDefaultUserPreferences.setHomePageType(toExportedHomePageType(data.userPreferences.homePageType))
         communityData.getDefaultUserPreferences.setOwnSessions(data.userPreferences.ownSessions)
         communityData.getDefaultUserPreferences.setAllSessions(data.userPreferences.allSessions)
+        communityData.getDefaultUserPreferences.setStatementsListView(data.userPreferences.statementsListView)
+        communityData.getDefaultUserPreferences.setMessagesSplitView(data.userPreferences.messagesSplitView)
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
         SelfRegistrationType.apply(community.get.selfRegType) match {

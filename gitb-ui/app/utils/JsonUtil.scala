@@ -762,7 +762,9 @@ object JsonUtil {
       "pageSize"            -> preferences.pageSize,
       "homePageType"        -> preferences.homePageType,
       "ownSessions"         -> preferences.ownSessions,
-      "allSessions"         -> preferences.allSessions
+      "allSessions"         -> preferences.allSessions,
+      "statementsListView"  -> preferences.statementsListView,
+      "messagesSplitView"   -> preferences.messagesSplitView
     )
   }
 

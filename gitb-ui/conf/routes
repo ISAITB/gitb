@@ -51,6 +51,8 @@ POST    /api/user/preference/menuCollapsed       @controllers.AccountService.upd
 POST    /api/user/preference/statementsCollapsed @controllers.AccountService.updatePreferenceForStatementsCollapsed()
 POST    /api/user/preference/pageSize            @controllers.AccountService.updatePreferenceForPageSize()
 POST    /api/user/preference/sessionColumns      @controllers.AccountService.updatePreferenceForSessionColumns()
+POST    /api/user/preference/statementsListView  @controllers.AccountService.updatePreferenceForStatementsListView()
+POST    /api/user/preference/messagesSplitView   @controllers.AccountService.updatePreferenceForMessagesSplitView()
 GET     /api/app/configuration                  @controllers.AccountService.getConfiguration()
 POST    /api/user/feedback                      @controllers.AccountService.submitFeedback()
 POST    /api/user/selfreg                       @controllers.CommunityService.selfRegister()

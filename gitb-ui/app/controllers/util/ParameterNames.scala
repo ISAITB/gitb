@@ -313,6 +313,8 @@ object ParameterNames {
   val HOME_PAGE_TYPE = "home_page_type"
   val OWN_SESSIONS = "own_sessions"
   val ALL_SESSIONS = "all_sessions"
+  val STATEMENTS_LIST_VIEW = "statements_list_view"
+  val MESSAGES_SPLIT_VIEW = "messages_split_view"
   val PREFERENCES = "preferences"
   val FORCE_PREFERENCES = "force_preferences"
   val MONITOR = "monitor"

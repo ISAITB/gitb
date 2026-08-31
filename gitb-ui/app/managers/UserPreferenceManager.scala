@@ -81,8 +81,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
   def updatePreferencesInternal(userId: Long, preferences: UserPreferenceBase): DBIO[Unit] = {
     PersistenceSchema.userPreferences.filter(_.user === userId)
-      .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions))
-      .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions))
+      .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions, x.statementsListView, x.messagesSplitView))
+      .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions, preferences.statementsListView, preferences.messagesSplitView))
       .map(_ => ())
   }
 
@@ -93,6 +93,16 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
   def updatePreferenceForStatementsCollapsed(userId: Long, value: Boolean): Future[Unit] = {
     val dbAction = PersistenceSchema.userPreferences.filter(_.user === userId).map(_.statementsCollapsed).update(value)
+    DB.run(dbAction.transactionally).map(_ => ())
+  }
+
+  def updatePreferenceForStatementsListView(userId: Long, value: Boolean): Future[Unit] = {
+    val dbAction = PersistenceSchema.userPreferences.filter(_.user === userId).map(_.statementsListView).update(value)
+    DB.run(dbAction.transactionally).map(_ => ())
+  }
+
+  def updatePreferenceForMessagesSplitView(userId: Long, value: Boolean): Future[Unit] = {
+    val dbAction = PersistenceSchema.userPreferences.filter(_.user === userId).map(_.messagesSplitView).update(value)
     DB.run(dbAction.transactionally).map(_ => ())
   }
 
@@ -115,8 +125,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
     for {
       _ <- PersistenceSchema.userPreferenceDefaults
         .filter(_.community === communityId)
-        .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions))
-        .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions))
+        .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions, x.statementsListView, x.messagesSplitView))
+        .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions, preferences.statementsListView, preferences.messagesSplitView))
       _ <- {
         if (overrideExistingUserPreferences) {
           for {
@@ -130,8 +140,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
             // Make the update.
             _ <- PersistenceSchema.userPreferences
               .filter(_.id inSet preferenceIds)
-              .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions))
-              .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions))
+              .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType, x.ownSessions, x.allSessions, x.statementsListView, x.messagesSplitView))
+              .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType, preferences.ownSessions, preferences.allSessions, preferences.statementsListView, preferences.messagesSplitView))
           } yield ()
         } else {
           DBIO.successful(())

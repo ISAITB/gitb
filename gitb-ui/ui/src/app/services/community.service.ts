@@ -202,6 +202,8 @@ export class CommunityService {
       home_page_type: userPreferences.homePageType,
       own_sessions: userPreferences.ownSessions,
       all_sessions: userPreferences.allSessions,
+      statements_list_view: userPreferences.statementsListView,
+      messages_split_view: userPreferences.messagesSplitView,
       tags: tags
     }
     if (this.dataService.configuration.registrationEnabled) {
@@ -270,6 +272,8 @@ export class CommunityService {
       home_page_type: userPreferences.homePageType,
       own_sessions: userPreferences.ownSessions,
       all_sessions: userPreferences.allSessions,
+      statements_list_view: userPreferences.statementsListView,
+      messages_split_view: userPreferences.messagesSplitView,
       force_preferences: forceUserPreferenceUpdate,
       tags: tags
     }

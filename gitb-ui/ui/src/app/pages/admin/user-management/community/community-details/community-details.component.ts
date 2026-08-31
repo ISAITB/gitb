@@ -635,6 +635,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       if (forceUserPreferenceUpdate && this.communityId == this.dataService.community?.id) {
         this.dataService.setMenuVisibility(!this.community.preferences!.menuCollapsed)
         this.dataService.setConformanceStatementDetailVisibility(!this.community.preferences!.statementsCollapsed)
+        this.dataService.setStatementsListView(this.community.preferences!.statementsListView)
+        this.dataService.setMessagesSplitView(this.community.preferences!.messagesSplitView)
         this.dataService.setDefaultPageSize(this.community.preferences!.pageSize)
         this.dataService.setHomePageType(this.community.preferences!.homePageType)
       }
@@ -1060,7 +1062,9 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.preferences?.pageSize != this.initialUserPreferences.pageSize ||
       this.community.preferences?.homePageType != this.initialUserPreferences.homePageType ||
       this.community.preferences?.ownSessions != this.initialUserPreferences.ownSessions ||
-      this.community.preferences?.allSessions != this.initialUserPreferences.allSessions
+      this.community.preferences?.allSessions != this.initialUserPreferences.allSessions ||
+      this.community.preferences?.statementsListView != this.initialUserPreferences.statementsListView ||
+      this.community.preferences?.messagesSplitView != this.initialUserPreferences.messagesSplitView
   }
 
   protected readonly Constants = Constants;

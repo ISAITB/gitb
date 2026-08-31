@@ -92,8 +92,8 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   peerFilterConfig2?: MultiSelectConfig<RecipientOption>
   peerFilterShowStage2 = false
 
-  // Component state only, not persisted - see the task's "Subsequent steps" note about recording this
-  // as a user preference later.
+  // Seeded from the user's persisted messagesSplitView preference in ngOnInit; toggleSplitView() writes
+  // it back via DataService.setMessagesSplitView so it survives reloads/logins (see account.service.ts).
   splitView = false
   splitTableHeight = 0
   splitDetailHeight = 0
@@ -143,6 +143,9 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   ngOnInit(): void {
     this.routingService.myMessagesBreadcrumbs()
     this.sentView = this.route.snapshot.queryParamMap.get('sent') === 'true'
+    // load()'s finish() (below) already recalculates the split heights once data has loaded, which
+    // covers the initial render whether splitView starts true (from the persisted preference) or false.
+    this.splitView = this.dataService.messagesSplitView
     this.statusOptions = [
       [
         { key: 'read', label: 'Read messages', default: true, iconClass: Constants.BUTTON_ICON.MESSAGE_READ+' fa-fw' },
@@ -225,6 +228,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   }
 
   toggleSplitView() {
+    this.dataService.setMessagesSplitView(this.splitView)
     this.splitUserAdjusted = false
     // Deferred a tick so .table-area/.split-divider (present unconditionally/only in split view
     // respectively - the divider via @if) have actually rendered with their new geometry before being

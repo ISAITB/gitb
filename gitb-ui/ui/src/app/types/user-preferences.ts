@@ -21,5 +21,7 @@ export interface UserPreferences {
   homePageType: number;
   ownSessions: string;
   allSessions: string;
+  statementsListView: boolean;
+  messagesSplitView: boolean;
 
 }

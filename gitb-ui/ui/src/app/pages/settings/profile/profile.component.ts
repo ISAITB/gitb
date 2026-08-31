@@ -53,6 +53,8 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
       homePageType: this.dataService.homePageType,
       ownSessions: this.dataService.getSessionColumnPreference('own_sessions'),
       allSessions: this.dataService.getSessionColumnPreference('all_sessions'),
+      statementsListView: this.dataService.statementsListView,
+      messagesSplitView: this.dataService.messagesSplitView,
     }
   }
   menuVisibilitySubscription?: Subscription
@@ -176,6 +178,12 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
         }
         if (this.data.preferences.statementsCollapsed != !this.dataService.conformanceStatementDetailVisibility) {
           this.dataService.setConformanceStatementDetailVisibility(!this.data.preferences.statementsCollapsed)
+        }
+        if (this.data.preferences.statementsListView != this.dataService.statementsListView) {
+          this.dataService.setStatementsListView(this.data.preferences.statementsListView)
+        }
+        if (this.data.preferences.messagesSplitView != this.dataService.messagesSplitView) {
+          this.dataService.setMessagesSplitView(this.data.preferences.messagesSplitView)
         }
         if (this.data.preferences.pageSize != this.dataService.defaultPagingTableSize) {
           this.dataService.setDefaultPageSize(this.data.preferences.pageSize)

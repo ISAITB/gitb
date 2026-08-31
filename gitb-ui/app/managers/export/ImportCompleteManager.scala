@@ -501,7 +501,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelUserPreferenceDefaults(community: com.gitb.xml.export.Community, communityId: Long): Option[UserPreferenceDefaults] = {
-    Option(community.getDefaultUserPreferences).map(x => UserPreferenceDefaults(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), Option(x.getOwnSessions).getOrElse(""), Option(x.getAllSessions).getOrElse(""), communityId))
+    Option(community.getDefaultUserPreferences).map(x => UserPreferenceDefaults(0L, Option(x.isMenuCollapsed).forall(_.booleanValue()),
+      Option(x.isStatementsCollapsed).exists(_.booleanValue()), Option(x.getPageSize).map(_.shortValue()).getOrElse(10),
+      toModelHomePageType(x.getHomePageType), Option(x.getOwnSessions).getOrElse(""), Option(x.getAllSessions).getOrElse(""),
+      Option(x.isStatementsListView).exists(_.booleanValue()), Option(x.isMessagesSplitView).exists(_.booleanValue()), communityId))
   }
 
   private def toModelConformanceOverCertificateSettingsWithMessages(exportedSettings: com.gitb.xml.export.ConformanceOverviewCertificateSettings, communityId: Long, ctx: ImportContext): ConformanceOverviewCertificateWithMessages = {
@@ -889,13 +892,16 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def toModelUserPreferences(data: com.gitb.xml.export.User): Option[models.UserPreferences] = {
     Option(data.getPreferences).map(x => {
-      models.UserPreferences(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), Option(x.getOwnSessions).getOrElse(""), Option(x.getAllSessions).getOrElse(""), 0L)
+      models.UserPreferences(0L, Option(x.isMenuCollapsed).forall(_.booleanValue()), Option(x.isStatementsCollapsed).exists(_.booleanValue()),
+        Option(x.getPageSize).map(_.shortValue()).getOrElse(10), toModelHomePageType(x.getHomePageType), Option(x.getOwnSessions).getOrElse(""),
+        Option(x.getAllSessions).getOrElse(""), Option(x.isStatementsListView).exists(_.booleanValue()),
+        Option(x.isMessagesSplitView).exists(_.booleanValue()), 0L)
     })
   }
 
   private def toModelHomePageType(data: com.gitb.xml.export.HomePageType): Short = {
-    val homePageType = data match {
-      case com.gitb.xml.export.HomePageType.CONFORMANCE_DASHBOARD => models.Enums.HomePageType.CONFORMANCE_DASHBOARD
+    val homePageType = Option(data) match {
+      case Some(com.gitb.xml.export.HomePageType.CONFORMANCE_DASHBOARD) => models.Enums.HomePageType.CONFORMANCE_DASHBOARD
       case _ => models.Enums.HomePageType.LANDING_PAGE
     }
     homePageType.id.toShort

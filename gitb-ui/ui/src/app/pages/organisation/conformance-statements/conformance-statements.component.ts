@@ -318,6 +318,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   viewTypeToggled() {
+    this.recordListViewPreference()
     if (!this.listView) {
       this.systemsLoaded(this.systems)
     }
