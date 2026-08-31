@@ -50,7 +50,7 @@
                     @if (systems.length == 0) {
                         <div class="alert alert-info rounded mb-0">
                             @if (showCreateSystem && activeConformanceSnapshot == undefined) {
-                                <span>No {{dataService.labelSystemsLower()}} defined. You must <a [navTarget]="createSystemTarget()">create a system</a> before defining its conformance statements.</span>
+                                <span>No {{dataService.labelSystemsLower()}} defined. You must <a [navTarget]="createSystemTarget()">create a {{dataService.labelSystemLower()}}</a> before defining its conformance statements.</span>
                             } @else if (activeConformanceSnapshot == undefined) {
                                 <span>No {{dataService.labelSystemsLower()}} defined. One must be created by an administrator before conformance statements can be defined.</span>
                             } @else {

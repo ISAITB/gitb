@@ -17,7 +17,13 @@
         width: 20px;
         padding: 4px 2px 4px 12px;
     }
-    .check-col { width: 32px; }
+    .check-col {
+        width: 36px;
+        .cell-content {
+            justify-content: right;
+            //padding-left: 8px;
+        }
+    }
     .peer-col { width: 20%; }
     .message-col { width: auto; }
     .date-col { width: 160px; }
@@ -80,6 +86,6 @@
     // selecting a row never shifts its content. td:first-child covers both column layouts, since the
     // "important" column is only rendered at all when at least one message on the page is flagged.
     tr.message-row.selected td:first-child {
-        box-shadow: inset 3px 0 0 0 var(--itb-card-title-color);
+        box-shadow: inset 3px 0 0 0 @gray;
     }
 }
