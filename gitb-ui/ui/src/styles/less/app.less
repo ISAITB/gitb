@@ -908,6 +908,14 @@ span.mini-tab, div.mini-tab {
                 transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
             }
         }
+        // The editor's own outer container (.tox-hugerte, see hugerte skin.css) gets a .tox-edit-focus
+        // class added while the editable area has focus - unlike the dialog fields above, nothing styled
+        // this to match the Bootstrap focus glow every other form control shows (see app-editor).
+        &.tox-hugerte.tox-edit-focus {
+            border-color: @bs-input-focus-highlight !important;
+            box-shadow: 0 0 0 0.25rem rgba(51, 122, 183, 0.25) !important;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
         .tox-button {
             font-size: @bs-btn-font-size !important;
             font-weight: @bs-btn-font-weight !important;
