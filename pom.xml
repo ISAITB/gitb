@@ -103,7 +103,7 @@
             stack used elsewhere, e.g. by CXF).
         -->
         <version.jaxbImplLegacy>2.3.9</version.jaxbImplLegacy>
-        <version.swaggerUi>5.32.11</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
+        <version.swaggerUi>5.32.14</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
         <version.owaspHtmlSanitizer>20260313.1</version.owaspHtmlSanitizer>
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
