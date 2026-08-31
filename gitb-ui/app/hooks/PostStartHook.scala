@@ -284,11 +284,11 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
         // Welcome page message.
         _ <- {
           val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage).map(_.config)
-          if (welcomeMessageConfig.nonEmpty && welcomeMessageConfig.get.parameter.nonEmpty) {
-            Configurations.WELCOME_MESSAGE = welcomeMessageConfig.get.parameter.get
-          } else {
-            Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
-          }
+          val welcomeHiddenConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessageHidden).map(_.config)
+          Configurations.applyWelcomeMessageSettings(
+            welcomeMessageConfig.flatMap(_.parameter),
+            welcomeHiddenConfig.flatMap(_.parameter).exists(_.toBoolean)
+          )
           Future.successful(())
         }
         // Welcome page texts.

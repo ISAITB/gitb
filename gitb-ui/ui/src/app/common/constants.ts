@@ -605,6 +605,7 @@ export class Constants {
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
 		WELCOME_MESSAGE: 'welcome',
+    WELCOME_HIDDEN: 'welcome_hidden',
 		ACCOUNT_RETENTION_PERIOD: 'account_retention_period',
 		EMAIL_SETTINGS: 'email_settings',
     SOFTWARE_VERSION_CHECK: 'software_version_check',

@@ -37,21 +37,31 @@
                                             <label class="form-check-label" for="welcomePageOverride">Override default content?</label>
                                         </div>
                                     </div>
+                                    @if (welcomePageOverride) {
+                                        <div class="col-auto">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="includeWelcomeMessage" name="includeWelcomeMessage" [(ngModel)]="includeWelcomeMessage">
+                                                <label class="form-check-label" for="includeWelcomeMessage">Include welcome message?</label>
+                                            </div>
+                                        </div>
+                                    }
                                 </div>
                                 <div [ngbCollapse]="!welcomePageOverride" [animation]="true">
                                     <div class="pt-3">
                                         <div class="form-container">
-                                            <app-form-section sectionTitle="Welcome message">
-                                                <div class="row pt-3">
-                                                    <div class="col-12">
-                                                        <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
+                                            <div [ngbCollapse]="!includeWelcomeMessage" [animation]="true">
+                                                <app-form-section sectionTitle="Welcome message">
+                                                    <div class="row pt-3">
+                                                        <div class="col-12">
+                                                            <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div class="row mt-3">
-                                                    <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
-                                                </div>
-                                            </app-form-section>
-                                            <app-form-section sectionTitle="Section texts" [marginBefore]="true">
+                                                    <div class="row py-3">
+                                                        <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                                    </div>
+                                                </app-form-section>
+                                            </div>
+                                            <app-form-section sectionTitle="Section texts">
                                                 @for (info of welcomeTextInfos; track info.key) {
                                                     <div class="row pt-3">
                                                         <label class="col-3 col-form-label text-end" [attr.for]="info.id">* {{info.label}}:</label>

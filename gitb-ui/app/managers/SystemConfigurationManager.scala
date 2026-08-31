@@ -66,7 +66,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiDevelopmentKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
-    Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
+    Constants.DemoAccount, Constants.WelcomeMessage, Constants.WelcomeMessageHidden, Constants.AccountRetentionPeriod,
     Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTexts, Constants.StartupWizard, Constants.UsageTips,
     Constants.TestServiceCallbacks, Constants.ReportSettings
   )
@@ -275,6 +275,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val startupWizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard)
         val usageTipsConfig = persistedConfigs.find(config => config.config.name == Constants.UsageTips)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
+        val welcomeHiddenConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessageHidden)
         val welcomeTextsConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTexts)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
@@ -305,7 +306,10 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
         }
         if (welcomeMessageConfig.isEmpty) {
-          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE_DEFAULT), None), defaultSetting = true, environmentSetting = false)
+        }
+        if (welcomeHiddenConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessageHidden, Some("false"), None), defaultSetting = true, environmentSetting = false)
         }
         if (welcomeTextsConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTexts, Some(JsonUtil.jsWelcomeTexts(WelcomeTexts.defaultConfiguration()).toString()), None), defaultSetting = true, environmentSetting = false)
@@ -444,17 +448,17 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeTexts || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime || name == Constants.ReportSettings) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeMessageHidden || name == Constants.WelcomeTexts || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime || name == Constants.ReportSettings) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
           }
-        } else if ((name == Constants.WelcomeMessage || name == Constants.WelcomeTexts) && value.isEmpty) {
-          // Reverting a welcome page setting that was never customised (e.g. because only the other
-          // one of the message/texts pair was): nothing to record. Inserting a row with a NULL
+        } else if ((name == Constants.WelcomeMessage || name == Constants.WelcomeMessageHidden || name == Constants.WelcomeTexts) && value.isEmpty) {
+          // Reverting a welcome page setting that was never customised (e.g. because only another one
+          // of the message/hidden flag/texts trio was): nothing to record. Inserting a row with a NULL
           // parameter here would make getEditableSystemConfigurationValues treat the setting as
           // persisted but unset, so the built-in defaults would stop being reported to the admin UI -
-          // reachable since the "Custom welcome page content" section resets both settings together.
+          // reachable since the "Custom welcome page content" section resets all three settings together.
           DBIO.successful(0)
         } else {
           PersistenceSchema.systemConfigurations += SystemConfigurations(name, value, None)
@@ -517,15 +521,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             }
             DBIO.successful(None)
           case Constants.WelcomeMessage =>
+            Configurations.applyWelcomeMessage(value)
             if (value.isDefined) {
-              Configurations.WELCOME_MESSAGE = value.get
               DBIO.successful(None)
             } else {
-              Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
               DBIO.successful(Some(
-                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE_DEFAULT), None), defaultSetting = true, environmentSetting = false)
               ))
             }
+          case Constants.WelcomeMessageHidden =>
+            val hidden = value.exists(_.toBoolean)
+            Configurations.applyWelcomeMessageHidden(hidden)
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessageHidden, Some(hidden.toString), None), defaultSetting = value.isEmpty, environmentSetting = false)
+            ))
           case Constants.WelcomeTexts =>
             if (value.isDefined) {
               Configurations.WELCOME_TEXTS = JsonUtil.parseJsWelcomeTexts(value.get)

@@ -35,11 +35,13 @@
 						</div>
 					</div>
 				</section>
-				<div class="page-with-margins">
+				<div class="page-with-margins@if(config.welcomeText.isEmpty){ no-welcome-text}">
 					<div class="container">
 						<div class="row">
 							<div class="col-12">
-								<div class="welcome-text">@Html(config.welcomeText)</div>
+								@if(config.welcomeText.isDefined) {
+								<div class="welcome-text">@Html(config.welcomeText.get)</div>
+								}
 								<div class="hybrid-wrap">
 									<a href="#" id="loginOption" class="h-card primary">
 										<span class="h-icon"><i class="fa-solid fa-arrow-right-to-bracket"></i></span>

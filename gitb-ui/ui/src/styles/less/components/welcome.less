@@ -24,6 +24,14 @@
 	padding-bottom: 35px;
 }
 
+/*
+ * Applied on the page-with-margins wrapper when no welcome message is displayed, evening out the
+ * margin that would otherwise frame the (now absent) welcome text.
+ */
+.page-with-margins.no-welcome-text {
+	margin: @page-content-margin-without-welcome-text;
+}
+
 .hybrid-wrap {
 	/* Cards are icon | title+rule+description | chevron, laid out as three
 	 * columns. Icon and chevron are top-aligned and fixed-size, so once a

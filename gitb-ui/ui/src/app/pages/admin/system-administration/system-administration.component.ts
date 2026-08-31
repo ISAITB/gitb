@@ -234,6 +234,9 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   // persisted (checked) or the persisted settings are deleted (unchecked). Initialised from whether
   // content is currently customised, but toggling it alone does not persist anything until saved.
   welcomePageOverride = false
+  // Whether the welcome message is included at all. When unchecked the message text is still kept
+  // (collapsed, unsaved changes aside) so that re-checking the box restores it.
+  includeWelcomeMessage = true
 
   // Email settings
   emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
@@ -394,8 +397,9 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             this.usageTipsStatus.fromDefault = configItem.default
             break
           case Constants.SYSTEM_CONFIG.WELCOME_MESSAGE:
+          case Constants.SYSTEM_CONFIG.WELCOME_HIDDEN:
           case Constants.SYSTEM_CONFIG.WELCOME_TEXTS:
-            // Welcome page message and texts (status is computed once both have been collected).
+            // Welcome page message, its hidden flag, and texts (status is computed once all have been collected).
             welcomeConfigs.push(configItem)
             break
           case Constants.SYSTEM_CONFIG.EMAIL_SETTINGS:
@@ -435,21 +439,24 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   /**
-   * Applies the welcome message and welcome texts configuration items, and derives the aggregate
-   * status (fromDefault/fromEnv/enabled) for the "Custom welcome page content" section from both of
-   * them together. Used both when configuration values are first loaded and after a reset to default.
+   * Applies the welcome message, its hidden flag, and welcome texts configuration items, and derives
+   * the aggregate status (fromDefault/fromEnv/enabled) for the "Custom welcome page content" section
+   * from all three together. Used both when configuration values are first loaded and after a reset
+   * to default.
    */
   private applyWelcomePageConfigs(configs: SystemConfiguration[]) {
     configs.forEach((configItem) => {
       if (configItem.parameter) {
         if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE) {
           this.welcomePageMessage = configItem.parameter
+        } else if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_HIDDEN) {
+          this.includeWelcomeMessage = configItem.parameter.toLowerCase() != 'true'
         } else if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TEXTS) {
           this.welcomePageTexts = JSON.parse(configItem.parameter)
         }
       }
     })
-    const complete = configs.length == 2
+    const complete = configs.length == 3
     this.welcomePageStatus.fromEnv = complete && configs.every((configItem) => configItem.environment)
     this.welcomePageStatus.fromDefault = complete && configs.every((configItem) => configItem.default)
     this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
@@ -1149,7 +1156,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   welcomePageTextsOk(): boolean {
-    return this.textProvided(this.welcomePageMessage) &&
+    return (!this.includeWelcomeMessage || this.textProvided(this.welcomePageMessage)) &&
       this.welcomeTextInfos.every((info) => this.textProvided(this.welcomePageTexts[info.key]))
   }
 
@@ -1157,7 +1164,9 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
    * Saves the welcome page content. When "Override default content?" is checked this persists the
    * current message and texts; when unchecked this deletes the persisted settings (equivalent to a
    * reset to default), since there is otherwise no way to distinguish "not yet overridden" from
-   * "explicitly reverted" once custom values have been set.
+   * "explicitly reverted" once custom values have been set. The welcome message text itself is always
+   * sent (and kept) even when "Include welcome message?" is unchecked, so re-checking it later
+   * restores the previous message rather than the default.
    */
   saveWelcomePage() {
     if (this.welcomePageOverride && !this.welcomePageTextsOk()) {
@@ -1166,9 +1175,11 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.welcomePageStatus.pending = true
     const values: ConfigurationValue[] = this.welcomePageOverride ? [
       { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, value: this.welcomePageMessage },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_HIDDEN, value: this.includeWelcomeMessage ? undefined : 'true' },
       { name: Constants.SYSTEM_CONFIG.WELCOME_TEXTS, value: JSON.stringify(this.welcomePageTexts) }
     ] : [
       { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_HIDDEN },
       { name: Constants.SYSTEM_CONFIG.WELCOME_TEXTS }
     ]
     this.systemConfigurationService.updateConfigurationValues(values)

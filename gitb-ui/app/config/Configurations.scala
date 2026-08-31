@@ -231,6 +231,9 @@ object Configurations {
   var TESTSUITE_DEPLOY_ALLOWED_URIS: Set[String] = Set.empty
 
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
+  // Raw persisted state from which WELCOME_MESSAGE is derived - see refreshWelcomeMessage().
+  private var welcomeMessageValue: Option[String] = None
+  private var welcomeMessageHidden: Boolean = false
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
   var WELCOME_TEXTS: WelcomeTexts = WelcomeTexts.defaultConfiguration()
 
@@ -418,6 +421,43 @@ object Configurations {
     DATE_FORMAT_DATETIME = resolveDateTimeFormat(settings)
     DATE_FORMAT_DATE_FILE = resolveDateFileFormat(settings)
     refreshDateFormatters()
+  }
+
+  /**
+   * Recomputes [[WELCOME_MESSAGE]] from the raw persisted message value and hidden flag. An empty
+   * [[WELCOME_MESSAGE]] means the welcome message is not to be displayed at all - see
+   * controllers.Application#index and views.index.
+   */
+  private def refreshWelcomeMessage(): Unit = {
+    WELCOME_MESSAGE = if (welcomeMessageHidden) "" else welcomeMessageValue.getOrElse(WELCOME_MESSAGE_DEFAULT)
+  }
+
+  /**
+   * Applies both raw welcome message settings at once. Used when loading the persisted settings at
+   * startup (see hooks.PostStartHook#adaptSystemConfiguration).
+   */
+  def applyWelcomeMessageSettings(value: Option[String], hidden: Boolean): Unit = {
+    welcomeMessageValue = value
+    welcomeMessageHidden = hidden
+    refreshWelcomeMessage()
+  }
+
+  /**
+   * Applies a change to the welcome message's text alone, keeping the current hidden flag. Used when
+   * this setting is saved on its own (see managers.SystemConfigurationManager).
+   */
+  def applyWelcomeMessage(value: Option[String]): Unit = {
+    welcomeMessageValue = value
+    refreshWelcomeMessage()
+  }
+
+  /**
+   * Applies a change to the welcome message's hidden flag alone, keeping the current text. Used when
+   * this setting is saved on its own (see managers.SystemConfigurationManager).
+   */
+  def applyWelcomeMessageHidden(hidden: Boolean): Unit = {
+    welcomeMessageHidden = hidden
+    refreshWelcomeMessage()
   }
 
   def loadConfigurations(): Unit = {
