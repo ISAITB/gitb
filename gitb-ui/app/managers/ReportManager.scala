@@ -644,30 +644,30 @@ class ReportManager @Inject() (communityManager: CommunityManager,
    * Assembles the test session data export archive from the XML/PDF reports and the (already renamed, per
    * [[TestSessionDataFileNamer]]) data folder produced by [[TestCaseReportProducer.generateTestSessionDataExport]].
    */
-  private def finaliseTestSessionDataArchive(archivePath: Path, export: TestCaseReportProducer.TestSessionDataExport): Future[Option[Path]] = {
-    val task = if (export.xmlReport.isDefined && export.pdfReport.isDefined) {
+  private def finaliseTestSessionDataArchive(archivePath: Path, exportSpecs: TestCaseReportProducer.TestSessionDataExport): Future[Option[Path]] = {
+    val task = if (exportSpecs.xmlReport.isDefined && exportSpecs.pdfReport.isDefined) {
       val tempFolder = archivePath.getParent.resolve("temp")
       Files.createDirectories(tempFolder)
-      Files.copy(export.xmlReport.get, tempFolder.resolve("test_case.xml"))
-      Files.copy(export.pdfReport.get, tempFolder.resolve("test_case.pdf"))
+      Files.copy(exportSpecs.xmlReport.get, tempFolder.resolve("test_case.xml"))
+      Files.copy(exportSpecs.pdfReport.get, tempFolder.resolve("test_case.pdf"))
       // The data folder is flat (one file per decoupled value) - copy each file under its resolved name,
       // falling back to the original name for any file that turned out not to be referenced from the report.
-      val sourceData = repositoryUtils.getPathForTestSessionData(export.sessionFolderInfo, tempData = false)
-      if (Files.exists(sourceData) || export.inlineFileContents.nonEmpty) {
+      val sourceData = repositoryUtils.getPathForTestSessionData(exportSpecs.sessionFolderInfo, tempData = false)
+      if (Files.exists(sourceData) || exportSpecs.inlineFileContents.nonEmpty) {
         val destinationData = tempFolder.resolve("data")
         Files.createDirectories(destinationData)
         if (Files.exists(sourceData)) {
           Using.resource(Files.list(sourceData)) { stream =>
             stream.forEach { sourcePath =>
-              val destinationFileName = export.fileNames.getOrElse(sourcePath.getFileName.toString, sourcePath.getFileName.toString)
+              val destinationFileName = exportSpecs.fileNames.getOrElse(sourcePath.getFileName.toString, sourcePath.getFileName.toString)
               Files.copy(sourcePath, destinationData.resolve(destinationFileName))
             }
           }
         }
         // Values that were embedded inline (too small to have been decoupled to their own file) have
         // nothing to copy from - write their content out as new files instead.
-        export.inlineFileContents.foreach { case (uuid, content) =>
-          val destinationFileName = export.fileNames.getOrElse(uuid, uuid)
+        exportSpecs.inlineFileContents.foreach { case (uuid, content) =>
+          val destinationFileName = exportSpecs.fileNames.getOrElse(uuid, uuid)
           Files.write(destinationData.resolve(destinationFileName), content)
         }
       }
@@ -678,10 +678,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
     task.andThen { _ =>
       // Clean up the intermediate report files that were generated directly in the (live) session folder.
-      export.xmlReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
-      export.pdfReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
-      if (export.sessionFolderInfo.archived) {
-        FileUtils.deleteQuietly(export.sessionFolderInfo.path.toFile)
+      exportSpecs.xmlReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
+      exportSpecs.pdfReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
+      if (exportSpecs.sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(exportSpecs.sessionFolderInfo.path.toFile)
       }
     }
   }
