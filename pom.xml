@@ -75,7 +75,7 @@
         <version.dnsJava>3.6.5</version.dnsJava>
         <version.commonsFileUpload>1.6.0</version.commonsFileUpload>
         <version.commonsCollections>4.6.0</version.commonsCollections>
-        <version.xmlUnit>2.12.0</version.xmlUnit>
+        <version.xmlUnit>2.13.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.freeMarker>2.3.35</version.freeMarker>
         <version.openhtmltopdf>1.1.65</version.openhtmltopdf>
