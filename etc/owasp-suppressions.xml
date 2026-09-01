@@ -1233,4 +1233,84 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
         <cve>CVE-2026-73180</cve>
     </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: netty-handler-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-75595</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: netty-handler-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-75596</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: netty-handler-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-62243</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: netty-handler-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-62380</cve>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: netty-transport-4.2.13.Final.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*@.*$</packageUrl>
+        <cve>CVE-2026-62380</cve>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: pac4j-core-6.5.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.pac4j/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-82463</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: pac4j-core-6.5.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.pac4j/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-82464</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: pac4j-oidc-6.5.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.pac4j/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-82461</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-59313</cve>
+    </suppress>
+    <suppress>
+        <!-- Not exploitable as the related feature is not used. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.18.jar
+    ]]></notes>
+        <sha1>6a32464668a1666a87a62fd72fe50cbbbcacf672</sha1>
+        <cve>CVE-2026-59314</cve>
+    </suppress>
 </suppressions>
