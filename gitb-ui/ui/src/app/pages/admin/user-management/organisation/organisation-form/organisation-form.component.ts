@@ -61,6 +61,7 @@ export class OrganisationFormComponent implements OnInit {
   legalNoticeSelectionConfig!: MultiSelectConfig<LegalNotice>
   errorTemplateSelectionConfig!: MultiSelectConfig<ErrorTemplate>
   copySelectionConfig!: MultiSelectConfig<Organisation>
+  initialLoadComplete = false
 
   constructor(
     public readonly dataService: DataService,
@@ -200,11 +201,12 @@ export class OrganisationFormComponent implements OnInit {
           this.errorTemplateSelectionConfig.replaceSelectedItems!.emit([item])
         }
       }
+      this.initialLoadComplete = true
     })
   }
 
   templateChoiceChanged() {
-    if (this.organisation.template) {
+    if (this.organisation.template && this.initialLoadComplete) {
       this.dataService.focus('templateName')
     }
   }

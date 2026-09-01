@@ -18,7 +18,7 @@
                 <div class="card-title-controls">
                     <div class="btn-toolbar action-container" [class.action-container-visible]="collapsedDetails && collapsedDetailsFinished">
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
-                        <div class="btn-group" ngbDropdown placement="bottom-end" (click)="$event.stopPropagation()">
+                        <div class="btn-group" ngbDropdown placement="bottom-end" (click)="dataService.signalButtonPopup(undefined); $event.stopPropagation()">
                             <button id="button-executionType" ngbDropdownToggle type="button" [labelIcon]="Constants.BUTTON_ICON.ACTIONS" [pending]="exportPending || copyBadgePending || refreshPending" [disable]="statement == undefined || deletePending || exportPending || copyBadgePending || refreshPending" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType">Actions... </button>
                             <div id="dropdown-executionType" ngbDropdownMenu aria-labelledby="button-executionType">
                                 <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceStatement('pdf')">

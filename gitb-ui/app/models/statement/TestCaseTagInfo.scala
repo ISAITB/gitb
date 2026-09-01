@@ -30,12 +30,11 @@ case class TestCaseTagInfo(key: String, name: String, foreground: String, backgr
 object TestCaseTagInfo {
 
   // Matches the defaults applied when rendering tags in reports (see ReportManager.parseTestCaseTags).
-  val DEFAULT_FOREGROUND = "#777777"
-  val DEFAULT_BACKGROUND = "#FFFFFF"
+  private val DEFAULT_FOREGROUND = "#777777"
+  private val DEFAULT_BACKGROUND = "#FFFFFF"
 
-  def keyFor(name: String, foreground: String, background: String): String = {
-    val digest = MessageDigest.getInstance("SHA-256").digest(s"$name|$foreground|$background".getBytes(StandardCharsets.UTF_8))
-    digest.map("%02x".format(_)).mkString.substring(0, 16)
+  private def keyFor(name: String, foreground: String, background: String): String = {
+    s"$name|$foreground|$background"
   }
 
   def normalise(tag: TestCaseTag): TestCaseTagInfo = {

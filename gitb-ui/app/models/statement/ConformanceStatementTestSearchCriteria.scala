@@ -20,7 +20,7 @@ import models.{ConformanceTestCase, ConformanceTestSuite}
 
 case class ConformanceStatementTestSearchCriteria(succeeded: Boolean, failed: Boolean, incomplete: Boolean, optional: Boolean, disabled: Boolean, testSuiteId: Option[Long], testSuiteFilterText: Option[String], testCaseFilterText: Option[String], tagKeys: Option[Set[String]] = None, untagged: Boolean = true) {
 
-    val testCaseFilterTextToUse = testCaseFilterText.map(_.trim.toLowerCase()).filter(_.nonEmpty)
+    private val testCaseFilterTextToUse = testCaseFilterText.map(_.trim.toLowerCase()).filter(_.nonEmpty)
 
     def matchesTestSuite(testSuite: ConformanceTestSuite): Boolean = {
         testSuiteId.isEmpty || testSuiteId.contains(testSuite.id)
