@@ -82,6 +82,30 @@ label {
     margin-right: 8px;
     margin-left: 8px;
 }
+// Stacked two-tone icon (e.g. a tag's colours): two real FontAwesome glyphs layered via genuine icon
+// stacking rather than a CSS-drawn circle, so both edges are anti-aliased identically by the same font
+// engine. FA's own .fa-stack-1x/.fa-stack-2x sizing is deliberately asymmetric (for a small icon over a
+// larger badge) - here both layers must coincide exactly, so both are forced to the same size.
+.optionIcon .fa-stack {
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
+    vertical-align: middle;
+    .fa-stack-1x, .fa-stack-2x {
+        font-size: 14px;
+        line-height: 14px;
+    }
+}
+.panelFooter {
+    .separator {
+        border-top: 1px solid @gray-light;
+        margin: 3px 0;
+    }
+    .btn-toolbar {
+        padding: 5px 14px 2px;
+        justify-content: flex-end;
+    }
+}
 .optionLabel {
     margin-left: 10px;
 }

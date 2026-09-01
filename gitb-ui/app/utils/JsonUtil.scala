@@ -4497,6 +4497,20 @@ object JsonUtil {
     )
   }
 
+  def jsTestCaseTagsForFiltering(tags: Seq[models.statement.TestCaseTagInfo], untagged: Boolean): JsObject = {
+    Json.obj(
+      "tags" -> JsArray(tags.map { tag =>
+        Json.obj(
+          "key" -> tag.key,
+          "name" -> tag.name,
+          "foreground" -> tag.foreground,
+          "background" -> tag.background
+        )
+      }),
+      "untagged" -> untagged
+    )
+  }
+
   def jsTestResultMinimal(value: TestResultMinimal): JsObject = {
     var json = Json.obj(
       "sessionId" -> value.sessionId,

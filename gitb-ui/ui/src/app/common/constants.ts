@@ -667,8 +667,11 @@ export class Constants {
     FAILED: '1',
     INCOMPLETE: '2',
     OPTIONAL: '3',
-    DISABLED: '4'
+    DISABLED: '4',
+    UNTAGGED: '5'
   }
+
+  public static readonly TEST_FILTER_TAG_KEY_PREFIX = 'tag:'
 
   public static readonly TEST_SERVICE_TYPE = {
     VALIDATION: 1,

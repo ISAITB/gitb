@@ -23,6 +23,16 @@ export interface CheckboxOption {
     iconClass?: string
     /** Optional colour override for the icon (e.g. a flag's configured colour). */
     iconColour?: string
+    /**
+     * Optional colour behind the icon (e.g. a tag's background, with `iconColour` as its foreground).
+     * When set, `iconClass` is stacked (real FontAwesome icon stacking, not a CSS circle - avoids
+     * mismatched anti-aliasing) over a backing icon, `iconBackgroundClass` by default.
+     */
+    iconBackground?: string
+    /** Backing shape for `iconBackground`, stacked behind `iconClass`. Defaults to `fa-solid fa-circle`. */
+    iconBackgroundClass?: string
+    /** Color to use for the icon's text shadow. */
+    iconShadowColor?: string
     disabled?: boolean
     /** Set only for single-selection options that navigate (e.g. "View system"), so the option is rendered as a real link. */
     target?: NavigationTarget

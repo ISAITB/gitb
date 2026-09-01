@@ -13,16 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Observable} from 'rxjs';
-import {TestCaseFilterState} from './test-case-filter-state';
-import {TestCaseTagsForFiltering} from '../../types/test-case-tag-filter-info';
+/** A distinct test case tag (by name/foreground/background) available for filtering within a statement. */
+export interface TestCaseTagFilterInfo {
 
-export interface TestCaseFilterOptions {
+    key: string
+    name: string
+    foreground: string
+    background: string
 
-  showOptional?: boolean,
-  showDisabled?: boolean,
-  initialState?: TestCaseFilterState,
-  /** When set, tags are loaded lazily (once, on first opening of the control) and shown as a filter group. */
-  tagsLoader?: () => Observable<TestCaseTagsForFiltering>
+}
+
+/** Response of the "tags for filtering" endpoint: the distinct tags plus whether untagged tests also exist. */
+export interface TestCaseTagsForFiltering {
+
+    tags: TestCaseTagFilterInfo[]
+    untagged: boolean
 
 }

@@ -93,8 +93,8 @@
                     @if (selectedItems.length > 0 || visibleAvailableItems.length > 0) {
                         @if (config.enableSelectAll) {
                             <div class="btn-group" ngbDropdown>
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
-                                <button id="button-select-all" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary btn-sm" (click)="applyItems()">Apply</button>
+                                <button id="button-select-all" type="button" ngbDropdownToggle class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden">Apply</span>
                                 </button>
@@ -103,13 +103,11 @@
                                 </div>
                             </div>
                         } @else {
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary btn-sm" (click)="applyItems()">Apply</button>
                         }
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NONE" class="btn btn-secondary btn-sm" [disable]="!hasCheckedSelectedItem" (click)="clearSelectedItems(); $event.stopPropagation()">Clear</button>
                     }
-                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
-                    @if (hasCheckedSelectedItem) {
-                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NONE" class="btn btn-secondary" (click)="clearSelectedItems(); $event.stopPropagation()">Clear</button>
-                    }
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary btn-sm" (click)="close()">Close</button>
                 </div>
             }
         </div>

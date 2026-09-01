@@ -22,7 +22,7 @@ import managers.ConformanceManager._
 import managers.triggers.TriggerHelper
 import models.Enums.{ConformanceStatementItemType, OrganizationType, TestResultStatus, UserRole}
 import models.snapshot._
-import models.statement.{AvailableStatementsSearchCriteria, ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
+import models.statement.{AvailableStatementsSearchCriteria, ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria, TestCaseTagInfo}
 import models.{FileInfo, PagingStatus, _}
 import org.apache.commons.lang3.Strings
 import persistence.db.PersistenceSchema
@@ -2029,6 +2029,48 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				toDBIO(actions)
 			}
 		} yield ()
+	}
+
+	/**
+	 * Distinct tags recorded across the statement's test cases, for use as filter options - along with
+	 * whether the statement also has test cases without any tags. Tags are recorded separately per test
+	 * case (not shared/reused rows), so distinctness here is based on (name, foreground, background) via
+	 * [[TestCaseTagInfo.normalise]], not on any shared identity.
+	 */
+	def getConformanceStatementTagsForFiltering(systemId: Long, actorId: Long, snapshotId: Option[Long]): Future[(Seq[TestCaseTagInfo], Boolean)] = {
+		DB.run {
+			val query = if (snapshotId.isDefined) {
+				PersistenceSchema.conformanceSnapshotResults
+					.join(PersistenceSchema.conformanceSnapshotTestCases).on((q, tc) => q.snapshotId === tc.snapshotId && q.testCaseId === tc.id)
+					.filter(_._1.snapshotId === snapshotId.get)
+					.filter(_._1.systemId === systemId)
+					.filter(_._1.actorId === actorId)
+					.map(_._2.tags)
+					.distinct
+			} else {
+				PersistenceSchema.conformanceResults
+					.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+					.filter(_._1.sut === systemId)
+					.filter(_._1.actor === actorId)
+					.map(_._2.tags)
+					.distinct
+			}
+			query.result.map { results =>
+				var hasUntagged = false
+				val tags = mutable.LinkedHashMap[String, TestCaseTagInfo]()
+				results.foreach { tagsJson =>
+					if (tagsJson.isEmpty || tagsJson.get.isEmpty) {
+						hasUntagged = true
+					} else {
+						utils.JsonUtil.parseJsTags(tagsJson.get).foreach { tag =>
+							val info = TestCaseTagInfo.normalise(tag)
+							tags.put(info.key, info)
+						}
+					}
+				}
+				(tags.values.toSeq.sortBy(_.name), hasUntagged)
+			}
+		}
 	}
 
 	def getConformanceStatementTestSuitesForFiltering(systemId: Long, actorId: Long, snapshotId: Option[Long]): Future[Iterable[TestSuiteMinimalInformation]] = {

@@ -15,12 +15,10 @@
 
 package models.statement
 
-import models.ConformanceTestCase
-import models.Enums.TestResultStatus
-import models.ConformanceTestSuite
 import com.gitb.tr.TestResultType
+import models.{ConformanceTestCase, ConformanceTestSuite}
 
-case class ConformanceStatementTestSearchCriteria(succeeded: Boolean, failed: Boolean, incomplete: Boolean, optional: Boolean, disabled: Boolean, testSuiteId: Option[Long], testSuiteFilterText: Option[String], testCaseFilterText: Option[String]) {
+case class ConformanceStatementTestSearchCriteria(succeeded: Boolean, failed: Boolean, incomplete: Boolean, optional: Boolean, disabled: Boolean, testSuiteId: Option[Long], testSuiteFilterText: Option[String], testCaseFilterText: Option[String], tagKeys: Option[Set[String]] = None, untagged: Boolean = true) {
 
     val testCaseFilterTextToUse = testCaseFilterText.map(_.trim.toLowerCase()).filter(_.nonEmpty)
 
@@ -39,6 +37,10 @@ case class ConformanceStatementTestSearchCriteria(succeeded: Boolean, failed: Bo
             }
             if (matches) {
                 matches = testCaseFilterTextToUse.isEmpty || testCase.name.toLowerCase.contains(testCaseFilterTextToUse.get.toLowerCase)
+            }
+            if (matches && tagKeys.isDefined) {
+                val keys = TestCaseTagInfo.keysFor(testCase.tags)
+                matches = if (keys.isEmpty) untagged else keys.exists(tagKeys.get.contains)
             }
         }
         matches

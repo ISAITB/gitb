@@ -75,6 +75,7 @@ GET     /api/suts/:sut_id/conformance                               @controllers
 GET     /api/suts/:sut_id/conformance/:actor_id                     @controllers.ConformanceService.getConformanceStatement(sut_id : Long, actor_id: Long)
 GET     /api/suts/:sut_id/conformanceTests/:actor_id                @controllers.ConformanceService.getConformanceStatementTests(sut_id : Long, actor_id: Long)
 GET     /api/suts/:sut_id/conformanceTestSuites/:actor_id           @controllers.ConformanceService.getConformanceStatementTestSuitesForFiltering(sut_id : Long, actor_id: Long)
+GET     /api/suts/:sut_id/conformanceTags/:actor_id                 @controllers.ConformanceService.getConformanceStatementTagsForFiltering(sut_id : Long, actor_id: Long)
 POST    /api/suts/:sut_id/availableStatements                       @controllers.ConformanceService.getAvailableConformanceStatements(sut_id : Long)
 POST    /api/suts/:sut_id/availableStatementIds                     @controllers.ConformanceService.getAvailableConformanceStatementIds(sut_id : Long)
 GET     /api/vendor/systems                                         @controllers.SystemService.getSystemsByOrganization()

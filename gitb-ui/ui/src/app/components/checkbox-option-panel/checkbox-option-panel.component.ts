@@ -55,6 +55,8 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   @Input() referenceItem?: any
   @Input() labelIcon?: string
   @Input() smallButton = false
+  /** Renders small "All"/"None" buttons in a footer, acting on every option in the panel. Off by default. */
+  @Input() bulkSelection = false
   @Output() updated = new EventEmitter<CheckboxOptionState>()
   @Output() opening = new EventEmitter<void>()
   @Output() opened = new EventEmitter<void>()
@@ -294,6 +296,35 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
       }
       this.close()
     }
+  }
+
+  allSelected(): boolean {
+    return this.options == undefined || this.options.every(optionSet => optionSet.every(option => option.disabled || this.currentState[option.key] === true))
+  }
+
+  noneSelected(): boolean {
+    return this.options == undefined || this.options.every(optionSet => optionSet.every(option => option.disabled || this.currentState[option.key] !== true))
+  }
+
+  selectAll(): void {
+    this.setAll(true)
+  }
+
+  selectNone(): void {
+    this.setAll(false)
+  }
+
+  private setAll(value: boolean): void {
+    if (this.options) {
+      for (let optionSet of this.options) {
+        for (let option of optionSet) {
+          if (!option.disabled) {
+            this.currentState[option.key] = value
+          }
+        }
+      }
+    }
+    this.updated.emit(this.currentState)
   }
 
 }

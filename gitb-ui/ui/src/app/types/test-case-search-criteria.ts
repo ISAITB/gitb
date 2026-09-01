@@ -22,5 +22,9 @@ export interface TestCaseSearchCriteria {
   disabled: boolean
   testSuiteId: number|undefined
   testCaseFilterText: string|undefined
+  /** Selected tag keys to filter by. Undefined means no tag filtering is active (all test cases pass). */
+  tagKeys: string[]|undefined
+  /** Whether test cases without any tags should be included when tag filtering is active. */
+  untagged: boolean|undefined
 
 }

@@ -59,6 +59,7 @@ import {CreateConformanceStatementSearchResult} from '../types/create-conformanc
 import {CreateStatementSearchCriteria} from '../pages/organisation/create-conformance-statement/create-statement-search-criteria';
 import {TestCaseSearchCriteria} from '../types/test-case-search-criteria';
 import {TestSuiteMinimalInfo} from '../types/test-suite-minimal-info';
+import {TestCaseTagsForFiltering} from '../types/test-case-tag-filter-info';
 import {Observable, tap} from 'rxjs';
 import {share} from 'rxjs/operators';
 import {PopupService} from './popup.service';
@@ -1277,9 +1278,26 @@ export class ConformanceService {
     }
     if (searchCriteria.testSuiteId != undefined) params.testSuite = searchCriteria.testSuiteId
     if (searchCriteria.testCaseFilterText != undefined) params.testCase = searchCriteria.testCaseFilterText
+    if (searchCriteria.tagKeys != undefined) {
+      params.tags = searchCriteria.tagKeys.join(',')
+      params.untagged = searchCriteria.untagged ?? true
+    }
     if (snapshotId != undefined) params.snapshot = snapshotId
     return this.restService.get<SearchResult<ConformanceStatus>>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatementTests(system, actor).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  getConformanceStatementTagsForFiltering(system: number, actor: number, snapshotId: number|undefined) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {}
+      params.snapshot = snapshotId
+    }
+    return this.restService.get<TestCaseTagsForFiltering>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementTagsForFiltering(system, actor).url,
       authenticate: true,
       params: params
     })

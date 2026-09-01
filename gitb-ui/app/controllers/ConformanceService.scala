@@ -1685,4 +1685,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def getConformanceStatementTagsForFiltering(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
+      conformanceManager.getConformanceStatementTagsForFiltering(systemId, actorId, snapshotId).map { case (tags, untagged) =>
+        val json = JsonUtil.jsTestCaseTagsForFiltering(tags, untagged).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
 }

@@ -142,8 +142,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     disabled: false,
     testSuiteId: undefined,
     testCaseFilterText: undefined,
+    tagKeys: undefined,
+    untagged: undefined,
     selectedTestSuite: undefined,
     testCaseFilterOptions: {
+      tagsLoader: () => this.conformanceService.getConformanceStatementTagsForFiltering(this.systemId, this.actorId, this.snapshotId),
       initialState: {
         showOptional: true,
         showDisabled: false,
@@ -252,6 +255,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
           if (existingDisplayState.state) {
             // Restore search criteria
             this.testCaseSearchCriteria = existingDisplayState.state
+            if (this.testCaseSearchCriteria.testCaseFilterOptions) {
+              // The loader function is not JSON-serialisable so it does not survive the sessionStorage
+              // round-trip - reattach it to the restored options.
+              this.testCaseSearchCriteria.testCaseFilterOptions.tagsLoader = () => this.conformanceService.getConformanceStatementTagsForFiltering(this.systemId, this.actorId, this.snapshotId)
+            }
           }
           return this.loadConformanceTestsInternal({
             targetPage: (existingDisplayState.paging != undefined)?existingDisplayState.paging.currentPage:1,
@@ -533,6 +541,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     this.testCaseSearchCriteria.incomplete = choices.showIncomplete
     this.testCaseSearchCriteria.optional = choices.showOptional
     this.testCaseSearchCriteria.disabled = choices.showDisabled
+    this.testCaseSearchCriteria.tagKeys = choices.tagKeys
+    this.testCaseSearchCriteria.untagged = choices.untagged
     this.applySearchFilters()
   }
 
@@ -666,6 +676,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       || this.testCaseSearchCriteria.disabled
       || this.testCaseSearchCriteria.testSuiteId != undefined
       || this.textProvided(this.testCaseSearchCriteria.testCaseFilterText)
+      || this.testCaseSearchCriteria.tagKeys != undefined
     const pagingStatus = this.pagingControls?.getCurrentStatus()
     const activePaging = pagingStatus != undefined && pagingStatus.currentPage > 1
     if (activeFiltering || activePaging) {
@@ -680,6 +691,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         state.state.testCaseFilterOptions.initialState.showSuccessful = state.state.succeeded
         state.state.testCaseFilterOptions.initialState.showOptional = state.state.optional
         state.state.testCaseFilterOptions.initialState.showDisabled = state.state.disabled
+        state.state.testCaseFilterOptions.initialState.tagKeys = state.state.tagKeys
+        state.state.testCaseFilterOptions.initialState.untagged = state.state.untagged
       }
       this.saveDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, state)
     } else {
@@ -875,6 +888,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   refresh() {
     this.refreshPending = true
     this.loadConformanceTests().subscribe(() => {
+        this.testCaseResultFilter?.clearCachedTags()
         this.refreshPending = false
     })
   }

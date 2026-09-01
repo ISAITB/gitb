@@ -1177,6 +1177,9 @@ object ParameterExtractor {
   }
 
   def extractConformanceStatementTestSearchCriteria(request: Request[AnyContent]): ConformanceStatementTestSearchCriteria = {
+    // Not blank-filtered like the other text parameters: an empty (but present) value means "every tag
+    // unchecked", which must stay distinguishable from the parameter being absent ("no tag filtering").
+    val tagKeys = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TAGS).map(_.split(",").toSet.filter(_.nonEmpty))
     ConformanceStatementTestSearchCriteria(
       succeeded = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SUCCEEDED).getOrElse(true),
       failed = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.FAILED).getOrElse(true),
@@ -1185,7 +1188,9 @@ object ParameterExtractor {
       disabled = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.DISABLED).getOrElse(true),
       testSuiteId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.TEST_SUITE),
       testSuiteFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_SUITE).filter(x => !x.isBlank),
-      testCaseFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_CASE).filter(x => !x.isBlank)
+      testCaseFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_CASE).filter(x => !x.isBlank),
+      tagKeys = tagKeys,
+      untagged = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.UNTAGGED).getOrElse(true)
     )
   }
 
