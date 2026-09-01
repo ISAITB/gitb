@@ -1009,4 +1009,228 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.tika/.*@.*$</packageUrl>
         <cve>CVE-2026-66755</cve>
     </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: jackson-databind-2.21.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-68497</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: jackson-databind-2.21.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-19032</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: jackson-databind-2.21.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-77310</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: jsoup-1.15.4.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jsoup/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-75140</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: jsoup-1.15.4.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jsoup/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-71497</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: logback-classic-1.5.34.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-19880</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-beans-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-59282</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-expression-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47886</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-web-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47891</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-web-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47885</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-web-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47883</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-web-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-59281</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-web-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-59314</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-web-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47889</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-webmvc-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47884</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-webmvc-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47887</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-webmvc-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-47890</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: spring-webmvc-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-59313</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-65637</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-65905</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-65182</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-68525</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-65183</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-66422</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-68569</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-65927</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-68763</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable. Relates to functionality that is not used or is not directly exploitable. -->
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.55.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <cve>CVE-2026-73180</cve>
+    </suppress>
 </suppressions>
