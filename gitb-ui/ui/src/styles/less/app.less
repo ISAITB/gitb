@@ -89,12 +89,14 @@ input, textarea {
 section.page-top {
     background-color: var(--itb-header-background-color);
     border-bottom-color: var(--itb-header-border-color);
-    height: @page-header-height * 1px;
+    min-height: @page-header-height * 1px;
     position: relative;
     align-items: center;
     display: flex;
 	border-bottom-width: 5px;
 	border-bottom-style: solid;
+    padding-top: 20px;
+    padding-bottom: 20px;
 }
 
 .page-title {
