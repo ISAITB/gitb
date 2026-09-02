@@ -261,6 +261,10 @@ public class JacksonUtil {
                     if (inputRequest.getAccept() != null && !inputRequest.getAccept().isEmpty()) {
                         json.writeStringProperty("accept", inputRequest.getAccept());
                     }
+                    if (inputRequest.getDependsOn() != null) {
+                        json.writeStringProperty("dependsOn", inputRequest.getDependsOn());
+                        json.writeStringProperty("dependsOnValue", inputRequest.getDependsOnValue());
+                    }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();
@@ -304,6 +308,10 @@ public class JacksonUtil {
                     }
                     if (instruction.getLevel() != null) {
                         json.writeStringProperty("level", instruction.getLevel().value());
+                    }
+                    if (instruction.getDependsOn() != null) {
+                        json.writeStringProperty("dependsOn", instruction.getDependsOn());
+                        json.writeStringProperty("dependsOnValue", instruction.getDependsOnValue());
                     }
                     json.writeEndObject();
                 }

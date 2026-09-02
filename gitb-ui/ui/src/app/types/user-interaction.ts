@@ -45,6 +45,8 @@ export interface UserInteraction {
   default?: string;
   accept?: string;
   metadata?: string;
+  dependsOn?: string;
+  dependsOnValue?: string;
 
   reset?: EventEmitter<void>;
   tempFiles: Array<Partial<FileData>>;

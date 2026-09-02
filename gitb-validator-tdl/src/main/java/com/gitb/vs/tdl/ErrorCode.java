@@ -175,7 +175,9 @@ public enum ErrorCode {
     POTENTIALLY_INVALID_ACTOR_VARIABLE(                 "TDL-138", "References are made to custom actor properties %s. Ensure these will be defined at runtime.", INFO),
     INVALID_MULTIPLE_ATTRIBUTE(                         "TDL-139", "%s [%s] defines a user interaction request with a [multiple] attribute that defines neither a [options] attribute (for a multiple selection), neither has [inputType] set to [UPLOAD] (for a multiple file upload). The [multiple] attribute will be ignored.", WARNING, true),
     EXTERNAL_ACTOR_REFERENCES_NOT_CHECKED(              "TDL-140", "References are made to external actors %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO),
-    EXTERNAL_PARAMETER_REFERENCES_NOT_CHECKED(          "TDL-141", "References are made to domain parameters %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO)
+    EXTERNAL_PARAMETER_REFERENCES_NOT_CHECKED(          "TDL-141", "References are made to domain parameters %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO),
+    INTERACTION_DEPENDENCY_INCOMPLETE(                  "TDL-142", "%s [%s] defines a user interaction element with a [dependsOn] attribute but no [dependsOnValue] attribute (or vice-versa). Both need to be set for the dependency to be considered.", ERROR, true),
+    INTERACTION_DEPENDENCY_INVALID_REFERENCE(           "TDL-143", "%s [%s] defines a user interaction element with a [dependsOn] attribute value [%s] that doesn't match the name of a request defined in the same interact step.", ERROR, true)
     ;
 
     private final String code;

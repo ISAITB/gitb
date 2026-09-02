@@ -25,6 +25,9 @@ import com.gitb.vs.tdl.util.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
 
     @Override
@@ -33,7 +36,14 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
         if (currentStep instanceof UserInteraction interaction) {
             if (interaction.getInstructOrRequest() != null) {
                 boolean hasInputRequests = false;
+                Set<String> requestNames = new HashSet<>();
+                for (InstructionOrRequest ir : interaction.getInstructOrRequest()) {
+                    if (ir instanceof UserRequest ur && ur.getName() != null) {
+                        requestNames.add(ur.getName());
+                    }
+                }
                 for (InstructionOrRequest ir : ((UserInteraction) step).getInstructOrRequest()) {
+                    checkDependency(ir, requestNames);
                     if (ir instanceof UserRequest ur) {
                         hasInputRequests = true;
                         boolean hasNoOptions = StringUtils.isBlank(ur.getOptions());
@@ -90,6 +100,16 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                     addReportItem(ErrorCode.INTERACTION_WITHOUT_EXPECTED_HANDLER, currentTestCase.getId());
                 }
             }
+        }
+    }
+
+    private void checkDependency(InstructionOrRequest ir, Set<String> requestNames) {
+        boolean hasDependsOn = StringUtils.isNotBlank(ir.getDependsOn());
+        boolean hasDependsOnValue = StringUtils.isNotBlank(ir.getDependsOnValue());
+        if (hasDependsOn != hasDependsOnValue) {
+            addReportItem(ErrorCode.INTERACTION_DEPENDENCY_INCOMPLETE, currentTestCase.getId());
+        } else if (hasDependsOn && !requestNames.contains(ir.getDependsOn())) {
+            addReportItem(ErrorCode.INTERACTION_DEPENDENCY_INVALID_REFERENCE, currentTestCase.getId(), ir.getDependsOn());
         }
     }
 

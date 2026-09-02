@@ -103,7 +103,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           }
         } else if (interaction.inputType == 'CODE') {
           this.editorFocus['input-'+i] = false
-          if (this.firstCodeIndex == undefined) {
+          if (this.firstCodeIndex == undefined && this.isVisible(interaction)) {
             this.firstCodeIndex = i
           }
           if (interaction.default != undefined) {
@@ -117,7 +117,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           this.resetTempFiles(interaction)
         } else {
           // Basic text inputs (secret, text, multiline)
-          if (this.firstTextIndex == undefined) {
+          if (this.firstTextIndex == undefined && this.isVisible(interaction)) {
             this.firstTextIndex = i
           }
           if (interaction.default != undefined) {
@@ -126,6 +126,29 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
         }
       }
 			i += 1
+    }
+  }
+
+  /**
+   * Determines whether an interaction is currently applicable, i.e. whether its dependency (if any) on another
+   * request's value is currently satisfied. Interactions without a dependency are always applicable. The comparison
+   * mirrors the engine's rules: an exact match against the dependency's current value, except for SELECT_MULTIPLE
+   * targets where any one of the currently selected values may match.
+   */
+  isVisible(interaction: UserInteraction): boolean {
+    if (interaction.dependsOn == undefined) {
+      return true
+    }
+    const target = this.interactions.find((candidate) => candidate.id == interaction.dependsOn)
+    if (target == undefined) {
+      return true
+    }
+    if (target.inputType == 'SELECT_MULTIPLE') {
+      return target.selectedOptions?.some((option) => option.value == interaction.dependsOnValue) ?? false
+    } else if (target.inputType == 'SELECT_SINGLE') {
+      return target.selectedOption?.value == interaction.dependsOnValue
+    } else {
+      return target.data == interaction.dependsOnValue
     }
   }
 
@@ -272,7 +295,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           }
         }
         const hasValue = (inputData.value != undefined && inputData.value.length > 0) || inputData.file != undefined
-        const inputValid = !interaction.required || hasValue
+        const inputValid = !interaction.required || hasValue || !this.isVisible(interaction)
         if (!inputValid) {
           inputsValid = false
           this.validation.apply("input_"+index, "Input is required.")
