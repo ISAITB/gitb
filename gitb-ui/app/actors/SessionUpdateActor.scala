@@ -204,12 +204,15 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
           val sessionFolderPath = sessionFolder.path
           Files.createDirectories(sessionFolderPath)
           interactWithUsersRequest.getInteraction.getInstructionOrRequest.asScala.foreach {
-            case instruction: Instruction if !StringUtils.isBlank(instruction.getValue) && StringUtils.isBlank(instruction.getName) => // Determine the file name from the BASE64 content.
-              val mimeType = MimeUtil.getMimeType(instruction.getValue, false)
-              val extension = MimeUtil.getExtensionFromMimeType(mimeType)
-              // Determine name.
-              if (extension != null) {
-                instruction.setName(s"file$extension")
+            case instruction: Instruction =>
+              if (!StringUtils.isBlank(instruction.getValue) && StringUtils.isBlank(instruction.getName)) {
+                // Determine the file name from the BASE64 content.
+                val mimeType = MimeUtil.getMimeType(instruction.getValue, false)
+                val extension = MimeUtil.getExtensionFromMimeType(mimeType)
+                // Determine name.
+                if (extension != null) {
+                  instruction.setName(s"file$extension")
+                }
               }
               // Decouple large content if needed into file references.
               repositoryUtils.decoupleLargeData(instruction, sessionFolderPath, isTempData = true)
