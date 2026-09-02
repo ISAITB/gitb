@@ -711,8 +711,8 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def endSession(session: String, logResult: Boolean = true): Future[Unit] = {
-    endRunningSessions(() => getRunningSession(session), logResult)
+  def endSession(session: String, logResult: Boolean = true, signalStop: Boolean = true): Future[Unit] = {
+    endRunningSessions(() => getRunningSession(session), logResult, signalStop)
   }
 
   def endIdleRunningSessions(maximumDifference: Long): Future[Unit] = {
@@ -731,7 +731,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     endRunningSessions(() => getRunningSessionsForOrganisation(organisation), logResult = true)
   }
 
-  private def endRunningSessions(sessionProvider: () => DBIO[Seq[SessionCompletionData]], logResult: Boolean): Future[Unit] = {
+  private def endRunningSessions(sessionProvider: () => DBIO[Seq[SessionCompletionData]], logResult: Boolean, signalStop: Boolean = true): Future[Unit] = {
     val now = TimeUtil.getCurrentTimestamp()
     DB.run {
       {
@@ -741,7 +741,12 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         } yield sessionData.map(_.sessionId)
       }.transactionally
     }.flatMap { sessionIds =>
-      signalStopSessions(sessionIds, logResult).map(_ => ())
+      if (signalStop) {
+        signalStopSessions(sessionIds, logResult).map(_ => ())
+      } else {
+        // The session is already unknown to the test engine (e.g. a dead session) - no need to signal it to stop.
+        Future.successful(())
+      }
     }
   }
 

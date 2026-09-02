@@ -182,4 +182,22 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
     }
   }
 
+  /**
+   * Given the test session IDs still considered active by gitb-ui, ask the test engine which of them it
+   * has no knowledge of (e.g. following a test engine restart) and are therefore to be considered dead.
+   *
+   * @param sessionIds The candidate session IDs to check.
+   * @return The subset of session IDs unknown to the test engine.
+   */
+  def getDeadSessions(sessionIds: Iterable[String]): Future[Iterable[String]] = {
+    val request = new GetActorDefinitionRequest()
+    request.setActorId("dead-sessions")
+    request.setTcId(sessionIds.mkString("|"))
+    Future {
+      Option(service().getActorDefinition(request).getActor.getDesc)
+        .map(_.split('|').filter(_.nonEmpty).toSeq)
+        .getOrElse(Seq.empty)
+    }
+  }
+
 }

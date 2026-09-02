@@ -744,7 +744,7 @@
                     <div class="configContainer" >
                         <app-configuration-entry
                             configTitle="Test session timeouts"
-                            configDescription="Terminate test sessions exceeding a maximum duration."
+                            configDescription="Terminate test sessions exceeding a maximum duration and clean up dead sessions."
                             [(status)]="sessionTimeoutStatus"
                         >
                             <form>
@@ -777,6 +777,16 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-auto" app-tooltip tbTooltip="The number of seconds after which to terminate a test session that is pending manual input from a non-administrator user."></div>
+                                                </div>
+                                                <div class="row pt-3 flex-nowrap">
+                                                    <label class="col-4 col-form-label text-end" for="sessionTimeoutDead">* Dead sessions:</label>
+                                                    <div class="col-auto">
+                                                        <div class="input-group minimum-width-number-grouped">
+                                                            <input id="sessionTimeoutDead" name="sessionTimeoutDead" placeholder="Timeout" [(ngModel)]="sessionTimeoutSettings.deadTimeout" class="form-control" type="number">
+                                                            <div class="input-group-text">seconds</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The number of seconds after which to terminate a dead test session. A test session is considered dead if due to an unexpected event such as a test engine crash, it is listed as active but is missing from the test engine. Dead test sessions cannot be restored but you may want to review them in view of tasks such as informing affected users."></div>
                                                 </div>
                                                 <div class="row pt-3 flex-nowrap">
                                                     <label class="col-4 col-form-label text-end" for="sessionTimeoutOther">* Other sessions:</label>

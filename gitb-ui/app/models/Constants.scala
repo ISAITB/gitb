@@ -26,6 +26,7 @@ object Constants {
 
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
+  val DefaultSessionTimeout = 3600L
   val RestApiEnabled = "rest_api_enabled"
   val RestApiAdminKey = "rest_api_admin_key"
   val RestApiDevelopmentKey = "rest_api_development_key"

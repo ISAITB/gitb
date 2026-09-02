@@ -2787,9 +2787,10 @@ object JsonUtil {
     val jsonObject = Json.parse(json)
     SessionTimeoutConfiguration(
       enabled = (jsonObject \ "enabled").as[Boolean],
-      userPendingTimeout = (jsonObject \ "userPendingTimeout").as[Long],
-      adminPendingTimeout = (jsonObject \ "adminPendingTimeout").as[Long],
-      otherTimeout = (jsonObject \ "otherTimeout").as[Long]
+      userPendingTimeout = (jsonObject \ "userPendingTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout),
+      adminPendingTimeout = (jsonObject \ "adminPendingTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout),
+      otherTimeout = (jsonObject \ "otherTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout),
+      deadTimeout = (jsonObject \ "deadTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout)
     )
   }
 

@@ -19,5 +19,6 @@ export interface SessionTimeoutConfiguration {
   userPendingTimeout: number;
   adminPendingTimeout: number;
   otherTimeout: number;
+  deadTimeout: number;
 
 }

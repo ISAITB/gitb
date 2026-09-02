@@ -58,6 +58,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
                                             repositoryUtils: RepositoryUtils,
                                             rateLimitManager: RateLimitManager,
                                             actorSystem: ActorSystem,
+                                            testbedClient: TestbedBackendClient,
                                             dbConfigProvider: DatabaseConfigProvider)
                                            (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -1104,25 +1105,33 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           config.flatMap(_.parameter).map(x => JsonUtil.parseJsSessionTimeoutConfiguration(x))
         }
       }
-      sessionsToTerminate <- {
+      sessionsToProcess <- {
         if (timeoutConfig.exists(_.enabled)) {
-          getIdleSessions(timeoutConfig.get).map(Some(_))
+          getIdleAndDeadCandidateSessions(timeoutConfig.get).map(Some(_))
         } else {
           Future.successful(None)
         }
       }
       _ <- {
-        if (sessionsToTerminate.isDefined) {
-          Future.sequence {
-            sessionsToTerminate.get.map { sessionId =>
-              testExecutionManager.endSession(sessionId, logResult = false).map { _ =>
-                logger.info("Terminated idle session [{}]", sessionId)
-              }.recover {
-                case e: Exception =>
-                  logger.warn("Failure while terminating idle session [%s]".formatted(sessionId), e)
+        if (sessionsToProcess.isDefined) {
+          val (idleSessions, deadCandidateSessions) = sessionsToProcess.get
+          for {
+            _ <- terminateSessions(idleSessions, "idle", signalStop = true)
+            deadSessions <- {
+              if (deadCandidateSessions.nonEmpty) {
+                testbedClient.getDeadSessions(deadCandidateSessions).recover {
+                  case e: Exception =>
+                    // The test engine may be unreachable - this must never be treated as all sessions being dead.
+                    logger.warn("Failure while checking for dead test sessions", e)
+                    Iterable.empty
+                }
+              } else {
+                Future.successful(Iterable.empty)
               }
             }
-          }
+            // Dead sessions are already unknown to the test engine - no need to signal them to stop.
+            _ <- terminateSessions(deadSessions, "dead", signalStop = false)
+          } yield ()
         } else {
           Future.successful(())
         }
@@ -1130,7 +1139,26 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     } yield ()
   }
 
-  private def getIdleSessions(config: SessionTimeoutConfiguration): Future[Iterable[String]] = {
+  private def terminateSessions(sessionIds: Iterable[String], sessionKind: String, signalStop: Boolean): Future[Unit] = {
+    Future.sequence {
+      sessionIds.map { sessionId =>
+        testExecutionManager.endSession(sessionId, logResult = false, signalStop = signalStop).map { _ =>
+          logger.info("Terminated {} session [{}]", sessionKind, sessionId)
+        }.recover {
+          case e: Exception =>
+            logger.warn("Failure while terminating %s session [%s]".formatted(sessionKind, sessionId), e)
+        }
+      }
+    }.map(_ => ())
+  }
+
+  /**
+   * Determine, among the currently active test sessions, which are idle (per the admin/user/other pending
+   * interaction timeouts) and which are merely candidates for being considered dead (sessions not already
+   * classified as idle, whose age has nonetheless exceeded the configured dead session timeout). The
+   * latter still need to be confirmed as dead by pinging the test engine.
+   */
+  private def getIdleAndDeadCandidateSessions(config: SessionTimeoutConfiguration): Future[(Iterable[String], Iterable[String])] = {
     DB.run {
       for {
         activeSessions <- PersistenceSchema.testResults
@@ -1143,26 +1171,28 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           .map { results =>
             results.map(x => x._1 -> x._2).toMap
           }
-        idleSessions <- {
+        result <- {
           DBIO.successful {
-            activeSessions.filter(x => {
-              val difference = TimeUtil.getTimeDifferenceInSeconds(x._2)
+            val sessionsWithAge = activeSessions.map(x => (x._1, TimeUtil.getTimeDifferenceInSeconds(x._2)))
+            val (idleSessions, otherSessions) = sessionsWithAge.partition(x => {
               if (pendingInteractions.contains(x._1)) {
                 if (pendingInteractions(x._1)) {
                   // Pending admin interaction
-                  difference >= config.adminPendingTimeout
+                  x._2 >= config.adminPendingTimeout
                 } else {
                   // Pending user interaction
-                  difference >= config.userPendingTimeout
+                  x._2 >= config.userPendingTimeout
                 }
               } else {
                 // Not pending interaction
-                difference >= config.otherTimeout
+                x._2 >= config.otherTimeout
               }
-            }).map(_._1)
+            })
+            val deadCandidateSessions = otherSessions.filter(_._2 >= config.deadTimeout)
+            (idleSessions.map(_._1), deadCandidateSessions.map(_._1))
           }
         }
-      } yield idleSessions
+      } yield result
     }
   }
 

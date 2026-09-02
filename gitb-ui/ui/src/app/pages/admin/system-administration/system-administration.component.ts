@@ -173,12 +173,14 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   // TTL
+  private readonly DEFAULT_SESSION_TIMEOUT = 3600
   sessionTimeoutStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   sessionTimeoutSettings: SessionTimeoutConfiguration = {
     enabled: false,
-    adminPendingTimeout: 3600,
-    userPendingTimeout: 3600,
-    otherTimeout: 3600
+    adminPendingTimeout: this.DEFAULT_SESSION_TIMEOUT,
+    userPendingTimeout: this.DEFAULT_SESSION_TIMEOUT,
+    otherTimeout: this.DEFAULT_SESSION_TIMEOUT,
+    deadTimeout: this.DEFAULT_SESSION_TIMEOUT
   }
 
   // Self-registration
@@ -345,6 +347,11 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             // TTL.
             if (configItem.parameter != undefined) {
               this.sessionTimeoutSettings = JSON.parse(configItem.parameter)
+              // Tolerate a value persisted before one or more of the timeout properties were introduced.
+              if (this.sessionTimeoutSettings.adminPendingTimeout == undefined) this.sessionTimeoutSettings.adminPendingTimeout = this.DEFAULT_SESSION_TIMEOUT
+              if (this.sessionTimeoutSettings.userPendingTimeout == undefined) this.sessionTimeoutSettings.userPendingTimeout = this.DEFAULT_SESSION_TIMEOUT
+              if (this.sessionTimeoutSettings.otherTimeout == undefined) this.sessionTimeoutSettings.otherTimeout = this.DEFAULT_SESSION_TIMEOUT
+              if (this.sessionTimeoutSettings.deadTimeout == undefined) this.sessionTimeoutSettings.deadTimeout = this.DEFAULT_SESSION_TIMEOUT
             }
             this.sessionTimeoutStatus.enabled = this.sessionTimeoutSettings.enabled
             this.sessionTimeoutStatus.fromEnv = configItem.environment
@@ -1202,7 +1209,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   sessionTimeoutSettingsOk() {
-    return !this.sessionTimeoutSettings.enabled || (this.sessionTimeoutSettings.otherTimeout != undefined && this.sessionTimeoutSettings.adminPendingTimeout != undefined && this.sessionTimeoutSettings.userPendingTimeout != undefined && this.sessionTimeoutSettings.otherTimeout >= 0 && this.sessionTimeoutSettings.adminPendingTimeout >= 0 && this.sessionTimeoutSettings.userPendingTimeout >= 0)
+    return !this.sessionTimeoutSettings.enabled || (this.sessionTimeoutSettings.otherTimeout != undefined && this.sessionTimeoutSettings.adminPendingTimeout != undefined && this.sessionTimeoutSettings.userPendingTimeout != undefined && this.sessionTimeoutSettings.deadTimeout != undefined && this.sessionTimeoutSettings.otherTimeout >= 0 && this.sessionTimeoutSettings.adminPendingTimeout >= 0 && this.sessionTimeoutSettings.userPendingTimeout >= 0 && this.sessionTimeoutSettings.deadTimeout >= 0)
   }
 
   softwareVersionCheckSettingsOk() {

@@ -279,6 +279,23 @@ public class TestbedService {
         }
     }
 
+	/**
+	 * Given a "|"-delimited list of test session IDs known to gitb-ui as active, determine which of them
+	 * are unknown to this test engine (i.e. dead, typically following a test engine restart).
+	 *
+	 * @param sessionIds The "|"-delimited session IDs to check.
+	 * @return The "|"-delimited subset of session IDs not found in the engine's in-memory session map.
+	 */
+	public static String deadSessions(String sessionIds) {
+		if (sessionIds == null || sessionIds.isEmpty()) {
+			return "";
+		}
+		SessionManager sessionManager = SessionManager.getInstance();
+		return Arrays.stream(sessionIds.split("\\|"))
+				.filter(sessionManager::notExists)
+				.collect(Collectors.joining("|"));
+	}
+
 	private static String serialiseThrowable(Throwable error) {
 		var messages = new ArrayList<String>();
 		var handledErrors = new ArrayList<Throwable>();
