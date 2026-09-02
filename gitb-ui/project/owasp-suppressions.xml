@@ -1927,4 +1927,28 @@
         <sha1>691459d4644894dae8e5c2d9550a4cfb8302f62f</sha1>
         <cve>CVE-2026-59280</cve>
     </suppress>
+    <suppress>
+        <!-- Relates to Spring features that are not used. -->
+        <notes><![CDATA[
+    file name: spring-aop-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-47892</cve>
+    </suppress>
+    <suppress>
+        <!-- Relates to Spring features that are not used. -->
+        <notes><![CDATA[
+    file name: spring-aop-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-47893</cve>
+    </suppress>
+    <suppress>
+        <!-- Relates to Spring features that are not used. -->
+        <notes><![CDATA[
+    file name: spring-aop-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-59280</cve>
+    </suppress>
 </suppressions>
