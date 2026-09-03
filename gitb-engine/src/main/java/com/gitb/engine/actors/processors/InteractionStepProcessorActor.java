@@ -15,7 +15,6 @@
 
 package com.gitb.engine.actors.processors;
 
-import com.gitb.PropertyConstants;
 import com.gitb.core.*;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.TestbedService;
@@ -251,7 +250,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     CallbackManager.getInstance().registerCallbackData(new SessionCallbackData(
                             messagingContext.getSessionId(),
                             callId,
-                            ((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP_API_KEY).toString(),
+                            scope.getContext().getSystemApiKey(),
                             deferredReport.getCallbackData())
                     );
                 }

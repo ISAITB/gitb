@@ -170,4 +170,32 @@ public class SessionManager {
 		return !contexts.isEmpty();
 	}
 
+	/**
+	 * Checks whether any currently active test session is configured for the given system API key (i.e. the SUT
+	 * system under test uses this API key). Used to eagerly drop incoming asynchronous calls (e.g. HTTP/SOAP
+	 * callbacks) that could never be matched to any parked test step.
+	 *
+	 * @param systemApiKey The system API key to check for.
+	 * @return {@code true} if at least one active session is configured with this system API key.
+	 */
+	public boolean hasActiveSessionForSystem(String systemApiKey) {
+		return hasActiveSessionForSystem(systemApiKey, null);
+	}
+
+	/**
+	 * As {@link #hasActiveSessionForSystem(String)} but ignoring the session identified by {@code excludingSessionId}
+	 * (if any). Used when a session is in the process of ending but may not yet have been removed from {@link #contexts}.
+	 *
+	 * @param systemApiKey The system API key to check for.
+	 * @param excludingSessionId A session ID to disregard when checking, or {@code null} to consider all sessions.
+	 * @return {@code true} if at least one other active session is configured with this system API key.
+	 */
+	public boolean hasActiveSessionForSystem(String systemApiKey, String excludingSessionId) {
+		if (systemApiKey == null) {
+			return false;
+		}
+		return contexts.entrySet().stream()
+				.anyMatch(entry -> !entry.getKey().equals(excludingSessionId) && systemApiKey.equals(entry.getValue().getSystemApiKey()));
+	}
+
 }

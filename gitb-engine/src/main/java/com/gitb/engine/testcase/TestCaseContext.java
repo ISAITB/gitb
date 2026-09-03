@@ -184,6 +184,11 @@ public class TestCaseContext {
 	private Path dataFolder;
     private boolean requiresPersistentReports = false;
 	private final Set<String> registeredCallbackApiKeys = new HashSet<>();
+	/**
+	 * The API key of the SUT system under test, as set on the SYSTEM map configuration. Used to correlate
+	 * incoming asynchronous calls (e.g. HTTP/SOAP callbacks) to this test session.
+	 */
+	private String systemApiKey;
 
     public TestCaseContext(TestCase testCase, String testCaseIdentifier, String sessionId) {
         this.currentState = TestCaseStateEnum.IDLE;
@@ -430,9 +435,19 @@ public class TestCaseContext {
 					configurationValue.setValue(configuration.getValue());
 				}
 				map.addItem(configuration.getName(), configurationValue);
+				if (SYSTEM_MAP.equals(mapVariableName) && SYSTEM_MAP_API_KEY.equals(configuration.getName())) {
+					systemApiKey = configuration.getValue();
+				}
 			}
 			addSpecialConfiguration(mapVariableName, map);
 		}
+	}
+
+	/**
+	 * @return The API key of the SUT system under test for this session, or {@code null} if not (yet) configured.
+	 */
+	public String getSystemApiKey() {
+		return systemApiKey;
 	}
 
 	private void setSUTConfigurationParameter(List<SUTConfiguration> sutConfigurations, String id, String endpoint, Parameter parameter) {

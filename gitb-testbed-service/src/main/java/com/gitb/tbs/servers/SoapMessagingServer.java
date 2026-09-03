@@ -16,6 +16,7 @@
 package com.gitb.tbs.servers;
 
 import com.gitb.engine.CallbackManager;
+import com.gitb.engine.CallbackPayloadStore;
 import com.gitb.engine.messaging.handlers.layer.application.soap.AttachmentInfo;
 import com.gitb.engine.messaging.handlers.layer.application.soap.ReportVisibilitySettings;
 import com.gitb.engine.messaging.handlers.layer.application.soap.SoapVersion;
@@ -30,6 +31,7 @@ import com.gitb.types.ObjectType;
 import com.gitb.types.StringType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.xml.soap.SOAPMessage;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +42,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2.REPORT_ITEM_HEADERS;
 import static com.gitb.engine.messaging.handlers.layer.application.soap.SoapMessagingHandlerV2.*;
@@ -50,25 +54,38 @@ import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 @RestController
 public class SoapMessagingServer extends AbstractMessagingServer {
 
+    public SoapMessagingServer(@Qualifier("messagingCallbackExecutor") Executor messagingCallbackExecutor) {
+        super(messagingCallbackExecutor);
+    }
+
     @PostMapping(path = "/"+ API_PATH+"/{system}/{*extension}")
-    public ResponseEntity<byte[]> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
+    public CompletableFuture<ResponseEntity<byte[]>> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
         if (system == null || system.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
         } else {
-            return handleInternal(CallbackManager.getInstance().lookupHandlingData(CallbackType.SOAP, system, (data) -> matchIncomingRequest(
+            Optional<String> detectedQueryString = Optional.ofNullable(request.getQueryString());
+            var lookup = CallbackManager.getInstance().lookupHandlingData(CallbackType.SOAP, system, (data) -> matchIncomingRequest(
                     HttpMethod.POST,
                     extension,
-                    Optional.ofNullable(request.getQueryString()),
+                    detectedQueryString,
                     data,
                     () -> Optional.of(HttpMethod.POST),
                     URI_EXTENSION_ARGUMENT_NAME
-            )), request);
+            ));
+            if (lookup.isDone() && lookup.getNow(Optional.empty()).isEmpty()) {
+                // Rejected outright (no matching or held call possible) - avoid needlessly reading the request body.
+                return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+            }
+            // Only a call we are about to park is worth spilling to disk - one already matched is consumed immediately.
+            CapturedRequest captured = capture(request, !lookup.isDone());
+            return lookup.thenApplyAsync(data -> handleInternal(data, captured), messagingCallbackExecutor)
+                    .whenComplete((response, error) -> captured.release());
         }
     }
 
-    private ResponseEntity<byte[]> handleInternal(Optional<SessionCallbackData> data, HttpServletRequest request) {
+    private ResponseEntity<byte[]> handleInternal(Optional<SessionCallbackData> data, CapturedRequest request) {
         if (data.isEmpty()) {
-            // No test session found to be waiting for this call.
+            // No test session found to be waiting for this call (or none appeared while it was held).
             return ResponseEntity.notFound().build();
         } else {
             try {
@@ -99,15 +116,13 @@ public class SoapMessagingServer extends AbstractMessagingServer {
                 report.addInput(REPORT_ITEM_REQUEST, requestMap);
                 report.addInput(REPORT_ITEM_RESPONSE, responseMap);
                 // Request URI.
-                requestMap.addItem(REPORT_ITEM_URI, getFullRequestURI(request));
+                requestMap.addItem(REPORT_ITEM_URI, new StringType(request.fullUri()));
                 // Request headers.
-                Optional<MapType> requestHeaders = getRequestHeaders(request);
-                requestHeaders.ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
-                Optional<String> requestContentTypeHeader = requestHeaders.flatMap(this::getContentTypeHeader);
-                SoapVersion requestSoapVersion = requestContentTypeHeader
+                request.headers().ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
+                SoapVersion requestSoapVersion = request.contentType()
                         .map(SoapVersion::forContentTypeHeader)
                         .orElse(VERSION_1_1);
-                SOAPMessage requestSoapMessage = deserialiseSoapMessage(requestSoapVersion, request.getInputStream(), requestContentTypeHeader);
+                SOAPMessage requestSoapMessage = deserialiseSoapMessage(requestSoapVersion, CallbackPayloadStore.getInstance().read(request.body()), request.contentType());
                 // Request envelope.
                 ObjectType requestEnvelopeItem = getSoapEnvelope(requestSoapMessage);
                 // Request body.

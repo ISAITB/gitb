@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class CallbackManager {
@@ -40,7 +42,21 @@ public class CallbackManager {
     private final Map<String, SessionCallbackData> callToDataMap = new HashMap<>();
     private final Map<String, Set<String>> systemToCallMap = new HashMap<>();
 
+    /*
+     * Incoming calls that arrived before a matching receive step had registered its callback data. Kept per
+     * system API key, in arrival order, so that when a matching step registers we hand it the oldest waiting
+     * call first (FIFO). Each pending call is released - i.e. its future completed - exactly once, either
+     * because a matching registration claims it (registerCallbackData), its wait window elapses
+     * (lookupHandlingData), or the last active session for its system API key ends (sessionEnded).
+     */
+    private final Map<String, LinkedList<PendingCall>> pendingCalls = new HashMap<>();
+    private int pendingCallCount;
+
     private final Object mutex = new Object();
+
+    private record PendingCall(CallbackType type, String systemApiKey, Function<Message, Boolean> matchFunction,
+                                CompletableFuture<Optional<SessionCallbackData>> result, long createdAt) {
+    }
 
     private CallbackManager() {
     }
@@ -51,24 +67,126 @@ public class CallbackManager {
 
     public void registerCallbackData(SessionCallbackData data) {
         synchronized (mutex) {
+            // First check whether an incoming call is already being held awaiting exactly this registration.
+            if (claimPendingCall(data)) {
+                return;
+            }
             callToDataMap.put(data.callId(), data);
-            Set<String> existingCallIds = systemToCallMap.computeIfAbsent(data.systemApiKey(), (k) -> new HashSet<>());
+            Set<String> existingCallIds = systemToCallMap.computeIfAbsent(data.systemApiKey(), (k) -> new LinkedHashSet<>());
             existingCallIds.add(data.callId());
         }
     }
 
-    public Optional<SessionCallbackData> lookupHandlingData(CallbackType type, String systemApiKey, Function<Message, Boolean> matchFunction) {
+    /**
+     * Looks up the callback data to handle an incoming call. If no test step is currently parked to receive it,
+     * the call is held (up to {@link TestEngineConfiguration#CALLBACK_WAIT_TIMEOUT}) so that a step reached
+     * shortly afterwards can still serve it - this avoids a race whereby an incoming call sent by a system under
+     * test reaches the test engine just before the corresponding {@code receive} test step is executed.
+     *
+     * @param type The type of callback expected (HTTP or SOAP).
+     * @param systemApiKey The system API key extracted from the incoming call's path.
+     * @param matchFunction Additional matching criteria (e.g. HTTP method, URI extension) to apply to a candidate.
+     * @return A future that completes with the matched callback data, or with an empty result if the call could
+     * not (or could no longer) be matched.
+     */
+    public CompletableFuture<Optional<SessionCallbackData>> lookupHandlingData(CallbackType type, String systemApiKey, Function<Message, Boolean> matchFunction) {
         synchronized (mutex) {
-            if (systemToCallMap.containsKey(systemApiKey)) {
-                return systemToCallMap.get(systemApiKey)
-                        .stream().filter(callId -> {
-                            var callbackData = callToDataMap.get(callId);
-                            return callbackData != null && callbackData.data().type() == type && matchFunction.apply(callbackData.data().inputs());
-                        })
-                        .findFirst()
-                        .map(callToDataMap::get);
+            Optional<SessionCallbackData> immediateMatch = findAndClaimMatch(type, systemApiKey, matchFunction);
+            if (immediateMatch.isPresent()) {
+                return CompletableFuture.completedFuture(immediateMatch);
             }
+            long waitTimeout = TestEngineConfiguration.CALLBACK_WAIT_TIMEOUT;
+            if (waitTimeout <= 0) {
+                // Holding incoming calls is disabled - preserve the previous immediate-rejection behaviour.
+                return CompletableFuture.completedFuture(Optional.empty());
+            }
+            if (!SessionManager.getInstance().hasActiveSessionForSystem(systemApiKey)) {
+                // No active test session is even configured with this system API key - this call can never be matched.
+                return CompletableFuture.completedFuture(Optional.empty());
+            }
+            if (pendingCallCount >= TestEngineConfiguration.CALLBACK_WAIT_LIMIT) {
+                LOG.warn("Rejecting an incoming call for system API key [{}] as the maximum number of concurrently held calls ({}) has been reached.", systemApiKey, TestEngineConfiguration.CALLBACK_WAIT_LIMIT);
+                return CompletableFuture.completedFuture(Optional.empty());
+            }
+            var pending = new PendingCall(type, systemApiKey, matchFunction, new CompletableFuture<>(), System.currentTimeMillis());
+            pendingCalls.computeIfAbsent(systemApiKey, k -> new LinkedList<>()).add(pending);
+            pendingCallCount++;
+            // Whatever completes the future (a matching registration, our own timeout, or a session ending), always clean up.
+            pending.result().whenComplete((result, error) -> deregisterPending(pending));
+            pending.result().completeOnTimeout(Optional.empty(), waitTimeout, TimeUnit.MILLISECONDS);
+            return pending.result();
+        }
+    }
+
+    /**
+     * Looks for a registered callback matching the given criteria and, if found, claims it - i.e. removes it from
+     * the registry - so that it cannot also be matched by a concurrently arriving call.
+     * <br>
+     * Must be called while holding {@link #mutex}.
+     */
+    private Optional<SessionCallbackData> findAndClaimMatch(CallbackType type, String systemApiKey, Function<Message, Boolean> matchFunction) {
+        Set<String> callIds = systemToCallMap.get(systemApiKey);
+        if (callIds == null) {
             return Optional.empty();
+        }
+        Iterator<String> iterator = callIds.iterator();
+        while (iterator.hasNext()) {
+            String callId = iterator.next();
+            var data = callToDataMap.get(callId);
+            if (data != null && data.data().type() == type && matchFunction.apply(data.data().inputs())) {
+                iterator.remove();
+                if (callIds.isEmpty()) {
+                    systemToCallMap.remove(systemApiKey);
+                }
+                callToDataMap.remove(callId);
+                return Optional.of(data);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Looks for a held incoming call matching the callback data just registered by a test step and, if found,
+     * completes it directly (bypassing {@link #systemToCallMap}/{@link #callToDataMap} entirely since the call
+     * is served immediately).
+     * <br>
+     * Must be called while holding {@link #mutex}.
+     *
+     * @return {@code true} if a held call was matched and completed.
+     */
+    private boolean claimPendingCall(SessionCallbackData data) {
+        LinkedList<PendingCall> pendingForSystem = pendingCalls.get(data.systemApiKey());
+        if (pendingForSystem == null) {
+            return false;
+        }
+        PendingCall matched = null;
+        for (PendingCall pending : pendingForSystem) {
+            if (pending.type() == data.data().type() && pending.matchFunction().apply(data.data().inputs())) {
+                matched = pending;
+                break;
+            }
+        }
+        if (matched == null) {
+            return false;
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(MarkerFactory.getDetachedMarker(data.sessionId()), "Matched an incoming call that had been held for [{}] ms while waiting for the corresponding receive step to be reached.", System.currentTimeMillis() - matched.createdAt());
+        }
+        // Completing this triggers the pending call's own whenComplete callback (deregisterPending), which
+        // removes it from pendingForSystem - do this after we've stopped iterating over that same list.
+        matched.result().complete(Optional.of(data));
+        return true;
+    }
+
+    private void deregisterPending(PendingCall pending) {
+        synchronized (mutex) {
+            var pendingForSystem = pendingCalls.get(pending.systemApiKey());
+            if (pendingForSystem != null && pendingForSystem.remove(pending)) {
+                pendingCallCount--;
+                if (pendingForSystem.isEmpty()) {
+                    pendingCalls.remove(pending.systemApiKey());
+                }
+            }
         }
     }
 
@@ -154,17 +272,57 @@ public class CallbackManager {
     }
 
     public void sessionEnded(String sessionId) {
+        Set<String> affectedSystemApiKeys = new HashSet<>();
         synchronized (mutex) {
-            if (sessionToCallMap.containsKey(sessionId)) {
-                for (String callId: sessionToCallMap.get(sessionId)) {
+            Set<String> callIds = sessionToCallMap.remove(sessionId);
+            if (callIds != null) {
+                for (String callId : callIds) {
                     callToActorMap.remove(callId);
                     var data = callToDataMap.remove(callId);
                     if (data != null) {
-                        systemToCallMap.remove(data.systemApiKey());
+                        // Only remove this session's own call ids - other still-running sessions may be using
+                        // the same system API key and must keep their own parked calls registered.
+                        var systemCallIds = systemToCallMap.get(data.systemApiKey());
+                        if (systemCallIds != null) {
+                            systemCallIds.remove(callId);
+                            if (systemCallIds.isEmpty()) {
+                                systemToCallMap.remove(data.systemApiKey());
+                            }
+                        }
+                        affectedSystemApiKeys.add(data.systemApiKey());
                     }
                 }
-                sessionToCallMap.remove(sessionId);
             }
+        }
+        // Also consider the session's own configured system API key, even if it never itself registered a call
+        // (e.g. it ended before ever reaching its receive step) - it may still be the last session "holding
+        // open" a pending call for that system that would otherwise only be dropped once its wait window elapses.
+        var context = SessionManager.getInstance().getContext(sessionId);
+        if (context != null && context.getSystemApiKey() != null) {
+            affectedSystemApiKeys.add(context.getSystemApiKey());
+        }
+        // If this was the last active session for a given system API key, no held incoming call for that key
+        // can ever be matched anymore - drop them now rather than making the caller wait out the full window.
+        for (String systemApiKey : affectedSystemApiKeys) {
+            if (!SessionManager.getInstance().hasActiveSessionForSystem(systemApiKey, sessionId)) {
+                dropPendingCalls(systemApiKey);
+            }
+        }
+    }
+
+    private void dropPendingCalls(String systemApiKey) {
+        List<PendingCall> toDrop;
+        synchronized (mutex) {
+            var pendingForSystem = pendingCalls.get(systemApiKey);
+            if (pendingForSystem == null || pendingForSystem.isEmpty()) {
+                return;
+            }
+            toDrop = new ArrayList<>(pendingForSystem);
+        }
+        // Complete outside the lock covering the copy above; each completion re-enters the lock individually
+        // via deregisterPending (triggered by the whenComplete callback registered in lookupHandlingData).
+        for (PendingCall pending : toDrop) {
+            pending.result().complete(Optional.empty());
         }
     }
 

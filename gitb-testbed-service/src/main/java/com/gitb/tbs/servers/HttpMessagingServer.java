@@ -16,6 +16,7 @@
 package com.gitb.tbs.servers;
 
 import com.gitb.engine.CallbackManager;
+import com.gitb.engine.CallbackPayloadStore;
 import com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2;
 import com.gitb.engine.messaging.handlers.layer.application.http.ReportVisibilitySettings;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -27,9 +28,8 @@ import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,8 +37,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2.*;
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
@@ -47,25 +48,39 @@ import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 @RestController
 public class HttpMessagingServer extends AbstractMessagingServer {
 
+    public HttpMessagingServer(@Qualifier("messagingCallbackExecutor") Executor messagingCallbackExecutor) {
+        super(messagingCallbackExecutor);
+    }
+
     @RequestMapping(path = "/"+ API_PATH+"/{system}/{*extension}")
-    public ResponseEntity<byte[]> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
+    public CompletableFuture<ResponseEntity<byte[]>> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
         if (system == null || system.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
         } else {
-            return handleInternal(CallbackManager.getInstance().lookupHandlingData(CallbackType.HTTP, system, (data) -> matchIncomingRequest(
-                    HttpMethod.valueOf(request.getMethod()),
+            HttpMethod detectedMethod = HttpMethod.valueOf(request.getMethod());
+            Optional<String> detectedQueryString = Optional.ofNullable(request.getQueryString());
+            var lookup = CallbackManager.getInstance().lookupHandlingData(CallbackType.HTTP, system, (data) -> matchIncomingRequest(
+                    detectedMethod,
                     extension,
-                    Optional.ofNullable(request.getQueryString()),
+                    detectedQueryString,
                     data,
                     () -> getMethod(data.getFragments(), METHOD_ARGUMENT_NAME),
                     URI_EXTENSION_ARGUMENT_NAME
-            )), request);
+            ));
+            if (lookup.isDone() && lookup.getNow(Optional.empty()).isEmpty()) {
+                // Rejected outright (no matching or held call possible) - avoid needlessly reading the request body.
+                return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+            }
+            // Only a call we are about to park is worth spilling to disk - one already matched is consumed immediately.
+            CapturedRequest captured = capture(request, !lookup.isDone());
+            return lookup.thenApplyAsync(data -> handleInternal(data, captured), messagingCallbackExecutor)
+                    .whenComplete((response, error) -> captured.release());
         }
     }
 
-    private ResponseEntity<byte[]> handleInternal(Optional<SessionCallbackData> data, HttpServletRequest request) {
+    private ResponseEntity<byte[]> handleInternal(Optional<SessionCallbackData> data, CapturedRequest request) {
         if (data.isEmpty()) {
-            // No test session found to be waiting for this call.
+            // No test session found to be waiting for this call (or none appeared while it was held).
             return ResponseEntity.notFound().build();
         } else {
             try {
@@ -90,48 +105,20 @@ public class HttpMessagingServer extends AbstractMessagingServer {
                 report.addInput(REPORT_ITEM_REQUEST, requestMap);
                 report.addInput(REPORT_ITEM_RESPONSE, responseMap);
                 // Request method.
-                requestMap.addItem(REPORT_ITEM_METHOD, new StringType(request.getMethod()));
+                requestMap.addItem(REPORT_ITEM_METHOD, new StringType(request.method()));
                 // Request URI.
-                requestMap.addItem(REPORT_ITEM_URI, getFullRequestURI(request));
+                requestMap.addItem(REPORT_ITEM_URI, new StringType(request.fullUri()));
                 // Request headers.
-                Optional<MapType> requestHeaders = getRequestHeaders(request);
-                requestHeaders.ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
-                Optional<String> requestContentTypeHeader = requestHeaders.flatMap(this::getContentTypeHeader);
+                request.headers().ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
                 // Request body.
+                Optional<MapType> multipartBody = toMultipartMap(request.multipartParts());
                 DataType requestBodyType = null;
-                if (requestContentTypeHeader.isPresent() && requestContentTypeHeader.get().contains("multipart/form-data")) {
+                if (multipartBody.isPresent()) {
                     // Multipart request parts
-                    MapType multipartBodyType = new MapType();
-                    try {
-                        for (var part: request.getParts()) {
-                            var partBytes = IOUtils.toByteArray(part.getInputStream());
-                            if (partBytes != null && partBytes.length > 0) {
-                                if (part.getSubmittedFileName() == null) {
-                                    multipartBodyType.addItem(part.getName(), new StringType(new String(partBytes)));
-                                } else {
-                                    var binaryPartType = new BinaryType(partBytes);
-                                    binaryPartType.setContentType(part.getContentType());
-                                    multipartBodyType.addItem(part.getName(), binaryPartType);
-                                }
-                            }
-                        }
-                    } catch (IOException | ServletException e) {
-                        throw new IllegalStateException("Error processing request parts", e);
-                    }
-                    if (!multipartBodyType.isEmpty()) {
-                        requestBodyType = multipartBodyType;
-                    }
-                } else {
+                    requestBodyType = multipartBody.get();
+                } else if (request.body().size() > 0) {
                     // Non-multipart.
-                    byte[] requestBodyBytes;
-                    try (var in = request.getInputStream()) {
-                        requestBodyBytes = IOUtils.toByteArray(in);
-                    } catch (IOException e) {
-                        throw new IllegalStateException("Error processing request body", e);
-                    }
-                    if (requestBodyBytes.length > 0) {
-                        requestBodyType = new BinaryType(requestBodyBytes);
-                    }
+                    requestBodyType = new BinaryType(CallbackPayloadStore.getInstance().read(request.body()));
                 }
                 if (requestBodyType != null) {
                     requestMap.addItem(REPORT_ITEM_BODY, requestBodyType);

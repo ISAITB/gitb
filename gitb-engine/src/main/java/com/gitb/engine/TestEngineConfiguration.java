@@ -66,6 +66,11 @@ public class TestEngineConfiguration {
 	public static String RESOURCE_ID_PARAMETER;
 	public static Configuration DEFAULT_MESSAGING_CONFIGURATION;
 	public static String HANDLER_API_ROOT;
+	public static long CALLBACK_WAIT_TIMEOUT;
+	public static int CALLBACK_WAIT_LIMIT;
+	public static String TEMP_LOCATION;
+	public static Boolean TEMP_CALLBACK_STORAGE_ENABLED;
+	public static String TEMP_CALLBACK_STORAGE_LOCATION;
 
 	public static final String HANDLER_API_SEGMENT = "api";
 	private static final String ENV_CALLBACK_ROOT_URL = "CALLBACK_ROOT_URL";
@@ -90,6 +95,11 @@ public class TestEngineConfiguration {
 	private static final String ENV_TEMP_STORAGE_BINARY_THRESHOLD = "GITB_ENGINE_STORAGE_BINARY_THRESHOLD";
 	private static final String ENV_TEMP_STORAGE_STRING_THRESHOLD = "GITB_ENGINE_STORAGE_STRING_THRESHOLD";
 	private static final String ENV_TEMP_STORAGE_XML_THRESHOLD = "GITB_ENGINE_STORAGE_XML_THRESHOLD";
+	private static final String ENV_CALLBACK_WAIT_TIMEOUT = "CALLBACK_WAIT_TIMEOUT";
+	private static final String ENV_CALLBACK_WAIT_LIMIT = "CALLBACK_WAIT_LIMIT";
+	private static final String ENV_TEMP_LOCATION = "GITB_ENGINE_TEMP_LOCATION";
+	private static final String ENV_TEMP_CALLBACK_STORAGE_ENABLED = "GITB_ENGINE_CALLBACK_STORAGE_ENABLED";
+	private static final String ENV_TEMP_CALLBACK_STORAGE_LOCATION = "GITB_ENGINE_CALLBACK_STORAGE_LOCATION";
 	private static final String ENV_FILE_SUFFIX = "_FILE";
 	private static final String ENV_DEV_FILE_SUFFIX = "_FILE_DEV";
 	private static final Path DEFAULT_EXTRA_CONFIGS_PATH = Path.of("/itbsrv/extra-configs");
@@ -154,6 +164,10 @@ public class TestEngineConfiguration {
 			HANDLER_API_ROOT = rootCallbackUrl+HANDLER_API_SEGMENT+"/";
 			CoreConfiguration.GITB_REST_CALLBACK_API_ROOT = HANDLER_API_ROOT+"gitb";
 			// Determine callback URLs - end.
+			// General-purpose temp location - start.
+			TEMP_LOCATION = System.getenv().getOrDefault(ENV_TEMP_LOCATION, config.getString("gitb.engine.temp.location", "./temp/"));
+			TEMP_LOCATION = Strings.CS.appendIfMissing(TEMP_LOCATION, "/");
+			// General-purpose temp location - end.
 			// Temp storage properties - start.
 			TEMP_STORAGE_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_STORAGE_ENABLED, config.getString("gitb.engine.storage.enabled", "true")));
 			TEMP_STORAGE_LOCATION = System.getenv().getOrDefault(ENV_TEMP_STORAGE_LOCATION, config.getString("gitb.engine.storage.location", "./temp/session/"));
@@ -194,6 +208,12 @@ public class TestEngineConfiguration {
 			// Embedded messaging handler configuration - start.
 			DEFAULT_MESSAGING_CONFIGURATION = loadDefaultMessagingHandlerConfiguration(config);
 			// Embedded messaging handler configuration - end.
+			// Incoming call holding (race avoidance for HTTP/SOAP receive steps) - start.
+			CALLBACK_WAIT_TIMEOUT = Long.parseLong(System.getenv().getOrDefault(ENV_CALLBACK_WAIT_TIMEOUT, config.getString("gitb.engine.callbacks.wait-timeout", "30000")));
+			CALLBACK_WAIT_LIMIT = Integer.parseInt(System.getenv().getOrDefault(ENV_CALLBACK_WAIT_LIMIT, config.getString("gitb.engine.callbacks.wait-limit", "1000")));
+			TEMP_CALLBACK_STORAGE_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault(ENV_TEMP_CALLBACK_STORAGE_ENABLED, config.getString("gitb.engine.callbacks.storage.enabled", "true")));
+			TEMP_CALLBACK_STORAGE_LOCATION = System.getenv().getOrDefault(ENV_TEMP_CALLBACK_STORAGE_LOCATION, config.getString("gitb.engine.callbacks.storage.location", TEMP_LOCATION + "callback-data/"));
+			// Incoming call holding (race avoidance for HTTP/SOAP receive steps) - end.
 			// JSON Path configuration
 			configureJsonPath();
 			// Proxy configuration

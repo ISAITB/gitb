@@ -27,6 +27,7 @@ import com.gitb.tr.TestResultType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +53,35 @@ public class TdlTestHelper {
         TestbedService.start(sessionId);
         TestStepStatus status = client.sessionResult().get(30, TimeUnit.SECONDS);
         return new TestRunResult(status, client.logMessages());
+    }
+
+    /**
+     * A session started via {@link #runAsync} without blocking for its outcome, paired with its session ID so
+     * that the caller can interact with it (e.g. issue calls against its configured system API key, or stop it
+     * explicitly) while it is still executing.
+     */
+    public record AsyncRun(String sessionId, CompletableFuture<TestRunResult> result) {}
+
+    /**
+     * As {@link #run(String, String, List)} but returns immediately without waiting for the session to complete,
+     * so that the caller can act (e.g. simulate an incoming asynchronous call) while the session is still
+     * progressing through its steps.
+     */
+    public static AsyncRun runAsync(String testCaseId, String apiKey, List<AnyContent> inputs) throws Exception {
+        TestCapturingClient client = new TestCapturingClient();
+        String sessionId = TestbedService.initiate(testCaseId, null);
+        TestbedServiceCallbackHandler.getInstance().registerForTest(sessionId, client);
+        TestbedService.configure(sessionId, buildConfigurations(apiKey), inputs);
+        // configure() only tells the SessionSupervisor actor - it does not itself wait for the configuration
+        // (including the SYSTEM api key ending up in the session's TestCaseContext) to actually be applied.
+        // Callers of runAsync rely on that having happened by the time this method returns (e.g. to immediately
+        // fire a call against the session's system API key), so wait for the same signal the real TestbedClient
+        // callback would receive before starting the session.
+        client.configComplete().get(5, TimeUnit.SECONDS);
+        TestbedService.start(sessionId);
+        CompletableFuture<TestRunResult> resultFuture = client.sessionResult()
+                .thenApply(status -> new TestRunResult(status, client.logMessages()));
+        return new AsyncRun(sessionId, resultFuture);
     }
 
     public static TestRunResult runWithCallback(String testCaseId, String apiKey, List<AnyContent> inputs,
@@ -123,7 +153,10 @@ public class TdlTestHelper {
         configs.add(sutConfig);
         if (apiKey != null) {
             ActorConfiguration sysConfig = new ActorConfiguration();
-            sysConfig.setActor("SYSTEM");
+            // Must be the reserved actor name SessionConfigurationData looks for - not the TDL actor id "SYSTEM" -
+            // otherwise this is treated as a plain (unused) SUT actor configuration and never reaches the
+            // session's SYSTEM scope map at all.
+            sysConfig.setActor(com.gitb.PropertyConstants.ACTOR_CONFIG_SYSTEM);
             Configuration apiKeyConfig = new Configuration();
             apiKeyConfig.setName("apiKey");
             apiKeyConfig.setValue(apiKey);

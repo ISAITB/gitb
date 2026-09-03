@@ -37,6 +37,8 @@ public class TestEngine {
         ModuleManager.getInstance();
         //Initialize the SessionManager
 		SessionManager.getInstance();
+        //Initialize the CallbackPayloadStore (used to hold incoming call payloads while they await a matching receive step)
+        CallbackPayloadStore.getInstance();
 	}
 
 	public void destroy() {
@@ -44,6 +46,10 @@ public class TestEngine {
 		actorSystem.shutdown();
 
 		SessionManager
+			.getInstance()
+			.destroy();
+
+		CallbackPayloadStore
 			.getInstance()
 			.destroy();
 	}

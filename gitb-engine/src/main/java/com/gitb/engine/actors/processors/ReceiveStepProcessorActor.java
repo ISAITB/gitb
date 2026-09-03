@@ -15,7 +15,6 @@
 
 package com.gitb.engine.actors.processors;
 
-import com.gitb.PropertyConstants;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
@@ -158,7 +157,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 						CallbackManager.getInstance().registerCallbackData(new SessionCallbackData(
 								messagingContext.getSessionId(),
 								callId,
-								((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP_API_KEY).toString(),
+								scope.getContext().getSystemApiKey(),
 								deferredReport.getCallbackData())
 						);
 						// Handle the report's deferred task (if any).

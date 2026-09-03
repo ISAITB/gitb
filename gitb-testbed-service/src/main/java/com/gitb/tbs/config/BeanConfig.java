@@ -34,6 +34,7 @@ import org.springframework.boot.webmvc.autoconfigure.DispatcherServletRegistrati
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.xml.namespace.QName;
@@ -66,6 +67,25 @@ public class BeanConfig {
         registration.addUrlPatterns("/TestbedService/*");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return registration;
+    }
+
+    /**
+     * Executor used by {@code HttpMessagingServer}/{@code SoapMessagingServer} to build and send the response
+     * to an incoming call once matched to a receive step - possibly after being held for a while awaiting a
+     * matching step (see {@code CallbackManager.lookupHandlingData}). Core threads are pre-started deliberately:
+     * {@link #dispatcherServlet()} makes the request context ThreadLocal inheritable, so a pool thread lazily
+     * created while handling a request would otherwise inherit (and retain a reference to) that request.
+     */
+    @Bean
+    public ThreadPoolTaskExecutor messagingCallbackExecutor() {
+        var executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(16);
+        executor.setQueueCapacity(1000);
+        executor.setThreadNamePrefix("messaging-callback-");
+        executor.initialize();
+        executor.getThreadPoolExecutor().prestartAllCoreThreads();
+        return executor;
     }
 
     @Bean

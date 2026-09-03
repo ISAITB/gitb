@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-http-receive-race-timeout" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>HttpMessagingV2 receive reached after a delay, with its own short timeout</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- delay=1500 keeps the session away from the receive step below, giving the test time to fire an
+             incoming HTTP call that is expected to be rejected (either because holding is disabled, or because
+             it is held for longer than the configured wait window) before the receive step is ever reached. -->
+        <receive handler="SimulatedMessaging" desc="Delay before the real receive step is reached">
+            <input name="delay">1500</input>
+        </receive>
+        <!-- Since the earlier call was already rejected, nothing will ever satisfy this step - its own short
+             timeout keeps the session bounded and deterministically FAILED. -->
+        <receive id="msg" handler="HttpMessagingV2" desc="Receive HTTP callback" timeout="500" timeoutIsError="true"/>
+    </steps>
+</testcase>
