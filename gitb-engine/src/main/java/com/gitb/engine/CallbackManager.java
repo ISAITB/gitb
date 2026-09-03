@@ -17,6 +17,7 @@ package com.gitb.engine;
 
 import com.gitb.core.LogLevel;
 import com.gitb.engine.commands.messaging.NotificationReceived;
+import com.gitb.engine.commands.messaging.ResultRequested;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.callback.CallbackType;
@@ -196,6 +197,38 @@ public class CallbackManager {
             existingSessionCallIds.add(callId);
             callToActorMap.put(callId, actor);
         }
+    }
+
+    /**
+     * Hands the actual incoming request over to the {@code receive} step's actor (registered earlier via
+     * {@link #registerForNotification}) for it to resolve dynamically - i.e. the step defines a {@code result}
+     * element. This is an alternative resolution of an already-matched call (matching itself, including the
+     * held-call race handling, is unaffected and has already happened by the time this is called) - not a new
+     * matching mechanism.
+     * <br>
+     * Deliberately does not clean up the {@code sessionId}/{@code callId} registration used for notification
+     * routing (unlike {@link #callbackReceived}) - the step's actor is expected to eventually notify back (via a
+     * subsequent call to {@link #callbackReceived}) once it has fully finished with this call (including any
+     * further processing after the resolved response returned here has been sent to the caller), at which point
+     * that registration is what allows the notification to still reach it.
+     *
+     * @param sessionId The ID of the session owning the call.
+     * @param callId The ID of the matched call.
+     * @param request The parsed incoming request.
+     * @return A future to be completed by the step's actor with the resolved response.
+     */
+    public CompletableFuture<Message> requestResult(String sessionId, String callId, Message request) {
+        ActorRef actor;
+        synchronized (mutex) {
+            actor = callToActorMap.get(callId);
+        }
+        CompletableFuture<Message> responseHandle = new CompletableFuture<>();
+        if (actor != null && !actor.isTerminated()) {
+            actor.tell(new ResultRequested(request, responseHandle), ActorRef.noSender());
+        } else {
+            responseHandle.completeExceptionally(new IllegalStateException("No test step actor is registered anymore for call [" + callId + "]."));
+        }
+        return responseHandle;
     }
 
     public void callbackReceived(String sessionId, String callId, Exception error) {

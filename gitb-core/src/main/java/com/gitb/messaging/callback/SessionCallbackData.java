@@ -15,5 +15,15 @@
 
 package com.gitb.messaging.callback;
 
-public record SessionCallbackData(String sessionId, String callId, String systemApiKey, CallbackData data) {
+/**
+ * @param dynamic Whether the registering {@code receive} step defines a {@code result} element - i.e. the response
+ *                for a matched incoming call is not readily available in {@code data} but must instead be resolved
+ *                dynamically (against the actual incoming request) by the step's own actor. See
+ *                {@code com.gitb.engine.CallbackManager#requestResult}.
+ */
+public record SessionCallbackData(String sessionId, String callId, String systemApiKey, CallbackData data, boolean dynamic) {
+
+    public SessionCallbackData(String sessionId, String callId, String systemApiKey, CallbackData data) {
+        this(sessionId, callId, systemApiKey, data, false);
+    }
 }

@@ -177,7 +177,8 @@ public enum ErrorCode {
     EXTERNAL_ACTOR_REFERENCES_NOT_CHECKED(              "TDL-140", "References are made to external actors %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO),
     EXTERNAL_PARAMETER_REFERENCES_NOT_CHECKED(          "TDL-141", "References are made to domain parameters %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO),
     INTERACTION_DEPENDENCY_INCOMPLETE(                  "TDL-142", "%s [%s] defines a user interaction element with a [dependsOn] attribute but no [dependsOnValue] attribute (or vice-versa). Both need to be set for the dependency to be considered.", ERROR, true),
-    INTERACTION_DEPENDENCY_INVALID_REFERENCE(           "TDL-143", "%s [%s] defines a user interaction element with a [dependsOn] attribute value [%s] that doesn't match the name of a request defined in the same interact step.", ERROR, true)
+    INTERACTION_DEPENDENCY_INVALID_REFERENCE(           "TDL-143", "%s [%s] defines a user interaction element with a [dependsOn] attribute value [%s] that doesn't match the name of a request defined in the same interact step.", ERROR, true),
+    RESULT_NOT_SUPPORTED_ON_LISTEN(                     "TDL-144", "%s [%s] defines a listen step with a 'result' element. This is currently only supported for 'receive' steps.", ERROR, true)
     ;
 
     private final String code;

@@ -171,6 +171,14 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     @Override
+    public void handleResultOutput(ReceiveOrListen step) {
+        super.handleResultOutput(step);
+        if (step.getResult() != null) {
+            checkBindings(step.getResult().getOutput());
+        }
+    }
+
+    @Override
     public void handleTestOutput(Output output) {
         super.handleTestOutput(output);
         if (output != null) {
@@ -234,6 +242,14 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 checkToken(receiveStep.getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutFlag(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutIsError(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            }
+            if (step instanceof ReceiveOrListen receiveOrListenStep && receiveOrListenStep.getResult() != null) {
+                if (step instanceof Listen) {
+                    addReportItem(ErrorCode.RESULT_NOT_SUPPORTED_ON_LISTEN, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet));
+                }
+                checkToken(receiveOrListenStep.getResult().getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                // result/output is checked separately, in handleResultOutput() - which runs after result/steps
+                // has been walked, so that result/output can see variables result/steps produces.
             }
         } else if (step instanceof BeginProcessingTransaction beginProcessingTransactionStep) {
             checkToken(beginProcessingTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);

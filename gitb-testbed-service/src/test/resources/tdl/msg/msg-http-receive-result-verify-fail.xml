@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-http-receive-result-verify-fail" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>HttpMessagingV2 receive with dynamic result whose steps fail</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <receive handler="SimulatedMessaging" desc="Delay before the real receive step is reached">
+            <input name="delay">500</input>
+        </receive>
+        <receive id="msg" handler="HttpMessagingV2" desc="Receive with dynamic result that fails via a verify">
+            <result timeout="5000">
+                <steps>
+                    <verify handler="StringValidator" desc="failing verify">
+                        <input name="actual">$msg{request}{method}</input>
+                        <input name="expected">'MISMATCH'</input>
+                    </verify>
+                </steps>
+                <output name="status">'200'</output>
+            </result>
+        </receive>
+    </steps>
+</testcase>

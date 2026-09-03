@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
@@ -214,6 +215,19 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
     @Override
     public void endSession(String sessionId) {
         CallbackManager.getInstance().sessionEnded(sessionId);
+    }
+
+    @Override
+    public Set<String> getResultOutputNamesHandledInternally() {
+        return Set.of(STATUS_ARGUMENT_NAME, HEADERS_ARGUMENT_NAME, ENVELOPE_ARGUMENT_NAME, ATTACHMENTS_ARGUMENT_NAME, VERSION_ARGUMENT_NAME);
+    }
+
+    @Override
+    public MapType buildResultPreview(Message request, Message responseDefaults) {
+        MapType preview = new MapType();
+        preview.addItem(REPORT_ITEM_REQUEST, messageToMap(request));
+        preview.addItem(REPORT_ITEM_RESPONSE, messageToMap(responseDefaults));
+        return preview;
     }
 
 }

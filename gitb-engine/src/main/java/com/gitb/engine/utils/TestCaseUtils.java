@@ -176,6 +176,10 @@ public class TestCaseUtils {
         applyStopOnErrorSemantics(steps, callStep.isStopOnError(), callStep.isStopOnChildError());
     }
 
+    public static void applyStopOnErrorSemantics(ReceiveOrListen receiveStep, Sequence steps) {
+        applyStopOnErrorSemantics(steps, receiveStep.isStopOnError(), null);
+    }
+
     private static Pair<Boolean, Boolean> stopOnErrorChildFlags(Pair<Boolean, Boolean> parentFlags, Pair<Boolean, Boolean> ownFlags) {
         Boolean stopOnError;
         Boolean stopOnChildError;

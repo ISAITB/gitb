@@ -52,7 +52,7 @@ public class TdlTestHelper {
         TestbedService.configure(sessionId, buildConfigurations(apiKey), inputs);
         TestbedService.start(sessionId);
         TestStepStatus status = client.sessionResult().get(30, TimeUnit.SECONDS);
-        return new TestRunResult(status, client.logMessages());
+        return new TestRunResult(status, client.logMessages(), client.allStatuses());
     }
 
     /**
@@ -80,7 +80,7 @@ public class TdlTestHelper {
         client.configComplete().get(5, TimeUnit.SECONDS);
         TestbedService.start(sessionId);
         CompletableFuture<TestRunResult> resultFuture = client.sessionResult()
-                .thenApply(status -> new TestRunResult(status, client.logMessages()));
+                .thenApply(status -> new TestRunResult(status, client.logMessages(), client.allStatuses()));
         return new AsyncRun(sessionId, resultFuture);
     }
 

@@ -26,10 +26,16 @@ public class TestRunResult {
 
     private final TestStepStatus finalStatus;
     private final List<String> logMessages;
+    private final List<TestStepStatus> allStatuses;
 
     TestRunResult(TestStepStatus finalStatus, List<String> logMessages) {
+        this(finalStatus, logMessages, List.of());
+    }
+
+    TestRunResult(TestStepStatus finalStatus, List<String> logMessages, List<TestStepStatus> allStatuses) {
         this.finalStatus = finalStatus;
         this.logMessages = List.copyOf(logMessages);
+        this.allStatuses = List.copyOf(allStatuses);
     }
 
     public TestStepStatus status() {
@@ -38,6 +44,12 @@ public class TestRunResult {
 
     public List<String> logMessages() {
         return logMessages;
+    }
+
+    /** Every {@code TestStepStatus} update received for the session, including per-step ones (not just the final
+     * one) - e.g. to inspect an individual step's own {@code TAR} report/context directly. */
+    public List<TestStepStatus> allStatuses() {
+        return allStatuses;
     }
 
     public TestRunResult assertSuccess() {

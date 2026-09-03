@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-http-receive-result-steps" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>HttpMessagingV2 receive with dynamic result (steps and output)</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <receive handler="SimulatedMessaging" desc="Delay before the real receive step is reached">
+            <input name="delay">500</input>
+        </receive>
+        <!-- result/steps runs against the real incoming request (exposed as $msg{request}, previewing what the
+             step's own id will hold once it completes) and produces a value that result/output then uses to
+             override the response body. -->
+        <receive id="msg" handler="HttpMessagingV2" desc="Receive with dynamic result (steps and output)">
+            <result>
+                <steps>
+                    <assign to="computed">'ack-' || $msg{request}{method}</assign>
+                </steps>
+                <output name="status">'202'</output>
+                <output name="body">$computed</output>
+                <output name="validationOutcome">'accepted'</output>
+            </result>
+        </receive>
+        <!-- Proves the generic actor-side patch reaches a later step's live scope: 'validationOutcome' is not a
+             name any handler recognises, so it must land as a top-level sibling on $msg alongside request/response. -->
+        <log>'outcome=' || $msg{validationOutcome}</log>
+        <verify handler="StringValidator" desc="result/output landed as a top-level sibling on the step variable">
+            <input name="actual">$msg{validationOutcome}</input>
+            <input name="expected">'accepted'</input>
+        </verify>
+    </steps>
+</testcase>

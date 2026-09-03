@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-simulated-receive-result-deferred" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>SimulatedMessaging receive with result (deferred async callback)</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <variables>
+        <var name="params" type="map"/>
+    </variables>
+    <steps stopOnError="true">
+        <assign to="params{code}">'A1'</assign>
+        <!-- delay=50 triggers the async deferred path: the handler returns a DeferredMessagingReport and later
+             schedules CallbackManager.callbackReceived() - so 'result' processing is entered via the actor's
+             NotificationReceived handling, distinct from the synchronous (immediate) case. -->
+        <receive id="msg" handler="SimulatedMessaging" desc="Receive with result (deferred callback)">
+            <input name="parameters">$params</input>
+            <input name="delay">50</input>
+            <result>
+                <steps>
+                    <assign to="verdict">'ok-' || $msg{code}</assign>
+                </steps>
+                <output name="verdict">$verdict</output>
+            </result>
+        </receive>
+        <log>'verdict=' || $msg{verdict}</log>
+        <verify handler="StringValidator" desc="result/output patched onto the step variable">
+            <input name="actual">$msg{verdict}</input>
+            <input name="expected">'ok-A1'</input>
+        </verify>
+        <verify handler="StringValidator" desc="handler's own report items still present alongside the patched output">
+            <input name="actual">$msg{code}</input>
+            <input name="expected">'A1'</input>
+        </verify>
+    </steps>
+</testcase>

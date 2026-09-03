@@ -277,6 +277,19 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         CallbackManager.getInstance().sessionEnded(sessionId);
     }
 
+    @Override
+    public Set<String> getResultOutputNamesHandledInternally() {
+        return Set.of(STATUS_ARGUMENT_NAME, HEADERS_ARGUMENT_NAME, BODY_ARGUMENT_NAME);
+    }
+
+    @Override
+    public MapType buildResultPreview(Message request, Message responseDefaults) {
+        MapType preview = new MapType();
+        preview.addItem(REPORT_ITEM_REQUEST, messageToMap(request));
+        preview.addItem(REPORT_ITEM_RESPONSE, messageToMap(responseDefaults));
+        return preview;
+    }
+
     private Map<String, List<String>> mergeMapsOfValues(Map<String, List<String>> map1, Map<String, List<String>> map2) {
         Map<String, List<String>> result = new HashMap<>(map1);
         map2.forEach((key, values) -> result.merge(key, values, (currentValues, newValues) -> {

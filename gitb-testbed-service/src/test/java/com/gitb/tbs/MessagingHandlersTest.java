@@ -42,7 +42,8 @@ class MessagingHandlersTest extends BaseIntegrationTest {
                 "msg-http-receive-basic", "msg-http-receive-status", "msg-http-send-receive",
                 "msg-soap-send-basic", "msg-soap-send-action", "msg-soap-send-tolerate",
                 "msg-soap-receive-basic",
-                "msg-domibus-receive-ack", "msg-domibus-receive-expiry"
+                "msg-domibus-receive-ack", "msg-domibus-receive-expiry",
+                "msg-domibus-receive-result", "msg-domibus-receive-result-expiry"
         }) {
             stubTdl(id, "tdl/msg/" + id + ".xml");
         }
@@ -217,5 +218,25 @@ class MessagingHandlersTest extends BaseIntegrationTest {
     @Test
     void domibusReceiveExpiry() throws Exception {
         assertFailed(run("msg-domibus-receive-expiry", API_KEY, backendUrlInput()));
+    }
+
+    /**
+     * 'result' generalizes to a real third-party-shaped handler (CallbackData registered, but no messaging
+     * server ever matches/serves it) with zero handler-side changes: the handler's own report - already complete
+     * by the time the DeferredTask's polling delivers it - is used as the preview exposed to result/steps, and
+     * the resolved result/output is patched onto it generically by the actor.
+     */
+    @Test
+    void domibusReceiveResult() throws Exception {
+        assertSuccess(run("msg-domibus-receive-result", API_KEY, backendUrlInput()));
+    }
+
+    /**
+     * 'result' must never run when the DeferredTask expires without ever receiving anything - there is no
+     * message to build a preview from, so the step must fail exactly as it would with no result block at all.
+     */
+    @Test
+    void domibusReceiveResultNotRunOnExpiry() throws Exception {
+        assertFailed(run("msg-domibus-receive-result-expiry", API_KEY, backendUrlInput()));
     }
 }
