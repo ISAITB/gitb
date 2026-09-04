@@ -789,4 +789,36 @@
         <sha1>691459d4644894dae8e5c2d9550a4cfb8302f62f</sha1>
         <cve>CVE-2026-59280</cve>
     </suppress>
+    <suppress>
+        <!-- Relates to a transitive dependency that is not exploitable. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.19.jar
+    ]]></notes>
+        <sha1>691459d4644894dae8e5c2d9550a4cfb8302f62f</sha1>
+        <cve>CVE-2026-47890</cve>
+    </suppress>
+    <suppress>
+        <!-- Relates to a transitive dependency that is not exploitable. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.19.jar
+    ]]></notes>
+        <sha1>691459d4644894dae8e5c2d9550a4cfb8302f62f</sha1>
+        <cve>CVE-2026-47891</cve>
+    </suppress>
+    <suppress>
+        <!-- Relates to a transitive dependency that is not exploitable. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.19.jar
+    ]]></notes>
+        <sha1>691459d4644894dae8e5c2d9550a4cfb8302f62f</sha1>
+        <cve>CVE-2026-59282</cve>
+    </suppress>
+    <suppress>
+        <!-- Relates to a transitive dependency that is not exploitable. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.19.jar
+    ]]></notes>
+        <sha1>691459d4644894dae8e5c2d9550a4cfb8302f62f</sha1>
+        <cve>CVE-2026-59281</cve>
+    </suppress>
 </suppressions>
