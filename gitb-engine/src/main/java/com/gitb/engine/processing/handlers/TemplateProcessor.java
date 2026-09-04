@@ -130,18 +130,25 @@ public class TemplateProcessor extends AbstractProcessingHandler {
     }
 
     private Object dataTypeToObject(DataType type) {
-        if (type instanceof ListType) {
-            var list = new ArrayList<>();
-            for (int i=0; i < ((ListType)type).getSize(); i++) {
-                list.add(dataTypeToObject(((ListType)type).getItem(i)));
+        switch (type) {
+            case null -> {
+                return "";
             }
-            return list;
-        } else if (type instanceof MapType) {
-            var map = new HashMap<String, Object>();
-            ((MapType)type).getItems().forEach((key, value) -> map.put(key, dataTypeToObject(value)));
-            return map;
-        } else {
-            return type.getValue();
+            case ListType listType -> {
+                var list = new ArrayList<>();
+                for (int i = 0; i < listType.getSize(); i++) {
+                    list.add(dataTypeToObject(listType.getItem(i)));
+                }
+                return list;
+            }
+            case MapType mapType -> {
+                var map = new HashMap<String, Object>();
+                mapType.getItems().forEach((key, value) -> map.put(key, dataTypeToObject(value)));
+                return map;
+            }
+            default -> {
+                return type.convertTo(DataType.STRING_DATA_TYPE).getValue();
+            }
         }
     }
 
