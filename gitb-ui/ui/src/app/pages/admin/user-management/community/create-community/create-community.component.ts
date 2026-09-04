@@ -47,6 +47,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
     allowUserManagement: true,
     allowXmlReports: true,
     allowObsoleteSessionDeletion: true,
+    allowAdminSenderNames: false,
+    allowOrganisationSenderNames: false,
     interactionNotification: false,
     preferences: {
       menuCollapsed: true,
@@ -130,6 +132,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
           this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
           this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
           this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!, this.community.allowUserManagement!, this.community.allowXmlReports!, this.community.allowObsoleteSessionDeletion!,
+          this.community.allowAdminSenderNames!, this.community.allowOrganisationSenderNames!,
           this.community.domain?.id, this.community.preferences!, this.dataService.serializeTags(this.community.tags))
           .subscribe(() => {
             this.cancelCreateCommunity()

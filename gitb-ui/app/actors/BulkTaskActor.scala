@@ -16,8 +16,9 @@
 package actors
 
 import actors.BulkTaskActor.{TaskComplete, logger}
+import actors.events.messaging.CreateMessageUnreadStatus
 import actors.events.obsolete.{DeleteAllObsoleteSessions, DeleteObsoleteSessionsForCommunity, DeleteObsoleteSessionsForOrganisation}
-import managers.TestResultManager
+import managers.{MessageManager, TestResultManager}
 import org.apache.pekko.actor.{Actor, Stash}
 import org.slf4j.LoggerFactory
 
@@ -34,7 +35,7 @@ object BulkTaskActor {
 /*
  * Actor that executes bulk tasks one at a time.
  */
-class BulkTaskActor @Inject() (testResultManager: TestResultManager) extends Actor with Stash {
+class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageManager: MessageManager) extends Actor with Stash {
 
   implicit private val ec: ExecutionContext = context.dispatcher
 
@@ -42,6 +43,7 @@ class BulkTaskActor @Inject() (testResultManager: TestResultManager) extends Act
     case _: DeleteAllObsoleteSessions               => startTask(handleDeleteAllObsoleteSessions())
     case msg: DeleteObsoleteSessionsForCommunity    => startTask(handleDeleteObsoleteSessionsForCommunity(msg))
     case msg: DeleteObsoleteSessionsForOrganisation => startTask(handleDeleteObsoleteSessionsForOrganisation(msg))
+    case msg: CreateMessageUnreadStatus             => startTask(handleCreateMessageUnreadStatus(msg))
     case msg => logger.warn("Unexpected event type received [{}]", msg.getClass.getName)
   }
 
@@ -81,6 +83,10 @@ class BulkTaskActor @Inject() (testResultManager: TestResultManager) extends Act
     testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(msg.organisationId).map { count =>
       logger.info("Deleted {} obsolete test sessions for organisation {}", count, msg.organisationId)
     }
+  }
+
+  private def handleCreateMessageUnreadStatus(msg: CreateMessageUnreadStatus): Future[Unit] = {
+    messageManager.createUnreadStatusRows(msg.messageId, msg.excludeUserId)
   }
 
 }

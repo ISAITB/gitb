@@ -73,6 +73,8 @@
                 <xsd:attribute name="interactionNotification" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="allowXmlReports" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowObsoleteSessionDeletion" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="allowAdminSenderNames" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="allowOrganisationSenderNames" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

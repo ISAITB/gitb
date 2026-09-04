@@ -15,6 +15,7 @@
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Constants } from '../../common/constants';
+import {Utils} from '../../common/utils';
 
 /**
  * A generic rounded "pill" display - extracted from the applied custom property filter's styling (see
@@ -32,6 +33,7 @@ export class PillComponent {
 
   @Input() title?: string
   @Input() text!: string
+  @Input() subText?: string
   @Input() shaded = true
   @Input() maxWidth?: number
   @Input() actionIcon?: string
@@ -46,4 +48,5 @@ export class PillComponent {
     this.action.emit()
   }
 
+  protected readonly Utils = Utils;
 }

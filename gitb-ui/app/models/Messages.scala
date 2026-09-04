@@ -21,4 +21,5 @@ case class Messages(id: Long, subject: Option[String], body: Option[String], bod
                     createdAt: Timestamp, deletedBySenderAt: Option[Timestamp],
                     parentMessageId: Option[Long], threadId: Long,
                     senderId: Option[Long], senderNameSnapshot: String,
-                    senderUserId: Option[Long], important: Boolean)
+                    senderUserId: Option[Long], senderUserNameSnapshot: Option[String], important: Boolean, senderType: Short,
+                    singleRecipientType: Option[Short], singleRecipientNameSnapshot: Option[String], recipientCount: Int)

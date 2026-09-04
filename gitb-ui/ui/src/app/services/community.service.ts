@@ -179,6 +179,7 @@ export class CommunityService {
     selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean, allowObsoleteSessionDeletion: boolean,
+    allowAdminSenderNames: boolean, allowOrganisationSenderNames: boolean,
     domainId: number|undefined, userPreferences: UserPreferences, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -195,6 +196,8 @@ export class CommunityService {
       allow_user_management: allowUserManagement,
       allow_xml_reports: allowXmlReports,
       allow_obsolete_session_deletion: allowObsoleteSessionDeletion,
+      allow_admin_sender_names: allowAdminSenderNames,
+      allow_organisation_sender_names: allowOrganisationSenderNames,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
@@ -249,6 +252,7 @@ export class CommunityService {
     selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean, allowObsoleteSessionDeletion: boolean,
+    allowAdminSenderNames: boolean, allowOrganisationSenderNames: boolean,
     domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -265,6 +269,8 @@ export class CommunityService {
       allow_user_management: allowUserManagement,
       allow_xml_reports: allowXmlReports,
       allow_obsolete_session_deletion: allowObsoleteSessionDeletion,
+      allow_admin_sender_names: allowAdminSenderNames,
+      allow_organisation_sender_names: allowOrganisationSenderNames,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,

@@ -34,6 +34,7 @@ import {StatementOptionsButtonApi} from '../statement-options-button/statement-o
 import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 import {RoutingService} from '../../services/routing.service';
 import {NavigationTarget} from '../../types/navigation-target';
+import {Utils} from '../../common/utils';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -311,13 +312,7 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   }
 
   exportPdfClicked(pop?: NgbTooltip) {
-    if (pop) {
-      pop.disableTooltip = true
-      pop.close()
-      setTimeout(() => {
-        pop.disableTooltip = false
-      }, this.Constants.TOOLTIP_DELAY + 50)
-    }
+    Utils.dismissTooltip(pop)
     this.onExport({statementReport: false, item: this.item, format: 'pdf'})
   }
 

@@ -13,6 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {MessageChainItem} from './message-chain-item';
+
 /** A common shape used by app-message-detail for both received and sent message details - see
  * MessageRowView for the equivalent used by the listing table. peerName is blank when peerCount > 1 (a
  * sent, fanned-out message) - the panel then shows a clickable "(N recipients)" indicator instead. */
@@ -28,5 +30,9 @@ export interface MessageDetailView {
     parentMessageId?: number
     // Only meaningful for received messages - drives the read/unread option shown in the header's options menu.
     read?: boolean
+    // Only meaningful for received messages - the sender's user name, already filtered server-side for
+    // the viewer (see MessageManager.resolveSenderUserName); undefined means it should not be shown.
+    senderUserName?: string
+    chain: MessageChainItem[]
 
 }

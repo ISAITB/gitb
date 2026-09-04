@@ -1,5 +1,15 @@
 @import "../../../styles/less/_common.less";
 
+// Lets app-pill participate correctly as a shrinkable child when placed inside a flex row (e.g.
+// .message-detail-peer, .message-chain-header) - without this, the host element's default
+// min-width:auto means it won't shrink below its content's unwrapped width, pushing flex siblings
+// (like a date tag) out of the row instead of letting .pill-text/.pill-subtext ellipsis below.
+:host {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+}
+
 .app-pill {
     display: inline-flex;
     align-items: center;
@@ -9,19 +19,34 @@
     height: 35px;
     padding: 5px 15px;
     max-width: 100%;
+    min-width: 0;
 
     .pill-title {
         font-weight: bold;
         white-space: nowrap;
         margin-right: 8px;
-        margin-top: -1px;
     }
 
     .pill-text {
+        // A small floor so the primary text always shows a few truncated characters rather than
+        // shrinking away to nothing at extreme widths - .pill-subtext (secondary, sheds first) has no
+        // such floor.
+        min-width: 24px;
+        flex-shrink: 1;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-top: -1px;
+    }
+
+    .pill-subtext {
+        min-width: 0;
+        flex-shrink: 2;
+        border-left: 1px solid @gray-dark-1;
+        margin-left: 8px;
+        padding-left: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .pill-action {

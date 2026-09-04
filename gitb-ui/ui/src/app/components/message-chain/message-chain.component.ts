@@ -13,15 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
-import { Constants } from '../../common/constants';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MessageChainItem } from '../../types/message-chain-item';
+import {Constants} from '../../common/constants';
 
 /**
  * The "chain of earlier messages" for a reply - reused both below the body editor when composing a reply
  * (ComposeMessageModalComponent) and above a reply's own content in the message detail panel
- * (MessageDetailComponent). Presentation is modelled on the test session comment chain (see
- * TestResultCommentsModalComponent): rounded, collapsible entries connected by an indented line.
+ * (MessageDetailComponent). The chain itself is hidden by default behind a "Show earlier messages"
+ * toggle (so a long thread doesn't dominate the screen); once expanded, each entry is rendered via
+ * app-message-item - the same component the main selected message uses - individually collapsed by
+ * default, connected by an indented line.
  */
 @Component({
   selector: 'app-message-chain',
@@ -38,11 +40,17 @@ export class MessageChainComponent {
   // the chain is ordered newest-ancestor-first there) or after it (message detail panel - oldest-first).
   @Input() continuesToContent = false
   @Input() connectorPosition: 'before'|'after' = 'after'
+  // False suppresses every entry's options menu - used by the compose modal's reply preview.
+  @Input() interactive = true
+  @Output() replyRequested = new EventEmitter<{ id: number, subject?: string }>()
 
-  protected readonly Constants = Constants
+  // Whether the collapsed-by-default chain list itself is currently shown - independent of each
+  // individual entry's own collapsed/expanded body state (see app-message-item).
+  chainExpanded = false
 
-  toggle(item: MessageChainItem) {
-    item.collapsed = !item.collapsed
+  toggleChain() {
+    this.chainExpanded = !this.chainExpanded
   }
 
+  protected readonly Constants = Constants;
 }

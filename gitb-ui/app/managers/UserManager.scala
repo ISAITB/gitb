@@ -350,6 +350,8 @@ class UserManager @Inject() (accountManager: AccountManager,
       userIds <- DBIO.successful(activeUserIds.toSet ++ inactiveUserIds.toSet)
       // Delete preferences.
       _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+      // Clear message references (sender name/id snapshot and unread status) - must run before the users are deleted.
+      _ <- messageManager.clearUserReferences(userIds.toSeq)
       // Delete user entries.
       _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
     } yield ()
@@ -370,6 +372,8 @@ class UserManager @Inject() (accountManager: AccountManager,
             .result
           // Delete preferences.
           _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+          // Clear message references (sender name/id snapshot and unread status) - must run before the users are deleted.
+          _ <- messageManager.clearUserReferences(userIds)
           // Delete user entries.
           _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
         } yield ()

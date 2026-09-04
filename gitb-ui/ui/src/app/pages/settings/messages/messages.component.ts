@@ -59,9 +59,10 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   sentView = false
   messages: MessageRowView[] = []
   selectedDetail?: MessageDetailView
-  selectedChain: MessageChainItem[] = []
   detailLoading = false
-  detailActionPending = false
+  detailReplyPending = false
+  detailMarkReadOrUnreadPending = false
+  detailDeletePending = false
   loadingStatus = { status: Constants.STATUS.PENDING }
   contentRefreshing = false
   deletePending = false
@@ -406,7 +407,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
           const communityOptions: RecipientOption[] = communities
             .slice()
             .sort((a, b) => a.fname.localeCompare(b.fname))
-            .map(c => ({ id: c.id, fname: c.fname }))
+            .map(c => ({ id: c.id, fname: c.fname, targetType: Constants.MESSAGE_TARGET_TYPE.ALL_COMMUNITY_USERS }))
           return ([{ id: -1, fname: 'Test Bed administrator', targetType: Constants.MESSAGE_TARGET_TYPE.TESTBED_ADMIN }] as RecipientOption[]).concat(communityOptions)
         })
       ),
@@ -450,9 +451,12 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     if (selected == undefined) {
       this.peerFilterShowStage2 = false
       this.peerFilterTargets = []
-    } else if (selected.targetType != undefined) {
+    } else if (selected.targetType == Constants.MESSAGE_TARGET_TYPE.TESTBED_ADMIN) {
       this.peerFilterShowStage2 = false
       this.peerFilterTargets = [{ targetType: selected.targetType }]
+    } else if (selected.targetType == Constants.MESSAGE_TARGET_TYPE.ALL_COMMUNITY_USERS) {
+      this.peerFilterShowStage2 = true
+      this.peerFilterTargets = [{ targetType: selected.targetType, communityId: selected.id }]
     } else {
       this.peerFilterShowStage2 = true
       this.peerFilterTargets = []
@@ -481,7 +485,6 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     // post-delete reload - the selected message may no longer be among the results, so the detail panel
     // is always cleared here rather than only when it's known to be affected.
     this.selectedDetail = undefined
-    this.selectedChain = []
     if (this.loadingStatus.status == Constants.STATUS.FINISHED) {
       this.contentRefreshing = true
     } else {
@@ -529,24 +532,14 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
       // Clicking the already-selected message again deselects it - and since it's already displayed,
       // there is nothing to (re-)fetch either way.
       this.selectedDetail = undefined
-      this.selectedChain = []
       return
     }
     this.detailLoading = true
     const detail$: Observable<MessageDetailView> = this.sentView
-      ? this.messageService.getSentMessage(row.id).pipe(map((detail) => ({ id: detail.id, subject: detail.subject, body: detail.body, peerName: detail.singleRecipientName ?? '', peerCount: detail.recipientCount, date: detail.date, important: detail.important, parentMessageId: detail.parentMessageId })))
-      : this.messageService.getReceivedMessage(row.id).pipe(map((detail) => ({ id: detail.id, subject: detail.subject, body: detail.body, peerName: detail.senderName, peerCount: 1, date: detail.date, important: detail.important, parentMessageId: detail.parentMessageId, read: true })))
-    // The chain's starting point (the row's own parentMessageId) is already known from the row itself,
-    // so the chain no longer needs to wait for the detail response - both requests are issued together
-    // here and the display below is replaced only once both have resolved (no intermediate state where
-    // the message is shown before its chain has loaded).
-    const chain$: Observable<MessageChainItem[]> = row.parentMessageId == undefined ? of([]) : this.messageService.getMessageChain(row.parentMessageId)
-    forkJoin([detail$, chain$]).subscribe(([detail, chain]) => {
+      ? this.messageService.getSentMessage(row.id).pipe(map((detail) => ({ id: detail.id, subject: detail.subject, body: detail.body, peerName: detail.singleRecipientName ?? '', peerCount: detail.recipientCount, date: detail.date, important: detail.important, parentMessageId: detail.parentMessageId, chain: detail.chain })))
+      : this.messageService.getReceivedMessage(row.id).pipe(map((detail) => ({ id: detail.id, subject: detail.subject, body: detail.body, peerName: detail.senderName, senderUserName: detail.senderUserName, peerCount: 1, date: detail.date, important: detail.important, parentMessageId: detail.parentMessageId, read: true, chain: detail.chain })))
+    detail$.subscribe((detail) => {
       this.selectedDetail = detail
-      // Reversed (immediate parent first, root last) - the connecting line runs from the message
-      // content above down through the chain, so the item adjacent to the content must be the
-      // immediate parent.
-      this.selectedChain = chain.map((item) => ({ ...item, collapsed: true })).reverse()
       if (!this.sentView && row.read === false) {
         row.read = true
       }
@@ -561,8 +554,14 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   reply(id: number, subject: string|undefined) {
     const row = this.messages.find((m) => m.id == id)
     const setters: ((v: boolean) => void)[] = row ? [(v) => { row.actionPending = v }] : []
-    if (this.selectedDetail != undefined && this.selectedDetail.id == id) { setters.push((v) => { this.detailActionPending = v }) }
+    if (this.selectedDetail != undefined && this.selectedDetail.id == id) { setters.push((v) => { this.detailReplyPending = v }) }
+    const chainItem = this.findChainItem(id)
+    if (chainItem != undefined) { setters.push((v) => { chainItem.replyPending = v }) }
     this.startReply(id, subject, setters)
+  }
+
+  private findChainItem(id: number): MessageChainItem|undefined {
+    return this.selectedDetail?.chain.find((item) => item.id == id)
   }
 
   replyChecked() {
@@ -570,7 +569,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     if (checked.length != 1) return
     const row = checked[0]
     const setters: ((v: boolean) => void)[] = [(v) => { this.replyPending = v }, (v) => { row.actionPending = v }]
-    if (this.selectedDetail != undefined && this.selectedDetail.id == row.id) { setters.push((v) => { this.detailActionPending = v }) }
+    if (this.selectedDetail != undefined && this.selectedDetail.id == row.id) { setters.push((v) => { this.detailReplyPending = v }) }
     this.startReply(row.id, row.subject, setters)
   }
 
@@ -578,27 +577,17 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     return this.checkedMessages().length == 1
   }
 
-  /** Loads everything a reply needs - the earlier chain and the role-appropriate default recipient -
-   * before opening the compose modal, so the modal never shows its own loading state (see #5 in the
-   * review). The triggering control (row/detail options menu, or the aggregate Reply button) is shown
-   * pending for the duration via whichever setters the caller supplies. */
+  /** Loads everything a reply needs. */
   private startReply(id: number, subject: string|undefined, pendingSetters: ((v: boolean) => void)[]) {
     pendingSetters.forEach((f) => f(true))
-    forkJoin([this.messageService.getMessageChain(id), this.messageService.getReplyTarget(id)]).subscribe(([rawChain, target]) => {
-      // Reversed (immediate parent first, root last) - the connecting line runs from the body editor
-      // above down through the chain, so the item adjacent to the editor must be the immediate parent.
-      const chain = rawChain.map((item) => ({ ...item, collapsed: true })).reverse()
+    forkJoin([this.messageService.getMessageChain(id), this.messageService.getReplyTarget(id)]).subscribe(([chain, target]) => {
       const seed = this.buildReplySeed(target)
       this.messageComposeService.openReply(id, 'RE: '+(subject || ''), chain, seed.recipients, seed.recipientDisplay, seed.adminCommunitySelection)
     }).add(() => pendingSetters.forEach((f) => f(false)))
   }
 
   /** Maps the backend's role-agnostic reply-target descriptor onto the specific static option ids/
-   * labels the replying role's own picker already uses (see setupOrganisationUserPicker /
-   * setupCommunityAdminPicker / setupTestBedAdminPicker in ComposeMessageModalComponent) - these ids
-   * differ per role (e.g. "Community administrator" is -1 for an organisation user but -2 for a
-   * community admin), so they cannot be hardcoded once. recipients mirrors what the corresponding
-   * picker's own *Changed handler would compute, since replying now sends exactly like a new message. */
+   * labels the replying role's own picker already uses. */
   private buildReplySeed(info?: ReplyTargetInfo): { recipients: MessageTarget[], recipientDisplay: RecipientOption[], adminCommunitySelection?: RecipientOption } {
     const TT = Constants.MESSAGE_TARGET_TYPE
     if (!info || info.targetType == undefined) {
@@ -679,7 +668,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   markOneRead(event: { id: number, read: boolean }) {
     const row = this.messages.find((m) => m.id == event.id)
     if (row != undefined) { row.actionPending = true }
-    if (this.selectedDetail != undefined && this.selectedDetail.id == event.id) { this.detailActionPending = true }
+    if (this.selectedDetail != undefined && this.selectedDetail.id == event.id) { this.detailMarkReadOrUnreadPending = true }
     this.messageService.updateMessageReadStatus([event.id], event.read).subscribe(() => {
       if (row != undefined) {
         row.read = event.read
@@ -689,7 +678,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
       }
     }).add(() => {
       if (row != undefined) { row.actionPending = false }
-      if (this.selectedDetail != undefined && this.selectedDetail.id == event.id) { this.detailActionPending = false }
+      if (this.selectedDetail != undefined && this.selectedDetail.id == event.id) { this.detailMarkReadOrUnreadPending = false }
     })
   }
 
@@ -698,35 +687,38 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     this.markOneRead({ id: this.selectedDetail.id, read: !this.selectedDetail.read })
   }
 
-  deleteOne(id: number) {
-    this.confirmDeleteAndProceed([id])
+  deleteOne(id: number, sent: boolean = this.sentView) {
+    this.confirmDeleteAndProceed([id], sent)
   }
 
   deleteSelected() {
     if (this.selectedDetail == undefined) return
-    this.confirmDeleteAndProceed([this.selectedDetail.id])
+    this.confirmDeleteAndProceed([this.selectedDetail.id], this.sentView)
   }
 
   deleteChecked() {
     const ids = this.checkedMessages().map((m) => m.id)
     if (ids.length == 0) return
-    this.confirmDeleteAndProceed(ids)
+    this.confirmDeleteAndProceed(ids, this.sentView)
   }
 
-  private confirmDeleteAndProceed(ids: number[]) {
+  private confirmDeleteAndProceed(ids: number[], sent: boolean) {
     const message = ids.length == 1 ? 'Are you sure you want to delete this message?' : `Are you sure you want to delete these ${ids.length} messages?`
     this.confirmationDialogService.confirmedDangerous('Confirm delete', message, 'Delete', 'Cancel', Constants.BUTTON_ICON.DELETE, Constants.BUTTON_ICON.CANCEL).subscribe(() => {
       this.deletePending = true
       const affectedRows = this.messages.filter((m) => ids.includes(m.id))
       affectedRows.forEach((m) => { m.actionPending = true })
-      if (this.selectedDetail != undefined && ids.includes(this.selectedDetail.id)) { this.detailActionPending = true }
-      this.messageService.deleteMessages(ids, this.sentView).subscribe(() => {
+      if (this.selectedDetail != undefined && ids.includes(this.selectedDetail.id)) { this.detailDeletePending = true }
+      const affectedChainItems = ids.map((id) => this.findChainItem(id)).filter((item): item is MessageChainItem => item != undefined)
+      affectedChainItems.forEach((item) => { item.deletePending = true })
+      this.messageService.deleteMessages(ids, sent).subscribe(() => {
         this.popupService.success(ids.length == 1 ? 'Message deleted.' : 'Messages deleted.')
         this.load(this.currentPage)
       }).add(() => {
         this.deletePending = false
         affectedRows.forEach((m) => { m.actionPending = false })
-        this.detailActionPending = false
+        this.detailDeletePending = false
+        affectedChainItems.forEach((item) => { item.deletePending = false })
       })
     })
   }

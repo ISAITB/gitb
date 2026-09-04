@@ -1338,6 +1338,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setAllowUserManagement(community.get.allowUserManagement)
         communityData.setAllowXmlReports(community.get.allowXmlReports)
         communityData.setAllowObsoleteSessionDeletion(community.get.allowObsoleteSessionDeletion)
+        communityData.setAllowAdminSenderNames(community.get.allowAdminSenderNames)
+        communityData.setAllowOrganisationSenderNames(community.get.allowOrganisationSenderNames)
         communityData.setInteractionNotification(community.get.interactionNotification)
         // User preference defaults.
         communityData.setDefaultUserPreferences(new com.gitb.xml.export.UserPreferences)

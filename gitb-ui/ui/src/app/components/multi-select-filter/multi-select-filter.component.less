@@ -27,27 +27,25 @@
     align-items: center;
     & .button-label {
         display: flex;
+        // Flex items default to min-width:auto, i.e. they refuse to shrink below their content's natural
+        // width. Without min-width:0 here and on .button-label-text below, the label would keep growing
+        // the button to fit its text instead of ever engaging the ellipsis.
+        min-width: 0;
         .button-label-text {
             flex-grow: 1;
+            min-width: 0;
             text-align: start;
             margin-right: 0.5rem;
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
     }
 
-    // Under a hard max-width (config.maxWidth), .button-label otherwise refuses to shrink below its
-    // content's natural width (flex items default to min-width:auto) - the label overflows the clipped
-    // button box, pushing the caret (Bootstrap's ::after pseudo-element, a sibling flex item of
-    // .button-label) flush against the edge and visually eating the right padding. Scoped to maxWidth
-    // usages only - every other usage of this heavily-reused component is unaffected.
-    &.constrained {
-        .button-label {
-            min-width: 0;
-        }
-        &::after {
-            flex-shrink: 0;
-        }
+    // Bootstrap's dropdown caret (the ::after pseudo-element in button mode) is a flex sibling of
+    // .button-label - once the label is allowed to shrink, keep the caret itself from being squeezed.
+    &::after {
+        flex-shrink: 0;
     }
 }
 .filterForm {

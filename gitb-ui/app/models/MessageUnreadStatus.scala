@@ -15,8 +15,9 @@
 
 package models
 
-import java.sql.Timestamp
-
-case class MessageRecipients(id: Long, messageId: Long, recipientId: Option[Long],
-                             recipientNameSnapshot: String, deliveredAt: Timestamp,
-                             deletedByRecipientAt: Option[Timestamp], recipientType: Short)
+/** Presence of a row means the message delivery identified by recipientId (a MessageRecipients id) is
+ * unread for userId. Absence means it is read - either because the user read it, or because they never
+ * had it delivered to begin with (e.g. their account was created after the message was sent) - both cases
+ * are intentionally indistinguishable. See MessageManager for how rows are created (message send, mark
+ * unread) and removed (message read, mark read, message deleted, user deleted). */
+case class MessageUnreadStatus(recipientId: Long, userId: Long)

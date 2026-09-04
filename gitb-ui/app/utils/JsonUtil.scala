@@ -17,7 +17,6 @@ package utils
 
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
 import com.gitb.ps.{ProcessRequest, ProcessResponse}
-import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
 import controllers.dto.ParameterInfo
@@ -27,28 +26,21 @@ import jakarta.xml.bind.JAXBElement
 import managers.breadcrumb.BreadcrumbLabelResponse
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums.{ServiceHealthStatusType, _}
-import models._
-import models.TestCaseGroup
+import models.Enums._
+import models.{TestCaseGroup, _}
 import models.automation._
+import models.health._
 import models.snapshot.ConformanceSnapshot
+import models.statement.TestSuiteMinimalInformation
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang3.{StringUtils, Strings}
-import play.api.libs.json.{JsObject, Json, _}
+import play.api.libs.json._
 
-import java.util
+import java.time.Instant
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
-import models.statement.TestSuiteMinimalInformation
-import models.health.SoftwareVersionInfo
-import models.health.ReleaseInfo
-
-import java.time.Instant
-import models.health.ReleaseMessages
-import models.health.ReleaseMessage
-import models.health.SoftwareVersionCheckSettings
 
 object JsonUtil {
 
@@ -875,6 +867,8 @@ object JsonUtil {
       "allowUserManagement" -> community.allowUserManagement,
       "allowXmlReports" -> community.allowXmlReports,
       "allowObsoleteSessionDeletion" -> community.allowObsoleteSessionDeletion,
+      "allowAdminSenderNames" -> community.allowAdminSenderNames,
+      "allowOrganisationSenderNames" -> community.allowOrganisationSenderNames,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -2981,19 +2975,21 @@ object JsonUtil {
     json
   }
 
-  def jsReceivedMessageDetail(message: ReceivedMessageDetail): JsObject = {
+  def jsReceivedMessageWithChain(message: ReceivedMessageDetail, chain: List[MessageChainItem]): JsObject = {
     Json.obj(
       "id" -> message.id,
       "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
       "body" -> (if (message.body.isDefined) message.body.get else JsNull),
       "senderName" -> message.senderName,
+      "senderUserName" -> (if (message.senderUserName.isDefined) message.senderUserName.get else JsNull),
       "date" -> TimeUtil.serializeTimestamp(message.date),
       "important" -> message.important,
-      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull),
+      "chain" -> jsMessageChain(chain)
     )
   }
 
-  def jsSentMessageDetail(message: SentMessageDetail): JsObject = {
+  def jsSentMessageWithChain(message: SentMessageDetail, chain: List[MessageChainItem]): JsObject = {
     Json.obj(
       "id" -> message.id,
       "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
@@ -3002,7 +2998,8 @@ object JsonUtil {
       "singleRecipientName" -> (if (message.singleRecipientName.isDefined) message.singleRecipientName.get else JsNull),
       "date" -> TimeUtil.serializeTimestamp(message.date),
       "important" -> message.important,
-      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull),
+      "chain" -> jsMessageChain(chain)
     )
   }
 
@@ -3018,11 +3015,12 @@ object JsonUtil {
     Json.obj(
       "id" -> item.id,
       "subject" -> (if (item.subject.isDefined) item.subject.get else JsNull),
-      "bodyPreview" -> (if (item.bodyPreview.isDefined) item.bodyPreview.get else JsNull),
       "body" -> (if (item.body.isDefined) item.body.get else JsNull),
       "date" -> TimeUtil.serializeTimestamp(item.date),
       "important" -> item.important,
-      "senderName" -> item.senderName
+      "senderName" -> item.senderName,
+      "senderUserName" -> (if (item.senderUserName.isDefined) item.senderUserName.get else JsNull),
+      "viewerIsSender" -> item.viewerIsSender,
     )
   }
 

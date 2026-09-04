@@ -53,6 +53,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   selectedItemIds: number[] = []
   selectedItems: T[] = []
   availableItems: T[] = []
+  private allItems: T[] = []
   visibleAvailableItems: T[] = []
   selectedAvailableItems: ItemMap<T> = {}
   selectedSelectedItems: ItemMap<T> = {}
@@ -164,6 +165,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.updateLabel()
     this.selectedItems = []
     this.selectedItemIds = []
+    this.allItems = items
     this.availableItems = items
     this.visibleAvailableItems = this.availableItems
   }
@@ -643,7 +645,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.availableItems = []
       loadObservable = this.config.loader()
     } else {
-      loadObservable = of(this.availableItems)
+      // The full universe (allItems), not the previously computed availableItems - see the field
+      // comment on allItems for why: availableItems only ever holds the currently unselected subset.
+      loadObservable = of(this.allItems)
     }
     return loadObservable.pipe(
       map((items) => {

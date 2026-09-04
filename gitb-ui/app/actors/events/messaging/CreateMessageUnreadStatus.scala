@@ -13,10 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models
+package actors.events.messaging
 
-import java.sql.Timestamp
-
-case class MessageRecipients(id: Long, messageId: Long, recipientId: Option[Long],
-                             recipientNameSnapshot: String, deliveredAt: Timestamp,
-                             deletedByRecipientAt: Option[Timestamp], recipientType: Short)
+/** Dispatched to BulkTaskActor right after a message and its recipient rows have been committed, to
+ * fan out MessageUnreadStatus rows for every user of every recipient organisation (except the sender)
+ * off the request thread - the only unbounded part of sending a message (organisations x users) - see
+ * MessageManager.createUnreadStatusRows. */
+case class CreateMessageUnreadStatus(messageId: Long, excludeUserId: Long)

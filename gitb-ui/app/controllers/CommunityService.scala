@@ -157,6 +157,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
       val allowXmlReports = requiredBodyParameter(request, ParameterNames.ALLOW_XML_REPORTS).toBoolean
       val allowObsoleteSessionDeletion = requiredBodyParameter(request, ParameterNames.ALLOW_OBSOLETE_SESSION_DELETION).toBoolean
+      val allowAdminSenderNames = requiredBodyParameter(request, ParameterNames.ALLOW_ADMIN_SENDER_NAMES).toBoolean
+      val allowOrganisationSenderNames = requiredBodyParameter(request, ParameterNames.ALLOW_ORGANISATION_SENDER_NAMES).toBoolean
       val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
       var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
       var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -216,6 +218,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinJoinAsAdmin,
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
         allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion,
+        allowAdminSenderNames, allowOrganisationSenderNames,
         domainId, selfRegDefaultOrganisation, Some(ParameterExtractor.extractUserPreferenceDefaults(request)), forceUserPreferences, tags
       ).map { _ =>
         ResponseConstructor.constructEmptyResponse

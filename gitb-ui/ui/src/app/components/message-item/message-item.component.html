@@ -1,0 +1,61 @@
+<div class="message-item">
+    <div class="message-item-header" (click)="toggleExpanded()">
+        <div class="message-item-row">
+            @if (important) {
+                <i class="important-icon" [class]="Constants.BUTTON_ICON.MESSAGE_IMPORTANT" tooltipClass="shortTooltip" container="body" ngbTooltip="Important" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"></i>
+            }
+            <div class="message-item-subject">
+                <span>{{ subject || '(no subject)' }}</span>
+            </div>
+            @if (showOptions) {
+                <div class="btn-toolbar" (click)="$event.stopPropagation()">
+                    <button type="button" class="btn btn-sm btn-secondary" [icon]="true" [pending]="replyPending" #pop="ngbTooltip" [disable]="markReadOrUnreadPending || deletePending" (click)="Utils.dismissTooltip(pop);reply()" tooltipClass="shortTooltip" container="body" ngbTooltip="Reply" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.REPLY"></i></button>
+                    @if (this.read != undefined && this.showMarkReadOrUnread) {
+                        @if (this.read) {
+                            <button type="button" class="btn btn-sm btn-secondary" [icon]="true" #pop="ngbTooltip" [pending]="markReadOrUnreadPending" [disable]="replyPending || deletePending" (click)="Utils.dismissTooltip(pop);markReadOrUnread()" tooltipClass="shortTooltip" container="body" ngbTooltip="Mark unread" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.MESSAGE_UNREAD"></i></button>
+                        } @else {
+                            <button type="button" class="btn btn-sm btn-secondary" [icon]="true" #pop="ngbTooltip" [pending]="markReadOrUnreadPending" [disable]="replyPending || deletePending" (click)="Utils.dismissTooltip(pop);markReadOrUnread()" tooltipClass="shortTooltip" container="body" ngbTooltip="Mark read" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.MESSAGE_READ"></i></button>
+                        }
+                    }
+                    @if (this.showDelete) {
+                        <button type="button" class="btn btn-sm btn-secondary" [icon]="true" #pop="ngbTooltip" [pending]="deletePending" [disable]="replyPending || markReadOrUnreadPending" (click)="Utils.dismissTooltip(pop);delete()" tooltipClass="shortTooltip" container="body" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
+                    }
+                </div>
+            }
+        </div>
+        <div class="message-item-row-separator"></div>
+        <div class="message-item-row peer-row">
+            <div class="message-item-peer">
+                @if (peerCount > 1) {
+                    <span class="peer-label">{{ peerLabel }}</span><app-pill [text]="'('+peerCount+' recipients)'" [shaded]="false"
+                        [actionIcon]="recipientsExpanded ? Constants.BUTTON_ICON.COLLAPSE_CIRCLE : Constants.BUTTON_ICON.EXPAND_CIRCLE"
+                        [actionTooltip]="recipientsExpanded ? 'Collapse' : 'Expand'"
+                        (action)="toggleRecipients()"></app-pill>
+                    @if (loadingRecipientNames) {
+                        <i class="pill-pending-icon" [class]="Constants.BUTTON_ICON.PENDING_SMALL"></i>
+                    }
+                } @else {
+                    <span class="peer-label">{{ peerLabel }}</span><app-pill [text]="peerName" [subText]="peerSubText" [shaded]="false"></app-pill>
+                }
+            </div>
+            <div class="message-item-date">
+                <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [value]="date"></app-tag>
+                <app-collapsing-icon [isCollapsed]="!expanded" [padded]="false"></app-collapsing-icon>
+            </div>
+        </div>
+        @if (peerCount > 1) {
+            <div [ngbCollapse]="!recipientsExpanded" [animation]="true">
+                @if (recipientNames != undefined) {
+                    <div class="message-item-recipients">
+                        @for (name of recipientNames; track name) {
+                            <app-pill [text]="name" [shaded]="false"></app-pill>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <div [ngbCollapse]="!expanded" [animation]="true">
+        <div class="message-item-content no-margin-on-last-p" [innerHtml]="(body ?? '') | sanitizeHtml"></div>
+    </div>
+</div>

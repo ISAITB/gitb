@@ -1,4 +1,6 @@
 <app-popup-popup-notification-container></app-popup-popup-notification-container>
-<app-minimised-message></app-minimised-message>
+@if (!dataService.isDemoAccount()) {
+    <app-minimised-message></app-minimised-message>
+}
 <app-scroll-to-top></app-scroll-to-top>
 <router-outlet></router-outlet>

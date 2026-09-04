@@ -59,11 +59,13 @@ object PersistenceSchema {
     def allowUserManagement = column[Boolean]("allow_user_management")
     def allowXmlReports = column[Boolean]("allow_xml_reports")
     def allowObsoleteSessionDeletion = column[Boolean]("allow_obsolete_session_deletion")
+    def allowAdminSenderNames = column[Boolean]("allow_admin_sender_names")
+    def allowOrganisationSenderNames = column[Boolean]("allow_organisation_sender_names")
     def apiKey = column[String]("api_key")
     def latestStatusLabel = column[Option[String]]("latest_status_label")
     def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
     def domain = column[Option[Long]] ("domain")
-    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: allowObsoleteSessionDeletion :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: allowObsoleteSessionDeletion :: allowAdminSenderNames :: allowOrganisationSenderNames :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -765,8 +767,13 @@ object PersistenceSchema {
     def senderId = column[Option[Long]]("sender_id")
     def senderNameSnapshot = column[String]("sender_name_snapshot")
     def senderUserId = column[Option[Long]]("sender_user_id")
+    def senderUserNameSnapshot = column[Option[String]]("sender_user_name_snapshot")
+    def senderType = column[Short]("sender_type")
+    def singleRecipientType = column[Option[Short]]("single_recipient_type")
+    def singleRecipientNameSnapshot = column[Option[String]]("single_recipient_name_snapshot")
+    def recipientCount = column[Int]("recipient_count")
     def important = column[Boolean]("important")
-    def * = (id, subject, body, bodyText, createdAt, deletedBySenderAt, parentMessageId, threadId, senderId, senderNameSnapshot, senderUserId, important) <> (Messages.tupled, Messages.unapply)
+    def * = (id :: subject :: body :: bodyText :: createdAt :: deletedBySenderAt :: parentMessageId :: threadId :: senderId :: senderNameSnapshot :: senderUserId :: senderUserNameSnapshot :: important :: senderType :: singleRecipientType :: singleRecipientNameSnapshot :: recipientCount :: HNil).mapTo[Messages]
   }
   val messages = TableQuery[MessagesTable]
   val insertMessage = messages returning messages.map(_.id)
@@ -777,12 +784,19 @@ object PersistenceSchema {
     def recipientId = column[Option[Long]]("recipient_id")
     def recipientNameSnapshot = column[String]("recipient_name_snapshot")
     def deliveredAt = column[Timestamp]("delivered_at", O.SqlType("TIMESTAMP"))
-    def readAt = column[Option[Timestamp]]("read_at", O.SqlType("TIMESTAMP"))
     def deletedByRecipientAt = column[Option[Timestamp]]("deleted_by_recipient_at", O.SqlType("TIMESTAMP"))
-    def * = (id, messageId, recipientId, recipientNameSnapshot, deliveredAt, readAt, deletedByRecipientAt) <> (MessageRecipients.tupled, MessageRecipients.unapply)
+    def recipientType = column[Short]("recipient_type")
+    def * = (id, messageId, recipientId, recipientNameSnapshot, deliveredAt, deletedByRecipientAt, recipientType) <> (MessageRecipients.tupled, MessageRecipients.unapply)
   }
   val messageRecipients = TableQuery[MessageRecipientsTable]
   val insertMessageRecipient = messageRecipients returning messageRecipients.map(_.id)
+
+  class MessageUnreadStatusTable(tag: Tag) extends Table[MessageUnreadStatus](tag, "MessageUnreadStatus") {
+    def recipientId = column[Long]("recipient_id")
+    def userId = column[Long]("user_id")
+    def * = (recipientId, userId) <> (MessageUnreadStatus.tupled, MessageUnreadStatus.unapply)
+  }
+  val messageUnreadStatus = TableQuery[MessageUnreadStatusTable]
 
   class TriggerDataTable(tag: Tag) extends Table[TriggerData](tag, "TriggerData") {
     def dataType = column[Short]("data_type")

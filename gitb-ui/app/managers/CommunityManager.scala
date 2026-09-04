@@ -412,6 +412,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
           allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, allowObsoleteSessionDeletion = true,
+          allowAdminSenderNames = false, allowOrganisationSenderNames = false,
           apiKeyToUse, None, None, domainId
         ), None)
       }
@@ -543,6 +544,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
                                                 selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean, allowObsoleteSessionDeletion: Boolean,
+                                                allowAdminSenderNames: Boolean, allowOrganisationSenderNames: Boolean,
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean, tags: Option[String], onSuccess: mutable.ListBuffer[() => _]) = {
     for {
       // Update short name.
@@ -572,11 +574,11 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
           c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView,
-          c.allowUserManagement, c.allowXmlReports, c.allowObsoleteSessionDeletion, c.interactionNotification, c.tags
+          c.allowUserManagement, c.allowXmlReports, c.allowObsoleteSessionDeletion, c.allowAdminSenderNames, c.allowOrganisationSenderNames, c.interactionNotification, c.tags
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
           allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView,
-          allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion, interactionNotification, tags
+          allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion, allowAdminSenderNames, allowOrganisationSenderNames, interactionNotification, tags
         )
       // Update user preferences.
       _ <- {
@@ -707,7 +709,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           community.selfRegJoinExisting, community.selfRegJoinAsAdmin,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
-          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, community.allowXmlReports, community.allowObsoleteSessionDeletion, None, domainIdToUse,
+          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, community.allowXmlReports, community.allowObsoleteSessionDeletion,
+          community.allowAdminSenderNames, community.allowOrganisationSenderNames, None, domainIdToUse,
           checkApiKeyUniqueness = false, None, overrideExistingUserPreferences = false, community.tags, onSuccess
         )
       }
@@ -727,6 +730,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean, allowObsoleteSessionDeletion: Boolean,
+                      allowAdminSenderNames: Boolean, allowOrganisationSenderNames: Boolean,
                       domainId: Option[Long], selfRegDefaultOrganisation: Option[Long], userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean,
                       tags: Option[String]): Future[Unit] = {
 
@@ -741,6 +745,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
             allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion,
+            allowAdminSenderNames, allowOrganisationSenderNames,
             None, domainId, checkApiKeyUniqueness = false, userPreferences, overrideExistingUserPreferences, tags, onSuccess
           )
         } else {

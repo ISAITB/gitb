@@ -13,6 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {MessageChainItem} from './message-chain-item';
+
 /** singleRecipientName is only present when recipientCount == 1 - otherwise the UI shows a clickable
  * "(N recipients)" indicator that lazily loads the full list (see MessageService.getMessageRecipients). */
 export interface SentMessageDetail {
@@ -25,5 +27,6 @@ export interface SentMessageDetail {
     date: string
     important: boolean
     parentMessageId?: number
+    chain: MessageChainItem[]
 
 }

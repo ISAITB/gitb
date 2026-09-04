@@ -20,13 +20,19 @@ export interface MessageChainItem {
 
     id: number
     subject?: string
-    bodyPreview?: string
     body?: string
     date: string
     important?: boolean
-    // Viewer-aware sender display name (see MessageManager.resolveAdminPeerNames), shown as a pill.
+    // Viewer-aware sender display name (see MessageManager.resolvePeerDisplayName), shown as a pill.
     senderName: string
-    // Client-side only - expand/collapse state, collapsed by default.
-    collapsed?: boolean
+    // Sender's user name snapshot, already filtered server-side for the viewer (see
+    // MessageManager.resolveSenderUserName) - undefined means it should not be shown.
+    senderUserName?: string
+    // True when the requesting organisation sent this entry rather than received it - drives whether
+    // its options menu offers Mark read/unread (never for a sent entry) and what "read" means below.
+    viewerIsSender: boolean
+    replyPending?: boolean
+    markReadOrUnreadPending?: boolean
+    deletePending?: boolean
 
 }

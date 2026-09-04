@@ -24,6 +24,7 @@ import {ValidationState} from '../../types/validation-state';
 import {ValueLabel} from '../../types/value-label';
 import {Constants} from '../../common/constants';
 import {NgbActiveModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from '../../common/utils';
 
 @Component({
     selector: 'app-provide-input-modal',
@@ -326,9 +327,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   }
 
   onFileRemove(request: UserInteraction, index: number, pop?: NgbTooltip) {
-    if (pop) {
-      pop.disableTooltip = true;
-    }
+    Utils.dismissTooltip(pop)
     request.tempFiles.splice(index, 1);
     if (request.tempFiles.length == 0) {
       this.addTempFile(request);

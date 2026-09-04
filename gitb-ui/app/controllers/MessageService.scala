@@ -18,10 +18,9 @@ package controllers
 import controllers.util._
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, MessageManager, UserManager}
-import models.Enums.UserRole
 import org.apache.commons.lang3.StringUtils
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import play.api.mvc._
 import utils.JsonUtil
 
 import javax.inject.Inject
@@ -33,16 +32,6 @@ class MessageService @Inject()(authorizedAction: AuthorizedAction,
                                userManager: UserManager,
                                authorizationManager: AuthorizationManager)
                               (implicit ec: ExecutionContext) extends AbstractController(cc) {
-
-  private def ownOrganisationId(request: play.api.mvc.Request[AnyContent]): Future[Long] = {
-    userManager.getById(ParameterExtractor.extractUserId(request)).map(_.organization)
-  }
-
-  /** The caller's own organisation id and whether they are a Test Bed administrator - used to render
-   * admin-organisation peer names differently depending on the viewer, see MessageManager.resolveAdminPeerNames. */
-  private def callerContext(request: play.api.mvc.Request[AnyContent]): Future[(Long, Boolean)] = {
-    userManager.getById(ParameterExtractor.extractUserId(request)).map(u => (u.organization, u.role == UserRole.SystemAdmin.id.toShort))
-  }
 
   def getReceivedMessages(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnMessages(request).flatMap { _ =>
@@ -57,11 +46,10 @@ class MessageService @Inject()(authorizedAction: AuthorizedAction,
       val sortColumn = ParameterExtractor.optionalQueryParameter(request, ParameterNames.SORT_COLUMN)
       val sortOrder = ParameterExtractor.optionalQueryParameter(request, ParameterNames.SORT_ORDER)
       val peerTargets = ParameterExtractor.optionalQueryParameter(request, ParameterNames.PEER_TARGETS).map(JsonUtil.parseJsMessageTargets).getOrElse(List())
-      callerContext(request).flatMap { case (orgId, viewerIsTestBedAdmin) =>
-        messageManager.getReceivedMessages(orgId, page, limit, filterText, showRead, showUnread, showImportant, deliveredAfter, deliveredBefore, sortColumn, sortOrder, peerTargets, viewerIsTestBedAdmin).map { result =>
-          val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsReceivedMessages).toString
-          ResponseConstructor.constructJsonResponse(json)
-        }
+      val userId = ParameterExtractor.extractUserId(request)
+      messageManager.getReceivedMessages(userId, page, limit, filterText, showRead, showUnread, showImportant, deliveredAfter, deliveredBefore, sortColumn, sortOrder, peerTargets).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsReceivedMessages).toString
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
@@ -77,74 +65,100 @@ class MessageService @Inject()(authorizedAction: AuthorizedAction,
       val sortColumn = ParameterExtractor.optionalQueryParameter(request, ParameterNames.SORT_COLUMN)
       val sortOrder = ParameterExtractor.optionalQueryParameter(request, ParameterNames.SORT_ORDER)
       val peerTargets = ParameterExtractor.optionalQueryParameter(request, ParameterNames.PEER_TARGETS).map(JsonUtil.parseJsMessageTargets).getOrElse(List())
-      callerContext(request).flatMap { case (orgId, viewerIsTestBedAdmin) =>
-        messageManager.getSentMessages(orgId, page, limit, filterText, showImportant, createdAfter, createdBefore, sortColumn, sortOrder, peerTargets, viewerIsTestBedAdmin).map { result =>
-          val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsSentMessages).toString
-          ResponseConstructor.constructJsonResponse(json)
-        }
+      val userId = ParameterExtractor.extractUserId(request)
+      messageManager.getSentMessages(userId, page, limit, filterText, showImportant, createdAfter, createdBefore, sortColumn, sortOrder, peerTargets).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsSentMessages).toString
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
 
-  /** Used only for the post-login unread-messages notification/menu badge - see MenuItemStatus and
-   * IndexComponent.handlePostUserLoad on the frontend. */
+  /**
+   * Used only for the post-login unread-messages notification/menu badge.
+   */
   def hasUnreadMessages(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnMessages(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
-      userManager.getById(userId).flatMap { user =>
-        messageManager.hasUnreadMessagesFromOthers(user.organization, userId).map { unread =>
-          ResponseConstructor.constructJsonResponse(Json.obj("unread" -> unread).toString)
-        }
+      messageManager.hasUnreadMessages(userId).map { unread =>
+        ResponseConstructor.constructJsonResponse(Json.obj("unread" -> unread).toString)
       }
     }
   }
 
-  def getMessage(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewOwnMessages(request).flatMap { _ =>
-      val sent = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SENT).getOrElse(false)
-      callerContext(request).flatMap { case (orgId, viewerIsTestBedAdmin) =>
-        if (sent) {
-          messageManager.getSentMessageDetail(messageId, orgId, viewerIsTestBedAdmin).map {
-            case Some(detail) => ResponseConstructor.constructJsonResponse(JsonUtil.jsSentMessageDetail(detail).toString)
-            case None => ResponseConstructor.constructNotFoundResponse(ErrorCodes.INVALID_PARAM, "The requested message could not be found.")
-          }
-        } else {
-          messageManager.getReceivedMessageDetail(messageId, orgId, viewerIsTestBedAdmin).map {
-            case Some(detail) => ResponseConstructor.constructJsonResponse(JsonUtil.jsReceivedMessageDetail(detail).toString)
-            case None => ResponseConstructor.constructNotFoundResponse(ErrorCodes.INVALID_PARAM, "The requested message could not be found.")
-          }
-        }
+  def getMessageWithChainAsCommunityAdmin(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val sent = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SENT).getOrElse(false)
+    authorizationManager.canViewMessage(request, messageId, requireTestBedAdmin = false, requireCommunityAdmin = true, sentMessage = Some(sent)).flatMap { case (_, orgId, userId) =>
+      getMessageWithChainInternal(messageId, sent, orgId, userId, isCommunityAdmin = true, isTestBedAdmin = false)
+    }
+  }
+
+  def getMessageWithChainAsTestBedAdmin(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val sent = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SENT).getOrElse(false)
+    authorizationManager.canViewMessage(request, messageId, requireTestBedAdmin = true, requireCommunityAdmin = false, sentMessage = Some(sent)).flatMap { case (_, orgId, userId) =>
+      getMessageWithChainInternal(messageId, sent, orgId, userId, isCommunityAdmin = false, isTestBedAdmin = true)
+    }
+  }
+
+  def getMessageWithChain(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val sent = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SENT).getOrElse(false)
+    authorizationManager.canViewMessage(request, messageId, requireTestBedAdmin = false, requireCommunityAdmin = false, sentMessage = Some(sent)).flatMap { case (_, orgId, userId) =>
+      getMessageWithChainInternal(messageId, sent, orgId, userId, isCommunityAdmin = false, isTestBedAdmin = false)
+    }
+  }
+
+  private def getMessageWithChainInternal(messageId: Long, sentMessage: Boolean, userOrganisation: Long, userId: Long, isCommunityAdmin: Boolean, isTestBedAdmin: Boolean): Future[Result] = {
+    if (sentMessage) {
+      messageManager.getSentMessageWithChain(messageId, userId, userOrganisation, isCommunityAdmin, isTestBedAdmin).map {
+        case Some((detail, chain)) => ResponseConstructor.constructJsonResponse(JsonUtil.jsSentMessageWithChain(detail, chain).toString)
+        case None => ResponseConstructor.constructNotFoundResponse(ErrorCodes.INVALID_PARAM, "The requested message could not be found.")
+      }
+    } else {
+      messageManager.getReceivedMessageWithChain(messageId, userId, userOrganisation, isCommunityAdmin, isTestBedAdmin).map {
+        case Some((detail, chain)) => ResponseConstructor.constructJsonResponse(JsonUtil.jsReceivedMessageWithChain(detail, chain).toString)
+        case None => ResponseConstructor.constructNotFoundResponse(ErrorCodes.INVALID_PARAM, "The requested message could not be found.")
       }
     }
   }
 
   def getMessageRecipients(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnMessages(request).flatMap { _ =>
-      callerContext(request).flatMap { case (orgId, viewerIsTestBedAdmin) =>
-        messageManager.getMessageRecipientNames(messageId, orgId, viewerIsTestBedAdmin).map { names =>
-          ResponseConstructor.constructJsonResponse(JsonUtil.jsMessageRecipientNames(names).toString)
-        }
+      val userId = ParameterExtractor.extractUserId(request)
+      messageManager.getMessageRecipientNames(userId, messageId).map { names =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsMessageRecipientNames(names).toString)
       }
     }
   }
 
+  def getMessageChainAsCommunityAdmin(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewMessage(request, messageId, requireTestBedAdmin = false, requireCommunityAdmin = true, sentMessage = None).flatMap { case (_, orgId, userId) =>
+      getMessageChainInternal(messageId, orgId, userId, isCommunityAdmin = true, isTestBedAdmin = false)
+    }
+  }
+
+  def getMessageChainAsTestBedAdmin(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewMessage(request, messageId, requireTestBedAdmin = true, requireCommunityAdmin = false, sentMessage = None).flatMap { case (_, orgId, userId) =>
+      getMessageChainInternal(messageId, orgId, userId, isCommunityAdmin = false, isTestBedAdmin = true)
+    }
+  }
+
   def getMessageChain(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewOwnMessages(request).flatMap { _ =>
-      callerContext(request).flatMap { case (orgId, viewerIsTestBedAdmin) =>
-        messageManager.getMessageChain(messageId, orgId, viewerIsTestBedAdmin).map { chain =>
-          ResponseConstructor.constructJsonResponse(JsonUtil.jsMessageChain(chain).toString)
-        }
-      }
+    authorizationManager.canViewMessage(request, messageId, requireTestBedAdmin = false, requireCommunityAdmin = false, sentMessage = None).flatMap { case (_, orgId, userId) =>
+      getMessageChainInternal(messageId, orgId, userId, isCommunityAdmin = false, isTestBedAdmin = false)
+    }
+  }
+
+  private def getMessageChainInternal(messageId: Long, userOrganisation: Long, userId: Long, isCommunityAdmin: Boolean, isTestBedAdmin: Boolean): Future[Result] = {
+    messageManager.getMessageChain(messageId, userOrganisation, userId, isTestBedAdmin, isCommunityAdmin).map { chain =>
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsMessageChain(chain).toString)
     }
   }
 
   def getReplyTarget(messageId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnMessages(request).flatMap { _ =>
-      callerContext(request).flatMap { case (orgId, _) =>
-        messageManager.resolveReplyTarget(messageId, orgId).map {
-          case Some(info) => ResponseConstructor.constructJsonResponse(JsonUtil.jsReplyTargetInfo(info).toString)
-          case None => ResponseConstructor.constructJsonResponse(Json.obj().toString)
-        }
+      val userId = ParameterExtractor.extractUserId(request)
+      messageManager.resolveReplyTarget(userId, messageId).map {
+        case Some(info) => ResponseConstructor.constructJsonResponse(JsonUtil.jsReplyTargetInfo(info).toString)
+        case None => ResponseConstructor.constructJsonResponse(Json.obj().toString)
       }
     }
   }
@@ -156,18 +170,13 @@ class MessageService @Inject()(authorizedAction: AuthorizedAction,
     val userId = ParameterExtractor.extractUserId(request)
     val parentMessageId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.PARENT_MESSAGE_ID)
     val targets = JsonUtil.parseJsMessageTargets(ParameterExtractor.requiredBodyParameter(request, ParameterNames.RECIPIENTS))
-    authorizationManager.canSendMessage(request, targets).flatMap { _ =>
-      userManager.getById(userId).flatMap { user =>
-        val messageIdFuture = parentMessageId match {
-          // A reply: the recipient is now a normal, user-editable target list (authorised above exactly
-          // like a new message) - the only reply-specific rule is that the sender must have been a party
-          // (sender or recipient) to the message being replied to, enforced inside createMessageReply.
-          case Some(pid) => messageManager.createMessageReply(user.organization, userId, pid, subject, body, important, targets)
-          case None => messageManager.createMessage(user.organization, userId, subject, body, important, targets)
-        }
-        messageIdFuture.map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+    authorizationManager.canSendMessage(request, targets, parentMessageId).flatMap { _ =>
+      val messageIdFuture = parentMessageId match {
+        case Some(pid) => messageManager.createMessageReply(userId, pid, subject, body, important, targets)
+        case None => messageManager.createMessage(userId, subject, body, important, targets)
+      }
+      messageIdFuture.map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
@@ -176,10 +185,9 @@ class MessageService @Inject()(authorizedAction: AuthorizedAction,
     authorizationManager.canManageOwnMessages(request).flatMap { _ =>
       val ids = ParameterExtractor.extractLongIdsBodyParameter(request).getOrElse(List[Long]())
       val read = ParameterExtractor.requiredBodyParameter(request, ParameterNames.READ).toBoolean
-      ownOrganisationId(request).flatMap { orgId =>
-        messageManager.markReceivedMessagesRead(ids, read, orgId).map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      val userId = ParameterExtractor.extractUserId(request)
+      messageManager.markReceivedMessagesRead(ids, read, userId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
@@ -188,11 +196,10 @@ class MessageService @Inject()(authorizedAction: AuthorizedAction,
     authorizationManager.canManageOwnMessages(request).flatMap { _ =>
       val ids = ParameterExtractor.extractLongIdsBodyParameter(request).getOrElse(List[Long]())
       val sent = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.SENT).getOrElse(false)
-      ownOrganisationId(request).flatMap { orgId =>
-        val result = if (sent) messageManager.deleteSentMessages(ids, orgId) else messageManager.deleteReceivedMessages(ids, orgId)
-        result.map { _ =>
-          ResponseConstructor.constructEmptyResponse
-        }
+      val userId = ParameterExtractor.extractUserId(request)
+      val result = if (sent) messageManager.deleteSentMessages(ids, userId) else messageManager.deleteReceivedMessages(ids, userId)
+      result.map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }

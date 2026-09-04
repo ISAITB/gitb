@@ -340,10 +340,22 @@
                     </label>
                 </div>
             }
-            <div class="form-check">
+            <div class="form-check pb-2">
                 <input class="form-check-input" type="checkbox" id="allowObsoleteSessionDeletion" name="allowObsoleteSessionDeletion" [(ngModel)]="community.allowObsoleteSessionDeletion">
                 <label class="form-check-label" for="allowObsoleteSessionDeletion">Delete obsolete test sessions
                      <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to delete their own obsolete test sessions.'"></div>
+                </label>
+            </div>
+            <div class="form-check pb-2">
+                <input class="form-check-input" type="checkbox" id="allowAdminSenderNames" name="allowAdminSenderNames" [(ngModel)]="community.allowAdminSenderNames">
+                <label class="form-check-label" for="allowAdminSenderNames">View sender name for administrator messages
+                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow message recipients to view the name of the sender that sent a given message. This applies to messages sent by community administrators."></div>
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="allowOrganisationSenderNames" name="allowOrganisationSenderNames" [(ngModel)]="community.allowOrganisationSenderNames">
+                <label class="form-check-label" for="allowOrganisationSenderNames">View sender name for {{dataService.labelOrganisationLower()}} messages
+                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow message recipients to view the name of the sender that sent a given message. This applies to messages sent within the same '+dataService.labelOrganisationLower()+'.'"></div>
                 </label>
             </div>
         </div>

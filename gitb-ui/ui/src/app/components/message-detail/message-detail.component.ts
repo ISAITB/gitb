@@ -13,19 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { Constants } from '../../common/constants';
-import { MessageService } from '../../services/message.service';
-import { MessageDetailView } from '../../types/message-detail-view';
-import { MessageChainItem } from '../../types/message-chain-item';
-import { CheckboxOption } from '../checkbox-option-panel/checkbox-option';
-import { CheckboxOptionState } from '../checkbox-option-panel/checkbox-option-state';
+import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import {MessageService} from '../../services/message.service';
+import {MessageDetailView} from '../../types/message-detail-view';
 
 /**
  * The panel below the message table showing the currently selected message's content. Kept as its own
  * component so a future alternative presentation (separate screen, side panel) can reuse it without
  * restructuring the "My messages" page - see the task's "Subsequent steps" notes.
+ *
+ * The message "card" itself (header, options menu, peer pill, collapsible body) is delegated to
+ * app-message-item - shared with each entry of the reply chain below it (see MessageChainComponent) so
+ * both present identically. This component keeps ownership only of what's specific to being the *main*
+ * selected message: the empty/loading placeholder, and the lazy recipient-name fetch for a fanned-out
+ * sent message (app-message-item only displays that state, it doesn't know how to load it).
  */
 @Component({
   selector: 'app-message-detail',
@@ -37,26 +38,20 @@ export class MessageDetailComponent implements OnChanges {
 
   @Input() mode: 'received'|'sent' = 'received'
   @Input() detail?: MessageDetailView
-  // Fetched by the parent (MessagesComponent.selectMessage()) in parallel with detail - see that
-  // method's comment for why: the row already knows its own parentMessageId, so both requests can be
-  // issued together and applied as a single atomic display swap rather than the chain trailing the
-  // message onto the screen.
-  @Input() chain: MessageChainItem[] = []
   @Input() loading = false
-  @Input() actionPending = false
+  @Input() replyPending = false
+  @Input() markReadOrUnreadPending = false
+  @Input() deletePending = false
 
   @Output() replyRequested = new EventEmitter<void>()
   @Output() markReadRequested = new EventEmitter<void>()
   @Output() deleteRequested = new EventEmitter<void>()
+  // Forwarded from a specific chain entry (see app-message-chain) - MessagesComponent routes these to
+  // the same per-id reply()/markOneRead()/deleteOne() methods it already uses for table rows.
+  @Output() chainReplyRequested = new EventEmitter<{ id: number, subject?: string }>()
 
-  expanded = false
   recipientNames?: string[]
   loadingNames = false
-
-  protected readonly Constants = Constants
-
-  // Stable reference so the options panel's input doesn't churn on every change-detection pass.
-  optionsFactory: () => Observable<CheckboxOption[][]> = () => this.loadAvailableOptions()
 
   constructor(
     private readonly messageService: MessageService
@@ -64,51 +59,19 @@ export class MessageDetailComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['detail']) {
-      this.expanded = false
       this.recipientNames = undefined
+      this.loadingNames = false
     }
   }
 
   toggleRecipients() {
-    if (this.detail == undefined || this.loadingNames) return
-    if (this.expanded) {
-      this.expanded = false
-    } else if (this.recipientNames != undefined) {
-      this.expanded = true
-    } else {
-      this.loadingNames = true
-      this.messageService.getMessageRecipients(this.detail.id).subscribe((names) => {
-        this.recipientNames = names
-        this.expanded = true
-      }).add(() => {
-        this.loadingNames = false
-      })
-    }
-  }
-
-  private loadAvailableOptions(): Observable<CheckboxOption[][]> {
-    const options: CheckboxOption[] = [
-      { key: 'reply', label: 'Reply', default: true, iconClass: Constants.BUTTON_ICON.REPLY }
-    ]
-    if (this.mode == 'received') {
-      if (this.detail?.read) {
-        options.push({ key: 'unread', label: 'Mark unread', default: true, iconClass: Constants.BUTTON_ICON.MESSAGE_UNREAD })
-      } else {
-        options.push({ key: 'read', label: 'Mark read', default: true, iconClass: Constants.BUTTON_ICON.MESSAGE_READ })
-      }
-    }
-    options.push({ key: 'delete', label: 'Delete', default: true, iconClass: Constants.BUTTON_ICON.DELETE })
-    return of([options])
-  }
-
-  handleOption(event: CheckboxOptionState) {
-    if (event['reply']) {
-      this.replyRequested.emit()
-    } else if (event['read'] || event['unread']) {
-      this.markReadRequested.emit()
-    } else if (event['delete']) {
-      this.deleteRequested.emit()
-    }
+    if (this.detail == undefined || this.loadingNames || this.recipientNames != undefined) return
+    this.loadingNames = true
+    this.messageService.getMessageRecipients(this.detail.id).subscribe((names) => {
+      this.recipientNames = names
+    }).add(() => {
+      this.loadingNames = false
+    })
   }
 
 }

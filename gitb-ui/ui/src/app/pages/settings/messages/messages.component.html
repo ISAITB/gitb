@@ -111,10 +111,14 @@
                         (pageNavigation)="doPaging($event)"></app-message-table>
                 </div>
                 <div splitViewSecondary class="message-detail-container">
-                    <app-message-detail [mode]="sentView ? 'sent' : 'received'" [detail]="selectedDetail" [chain]="selectedChain" [loading]="detailLoading" [actionPending]="detailActionPending"
-                        (replyRequested)="replyToSelected()"
-                        (markReadRequested)="toggleSelectedRead()"
-                        (deleteRequested)="deleteSelected()"></app-message-detail>
+                    <app-message-detail [mode]="sentView ? 'sent' : 'received'" [detail]="selectedDetail" [loading]="detailLoading"
+                                        [replyPending]="detailReplyPending"
+                                        [markReadOrUnreadPending]="detailMarkReadOrUnreadPending"
+                                        [deletePending]="detailDeletePending"
+                                        (replyRequested)="replyToSelected()"
+                                        (markReadRequested)="toggleSelectedRead()"
+                                        (deleteRequested)="deleteSelected()"
+                                        (chainReplyRequested)="reply($event.id, $event.subject)"></app-message-detail>
                 </div>
             </app-split-view>
         </div>

@@ -15,6 +15,8 @@
 
 import { HttpHeaders, HttpResponse } from "@angular/common/http"
 import { HttpRequestConfig } from "../types/http-request-config.type"
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from './constants';
 
 export class Utils {
 
@@ -99,6 +101,16 @@ export class Utils {
      */
     public static isPlainNavigationClick(event: MouseEvent): boolean {
         return event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey
+    }
+
+    public static dismissTooltip(pop?: NgbTooltip): void {
+      if (pop) {
+        pop.disableTooltip = true
+        pop.close()
+        setTimeout(() => {
+          pop.disableTooltip = false
+        }, Constants.TOOLTIP_DELAY + 50)
+      }
     }
 
 }

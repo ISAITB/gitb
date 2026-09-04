@@ -19,6 +19,7 @@ import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {KeyValue} from 'src/app/types/key-value';
+import {Utils} from '../../common/utils';
 
 /**
  * The input control used to define the naming expression for a report's file name. Used both in
@@ -65,11 +66,7 @@ export class ReportFileNameExpressionComponent implements OnChanges {
   }
 
   dropdownToggleClicked(pop: NgbTooltip) {
-    pop.disableTooltip = true
-    pop.close()
-    setTimeout(() => {
-      pop.disableTooltip = false
-    }, Constants.TOOLTIP_DELAY + 50)
+    Utils.dismissTooltip(pop)
   }
 
   private placeholdersFor(reportType: number): KeyValue[] {

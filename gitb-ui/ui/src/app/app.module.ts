@@ -322,6 +322,7 @@ import { MessageDetailComponent } from './components/message-detail/message-deta
 import { ComposeMessageModalComponent } from './modals/compose-message-modal/compose-message-modal.component';
 import { PillComponent } from './components/pill/pill.component';
 import { MessageChainComponent } from './components/message-chain/message-chain.component';
+import { MessageItemComponent } from './components/message-item/message-item.component';
 
 @NgModule({
   declarations: [
@@ -340,6 +341,7 @@ import { MessageChainComponent } from './components/message-chain/message-chain.
     ComposeMessageModalComponent,
     PillComponent,
     MessageChainComponent,
+    MessageItemComponent,
     PasswordComponent,
     SelfRegistrationComponent,
     TableComponent,

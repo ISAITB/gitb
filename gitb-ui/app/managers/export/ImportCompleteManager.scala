@@ -75,6 +75,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       repositoryUtils: RepositoryUtils,
                                       reportManager: ReportManager,
                                       userManager: UserManager,
+                                      messageManager: MessageManager,
                                       dbConfigProvider: DatabaseConfigProvider)
                                      (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -1399,7 +1400,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 val userId = targetKey.toLong
                 if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
                   // Avoid deleting self
-                  PersistenceSchema.users.filter(_.id === userId).delete
+                  messageManager.clearUserReferences(Seq(userId)).andThen(PersistenceSchema.users.filter(_.id === userId).delete)
                 } else {
                   DBIO.successful(())
                 }
@@ -2432,7 +2433,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
                     data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports, data.isAllowObsoleteSessionDeletion,
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowPostTestSystemUpdates, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports, data.isAllowObsoleteSessionDeletion,
+                    data.isAllowAdminSenderNames, data.isAllowOrganisationSenderNames,
                     apiKey, None, Option(data.getTags), domainId
                   ), checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, 0L))
                 },
@@ -2445,7 +2447,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
                     data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports, data.isAllowObsoleteSessionDeletion,
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowPostTestSystemUpdates, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports, data.isAllowObsoleteSessionDeletion,
+                    data.isAllowAdminSenderNames, data.isAllowOrganisationSenderNames,
                     Some(apiKey), domainId, checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, targetCommunity.get.id), overrideExistingUserPreferences = false, Option(data.getTags), ctx.onSuccessCalls
                   )
                 },
@@ -2895,7 +2898,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   val userId = targetKey.toLong
                   if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
                     // Avoid deleting self
-                    PersistenceSchema.users.filter(_.id === userId).delete
+                    messageManager.clearUserReferences(Seq(userId)).andThen(PersistenceSchema.users.filter(_.id === userId).delete)
                   } else {
                     DBIO.successful(())
                   }
@@ -3001,7 +3004,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
               processRemaining(ImportItemType.OrganisationUser, ctx,
                 (targetKey: String, _: ImportItem) => {
-                  PersistenceSchema.users.filter(_.id === targetKey.toLong).delete
+                  val userId = targetKey.toLong
+                  messageManager.clearUserReferences(Seq(userId)).andThen(PersistenceSchema.users.filter(_.id === userId).delete)
                 }
               )
             } else {

@@ -43,7 +43,7 @@
         </div>
     </div>
     @if (isReply) {
-        <app-message-chain [chain]="chain" [continuesToContent]="true" connectorPosition="before"></app-message-chain>
+        <app-message-chain [chain]="chain" [continuesToContent]="true" connectorPosition="before" [interactive]="false"></app-message-chain>
     }
 </div>
 <div class="modal-footer button-container">

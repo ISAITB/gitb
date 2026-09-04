@@ -231,7 +231,8 @@ export class Constants {
 		ORGANISATION: 5,
 		ALL_COMMUNITY_ADMINS: 6,
 		ALL_ORGANISATIONS: 7,
-		ALL_USERS: 8
+		ALL_USERS: 8,
+    ALL_COMMUNITY_USERS: 9
 	}
 
 	public static readonly VENDOR_USER_ROLES: IdLabel[] = [

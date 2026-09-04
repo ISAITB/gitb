@@ -2,11 +2,11 @@
     @if (title) {
         <span class="pill-title">{{ title }}</span>
     }
-    <span class="pill-text">{{ text }}</span>
+    <span class="pill-text">{{ text }}</span>@if (subText) {<span class="pill-subtext">{{ subText }}</span>}
     @if (actionPending) {
         <span class="pill-pending"><i [class]="Constants.BUTTON_ICON.PENDING_SMALL"></i></span>
     } @else if (actionIcon) {
-        <span class="pill-action" (click)="actionClicked($event)" tooltipClass="shortTooltip" container="body" [ngbTooltip]="actionTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+        <span class="pill-action" #pop="ngbTooltip" (click)="Utils.dismissTooltip(pop);actionClicked($event)" tooltipClass="shortTooltip" container="body" [ngbTooltip]="actionTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
             <i [class]="actionIcon"></i>
         </span>
     }

@@ -51,6 +51,8 @@ export interface Community extends CommunityLimited {
   allowUserManagement: boolean;
   allowXmlReports: boolean;
   allowObsoleteSessionDeletion: boolean;
+  allowAdminSenderNames: boolean;
+  allowOrganisationSenderNames: boolean;
   apiKey?: string;
   preferences?: UserPreferences
   tags?: TagData[]

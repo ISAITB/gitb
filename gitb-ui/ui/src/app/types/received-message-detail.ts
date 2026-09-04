@@ -13,14 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {MessageChainItem} from './message-chain-item';
+
 export interface ReceivedMessageDetail {
 
     id: number
     subject?: string
     body?: string
     senderName: string
+    senderUserName?: string
     date: string
     important: boolean
     parentMessageId?: number
+    chain: MessageChainItem[]
 
 }

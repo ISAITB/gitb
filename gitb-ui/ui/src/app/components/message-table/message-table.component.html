@@ -79,7 +79,7 @@
                         </td>
                         <td class="message-col">
                             <div class="cell-content truncate">
-                                <span [class.bold]="mode == 'received' && row.read === false">{{ row.subject || '(no subject)' }}</span>@if (row.bodyPreview) {<span class="separator">|</span><span class="preview">{{ row.bodyPreview }}</span>}
+                                <span [class.bold]="mode == 'received' && row.read === false">{{ row.subject || '(no subject)' }}</span>@if (row.bodyPreview) {<span class="preview">{{ row.bodyPreview }}</span>}
                             </div>
                         </td>
                         <td class="date-col">

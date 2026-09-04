@@ -45,6 +45,8 @@ case class Communities(
                         allowUserManagement: Boolean,
                         allowXmlReports: Boolean,
                         allowObsoleteSessionDeletion: Boolean,
+                        allowAdminSenderNames: Boolean,
+                        allowOrganisationSenderNames: Boolean,
                         apiKey: String,
                         latestStatusLabel: Option[String],
                         tags: Option[String],
@@ -86,6 +88,8 @@ class Community(
                  _allowUserManagement: Boolean,
                  _allowXmlReports: Boolean,
                  _allowObsoleteSessionDeletion: Boolean,
+                 _allowAdminSenderNames: Boolean,
+                 _allowOrganisationSenderNames: Boolean,
                  _apiKey: String,
                  _domain:Option[Domain],
                  _defaultSelfRegOrganisation: Option[Organizations],
@@ -120,6 +124,8 @@ class Community(
   var allowUserManagement: Boolean = _allowUserManagement
   var allowXmlReports: Boolean = _allowXmlReports
   var allowObsoleteSessionDeletion: Boolean = _allowObsoleteSessionDeletion
+  var allowAdminSenderNames: Boolean = _allowAdminSenderNames
+  var allowOrganisationSenderNames: Boolean = _allowOrganisationSenderNames
   var apiKey: String  = _apiKey
   var domain:Option[Domain] = _domain
   var defaultSelfRegOrganisation: Option[Organizations] = _defaultSelfRegOrganisation
@@ -157,6 +163,8 @@ class Community(
       _case.allowUserManagement,
       _case.allowXmlReports,
       _case.allowObsoleteSessionDeletion,
+      _case.allowAdminSenderNames,
+      _case.allowOrganisationSenderNames,
       _case.apiKey,
       _domain,
       _defaultSelfRegOrganisation,
@@ -202,6 +210,8 @@ class Community(
       allowUserManagement,
       allowXmlReports,
       allowObsoleteSessionDeletion,
+      allowAdminSenderNames,
+      allowOrganisationSenderNames,
       apiKey,
       None,
       tags,

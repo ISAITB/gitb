@@ -147,7 +147,10 @@ export class IndexComponent implements OnInit, OnDestroy {
       // first ends up lowest - the health popup is raised first so the unread-messages popup (if any)
       // sits above it, as specified.
       const health$: Observable<HealthStatus|undefined> = this.dataService.isSystemAdmin ? this.healthCheckService.runPostLoginChecks() : of(undefined)
-      forkJoin([health$, this.messageService.hasUnreadMessages()]).subscribe(([health, unread]) => {
+      // My messages is unavailable to the demo account (see AuthorizationManager.canViewOwnMessages) - skip
+      // the call entirely rather than have it fail server-side.
+      const unread$: Observable<{ unread: boolean }> = this.dataService.isDemoAccount() ? of({ unread: false }) : this.messageService.hasUnreadMessages()
+      forkJoin([health$, unread$]).subscribe(([health, unread]) => {
         if (health != undefined) {
           switch (health) {
             case HealthStatus.ERROR:

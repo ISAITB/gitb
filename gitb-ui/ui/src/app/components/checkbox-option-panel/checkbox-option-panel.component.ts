@@ -35,6 +35,7 @@ import {share} from 'rxjs/operators';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
 import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from '../../common/utils';
 
 @Component({
     selector: 'app-checkbox-option-panel',
@@ -104,13 +105,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   }
 
   buttonClicked(pop?: NgbTooltip) {
-    if (pop) {
-      pop.disableTooltip = true
-      pop.close()
-      setTimeout(() => {
-        pop.disableTooltip = false
-      }, this.Constants.TOOLTIP_DELAY + 50)
-    }
+    Utils.dismissTooltip(pop)
     let obs$: Observable<any>
     if (!this.open) {
       this.opening.emit()

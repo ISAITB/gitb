@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, forwardRef, Input, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, forwardRef, Input, NgZone, OnInit, ViewChild} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DataService } from 'src/app/services/data.service';
 import { EditorComponent as HugeRteEditorComponent } from '@hugerte/hugerte-angular';
@@ -41,7 +41,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
   onChange = (_: any) => {}
   onTouched = () => {}
 
-  constructor(private readonly dataService: DataService) {}
+  constructor(private readonly dataService: DataService, private readonly zone: NgZone) {}
 
   set editorValue(value: string) {
     this._editorValue = value
@@ -78,7 +78,15 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       link_target_list: [
         { text: 'New window', value: '_blank' },
         { text: 'Current window', value: '' }
-      ]
+      ],
+      // The editor body renders inside its own iframe, so a click/focus inside it never reaches the
+      // outer document - any open dropdown/options panel elsewhere on the page (which closes itself on
+      // a document:click it never receives) would otherwise stay open. Reuse the app's existing
+      // "something else just claimed attention" signal instead of a new mechanism - MultiSelectFilterComponent
+      // and CheckboxOptionPanelComponent already close themselves on it.
+      setup: (editor: any) => {
+        editor.on('click focus', () => this.zone.run(() => this.dataService.signalButtonPopup(this)))
+      }
     }
     if (this.type == 'normal') {
       config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'

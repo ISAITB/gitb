@@ -13,17 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { ROUTES } from '../common/global';
-import { RestService } from './rest.service';
-import { SearchResult } from '../types/search-result';
-import { ReceivedMessage } from '../types/received-message';
-import { SentMessage } from '../types/sent-message';
-import { ReceivedMessageDetail } from '../types/received-message-detail';
-import { SentMessageDetail } from '../types/sent-message-detail';
-import { MessageTarget } from '../types/message-target';
-import { MessageChainItem } from '../types/message-chain-item';
-import { ReplyTargetInfo } from '../types/reply-target-info';
+import {Injectable} from '@angular/core';
+import {ROUTES} from '../common/global';
+import {RestService} from './rest.service';
+import {SearchResult} from '../types/search-result';
+import {ReceivedMessage} from '../types/received-message';
+import {SentMessage} from '../types/sent-message';
+import {ReceivedMessageDetail} from '../types/received-message-detail';
+import {SentMessageDetail} from '../types/sent-message-detail';
+import {MessageTarget} from '../types/message-target';
+import {MessageChainItem} from '../types/message-chain-item';
+import {ReplyTargetInfo} from '../types/reply-target-info';
+import {DataService} from './data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -31,7 +32,8 @@ import { ReplyTargetInfo } from '../types/reply-target-info';
 export class MessageService {
 
   constructor(
-    private readonly restService: RestService
+    private readonly restService: RestService,
+    private readonly dataService: DataService
   ) { }
 
   getReceivedMessages(page: number, limit: number, filterText: string|undefined, showRead: boolean, showUnread: boolean,
@@ -77,15 +79,25 @@ export class MessageService {
 
   getReceivedMessage(id: number) {
     return this.restService.get<ReceivedMessageDetail>({
-      path: ROUTES.controllers.MessageService.getMessage(id).url,
+      path: this.routeForMessageWithChain(id),
       authenticate: true,
       params: { sent: false }
     })
   }
 
+  private routeForMessageWithChain(messageId: number) {
+    if (this.dataService.isCommunityAdmin) {
+      return ROUTES.controllers.MessageService.getMessageWithChainAsCommunityAdmin(messageId).url
+    } else if (this.dataService.isSystemAdmin) {
+      return ROUTES.controllers.MessageService.getMessageWithChainAsTestBedAdmin(messageId).url
+    } else {
+      return ROUTES.controllers.MessageService.getMessageWithChain(messageId).url
+    }
+  }
+
   getSentMessage(id: number) {
     return this.restService.get<SentMessageDetail>({
-      path: ROUTES.controllers.MessageService.getMessage(id).url,
+      path: this.routeForMessageWithChain(id),
       authenticate: true,
       params: { sent: true }
     })
@@ -99,8 +111,16 @@ export class MessageService {
   }
 
   getMessageChain(id: number) {
+    let route
+    if (this.dataService.isCommunityAdmin) {
+      route = ROUTES.controllers.MessageService.getMessageChainAsCommunityAdmin(id).url
+    } else if (this.dataService.isSystemAdmin) {
+      route = ROUTES.controllers.MessageService.getMessageChainAsTestBedAdmin(id).url
+    } else {
+      route = ROUTES.controllers.MessageService.getMessageChain(id).url
+    }
     return this.restService.get<MessageChainItem[]>({
-      path: ROUTES.controllers.MessageService.getMessageChain(id).url,
+      path: route,
       authenticate: true
     })
   }
