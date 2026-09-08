@@ -648,11 +648,14 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                     monthFoldersToArchive.foreach { monthFolder =>
                       // Create the zip archive.
                       val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
-                      Files.deleteIfExists(zipArchive)
-                      new ZipArchiver(monthFolder.toPath, zipArchive).zip()
-                      // All OK - delete the folder.
-                      FileUtils.deleteDirectory(monthFolder)
-                      logger.info("Archived test session folder for year [{}] and month [{}]", yearFolder.getName, monthFolder.getName)
+                      if (Files.exists(zipArchive)) {
+                        logger.warn("Test session folder archival for year [{}] and month [{}] skipped due to an archived folder already being present. This can cause report retrieval to fail and should be addressed.", yearFolder.getName, monthFolder.getName)
+                      } else {
+                        new ZipArchiver(monthFolder.toPath, zipArchive).zip()
+                        // All OK - delete the folder.
+                        FileUtils.deleteDirectory(monthFolder)
+                        logger.info("Archived test session folder for year [{}] and month [{}]", yearFolder.getName, monthFolder.getName)
+                      }
                     }
                   }
                 }
