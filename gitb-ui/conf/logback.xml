@@ -36,6 +36,7 @@
     <logger name="play.api.Play" level="WARN"/>
     <logger name="org.apache.pdfbox.pdmodel.font.PDType1Font" level="ERROR"/>
     <logger name="org.ldaptive" level="WARN"/>
+    <logger name="org.pac4j.core.util.Announcement" level="ERROR"/>
 
     <logger name="com.zaxxer.hikari" level="${LOG_LEVEL_DB_CONNECTION_POOL:-WARN}"/>
     <logger name="slick.jdbc" level="${LOG_LEVEL_DB_QUERIES:-WARN}"/> <!-- For DB debug logging set to DEBUG -->
