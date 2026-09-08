@@ -277,8 +277,8 @@
 <app-form-section sectionTitle="User permissions" [collapsed]="userPermissionsCollapsed" [marginBefore]="true">
     <div class="pt-3 row">
         <legend class="col-3 col-form-label text-end pt-0">{{dataService.labelOrganisation()}} users may:</legend>
-        <div class="col-9 permission-columns">
-            <div class="permission-column">
+        <div class="col-9 checkbox-columns">
+            <div class="checkbox-column">
                 <div class="form-check pb-2">
                     <input class="form-check-input" type="checkbox" id="allowCertificateDownload" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">
                     <label class="form-check-label" for="allowCertificateDownload">Download conformance certificates
@@ -324,7 +324,7 @@
                     </div>
                 }
             </div>
-            <div class="permission-column">
+            <div class="checkbox-column">
                 <div class="form-check pb-2">
                     <input class="form-check-input" type="checkbox" id="allowPostTestOrganisationUpdates" name="allowPostTestOrganisationUpdates" [(ngModel)]="community.allowPostTestOrganisationUpdates">
                     <label class="form-check-label" for="allowPostTestOrganisationUpdates">Update {{dataService.labelOrganisationLower()}} data after testing
@@ -368,30 +368,34 @@
 <app-form-section sectionTitle="Default user preferences" [collapsed]="userPreferencesCollapsed" [marginBefore]="true">
     <div class="row pt-3">
         <legend class="col-3 col-form-label text-end pt-0">Display preferences:</legend>
-        <div class="col-9">
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="menuCollapsed" name="menuCollapsed" [(ngModel)]="community.preferences!.menuCollapsed">
-                <label class="form-check-label" for="menuCollapsed">Collapsed menu
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, the left-side menu will be presented to users as collapsed by default."></div>
-                </label>
+        <div class="col-9 checkbox-columns">
+            <div class="checkbox-column">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="menuCollapsed" name="menuCollapsed" [(ngModel)]="community.preferences!.menuCollapsed">
+                    <label class="form-check-label" for="menuCollapsed">Collapsed left-side menu
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, the left-side menu will be presented to users as collapsed by default."></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="statementsCollapsed" name="statementsCollapsed" [(ngModel)]="community.preferences!.statementsCollapsed">
+                    <label class="form-check-label" for="statementsCollapsed">Collapsed conformance statement details
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statements will be displayed to users by default with their details collapsed."></div>
+                    </label>
+                </div>
             </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="statementsCollapsed" name="statementsCollapsed" [(ngModel)]="community.preferences!.statementsCollapsed">
-                <label class="form-check-label" for="statementsCollapsed">Collapsed conformance statement details
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statements will be displayed to users by default with their details collapsed."></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="statementsListView" name="statementsListView" [(ngModel)]="community.preferences!.statementsListView">
-                <label class="form-check-label" for="statementsListView">List view for conformance statements
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statement dashboards will be presented to users as a flat list by default."></div>
-                </label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="messagesSplitView" name="messagesSplitView" [(ngModel)]="community.preferences!.messagesSplitView">
-                <label class="form-check-label" for="messagesSplitView">Split view for message lists and details
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, message lists and the details of the selected message will be presented to users as a split view by default."></div>
-                </label>
+            <div class="checkbox-column">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="statementsListView" name="statementsListView" [(ngModel)]="community.preferences!.statementsListView">
+                    <label class="form-check-label" for="statementsListView">List view for conformance statements
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statement dashboards will be presented to users as a flat list by default."></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="messagesSplitView" name="messagesSplitView" [(ngModel)]="community.preferences!.messagesSplitView">
+                    <label class="form-check-label" for="messagesSplitView">Split view for message lists and details
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, message lists and the details of the selected message will be presented to users as a split view by default."></div>
+                    </label>
+                </div>
             </div>
         </div>
     </div>

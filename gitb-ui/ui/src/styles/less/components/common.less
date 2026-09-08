@@ -20,6 +20,44 @@ textarea {
 	min-height: 34px;
 }
 
+// Splits a checkbox group's options into two columns when there is enough width, falling back to a
+// single stacked column otherwise. Deliberately avoids a Bootstrap grid split (e.g. col-md-6), which
+// leaves a lot of dead horizontal space on wide screens since the columns are then a fixed fraction
+// of the row rather than sized to their content.
+.checkbox-columns {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 40px;
+
+    .checkbox-column {
+        flex: 0 1 auto;
+
+        // Non-wrapping labels (text + tooltip icon) give each column a min-content width equal to its
+        // widest option. That is what drives the flex-wrap: the two columns sit side by side while
+        // both fit on the line, and drop to a single stacked column exactly when they no longer do -
+        // without any breakpoint guessing.
+        .form-check-label {
+            white-space: nowrap;
+        }
+
+        > .form-check:last-child {
+            padding-bottom: 0;
+        }
+    }
+}
+
+// Once the columns are already stacked (narrow viewports), let long option texts wrap again rather
+// than force horizontal overflow of the page.
+@media (max-width: 767.98px) {
+    .checkbox-columns .checkbox-column {
+        flex: 1 1 100%;
+
+        .form-check-label {
+            white-space: normal;
+        }
+    }
+}
+
 .btn span.label-icon i {
     width: 0.85rem;
 }

@@ -34,7 +34,6 @@ import {Utils} from 'src/app/common/utils';
 @Component({
     selector: 'app-community-form',
     templateUrl: './community-form.component.html',
-    styleUrl: './community-form.component.less',
     standalone: false
 })
 export class CommunityFormComponent extends BaseComponent implements OnInit {
