@@ -37,7 +37,7 @@ import utils._
 import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.time.LocalDate
+import java.time.{LocalDate, YearMonth}
 import java.time.format.TextStyle
 import java.util
 import java.util.{Locale, Properties}
@@ -596,44 +596,64 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     Future.successful {
       actorSystem.scheduler.scheduleAtFixedRate(0.minutes, 20.hours) {
         () => {
-          val now = LocalDate.now()
-          val archivalThreshold = now.minusDays(Configurations.TEST_SESSION_ARCHIVE_THRESHOLD)
-          val statusUpdatesFolder = repositoryUtils.getStatusUpdatesFolder()
-          if (statusUpdatesFolder.exists() && statusUpdatesFolder.isDirectory) {
-            val yearFolders = statusUpdatesFolder.listFiles(new FileFilter {
-              override def accept(pathname: File): Boolean = {
-                pathname.isDirectory && isNumeric(pathname.getName)
-              }
-            })
-            if (yearFolders != null) {
-              yearFolders.foreach { yearFolder =>
-                val monthFoldersToArchive = yearFolder.listFiles(new FileFilter {
-                  override def accept(pathname: File): Boolean = {
-                    if (pathname.isDirectory) {
-                      try {
-                        val year = Integer.parseInt(yearFolder.getName)
-                        val month = Integer.parseInt(pathname.getName)
-                        val folderDate = LocalDate.of(year, month, 1)
-                        folderDate.isBefore(archivalThreshold) && (now.getYear != year || month < now.getMonthValue)
-                      } catch {
-                        case _: NumberFormatException =>
-                          // In case we have unexpected folders that don't match what we expect
-                          false
+          // First get the months for which we have currently active test sessions.
+          testResultManager.getActiveTestSessionStartMonths().map { activeMonths =>
+            // Process the status update folders.
+            val now = LocalDate.now()
+            val nowYearMonth = YearMonth.from(now)
+            val archivalThreshold = now.minusDays(Configurations.TEST_SESSION_ARCHIVE_THRESHOLD)
+            val statusUpdatesFolder = repositoryUtils.getStatusUpdatesFolder()
+            if (statusUpdatesFolder.exists() && statusUpdatesFolder.isDirectory) {
+              val yearFolders = statusUpdatesFolder.listFiles(new FileFilter {
+                override def accept(pathname: File): Boolean = {
+                  pathname.isDirectory && isNumeric(pathname.getName)
+                }
+              })
+              if (yearFolders != null) {
+                yearFolders.foreach { yearFolder =>
+                  val monthFoldersToArchive = yearFolder.listFiles(new FileFilter {
+                    override def accept(pathname: File): Boolean = {
+                      if (pathname.isDirectory) {
+                        try {
+                          val folderYearMonth = YearMonth.of(Integer.parseInt(yearFolder.getName), Integer.parseInt(pathname.getName))
+                          val folderDate = folderYearMonth.atDay(1)
+                          /*
+                           * Folders to archive are those that:
+                           * - Are before the archival threshold.
+                           * - Are before the current month.
+                           * - Are not related to active test sessions.
+                           */
+                          val include = if (folderDate.isBefore(archivalThreshold) && nowYearMonth.isAfter(folderYearMonth)) {
+                            if (activeMonths.contains(folderYearMonth)) {
+                              logger.info("Skipping archival of test session folder for year [{}] and month [{}] due to incomplete test sessions", folderYearMonth.getYear, folderYearMonth.getMonthValue)
+                              false
+                            } else {
+                              true
+                            }
+                          } else {
+                            false
+                          }
+                          include
+                        } catch {
+                          case _: NumberFormatException =>
+                            // In case we have unexpected folders that don't match what we expect
+                            false
+                        }
+                      } else {
+                        false
                       }
-                    } else {
-                      false
                     }
-                  }
-                })
-                if (monthFoldersToArchive != null) {
-                  monthFoldersToArchive.foreach { monthFolder =>
-                    // Create the zip archive.
-                    val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
-                    Files.deleteIfExists(zipArchive)
-                    new ZipArchiver(monthFolder.toPath, zipArchive).zip()
-                    // All OK - delete the folder.
-                    FileUtils.deleteDirectory(monthFolder)
-                    logger.info("Archived test session folder for year [{}] and month [{}]", yearFolder.getName, monthFolder.getName)
+                  })
+                  if (monthFoldersToArchive != null) {
+                    monthFoldersToArchive.foreach { monthFolder =>
+                      // Create the zip archive.
+                      val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
+                      Files.deleteIfExists(zipArchive)
+                      new ZipArchiver(monthFolder.toPath, zipArchive).zip()
+                      // All OK - delete the folder.
+                      FileUtils.deleteDirectory(monthFolder)
+                      logger.info("Archived test session folder for year [{}] and month [{}]", yearFolder.getName, monthFolder.getName)
+                    }
                   }
                 }
               }

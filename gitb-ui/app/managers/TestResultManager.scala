@@ -32,6 +32,7 @@ import utils.{EmailUtil, JacksonUtil, RepositoryUtils, TimeUtil}
 import java.io.{File, StringReader}
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.sql.Timestamp
+import java.time.{YearMonth, ZoneOffset}
 import java.util.Calendar
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
@@ -987,6 +988,17 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
       }
     }
     query
+  }
+
+  def getActiveTestSessionStartMonths(): Future[Set[YearMonth]] = {
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(_.endTime.isEmpty)
+        .map(_.startTime)
+        .result
+    ).map(_.map { result =>
+      YearMonth.from(result.toInstant.atZone(ZoneOffset.UTC))
+    }.toSet)
   }
 
 }
