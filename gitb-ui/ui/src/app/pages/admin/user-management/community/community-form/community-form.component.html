@@ -277,86 +277,90 @@
 <app-form-section sectionTitle="User permissions" [collapsed]="userPermissionsCollapsed" [marginBefore]="true">
     <div class="pt-3 row">
         <legend class="col-3 col-form-label text-end pt-0">{{dataService.labelOrganisation()}} users may:</legend>
-        <div class="col-9">
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowCertificateDownload" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">
-                <label class="form-check-label" for="allowCertificateDownload">Download conformance certificates
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowXmlReports" name="allowXmlReports" [(ngModel)]="community.allowXmlReports">
-                <label class="form-check-label" for="allowXmlReports">Download reports in XML format
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download reports in XML format (besides PDF). Note that community administrators can always generate reports in both XML and PDF formats.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowUserManagement" name="allowUserManagement" [(ngModel)]="community.allowUserManagement">
-                <label class="form-check-label" for="allowUserManagement">Manage {{ dataService.labelOrganisationLower()}} users
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to manage users within their own '+dataService.labelOrganisationLower()+'. Otherwise only community administrators may manage '+dataService.labelOrganisationLower()+' users.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowSystemManagement" name="allowSystemManagement" [(ngModel)]="community.allowSystemManagement">
-                <label class="form-check-label" for="allowSystemManagement">Create or delete {{dataService.labelSystemsLower()}}
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete '+dataService.labelSystemsLower()+' (editing an existing '+dataService.labelSystemLower()+' is always possible). You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowStatementManagement" name="allowStatementManagement" [(ngModel)]="community.allowStatementManagement">
-                <label class="form-check-label" for="allowStatementManagement">Create or delete conformance statements
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowPostTestOrganisationUpdates" name="allowPostTestOrganisationUpdates" [(ngModel)]="community.allowPostTestOrganisationUpdates">
-                <label class="form-check-label" for="allowPostTestOrganisationUpdates">Update {{dataService.labelOrganisationLower()}} data after testing
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelOrganisationLower()+' data and custom properties once tests have been recorded.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowPostTestSystemUpdates" name="allowPostTestSystemUpdates" [(ngModel)]="community.allowPostTestSystemUpdates">
-                <label class="form-check-label" for="allowPostTestSystemUpdates">Update {{dataService.labelSystemLower()}} data after testing
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowPostTestStatementUpdates" name="allowPostTestStatementUpdates" [(ngModel)]="community.allowPostTestStatementUpdates">
-                <label class="form-check-label" for="allowPostTestStatementUpdates">Update conformance statement after testing
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update the configuration parameters for a conformance statement once tests have been recorded.'"></div>
-                </label>
-            </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowCommunityView" name="allowCommunityView" [(ngModel)]="community.allowCommunityView">
-                <label class="form-check-label" for="allowCommunityView">View community test history
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to have a readonly view of the testing history of other '+dataService.labelOrganisationsLower()+'.'"></div>
-                </label>
-            </div>
-            @if (dataService.configuration.automationApiEnabled) {
+        <div class="col-9 permission-columns">
+            <div class="permission-column">
                 <div class="form-check pb-2">
-                    <input class="form-check-input" type="checkbox" id="allowAutomationApi" name="allowAutomationApi" [(ngModel)]="community.allowAutomationApi">
-                    <label class="form-check-label" for="allowAutomationApi">Manage test sessions via REST API
-                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to use the Test Bed\'s REST API to start test sessions, stop them, and view their status.'"></div>
+                    <input class="form-check-input" type="checkbox" id="allowCertificateDownload" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">
+                    <label class="form-check-label" for="allowCertificateDownload">Download conformance certificates
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates.'"></div>
                     </label>
                 </div>
-            }
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowObsoleteSessionDeletion" name="allowObsoleteSessionDeletion" [(ngModel)]="community.allowObsoleteSessionDeletion">
-                <label class="form-check-label" for="allowObsoleteSessionDeletion">Delete obsolete test sessions
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to delete their own obsolete test sessions.'"></div>
-                </label>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowXmlReports" name="allowXmlReports" [(ngModel)]="community.allowXmlReports">
+                    <label class="form-check-label" for="allowXmlReports">Download reports in XML format
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download reports in XML format (besides PDF). Note that community administrators can always generate reports in both XML and PDF formats.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowUserManagement" name="allowUserManagement" [(ngModel)]="community.allowUserManagement">
+                    <label class="form-check-label" for="allowUserManagement">Manage {{ dataService.labelOrganisationLower()}} users
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to manage users within their own '+dataService.labelOrganisationLower()+'. Otherwise only community administrators may manage '+dataService.labelOrganisationLower()+' users.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowSystemManagement" name="allowSystemManagement" [(ngModel)]="community.allowSystemManagement">
+                    <label class="form-check-label" for="allowSystemManagement">Create or delete {{dataService.labelSystemsLower()}}
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete '+dataService.labelSystemsLower()+' (editing an existing '+dataService.labelSystemLower()+' is always possible). You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowStatementManagement" name="allowStatementManagement" [(ngModel)]="community.allowStatementManagement">
+                    <label class="form-check-label" for="allowStatementManagement">Create or delete conformance statements
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowObsoleteSessionDeletion" name="allowObsoleteSessionDeletion" [(ngModel)]="community.allowObsoleteSessionDeletion">
+                    <label class="form-check-label" for="allowObsoleteSessionDeletion">Delete obsolete test sessions
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to delete their own obsolete test sessions.'"></div>
+                    </label>
+                </div>
+                @if (dataService.configuration.automationApiEnabled) {
+                    <div class="form-check pb-2">
+                        <input class="form-check-input" type="checkbox" id="allowAutomationApi" name="allowAutomationApi" [(ngModel)]="community.allowAutomationApi">
+                        <label class="form-check-label" for="allowAutomationApi">Manage test sessions via REST API
+                             <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to use the Test Bed\'s REST API to start test sessions, stop them, and view their status.'"></div>
+                        </label>
+                    </div>
+                }
             </div>
-            <div class="form-check pb-2">
-                <input class="form-check-input" type="checkbox" id="allowAdminSenderNames" name="allowAdminSenderNames" [(ngModel)]="community.allowAdminSenderNames">
-                <label class="form-check-label" for="allowAdminSenderNames">View sender name for administrator messages
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow message recipients to view the name of the sender that sent a given message. This applies to messages sent by community administrators."></div>
-                </label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="allowOrganisationSenderNames" name="allowOrganisationSenderNames" [(ngModel)]="community.allowOrganisationSenderNames">
-                <label class="form-check-label" for="allowOrganisationSenderNames">View sender name for {{dataService.labelOrganisationLower()}} messages
-                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow message recipients to view the name of the sender that sent a given message. This applies to messages sent within the same '+dataService.labelOrganisationLower()+'.'"></div>
-                </label>
+            <div class="permission-column">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowPostTestOrganisationUpdates" name="allowPostTestOrganisationUpdates" [(ngModel)]="community.allowPostTestOrganisationUpdates">
+                    <label class="form-check-label" for="allowPostTestOrganisationUpdates">Update {{dataService.labelOrganisationLower()}} data after testing
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelOrganisationLower()+' data and custom properties once tests have been recorded.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowPostTestSystemUpdates" name="allowPostTestSystemUpdates" [(ngModel)]="community.allowPostTestSystemUpdates">
+                    <label class="form-check-label" for="allowPostTestSystemUpdates">Update {{dataService.labelSystemLower()}} data after testing
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowPostTestStatementUpdates" name="allowPostTestStatementUpdates" [(ngModel)]="community.allowPostTestStatementUpdates">
+                    <label class="form-check-label" for="allowPostTestStatementUpdates">Update conformance statement after testing
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update the configuration parameters for a conformance statement once tests have been recorded.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowCommunityView" name="allowCommunityView" [(ngModel)]="community.allowCommunityView">
+                    <label class="form-check-label" for="allowCommunityView">View community test history
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to have a readonly view of the testing history of other '+dataService.labelOrganisationsLower()+'.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowAdminSenderNames" name="allowAdminSenderNames" [(ngModel)]="community.allowAdminSenderNames">
+                    <label class="form-check-label" for="allowAdminSenderNames">View sender name for administrator messages
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow message recipients to view the name of the sender that sent a given message. This applies to messages sent by community administrators."></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="allowOrganisationSenderNames" name="allowOrganisationSenderNames" [(ngModel)]="community.allowOrganisationSenderNames">
+                    <label class="form-check-label" for="allowOrganisationSenderNames">View sender name for {{dataService.labelOrganisationLower()}} messages
+                         <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow message recipients to view the name of the sender that sent a given message. This applies to messages sent within the same '+dataService.labelOrganisationLower()+'.'"></div>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
