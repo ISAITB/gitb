@@ -30,5 +30,17 @@
                 <span class="session-info-panel-value">{{row.system}}</span>
             </div>
         </div>
+        <div class="session-info-panel-section">
+            <div class="session-info-panel-row">
+                <span class="session-info-panel-label">Start time</span>
+                <span class="session-info-panel-value">{{row.startTime}}</span>
+            </div>
+            @if (row.endTime) {
+                <div class="session-info-panel-row">
+                    <span class="session-info-panel-label">End time</span>
+                    <span class="session-info-panel-value">{{row.endTime}}</span>
+                </div>
+            }
+        </div>
     </div>
 </ng-template>

@@ -52,8 +52,8 @@
                      [contentRefreshing]="refreshActivePending"
                      [copyForOtherRoleOption]="copyForOtherRoleOption"
                      [showNavigationControls]="showSessionNavigationControls"
-                     [columnChooserOptions]="columnChooserOptions"
-                     (columnChooserUpdated)="onColumnChooserUpdated($event)"
+                     [columnChooserOptions]="activeColumnChooserOptions"
+                     (columnChooserUpdated)="onColumnChooserUpdated($event, false)"
                      (columnChooserClosed)="onColumnChooserClosed()">
                 </div>
             </div>
@@ -108,8 +108,8 @@
                  [contentRefreshing]="refreshCompletedPending"
                  [copyForOtherRoleOption]="copyForOtherRoleOption"
                  [showNavigationControls]="showSessionNavigationControls"
-                 [columnChooserOptions]="columnChooserOptions"
-                 (columnChooserUpdated)="onColumnChooserUpdated($event)"
+                 [columnChooserOptions]="completedColumnChooserOptions"
+                 (columnChooserUpdated)="onColumnChooserUpdated($event, true)"
                  (columnChooserClosed)="onColumnChooserClosed()">
             </div>
         </div>

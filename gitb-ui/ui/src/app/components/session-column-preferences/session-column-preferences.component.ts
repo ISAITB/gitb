@@ -15,7 +15,7 @@
 
 import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
-import {ColumnId, isOwnCase, SessionColumnCase, SessionColumnsService, WHAT_COLUMNS, WHO_COLUMNS} from '../../services/session-columns.service';
+import {ColumnId, EXTRA_COLUMNS_FORM_ORDER, isOwnCase, SessionColumnCase, SessionColumnsService, WHAT_COLUMNS, WHO_COLUMNS} from '../../services/session-columns.service';
 
 @Component({
   selector: 'app-session-column-preferences',
@@ -62,7 +62,7 @@ export class SessionColumnPreferencesComponent implements OnChanges {
   }
 
   private recompute(): void {
-    const groups = this.sessionColumnsService.buildChooserOptions(this.columnCase, this.activeIds, this.isSystemAdmin, false)
+    const groups = this.sessionColumnsService.buildChooserOptions(this.columnCase, this.activeIds, this.isSystemAdmin, false, false, EXTRA_COLUMNS_FORM_ORDER)
     this.options = groups.flatMap(g => g)
 
     const activeSet = new Set(this.activeIds)
@@ -90,9 +90,12 @@ export class SessionColumnPreferencesComponent implements OnChanges {
     return (WHAT_COLUMNS as readonly string[]).includes(key)
   }
 
+  isWhoColumn(key: string): boolean {
+    return (WHO_COLUMNS as readonly string[]).includes(key)
+  }
+
   optionInvalid(option: CheckboxOption): boolean {
-    // The Flag column belongs to neither group's "at least one selected" requirement.
-    if (option.key === 'flag') return false
+    if (!this.isWhatColumn(option.key) && !this.isWhoColumn(option.key)) return false
     return this.isWhatColumn(option.key) ? this.whatInvalid : this.whoInvalid
   }
 

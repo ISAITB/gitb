@@ -118,7 +118,8 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
   @ViewChild("completedSessions") completedSessionsTable?: SessionTableComponent
   @ViewChild("activeSessions") activeSessionsTable?: SessionTableComponent
 
-  columnChooserOptions?: CheckboxOption[][]
+  activeColumnChooserOptions?: CheckboxOption[][]
+  completedColumnChooserOptions?: CheckboxOption[][]
   private currentColumnIds: string[] = []
   /** Whether we arrived here via RoutingService.returnToSource() (a "View XYZ" Back navigation).
    * Captured from transient router state (not sessionStorage) so it can never leak into a later,
@@ -184,7 +185,7 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
     this.activeTestsColumns = this.getActiveTestsColumns()
     this.completedTestsColumns = this.getCompletedTestsColumns()
     this.currentColumnIds = this.sessionColumnsService.activeIds(this.dataService.getSessionColumnPreference(this.getColumnCase()), this.getColumnCase(), this.dataService.isSystemAdmin)
-    this.columnChooserOptions = this.buildColumnChooserOptions()
+    this.buildColumnChooserOptions()
     if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined)) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
     }
@@ -297,15 +298,27 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
     return this.sessionColumnsService.buildTableColumns(cc, this.dataService.getSessionColumnPreference(cc), this.dataService.isSystemAdmin, true)
   }
 
-  protected buildColumnChooserOptions(): CheckboxOption[][] {
+  protected buildColumnChooserOptions(): void {
     const cc = this.getColumnCase()
-    return this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin)
+    this.activeColumnChooserOptions = this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin, true, true)
+    this.completedColumnChooserOptions = this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin, true, false)
   }
 
-  /** Handles a live toggle in the column chooser - applies the new column set to both the active and completed tables. */
-  onColumnChooserUpdated(state: CheckboxOptionState): void {
+  /**
+   * Handles a live toggle in the column chooser - applies the new column set to both the active and
+   * completed tables.
+   */
+  onColumnChooserUpdated(state: CheckboxOptionState, completed: boolean): void {
     const cc = this.getColumnCase()
-    this.currentColumnIds = Object.keys(state).filter(k => state[k])
+    let newIds = Object.keys(state).filter(k => state[k])
+    if (!completed) {
+      const completedStartTimeActive = this.currentColumnIds.includes('startTime')
+      newIds = newIds.filter(id => id !== 'startTime')
+      if (completedStartTimeActive) {
+        newIds = [...newIds, 'startTime']
+      }
+    }
+    this.currentColumnIds = newIds
     const serialized = this.sessionColumnsService.serialize(this.currentColumnIds)
     this.activeTestsColumns = this.sessionColumnsService.buildTableColumns(cc, serialized, this.dataService.isSystemAdmin, false)
     this.completedTestsColumns = this.sessionColumnsService.buildTableColumns(cc, serialized, this.dataService.isSystemAdmin, true)
@@ -323,10 +336,9 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
       this.getCompletedTests(this.currentCompletedPagingInfo())
     }
     // Refresh both tables' chooser popups to update disabled flags.
-    const refreshed = this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin)
-    this.columnChooserOptions = refreshed
-    this.activeSessionsTable?.refreshColumnChooser(refreshed)
-    this.completedSessionsTable?.refreshColumnChooser(refreshed)
+    this.buildColumnChooserOptions()
+    this.activeSessionsTable?.refreshColumnChooser(this.activeColumnChooserOptions!)
+    this.completedSessionsTable?.refreshColumnChooser(this.completedColumnChooserOptions!)
   }
 
   onColumnChooserClosed(): void {

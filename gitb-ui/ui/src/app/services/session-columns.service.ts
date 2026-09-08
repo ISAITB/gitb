@@ -31,14 +31,16 @@ export enum SessionColumnCase {
 /** Column state for a given context. MUST = always shown. NA = never shown. ON/OFF = user-adaptable. */
 type ColState = 'MUST' | 'ON' | 'OFF' | 'NA'
 
-/** Column IDs for the adaptable column groups (WHAT, WHO, and the optional FLAG column). */
+/** Column IDs for the adaptable column groups (WHAT, WHO, and the optional EXTRA columns). */
 export const WHAT_COLUMNS = ['domain', 'specification', 'actor', 'testSuite', 'testCase'] as const
 export const WHO_COLUMNS  = ['community', 'organization', 'system'] as const
-/** A single-entry group for the optional "Flag" column - kept separate from WHAT/WHO since it's not
- * part of either group's "at least one selected" requirement, and (unlike them) only ever renders in
- * the completed-sessions table regardless of whether it's toggled on for the active one too. */
-export const FLAG_COLUMNS = ['flag'] as const
-export type ColumnId = typeof WHAT_COLUMNS[number] | typeof WHO_COLUMNS[number] | typeof FLAG_COLUMNS[number]
+/** "Start time" and "Flag" - kept separate from WHAT/WHO since neither is part of either group's "at
+ * least one selected" requirement.*/
+export const EXTRA_COLUMNS = ['startTime', 'flag'] as const
+export type ColumnId = typeof WHAT_COLUMNS[number] | typeof WHO_COLUMNS[number] | typeof EXTRA_COLUMNS[number]
+/** Order used by the flat user-preferences editor (session-column-preferences), matching the actual
+ * left-to-right order these two columns render with. */
+export const EXTRA_COLUMNS_FORM_ORDER: readonly ColumnId[] = ['flag', 'startTime']
 
 export function isOwnCase(c: SessionColumnCase): boolean {
   return c === SessionColumnCase.Own
@@ -63,16 +65,16 @@ export class SessionColumnsService {
       case 'community':     return (!own && isSystemAdmin) ? 'OFF' : 'NA'
       case 'organization':  return own ? 'NA' : 'ON'
       case 'system':        return own ? 'ON' : 'OFF'
-      // Flag - always offered as a toggle, off by default (niche feature); rendering itself is
-      // additionally restricted to the completed-sessions table in buildTableColumns, and to
-      // communities that actually define flags via the row's own precomputed flagDisplay value.
+      // Flag - always offered as a toggle, off by default (niche feature).
       case 'flag':           return 'OFF'
+      // Start time - only adaptable for the completed-sessions table.
+      case 'startTime':      return 'OFF'
     }
   }
 
   /** Returns the set of adaptable column IDs applicable for the given context (state ON or OFF). */
   adaptableColumns(columnCase: SessionColumnCase, isSystemAdmin: boolean): ColumnId[] {
-    const all: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS, ...FLAG_COLUMNS]
+    const all: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS, ...EXTRA_COLUMNS]
     return all.filter(id => {
       const s = this.getColumnState(id, columnCase, isSystemAdmin)
       return s === 'ON' || s === 'OFF'
@@ -115,16 +117,16 @@ export class SessionColumnsService {
 
   /**
    * Build the TableColumnDefinition array for a session table.
-   * Inserts adaptable columns in matrix order then appends the fixed MUST columns: for the active
-   * table this is just "Start time", for the completed table it is "End time" and "Result" (completed
-   * tables never show "Start time").
+   * Inserts adaptable columns in matrix order then appends the fixed/adaptable trailing columns.
    */
   buildTableColumns(columnCase: SessionColumnCase, storedValue: string, isSystemAdmin: boolean, completed: boolean): TableColumnDefinition[] {
     const active = new Set(this.activeIds(storedValue, columnCase, isSystemAdmin))
     const cols: TableColumnDefinition[] = []
 
-    const allAdaptable: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS, ...FLAG_COLUMNS]
+    const allAdaptable: ColumnId[] = [...WHAT_COLUMNS, ...WHO_COLUMNS, ...EXTRA_COLUMNS]
     for (const id of allAdaptable) {
+      // "Start time" is positioned explicitly below, immediately left of "End time", rather than in matrix order.
+      if (id === 'startTime') continue
       if (id === 'flag' && !completed) continue // flags only ever apply to completed sessions
       const state = this.getColumnState(id, columnCase, isSystemAdmin)
       if (state === 'NA' || state === 'MUST') continue
@@ -135,6 +137,10 @@ export class SessionColumnsService {
     if (!completed) {
       cols.push({ field: 'startTime', title: 'Start time', sortable: true, order: 'asc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' })
     } else {
+      // "Start time" is adaptable (off by default) for the completed table only, rendered immediately left of "End time".
+      if (active.has('startTime')) {
+        cols.push({ field: 'startTime', title: 'Start time', sortable: true, tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' })
+      }
       cols.push({ field: 'endTime', title: 'End time', sortable: true, order: 'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' })
       cols.push({ field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult, headerClass: 'th-min centered', cellClass: 'td-min centered' })
     }
@@ -150,18 +156,27 @@ export class SessionColumnsService {
    * column) can always be fully unchecked since the owning organisation is implicit in those
    * tables. Editors that show inline validation instead (rather than disabling checkboxes) pass
    * disableLastRemaining=false.
+   * When forActiveTable is true (the active table's own popup) "Start time" is rendered as a
+   * checked, disabled entry regardless of the stored preference, since the active table always
+   * shows that column - the toggle only ever governs the completed table's own "Start time" column.
+   * "Flag" is omitted entirely in that case, as it never applies to active sessions.
+   * extraColumnsOrder controls the display order of the "Start time"/"Flag" group - defaults to the
+   * Columns selector's own order (EXTRA_COLUMNS); pass EXTRA_COLUMNS_FORM_ORDER for the flat
+   * user-preferences editor, which mirrors the table's actual column order instead.
    */
   buildChooserOptions(
     columnCase: SessionColumnCase,
     currentActiveIds: string[],
     isSystemAdmin: boolean,
-    disableLastRemaining = true
+    disableLastRemaining = true,
+    forActiveTable = false,
+    extraColumnsOrder: readonly ColumnId[] = EXTRA_COLUMNS
   ): CheckboxOption[][] {
     const activeSet = new Set(currentActiveIds)
 
-    const whatOptions: CheckboxOption[] = []
-    const whoOptions:  CheckboxOption[] = []
-    const flagOptions: CheckboxOption[] = []
+    const whatOptions:  CheckboxOption[] = []
+    const whoOptions:   CheckboxOption[] = []
+    const extraOptions: CheckboxOption[] = []
 
     for (const id of WHAT_COLUMNS) {
       const state = this.getColumnState(id, columnCase, isSystemAdmin)
@@ -173,10 +188,15 @@ export class SessionColumnsService {
       if (state === 'NA' || state === 'MUST') continue
       whoOptions.push({ key: id, label: this.columnLabel(id), default: activeSet.has(id) })
     }
-    for (const id of FLAG_COLUMNS) {
+    for (const id of extraColumnsOrder) {
+      if (id === 'flag' && forActiveTable) continue // Flag never applies to active sessions
       const state = this.getColumnState(id, columnCase, isSystemAdmin)
       if (state === 'NA' || state === 'MUST') continue
-      flagOptions.push({ key: id, label: this.columnLabel(id), default: activeSet.has(id) })
+      if (id === 'startTime' && forActiveTable) {
+        extraOptions.push({ key: id, label: this.columnLabel(id), default: true, disabled: true })
+      } else {
+        extraOptions.push({ key: id, label: this.columnLabel(id), default: activeSet.has(id) })
+      }
     }
 
     // Disabled-last-in-group: if only one WHAT/WHO is checked, that one cannot be unchecked.
@@ -196,7 +216,7 @@ export class SessionColumnsService {
     const groups: CheckboxOption[][] = []
     if (whatOptions.length > 0) groups.push(whatOptions)
     if (whoOptions.length > 0) groups.push(whoOptions)
-    if (flagOptions.length > 0) groups.push(flagOptions)
+    if (extraOptions.length > 0) groups.push(extraOptions)
     return groups
   }
 
@@ -212,6 +232,7 @@ export class SessionColumnsService {
       case 'organization':  return this.dataService.labelOrganisation()
       case 'system':        return this.dataService.labelSystem()
       case 'flag':          return 'Flag'
+      case 'startTime':     return 'Start time'
       default:              return id
     }
   }
@@ -244,6 +265,10 @@ export class SessionColumnsService {
           iconColourFn: (data?: {colour: string, name: string}) => data?.colour ?? '',
           iconTooltipFn: (data?: {colour: string, name: string}) => data?.name ?? ''
         }
+      case 'startTime':
+        // Never actually reached - buildTableColumns positions "Start time" explicitly rather than
+        // via this generic lookup (see the "id === 'startTime'" skip there).
+        throw new Error("'startTime' is positioned explicitly, not built via buildColumnDef")
     }
   }
 
