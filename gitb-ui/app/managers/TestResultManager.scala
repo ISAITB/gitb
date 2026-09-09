@@ -32,7 +32,7 @@ import utils.{EmailUtil, JacksonUtil, RepositoryUtils, TimeUtil}
 import java.io.{File, StringReader}
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.sql.Timestamp
-import java.time.{YearMonth, ZoneOffset}
+import java.time.YearMonth
 import java.util.Calendar
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
@@ -997,7 +997,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         .map(_.startTime)
         .result
     ).map(_.map { result =>
-      YearMonth.from(result.toInstant.atZone(ZoneOffset.UTC))
+      YearMonth.from(result.toInstant.atZone(Configurations.TIME_ZONE))
     }.toSet)
   }
 

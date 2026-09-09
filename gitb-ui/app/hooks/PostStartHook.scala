@@ -36,7 +36,7 @@ import utils._
 
 import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, StandardCopyOption}
 import java.time.{LocalDate, YearMonth}
 import java.time.format.TextStyle
 import java.util
@@ -60,6 +60,12 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                               (implicit ec: ExecutionContext) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
+  // Suffix used for the temporary file a month folder is first zipped into, before it atomically replaces the
+  // folder as the archive. Also used to detect and clean up leftovers from an interrupted archival run.
+  private val TEMP_ARCHIVE_SUFFIX = ".zip.tmp"
+  // Suffix used for the temporary merged copy of an existing archive - kept here too so that a leftover from an
+  // interrupted merge is also cleaned up.
+  private val TEMP_MERGE_ARCHIVE_SUFFIX = ".zip.merge.tmp"
 
   onStart()
 
@@ -598,72 +604,123 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
         () => {
           // First get the months for which we have currently active test sessions.
           testResultManager.getActiveTestSessionStartMonths().map { activeMonths =>
-            // Process the status update folders.
-            val now = LocalDate.now()
-            val nowYearMonth = YearMonth.from(now)
-            val archivalThreshold = now.minusDays(Configurations.TEST_SESSION_ARCHIVE_THRESHOLD)
-            val statusUpdatesFolder = repositoryUtils.getStatusUpdatesFolder()
-            if (statusUpdatesFolder.exists() && statusUpdatesFolder.isDirectory) {
-              val yearFolders = statusUpdatesFolder.listFiles(new FileFilter {
-                override def accept(pathname: File): Boolean = {
-                  pathname.isDirectory && isNumeric(pathname.getName)
-                }
-              })
-              if (yearFolders != null) {
-                yearFolders.foreach { yearFolder =>
-                  val monthFoldersToArchive = yearFolder.listFiles(new FileFilter {
-                    override def accept(pathname: File): Boolean = {
-                      if (pathname.isDirectory) {
-                        try {
-                          val folderYearMonth = YearMonth.of(Integer.parseInt(yearFolder.getName), Integer.parseInt(pathname.getName))
-                          val folderDate = folderYearMonth.atDay(1)
-                          /*
-                           * Folders to archive are those that:
-                           * - Are before the archival threshold.
-                           * - Are before the current month.
-                           * - Are not related to active test sessions.
-                           */
-                          val include = if (folderDate.isBefore(archivalThreshold) && nowYearMonth.isAfter(folderYearMonth)) {
-                            if (activeMonths.contains(folderYearMonth)) {
-                              logger.info("Skipping archival of test session folder for year [{}] and month [{}] due to incomplete test sessions", folderYearMonth.getYear, folderYearMonth.getMonthValue)
-                              false
-                            } else {
-                              true
-                            }
-                          } else {
-                            false
-                          }
-                          include
-                        } catch {
-                          case _: NumberFormatException =>
-                            // In case we have unexpected folders that don't match what we expect
-                            false
-                        }
-                      } else {
-                        false
-                      }
+            processTestSessionArchival(activeMonths)
+          }.recover {
+            case e: Exception =>
+              // Errors here must never bubble up and cancel the schedule - log and retry on the next run.
+              logger.error("Failed to archive old test session folders.", e)
+          }
+        }
+      }
+    }
+  }
+
+  private def processTestSessionArchival(activeMonths: Set[YearMonth]): Unit = {
+    // Process the status update folders.
+    val now = LocalDate.now()
+    val nowYearMonth = YearMonth.from(now)
+    val archivalThreshold = now.minusDays(Configurations.TEST_SESSION_ARCHIVE_THRESHOLD)
+    val statusUpdatesFolder = repositoryUtils.getStatusUpdatesFolder()
+    if (statusUpdatesFolder.exists() && statusUpdatesFolder.isDirectory) {
+      val yearFolders = statusUpdatesFolder.listFiles(new FileFilter {
+        override def accept(pathname: File): Boolean = {
+          pathname.isDirectory && isNumeric(pathname.getName)
+        }
+      })
+      if (yearFolders != null) {
+        yearFolders.foreach { yearFolder =>
+          // Remove any leftover temporary archive files from a previous archival run that was interrupted
+          // (e.g. an application restart) before it could complete.
+          cleanupStaleArchiveTempFiles(yearFolder)
+          val monthFoldersToArchive = yearFolder.listFiles(new FileFilter {
+            override def accept(pathname: File): Boolean = {
+              if (pathname.isDirectory) {
+                try {
+                  val folderYearMonth = YearMonth.of(Integer.parseInt(yearFolder.getName), Integer.parseInt(pathname.getName))
+                  // Compared against the last (not first) day of the month so that a folder is only archived once
+                  // every test session that could ever have been recorded in it is older than the threshold.
+                  val folderDate = folderYearMonth.atEndOfMonth()
+                  /*
+                   * Folders to archive are those that:
+                   * - Are before the archival threshold (measured from the end of the month).
+                   * - Are before the current month.
+                   * - Are not related to active test sessions.
+                   */
+                  val include = if (folderDate.isBefore(archivalThreshold) && nowYearMonth.isAfter(folderYearMonth)) {
+                    if (activeMonths.contains(folderYearMonth)) {
+                      logger.info("Skipping archival of test session folder for year [{}] and month [{}] due to incomplete test sessions.", folderYearMonth.getYear, folderYearMonth.getMonthValue)
+                      false
+                    } else {
+                      true
                     }
-                  })
-                  if (monthFoldersToArchive != null) {
-                    monthFoldersToArchive.foreach { monthFolder =>
-                      // Create the zip archive.
-                      val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
-                      if (Files.exists(zipArchive)) {
-                        logger.warn("Test session folder archival for year [{}] and month [{}] skipped due to an archived folder already being present. This can cause report retrieval to fail and should be addressed.", yearFolder.getName, monthFolder.getName)
-                      } else {
-                        new ZipArchiver(monthFolder.toPath, zipArchive).zip()
-                        // All OK - delete the folder.
-                        FileUtils.deleteDirectory(monthFolder)
-                        logger.info("Archived test session folder for year [{}] and month [{}]", yearFolder.getName, monthFolder.getName)
-                      }
-                    }
+                  } else {
+                    false
                   }
+                  include
+                } catch {
+                  case _: NumberFormatException =>
+                    // In case we have unexpected folders that don't match what we expect
+                    false
                 }
+              } else {
+                false
+              }
+            }
+          })
+          if (monthFoldersToArchive != null) {
+            monthFoldersToArchive.foreach { monthFolder =>
+              try {
+                archiveMonthFolder(yearFolder, monthFolder)
+              } catch {
+                case e: Exception =>
+                  // Do not let a single problematic month folder prevent the others from being processed.
+                  logger.error("Failed to archive test session folder for year [{}] and month [{}].", yearFolder.getName, monthFolder.getName, e)
               }
             }
           }
         }
       }
+    }
+  }
+
+  private def cleanupStaleArchiveTempFiles(yearFolder: File): Unit = {
+    val staleTempFiles = yearFolder.listFiles(new FileFilter {
+      override def accept(pathname: File): Boolean = {
+        pathname.isFile && (pathname.getName.endsWith(TEMP_ARCHIVE_SUFFIX) || pathname.getName.endsWith(TEMP_MERGE_ARCHIVE_SUFFIX))
+      }
+    })
+    if (staleTempFiles != null) {
+      staleTempFiles.foreach { staleTempFile =>
+        logger.warn("Removing stale temporary test session archive file [{}] left over from a previous, presumably interrupted, archival run.", staleTempFile.getName)
+        FileUtils.deleteQuietly(staleTempFile)
+      }
+    }
+  }
+
+  private def archiveMonthFolder(yearFolder: File, monthFolder: File): Unit = {
+    val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
+    if (Files.exists(zipArchive)) {
+      // This should not normally occur, given that folders linked to active test sessions are never selected for
+      // archival above. It can still arise in the exceptional case of a test session that was already running
+      // when its month was archived, and only completed afterwards - re-creating this folder with the remaining
+      // data for that session. Rather than skip archival (which would leave this folder's test session data
+      // effectively invisible, since reporting always prefers a live folder over an archive for the same test
+      // session), the folder is merged into the existing archive so that no data is lost either way.
+      logger.warn("Test session folder for year [{}] and month [{}] exists alongside its archive. This should not normally occur - merging the folder into the existing archive.", yearFolder.getName, monthFolder.getName)
+      val workFolder = Path.of(repositoryUtils.getTempFolder().getAbsolutePath, "archive_merge", yearFolder.getName+"_"+monthFolder.getName+"_"+System.currentTimeMillis())
+      val result = new TestSessionArchiveMerger(monthFolder.toPath, zipArchive, workFolder).merge()
+      FileUtils.deleteDirectory(monthFolder)
+      logger.warn("Merged test session folder for year [{}] and month [{}] into its existing archive: [{}] file(s) added, [{}] file(s) replaced, [{}] session log(s) merged.", yearFolder.getName, monthFolder.getName, result.filesAdded(), result.filesReplaced(), result.filesLogMerged())
+    } else {
+      // Build the archive in a temporary file first, only replacing it into place once complete, so that an
+      // interruption between creating the archive and deleting the folder never leaves the folder deleted
+      // without a complete archive having taken its place.
+      val tempZipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+TEMP_ARCHIVE_SUFFIX)
+      new ZipArchiver(monthFolder.toPath, tempZipArchive).zip()
+      Files.move(tempZipArchive, zipArchive, StandardCopyOption.REPLACE_EXISTING)
+      // All OK - delete the folder.
+      FileUtils.deleteDirectory(monthFolder)
+      logger.info("Archived test session folder for year [{}] and month [{}].", yearFolder.getName, monthFolder.getName)
     }
   }
 
