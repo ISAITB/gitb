@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-text-json" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TextProcessor JSON escape and unescape</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="original">'He said "hi"&#10;New line \ backslash'</assign>
+        <process handler="TextProcessor" operation="jsonEscape" output="escaped">
+            <input name="input">$original</input>
+        </process>
+        <verify handler="StringValidator" desc="escaped value is as expected">
+            <input name="actual">$escaped</input>
+            <input name="expected">'He said \"hi\"\nNew line \\ backslash'</input>
+        </verify>
+        <process handler="TextProcessor" operation="jsonUnescape" output="unescaped">
+            <input name="input">$escaped</input>
+        </process>
+        <verify handler="StringValidator" desc="round-trip matches original">
+            <input name="actual">$unescaped</input>
+            <input name="expected">$original</input>
+        </verify>
+        <!-- Round-trip with the "quoted" flag, producing/consuming a complete JSON string literal. -->
+        <process handler="TextProcessor" operation="jsonEscape" output="escapedQuoted">
+            <input name="input">$original</input>
+            <input name="quoted">true()</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="quoted result is wrapped in double quotes">
+            <input name="expression">starts-with($escapedQuoted, '"') and ends-with($escapedQuoted, '"')</input>
+        </verify>
+        <process handler="TextProcessor" operation="jsonUnescape" output="unescapedQuoted">
+            <input name="input">$escapedQuoted</input>
+            <input name="quoted">true()</input>
+        </process>
+        <verify handler="StringValidator" desc="quoted round-trip matches original">
+            <input name="actual">$unescapedQuoted</input>
+            <input name="expected">$original</input>
+        </verify>
+    </steps>
+</testcase>

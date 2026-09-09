@@ -48,7 +48,20 @@ class ProcessingHandlersTest extends BaseIntegrationTest {
                 "proc-varutils-exists",
                 "proc-delay-basic",
                 "proc-xslt-transform",
-                "proc-varutils-type"
+                "proc-varutils-type",
+                "proc-regexp-replace",
+                "proc-regexp-replace-groups",
+                "proc-regexp-replace-first",
+                "proc-text-xml",
+                "proc-text-json",
+                "proc-text-html",
+                "proc-text-uri",
+                "proc-text-form",
+                "proc-text-csv",
+                "proc-text-regex",
+                "proc-text-hex",
+                "proc-text-nonstring-input",
+                "proc-text-bad-operation"
         }) {
             stubTdl(id, "tdl/proc/" + id + ".xml");
         }
@@ -172,5 +185,70 @@ class ProcessingHandlersTest extends BaseIntegrationTest {
     @Test
     void varUtilsType() throws Exception {
         assertSuccess(run("proc-varutils-type"));
+    }
+
+    @Test
+    void regexpReplace() throws Exception {
+        assertSuccess(run("proc-regexp-replace"));
+    }
+
+    @Test
+    void regexpReplaceGroups() throws Exception {
+        assertSuccess(run("proc-regexp-replace-groups"));
+    }
+
+    @Test
+    void regexpReplaceFirst() throws Exception {
+        assertSuccess(run("proc-regexp-replace-first"));
+    }
+
+    @Test
+    void textXml() throws Exception {
+        assertSuccess(run("proc-text-xml"));
+    }
+
+    @Test
+    void textJson() throws Exception {
+        assertSuccess(run("proc-text-json"));
+    }
+
+    @Test
+    void textHtml() throws Exception {
+        assertSuccess(run("proc-text-html"));
+    }
+
+    @Test
+    void textUri() throws Exception {
+        assertSuccess(run("proc-text-uri"));
+    }
+
+    @Test
+    void textForm() throws Exception {
+        assertSuccess(run("proc-text-form"));
+    }
+
+    @Test
+    void textCsv() throws Exception {
+        assertSuccess(run("proc-text-csv"));
+    }
+
+    @Test
+    void textRegex() throws Exception {
+        assertSuccess(run("proc-text-regex"));
+    }
+
+    @Test
+    void textHex() throws Exception {
+        assertSuccess(run("proc-text-hex"));
+    }
+
+    @Test
+    void textNonStringInput() throws Exception {
+        assertSuccess(run("proc-text-nonstring-input"));
+    }
+
+    @Test
+    void textBadOperation() throws Exception {
+        assertFailed(run("proc-text-bad-operation"));
     }
 }

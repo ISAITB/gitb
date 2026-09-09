@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-text-bad-operation" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TextProcessor errors on an unknown operation</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <process handler="TextProcessor" operation="bogusOperation" output="result">
+            <input name="input">'text'</input>
+        </process>
+    </steps>
+</testcase>

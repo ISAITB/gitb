@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-text-nonstring-input" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TextProcessor accepts non-string inputs via automatic conversion</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <process handler="TextProcessor" operation="xmlEscape" output="fromNumber">
+            <input name="input">42</input>
+        </process>
+        <verify handler="StringValidator" desc="a number input is converted to its string form">
+            <input name="actual">$fromNumber</input>
+            <input name="expected">'42'</input>
+        </verify>
+        <process handler="TextProcessor" operation="xmlEscape" output="fromBoolean">
+            <input name="input">true()</input>
+        </process>
+        <verify handler="StringValidator" desc="a boolean input is converted to its string form">
+            <input name="actual">$fromBoolean</input>
+            <input name="expected">'true'</input>
+        </verify>
+    </steps>
+</testcase>

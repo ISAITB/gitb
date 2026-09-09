@@ -31,6 +31,7 @@ import com.gitb.types.StringType;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,8 +40,11 @@ public class RegExpProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION_CHECK = "check";
     private static final String OPERATION_COLLECT = "collect";
+    private static final String OPERATION_REPLACE = "replace";
     private static final String INPUT_INPUT = "input";
     private static final String INPUT_EXPRESSION = "expression";
+    private static final String INPUT_REPLACEMENT = "replacement";
+    private static final String INPUT_ALL = "all";
     private static final String OUTPUT_OUTPUT = "output";
 
     @Override
@@ -67,6 +71,17 @@ public class RegExpProcessor extends AbstractProcessingHandler {
                 ),
                 List.of(
                         createParameter(OUTPUT_OUTPUT, "list[string]", UsageEnumeration.R, ConfigurationType.SIMPLE, "A list of strings that were collected as matching groups.")
+                )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION_REPLACE,
+                List.of(
+                        createParameter(INPUT_INPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The text to run the regular expression on."),
+                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The regular expression to use."),
+                        createParameter(INPUT_REPLACEMENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The replacement text. References to capturing groups (e.g. \"$1\") are replaced by the corresponding matched group; a literal \"$\" must be escaped as \"\\$\"."),
+                        createParameter(INPUT_ALL, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether to replace all matches or only the first one (default is true).")
+                ),
+                List.of(
+                        createParameter(OUTPUT_OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The text resulting from applying the replacement(s).")
                 )
         ));
         return module;
@@ -107,6 +122,17 @@ public class RegExpProcessor extends AbstractProcessingHandler {
                 }
             }
             data.getData().put(OUTPUT_OUTPUT, groups);
+        } else if (OPERATION_REPLACE.equalsIgnoreCase(operation)) {
+            String replacement = getRequiredInputForName(input, INPUT_REPLACEMENT, StringType.class).getValue();
+            boolean all = Optional.ofNullable(getInputForName(input, INPUT_ALL, BooleanType.class)).map(BooleanType::getValue).orElse(true);
+            Matcher matcher = expression.matcher(inputText);
+            String result;
+            try {
+                result = all ? matcher.replaceAll(replacement) : matcher.replaceFirst(replacement);
+            } catch (IndexOutOfBoundsException e) {
+                throw new IllegalArgumentException("The provided replacement [" + replacement + "] refers to a capturing group not present in the expression", e);
+            }
+            data.getData().put(OUTPUT_OUTPUT, new StringType(result));
         } else {
             throw new IllegalArgumentException("Unknown operation [" + operation + "]");
         }

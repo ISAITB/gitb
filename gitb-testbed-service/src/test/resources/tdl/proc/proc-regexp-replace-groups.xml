@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-regexp-replace-groups" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RegExpProcessor replace with capturing group references</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="text">'John Doe'</assign>
+        <process handler="RegExpProcessor" operation="replace" output="result">
+            <input name="input">$text</input>
+            <input name="expression">'(\w+) (\w+)'</input>
+            <input name="replacement">'$2, $1'</input>
+        </process>
+        <verify handler="StringValidator" desc="groups are swapped as expected">
+            <input name="actual">$result</input>
+            <input name="expected">'Doe, John'</input>
+        </verify>
+    </steps>
+</testcase>

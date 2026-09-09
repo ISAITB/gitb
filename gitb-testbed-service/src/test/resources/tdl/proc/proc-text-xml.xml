@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-text-xml" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TextProcessor XML escape and unescape</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- Ampersand escaping is checked against a known expected value. -->
+        <assign to="original">'A &amp; B'</assign>
+        <process handler="TextProcessor" operation="xmlEscape" output="escaped">
+            <input name="input">$original</input>
+        </process>
+        <verify handler="StringValidator" desc="escaped value is as expected">
+            <input name="actual">$escaped</input>
+            <input name="expected">'A &amp;amp; B'</input>
+        </verify>
+        <process handler="TextProcessor" operation="xmlUnescape" output="unescaped">
+            <input name="input">$escaped</input>
+        </process>
+        <verify handler="StringValidator" desc="round-trip matches original">
+            <input name="actual">$unescaped</input>
+            <input name="expected">$original</input>
+        </verify>
+        <!-- Round-trip across the full set of characters escapeXml10 handles. -->
+        <assign to="originalFull">"&lt;a&gt; &amp; ""b"" 'c'"</assign>
+        <process handler="TextProcessor" operation="xmlEscape" output="escapedFull">
+            <input name="input">$originalFull</input>
+        </process>
+        <process handler="TextProcessor" operation="xmlUnescape" output="unescapedFull">
+            <input name="input">$escapedFull</input>
+        </process>
+        <verify handler="StringValidator" desc="full round-trip matches original">
+            <input name="actual">$unescapedFull</input>
+            <input name="expected">$originalFull</input>
+        </verify>
+    </steps>
+</testcase>
