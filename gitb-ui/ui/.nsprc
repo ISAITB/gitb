@@ -218,5 +218,9 @@
   "1138113": {
     "active": true,
     "notes": "Transitive dependencies that are not exploitable."
+  },
+  "1193686": {
+    "active": true,
+    "notes": "Not applicable."
   }
 }
