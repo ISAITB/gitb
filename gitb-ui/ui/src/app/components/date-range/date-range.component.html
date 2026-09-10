@@ -1,5 +1,5 @@
 <div #input class="input-group">
-    <input type="text" [value]="displayValue" placeholder="Select date..." autocomplete="off" class="form-control" [class.clickable]="true" (click)="toggle()" readonly="readonly"/>
+    <input type="text" [value]="displayValue" placeholder="Select range..." autocomplete="off" class="form-control" [class.clickable]="true" (click)="toggle()" readonly="readonly"/>
     <button class="btn btn-secondary" type="button" (click)="clear()" [disabled]="beginDate == undefined && endDate == undefined" tooltipClass="shortTooltip" container="body" ngbTooltip="Clear" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.CANCEL"></i></button>
 </div>
 <ng-template #popupTemplate>
