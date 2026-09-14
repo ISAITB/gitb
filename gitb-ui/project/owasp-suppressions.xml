@@ -1951,4 +1951,20 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
         <cve>CVE-2026-59280</cve>
     </suppress>
+    <suppress>
+        <!-- Related to unused features and thus non-exploitable. -->
+        <notes><![CDATA[
+    file name: freemarker-2.3.34.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.freemarker/.*@.*$</packageUrl>
+        <cve>CVE-2026-84939</cve>
+    </suppress>
+    <suppress>
+        <!-- Related to unused features and thus non-exploitable. -->
+        <notes><![CDATA[
+    file name: spring-core-6.2.19.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/.*@.*$</packageUrl>
+        <cve>CVE-2026-47888</cve>
+    </suppress>
 </suppressions>
