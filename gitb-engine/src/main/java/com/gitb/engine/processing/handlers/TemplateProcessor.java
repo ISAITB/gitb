@@ -26,10 +26,7 @@ import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
-import com.gitb.types.DataType;
-import com.gitb.types.ListType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import freemarker.cache.TemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -145,6 +142,12 @@ public class TemplateProcessor extends AbstractProcessingHandler {
                 var map = new HashMap<String, Object>();
                 mapType.getItems().forEach((key, value) -> map.put(key, dataTypeToObject(value)));
                 return map;
+            }
+            case NumberType numberType -> {
+                return numberType.getValue();
+            }
+            case BooleanType booleanType -> {
+                return booleanType.getValue();
             }
             default -> {
                 return type.convertTo(DataType.STRING_DATA_TYPE).getValue();
