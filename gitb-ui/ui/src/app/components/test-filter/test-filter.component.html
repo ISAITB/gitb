@@ -130,7 +130,7 @@
             </div>
           }
           @if (filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
-            <div class="filterCell">
+            <div class="filterCell commentFilter">
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.COMMENTS]}}</span></div>
               <div class="filterValue">
                   <app-text-filter #commentFilter name="commentFilter" [(ngModel)]="commentText" (apply)="applyFilters()" [withToggle]="true" (toggle)="withComments = $event; applyFilters()"></app-text-filter>
