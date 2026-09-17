@@ -66,6 +66,7 @@ export class UserGuideService {
     this.paths['/settings/organisation/system/create'] = this.setPath('', 'manageOrganisation/index.html#create-a-new-system', 'validateTestSetup/index.html#create-a-new-system')
     this.paths['/settings/organisation/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID] = this.setPath('manageOrganisation/index.html#manage-your-systems', 'manageOrganisation/index.html#edit-an-existing-system', 'validateTestSetup/index.html#edit-an-existing-system')
     this.paths['/settings/password'] = this.setPath('profile/index.html#change-your-password')
+    this.paths['/settings/messages'] = this.setPath('messages/index.html')
     this.paths['/admin/sessions'] = this.setPath('', '', 'sessionDashboard/index.html')
     this.paths['/admin/conformance'] = this.setPath('', '', 'conformanceDashboard/index.html')
     this.paths['/admin/domains'] = this.setPath('', '', 'domainDashboard/index.html')
