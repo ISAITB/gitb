@@ -222,5 +222,25 @@
   "1193686": {
     "active": true,
     "notes": "Not applicable."
+  },
+  "1204772": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1204778": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1204779": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1153171": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
+  },
+  "1153172": {
+    "active": true,
+    "notes": "Suppressed vulnerability as non-applicable."
   }
 }
