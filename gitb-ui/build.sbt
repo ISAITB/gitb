@@ -12,7 +12,7 @@ val bouncyCastleVersion = "1.85"
 val commonsTextVersion = "1.15.0"
 val mySqlConnectorVersion = "26.7.0"
 val pac4jVersion = "6.5.6"
-val nettyVersion = "4.2.17.Final"
+val nettyVersion = "4.2.18.Final"
 val pdfBoxVersion = "3.0.8"
 val jaxbVersion = "4.0.9"
 
