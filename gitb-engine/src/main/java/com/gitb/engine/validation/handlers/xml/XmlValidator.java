@@ -20,6 +20,7 @@ import com.gitb.core.Configuration;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.common.XmlInputProvider;
 import com.gitb.engine.validation.handlers.schematron.SchematronReportHandler;
 import com.gitb.engine.validation.handlers.schematron.SchematronValidator;
 import com.gitb.engine.validation.handlers.xsd.XsdReportHandler;
@@ -63,6 +64,9 @@ public class XmlValidator extends AbstractValidator {
         var showPaths = getAndConvert(inputs, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var schemaVersion = getAndConvert(inputs, SCHEMA_VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
         var testCaseId = new StringType(getTestCaseId(inputs));
+        // Shared across the XSD and every Schematron validation below, so the input content is serialised (and, if
+        // needed, parsed into a line-numbered DOM) at most once for this whole verify step.
+        var inputProvider = new XmlInputProvider(xml);
         TAR xsdReport = null;
         List<TAR> schematronReports = new ArrayList<>();
         List<TAR> allReports = new ArrayList<>();
@@ -74,7 +78,7 @@ public class XmlValidator extends AbstractValidator {
             ));
             putIfNotNull(map, XsdValidator.SHOW_SCHEMA_ARGUMENT_NAME, showArtefacts);
             putIfNotNull(map, SCHEMA_VERSION_ARGUMENT_NAME, schemaVersion);
-            xsdReport = (TAR)new XsdValidator().validate(configurations, map);
+            xsdReport = (TAR)new XsdValidator().validate(configurations, map, inputProvider);
             allReports.add(xsdReport);
         }
         /*
@@ -95,7 +99,7 @@ public class XmlValidator extends AbstractValidator {
                 putIfNotNull(map, SchematronValidator.SHOW_TESTS_ARGUMENT_NAME, showTests);
                 putIfNotNull(map, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, showPaths);
                 map.put(SchematronValidator.FROM_XML_VALIDATOR_ARGUMENT_NAME,new BooleanType(true));
-                schematronReports.add((TAR)schematronValidator.validate(configurations, map));
+                schematronReports.add((TAR)schematronValidator.validate(configurations, map, inputProvider));
             }
             allReports.addAll(schematronReports);
         }

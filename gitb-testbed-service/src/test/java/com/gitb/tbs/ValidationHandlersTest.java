@@ -16,15 +16,20 @@
 package com.gitb.tbs;
 
 import com.gitb.core.AnyContent;
+import com.gitb.tr.BAR;
+import com.gitb.tr.TAR;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.gitb.tbs.TdlTestHelper.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ValidationHandlersTest extends BaseIntegrationTest {
 
@@ -47,6 +52,9 @@ class ValidationHandlersTest extends BaseIntegrationTest {
                 "val-xml-valid",
                 "val-xml-invalid",
                 "val-xml-schematron",
+                "val-xml-schematron-xslt-lines",
+                "val-xml-schematron-default-ns",
+                "val-xml-schematron-multiple",
                 "val-json-valid",
                 "val-json-invalid",
                 "val-xmlmatch-match",
@@ -158,6 +166,63 @@ class ValidationHandlersTest extends BaseIntegrationTest {
     @Test
     void xmlSchematron() throws Exception {
         assertSuccess(run("val-xml-schematron"));
+    }
+
+    // Schematron performance fix (streamed input for XSLT-based Schematron, lazy line-numbered document, fast
+    // location resolver) - see SchematronValidator/SchematronReportHandler/SchematronLocationResolver.
+
+    @Test
+    void xmlSchematronXsltReportsCorrectLineNumbers() throws Exception {
+        TestRunResult result = run("val-xml-schematron-xslt-lines");
+        assertFailed(result);
+        List<BAR> findings = reportFindings(result);
+        assertEquals(2, findings.size());
+        assertEquals(List.of("xml:6:0", "xml:9:0"), findings.stream().map(BAR::getLocation).toList());
+    }
+
+    // Attribute-location line-number fallback (a finding whose location resolves to an attribute node) is covered
+    // by SchematronReportHandlerTest#testAttributeLocationFallsBackToOwningElementLine, not here: see that test's
+    // Javadoc for why neither Schematron engine reliably produces that scenario end-to-end in this ph-schematron
+    // version.
+
+    @Test
+    void xmlSchematronDefaultNamespaceResolvesLocation() throws Exception {
+        TestRunResult result = run("val-xml-schematron-default-ns");
+        assertFailed(result);
+        List<BAR> findings = reportFindings(result);
+        assertEquals(1, findings.size());
+        assertEquals("xml:6:0", findings.getFirst().getLocation());
+    }
+
+    @Test
+    void xmlSchematronMultipleShareOneInputProvider() throws Exception {
+        TestRunResult result = run("val-xml-schematron-multiple");
+        assertFailed(result);
+        List<BAR> findings = reportFindings(result);
+        // 2 findings from the first Schematron (lines 6 and 9) + 1 from the second (line 6): both were validated
+        // successfully against the one input serialised by the XmlInputProvider shared across both. The merged
+        // report is sorted by location, so compare as a sorted multiset rather than assuming per-schematron order.
+        List<String> locations = findings.stream().map(BAR::getLocation).sorted().toList();
+        assertEquals(List.of("xml:6:0", "xml:6:0", "xml:9:0"), locations);
+        assertTrue(locations.stream().noneMatch(location -> location.contains(":0:0")),
+                "No finding should have fallen back to line 0: " + locations);
+    }
+
+    /**
+     * Extract the {@link BAR} findings from the verify step's own report - the {@link TestRunResult} among
+     * {@link TestRunResult#allStatuses()} whose report carries the most findings (the session-end status itself
+     * carries no per-item detail, only the aggregate result).
+     */
+    private List<BAR> reportFindings(TestRunResult result) {
+        TAR report = result.allStatuses().stream()
+                .filter(status -> status.getReport() instanceof TAR)
+                .map(status -> (TAR) status.getReport())
+                .filter(tar -> tar.getReports() != null)
+                .max(Comparator.comparingInt(tar -> tar.getReports().getInfoOrWarningOrError().size()))
+                .orElseThrow(() -> new AssertionError("No report with findings found among captured statuses"));
+        return report.getReports().getInfoOrWarningOrError().stream()
+                .map(element -> (BAR) element.getValue())
+                .toList();
     }
 
     @Test

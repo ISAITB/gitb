@@ -19,14 +19,17 @@ import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.validation.handlers.common.AbstractReportHandler;
 import com.gitb.engine.validation.handlers.xml.DocumentNamespaceContext;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.*;
 import com.gitb.types.DataType;
-import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
+import com.gitb.utils.XMLUtils;
 import com.helger.diagnostics.error.level.EErrorLevel;
 import com.helger.schematron.svrl.AbstractSVRLMessage;
 import com.helger.schematron.svrl.SVRLHelper;
 import com.helger.schematron.svrl.jaxb.SchematronOutputType;
+import jakarta.xml.bind.JAXBElement;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -35,13 +38,15 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.JAXBElement;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,7 +61,11 @@ public class SchematronReportHandler extends AbstractReportHandler {
     public static final String SCH_ITEM_NAME  = "sch";
     private static final Pattern DEFAULTNS_PATTERN = Pattern.compile("\\/[\\w]+:?");
 
-    private final Document node;
+    private final Supplier<Document> documentSupplier;
+    private Document document;
+    private XPathFactory xpathFactory;
+    private XPath xPath;
+    private SchematronLocationResolver locationResolver;
     private final SchematronOutputType svrlReport;
     private NamespaceContext namespaceContext;
     private final boolean convertXPathExpressions;
@@ -64,10 +73,23 @@ public class SchematronReportHandler extends AbstractReportHandler {
     private final boolean showPaths;
     private Boolean hasDefaultNamespace;
 
-    protected SchematronReportHandler(ObjectType xml, SchemaType sch, Document node, SchematronOutputType svrl, boolean convertXPathExpressions, boolean showTests, boolean showPaths) {
+    /**
+     * Constructor.
+     *
+     * @param xmlContent The input XML content, already serialised (by the caller's shared
+     *   {@code XmlInputProvider}) rather than serialised again here.
+     * @param sch The Schematron schema to attach to the report, or {@code null} if it should not be shown.
+     * @param documentSupplier Supplier for the line-numbered document, resolved lazily and at most once, since it is
+     *   only needed to localise report item locations.
+     * @param svrl The SVRL validation output.
+     * @param convertXPathExpressions Whether locations come from the pure Schematron engine (and so need path
+     *   conversion) rather than the XSLT-based one.
+     * @param showTests Whether to include the failed assertion's test expression in the report.
+     * @param showPaths Whether to include the resolved location path in the report.
+     */
+    protected SchematronReportHandler(String xmlContent, SchemaType sch, Supplier<Document> documentSupplier, SchematronOutputType svrl, boolean convertXPathExpressions, boolean showTests, boolean showPaths) {
         super();
-
-        this.node = node;
+        this.documentSupplier = documentSupplier;
         this.svrlReport = svrl;
         this.convertXPathExpressions = convertXPathExpressions;
         this.showTests = showTests;
@@ -83,7 +105,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
 	    xmlAttachment.setName(XML_ITEM_NAME);
         xmlAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
 	    xmlAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-	    xmlAttachment.setValue(new String(xml.serializeByDefaultEncoding()));
+	    xmlAttachment.setValue(xmlContent);
 	    attachment.getItem().add(xmlAttachment);
 
         if (sch != null) {
@@ -92,11 +114,24 @@ public class SchematronReportHandler extends AbstractReportHandler {
             schemaAttachment.setType(DataType.SCHEMA_DATA_TYPE);
             schemaAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
             schemaAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-            schemaAttachment.setValue(new String(sch.serializeByDefaultEncoding()));
+            schemaAttachment.setValue(new String(sch.serializeByDefaultEncoding(), StandardCharsets.UTF_8));
             attachment.getItem().add(schemaAttachment);
         }
 
 	    report.setContext(attachment);
+    }
+
+    /**
+     * Get or resolve (parse) the line-numbered input document. Resolved lazily and only once, since parsing is
+     * only needed to localise report item locations.
+     *
+     * @return The document.
+     */
+    private Document getDocument() {
+        if (document == null) {
+            document = documentSupplier.get();
+        }
+        return document;
     }
 
     private <T extends AbstractSVRLMessage> TestResultType getErrorLevel(List<T> messages) {
@@ -173,27 +208,145 @@ public class SchematronReportHandler extends AbstractReportHandler {
 
     private NamespaceContext getNamespaceContext() {
         if (namespaceContext == null) {
-            namespaceContext = new DocumentNamespaceContext(node, false);
+            namespaceContext = new DocumentNamespaceContext(getDocument(), false);
         }
         return namespaceContext;
     }
 
+    /**
+     * Get or initialise the resolver used to quickly locate the line number for a report item's location, without
+     * needing a full XPath evaluation for the (very common) case of a canonical, XSLT-generated location path.
+     *
+     * @return The resolver.
+     */
+    private SchematronLocationResolver getLocationResolver() {
+        if (locationResolver == null) {
+            locationResolver = new SchematronLocationResolver(getDocument());
+        }
+        return locationResolver;
+    }
+
+    /**
+     * Construct the specific XPath factory to use (force it to be a Saxon implementation).
+     *
+     * @return The factory.
+     */
+    private XPathFactory getXPathFactory() {
+        if (xpathFactory == null) {
+            xpathFactory = new net.sf.saxon.xpath.XPathFactoryImpl();
+        }
+        return xpathFactory;
+    }
+
+    /**
+     * Get or initialise the (single, reused) XPath instance used to resolve report item locations.
+     *
+     * @return The XPath instance.
+     */
+    private XPath getXPath() {
+        if (xPath == null) {
+            xPath = getXPathFactory().newXPath();
+            xPath.setNamespaceContext(getNamespaceContext());
+        }
+        return xPath;
+    }
+
+    /**
+     * Adapt the provided XPath expression to change its path elements that don't have a prefix, to use a wildcard prefix.
+     * <p/>
+     * Splitting naively on {@code '/'} is not fully safe for canonical, XSLT-generated locations - a namespace URI
+     * predicate can itself contain slashes - but those never reach this method in practice: they are always
+     * prefixed (see {@link SchematronLocationResolver}), so no path part is ever missing a {@code ':'} and
+     * {@code changed} stays {@code false}, returning empty. A genuinely malformed split simply fails to evaluate,
+     * degrading to line {@code "0"} - the same outcome as before this method existed.
+     *
+     * @param xpathExpression The XPath expression to process.
+     * @return The adapted XPath expression or empty if no change was made to the original expression.
+     */
+    private Optional<String> convertToWildCardXPathExpression(String xpathExpression) {
+        boolean changed = false;
+        String expressionToReturn = xpathExpression;
+        if (xpathExpression != null) {
+            String[] pathParts = StringUtils.split(xpathExpression, '/');
+            var builder = new StringBuilder();
+            for (var pathPart: pathParts) {
+                if (!builder.isEmpty()) {
+                    builder.append('/');
+                }
+                if (pathPart.indexOf(':') == -1) {
+                    changed = true;
+                    builder.append("*:");
+                }
+                builder.append(pathPart);
+            }
+            expressionToReturn = builder.toString();
+        }
+        if (changed) {
+            return Optional.of(expressionToReturn);
+        } else {
+            return Optional.empty();
+        }
+    }
+
     private LocationInfo getLocationInfo(String xpathExpression) {
         String xpathExpressionConverted = convertToXPathExpression(xpathExpression);
-        XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
-        xPath.setNamespaceContext(getNamespaceContext());
-        Node node;
-        String lineNumber = "0";
+        String lineNumber;
         try {
-            node = (Node) xPath.evaluate(xpathExpressionConverted, this.node, XPathConstants.NODE);
-            if (node != null) {
-                lineNumber = (String) node.getUserData("lineNumber");
+            Node locatedNode = null;
+            if (!convertXPathExpressions) {
+                /*
+                 * The fast resolver understands the canonical, XSLT-generated location syntax produced for
+                 * XSLT-based Schematron ("*:local[namespace-uri()='uri'][n]"). It is not attempted for the "pure"
+                 * Schematron path (convertXPathExpressions=true), whose locations use a different XPath dialect
+                 * that the resolver does not parse - it would simply never match and fall through below
+                 * regardless, but skipping the attempt avoids the wasted parsing effort.
+                 */
+                locatedNode = getLocationResolver().resolve(xpathExpressionConverted).orElse(null);
             }
-        } catch (XPathExpressionException e) {
+            if (locatedNode == null) {
+                XPath xPath = getXPath();
+                locatedNode = (Node) xPath.evaluate(xpathExpressionConverted, getDocument(), XPathConstants.NODE);
+                if (locatedNode == null) {
+                    var expressionWithWildcards = convertToWildCardXPathExpression(xpathExpression);
+                    if (expressionWithWildcards.isPresent()) {
+                        locatedNode = (Node) xPath.evaluate(expressionWithWildcards.get(), getDocument(), XPathConstants.NODE);
+                    }
+                }
+            }
+            lineNumber = resolveLineNumber(locatedNode);
+        } catch (GITBEngineInternalError e) {
+            // A genuine failure to resolve the input document itself (see getDocument()) - not a location
+            // resolution problem, so this must not be silently swallowed into a "0" line number.
+            throw e;
+        } catch (Exception e) {
+            // Either the fast resolver or the XPath evaluation failed to make sense of this specific location
+            // expression - the pre-existing behaviour for such cases, i.e. the finding is still reported, just
+            // without a specific line number.
             logger.debug(e.getMessage());
             lineNumber = "0";
         }
         return new LocationInfo(toPathForPresentation(xpathExpression), lineNumber);
+    }
+
+    /**
+     * Resolve the line number to report for the given located node.
+     * <p/>
+     * The line-numbered document ({@code XMLUtils#readXMLWithLineNumbers}) only records the line number user data
+     * on elements, not attributes - so a location that resolves to an attribute (e.g. {@code @id}) falls back to
+     * its owning element's line, rather than reporting a literal {@code "null"} line number.
+     *
+     * @param locatedNode The located node, or {@code null} if none was found.
+     * @return The line number to report, or {@code "0"} if none could be determined.
+     */
+    private String resolveLineNumber(Node locatedNode) {
+        if (locatedNode == null) {
+            return "0";
+        }
+        Node lineNumberSource = locatedNode.getNodeType() == Node.ATTRIBUTE_NODE
+                ? ((org.w3c.dom.Attr) locatedNode).getOwnerElement()
+                : locatedNode;
+        String lineNumber = lineNumberSource == null ? null : (String) lineNumberSource.getUserData(XMLUtils.LINE_NUMBER_KEY_NAME);
+        return lineNumber != null ? lineNumber : "0";
     }
 
     /**
@@ -215,7 +368,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
     private String convertToXPathExpression(String xpathExpression) {
         if (convertXPathExpressions) {
             try {
-                if (documentHasDefaultNamespace(node)) {
+                if (documentHasDefaultNamespace(getDocument())) {
                     StringBuilder s = new StringBuilder(xpathExpression);
                     Matcher m = DEFAULTNS_PATTERN.matcher(s.toString());
                     s.delete(0, s.length());
