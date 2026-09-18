@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.30.0-SNAPSHOT</version>
+    <version>1.30.0</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -36,7 +36,7 @@
         <version.plugin.mavenSitePlugin>3.22.0</version.plugin.mavenSitePlugin>
         <version.plugin.projectInfoReports>3.9.0</version.plugin.projectInfoReports>
         <!-- Dependency versions -->
-        <version.gitbTypes>1.30.0-SNAPSHOT</version.gitbTypes>
+        <version.gitbTypes>1.30.0</version.gitbTypes>
         <version.springBoot>4.1.1</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
         <tomcat.version>11.0.25</tomcat.version>
         <version.bouncycastle>1.86</version.bouncycastle>
@@ -78,7 +78,7 @@
         <version.xmlUnit>2.13.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.freeMarker>2.3.35</version.freeMarker>
-        <version.openhtmltopdf>1.1.65</version.openhtmltopdf>
+        <version.openhtmltopdf>1.1.86</version.openhtmltopdf>
         <version.org.jsoup>1.23.2</version.org.jsoup>
         <version.jena>6.1.0</version.jena>
         <!-- Ensure the libthrift version matches the one used within Jena. -->
@@ -317,8 +317,8 @@
                         <execution>
                             <phase>none</phase>
                             <!--
-                                Run manually with `mvn versions:set -DnewVersion=1.29.0`
-                                For a new development cycle run `mvn versions:set -DnewVersion=1.29.0-SNAPSHOT`
+                                Run manually with `mvn versions:set -DnewVersion=1.30.0`
+                                For a new development cycle run `mvn versions:set -DnewVersion=1.30.0-SNAPSHOT`
                                 The version number should be aligned with the gitb-types-jakarta dependency.
                             -->
                         </execution>
@@ -648,6 +648,11 @@
                 <version>${version.jackson2}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson2}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${version.jackson2}</version>
@@ -655,6 +660,11 @@
             <dependency>
                 <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
             <dependency>
