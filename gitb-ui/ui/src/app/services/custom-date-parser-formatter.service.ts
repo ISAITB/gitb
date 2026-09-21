@@ -55,8 +55,8 @@ export class CustomDateParserFormatter extends NgbDateParserFormatter {
   // Convert string from input to NgbDateStruct
   parse(value: string): NgbDateStruct | null {
     if (!value) return null;
-    const parts = value.split(/\D+/).filter(p => p.length > 0).map(p => parseInt(p, 10));
-    if (parts.length !== 3 || parts.some(p => isNaN(p))) return null;
+    const parts = value.split(/\D+/).filter(p => p.length > 0).map(p => Number.parseInt(p, 10));
+    if (parts.length !== 3 || parts.some(p => Number.isNaN(p))) return null;
     const order = this.partOrder()
     const result: Partial<Record<DatePart, number>> = {}
     order.forEach((part, index) => result[part] = parts[index])

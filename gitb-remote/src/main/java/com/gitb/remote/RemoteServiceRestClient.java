@@ -115,7 +115,8 @@ public abstract class RemoteServiceRestClient {
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected error while calling remote service", e);
         } catch (InterruptedException e) {
-            throw new IllegalStateException(e);
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Thread interrupted", e);
         }
     }
 
