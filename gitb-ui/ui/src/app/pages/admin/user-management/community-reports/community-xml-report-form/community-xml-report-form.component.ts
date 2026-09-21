@@ -141,8 +141,6 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
           value: response.body ?? '',
           readOnly: true,
           lineNumbers: true,
-          smartIndent: false,
-          electricChars: false,
           mode: 'application/xml',
           download: {
             fileName: Utils.fileNameFromContentDisposition(response, this.config.previewFileNameXml),

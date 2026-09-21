@@ -149,8 +149,6 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
           value: data,
           readOnly: true,
           lineNumbers: true,
-          smartIndent: false,
-          electricChars: false,
           mode: 'application/xml',
           download: {
             fileName: 'stylesheet.xslt',

@@ -14,7 +14,7 @@
  */
 
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
-import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {CodeEditorComponent} from 'src/app/components/code-editor/code-editor.component';
 import {AnyContent} from 'src/app/components/diagram/any-content';
 import {DataService} from 'src/app/services/data.service';
 import {FileData} from 'src/app/types/file-data.type';
@@ -38,7 +38,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   @Input() interactions!: UserInteraction[]
   @Input() inputTitle? = 'User interaction'
   @Input() sessionId!: string
-  @ViewChildren(CodemirrorComponent) codeMirrors?: QueryList<CodemirrorComponent>
+  @ViewChildren(CodeEditorComponent) codeMirrors?: QueryList<CodeEditorComponent>
   needsInput = false
   firstCodeIndex:number|undefined
   firstTextIndex:number|undefined
@@ -160,7 +160,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   waitUntilControlsAreAvailable(retries = 10) {
     if (this.codeMirrors) {
-      const ready = this.codeMirrors.toArray().every(codeMirror => codeMirror.codeMirror)
+      const ready = this.codeMirrors.toArray().every(codeMirror => codeMirror.view)
       if (ready) {
         this.initialiseControls()
       } else if (retries > 0) {
@@ -174,30 +174,23 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   private initialiseControls() {
     if (this.codeMirrors) {
       // Refresh dimensions.
-      this.codeMirrors.forEach((codeMirror) => {
-        if (codeMirror.codeMirror) {
-          codeMirror.codeMirror.refresh()
-        }
-      })
+      this.codeMirrors.forEach((codeMirror) => codeMirror.refresh())
       // Set editor values.
       this.interactions.forEach((interaction, index) => {
         if (interaction.type == "request" && interaction.inputType == "CODE" && interaction.data != undefined && interaction.data.length > 0) {
-          const editor = this.codeEditorForName('input-'+index)
-          if (editor && editor.codeMirror) {
-            editor.codeMirror.setValue(interaction.data)
-          }
+          this.codeEditorForName('input-'+index)?.setValue(interaction.data)
         }
       })
     }
     // Focus.
     if (this.firstCodeIndex != undefined && this.firstTextIndex != undefined) {
       if (this.firstCodeIndex < this.firstTextIndex) {
-        this.codeEditorForName('input-'+this.firstCodeIndex)?.codeMirror!.focus()
+        this.codeEditorForName('input-'+this.firstCodeIndex)?.focus()
       } else {
         this.dataService.focus('input-'+this.firstTextIndex)
       }
     } else if (this.firstCodeIndex != undefined) {
-      this.codeEditorForName('input-'+this.firstCodeIndex)?.codeMirror!.focus()
+      this.codeEditorForName('input-'+this.firstCodeIndex)?.focus()
     } else if (this.firstTextIndex != undefined) {
       this.dataService.focus('input-'+this.firstTextIndex)
     }
@@ -344,15 +337,14 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     return false
   }
 
-  editorInitialized(editor: CodemirrorComponent, interaction: UserInteraction) {
-    this.dataService.addControlSubmitBehaviourToCodeEditor(editor)
+  editorInitialized(editor: CodeEditorComponent, interaction: UserInteraction) {
     if (interaction.size != undefined && interaction.size > 0) {
       let sizeToSet = interaction.size
       if (sizeToSet < 30) {
         sizeToSet = 30
       }
       // Minimum height is 50px.
-      editor.codeMirror?.setSize(null, sizeToSet)
+      editor.setHeight(sizeToSet)
     }
   }
 

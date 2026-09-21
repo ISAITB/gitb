@@ -58,8 +58,6 @@ export class ServiceCallResultHandlerService {
         value: valueToShow,
         readOnly: true,
         lineNumbers: true,
-        smartIndent: false,
-        electricChars: false,
         mode: result.contentType
       }
     } else {

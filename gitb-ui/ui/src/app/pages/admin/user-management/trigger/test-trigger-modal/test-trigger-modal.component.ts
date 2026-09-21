@@ -21,7 +21,6 @@ import {TriggerService} from 'src/app/services/trigger.service';
 import {Subscription} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from '../../../../base-component.component';
-import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
@@ -62,22 +61,16 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
     this.editorOptionsRequest = {
       readOnly: false,
       lineNumbers: true,
-      smartIndent: false,
-      electricChars: false,
       mode: ((this.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB)? 'application/xml' : 'application/json')
     }
     this.editorOptionsResponse = {
       readOnly: true,
       lineNumbers: true,
-      smartIndent: false,
-      electricChars: false,
       mode: ((this.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB)? 'application/xml' : 'application/json')
     }
     this.editorOptionsResponseError = {
       readOnly: true,
       lineNumbers: true,
-      smartIndent: false,
-      electricChars: false,
       mode: 'text/plain'
     }
   }
@@ -143,10 +136,6 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
       this.callSubscription.unsubscribe()
     }
     this.modalRef.dismiss()
-  }
-
-  requestEditorLoaded(editor: CodemirrorComponent) {
-    this.dataService.addControlSubmitBehaviourToCodeEditor(editor)
   }
 
   protected readonly Constants = Constants;

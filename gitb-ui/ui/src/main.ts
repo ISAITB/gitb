@@ -20,11 +20,6 @@ import {enableProdMode, importProvidersFrom, provideZoneChangeDetection} from '@
 import { AppModule } from './app/app.module';
 import { environment } from './environments/environment';
 
-import 'codemirror/mode/xml/xml'
-import 'codemirror/mode/xquery/xquery'
-import 'codemirror/mode/http/http'
-import 'codemirror/mode/htmlmixed/htmlmixed'
-import 'codemirror/mode/htmlembedded/htmlembedded'
 import {AppComponent} from './app/app.component';
 import {bootstrapApplication} from '@angular/platform-browser';
 

@@ -64,7 +64,7 @@
                                     }
 									@case ("CODE") {
 										<!-- Code editor -->
-										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" (codeMirrorLoaded)="editorInitialized($event, interaction)" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></ngx-codemirror>
+										<app-code-editor #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, mode: interaction.mimeType}" [submitOnCtrlEnter]="true" (loaded)="editorInitialized($event, interaction)" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></app-code-editor>
 									}
 									@case ("MULTILINE_TEXT") {
 										<!-- Text area -->

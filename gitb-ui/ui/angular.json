@@ -50,7 +50,6 @@
               "node_modules/@fortawesome/fontawesome-free/css/fontawesome.css",
               "node_modules/@fortawesome/fontawesome-free/css/solid.css",
               "node_modules/@fortawesome/fontawesome-free/css/regular.css",
-              "node_modules/codemirror/lib/codemirror.css",
               "src/styles/css/fonts/opensans/stylesheet.css",
               "src/styles/styles.less"
             ],
@@ -58,12 +57,7 @@
               "node_modules/hugerte/hugerte.min.js"
             ],
             "allowedCommonJsDependencies": [
-              "file-saver",
-              "codemirror/mode/xml/xml",
-              "codemirror/mode/xquery/xquery",
-              "codemirror/mode/http/http",
-              "codemirror/mode/htmlmixed/htmlmixed",
-              "codemirror/mode/htmlembedded/htmlembedded"
+              "file-saver"
             ],
             "externalDependencies": [
               "marked-katex-extension"

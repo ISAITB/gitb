@@ -9,7 +9,7 @@
                 <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call returns output data, it will be displayed but not used for actual updates.</span>
             </div>
             <div class="editor editor-normal" [class.disable-events]="actionPending">
-                <ngx-codemirror name="requestEditor" [(ngModel)]="request" [options]="editorOptionsRequest" (codeMirrorLoaded)="requestEditorLoaded($event)"></ngx-codemirror>
+                <app-code-editor name="requestEditor" [(ngModel)]="request" [options]="editorOptionsRequest" [submitOnCtrlEnter]="true"></app-code-editor>
             </div>
         } @else {
             @if (responseSuccess) {
@@ -17,14 +17,14 @@
                     <span>The service call succeeded and produced the following output. Any output data returned was not used for actual updates.</span>
                 </div>
                 <div class="editor editor-normal">
-                    <ngx-codemirror name="responseEditor" [(ngModel)]="response" [options]="editorOptionsResponse"></ngx-codemirror>
+                    <app-code-editor name="responseEditor" [(ngModel)]="response" [options]="editorOptionsResponse"></app-code-editor>
                 </div>
             } @else {
                 <div class="alert alert-danger rounded">
                     <span>The service call failed. The errors raised during the call are listed below.</span>
                 </div>
                 <div class="editor editor-short">
-                    <ngx-codemirror name="responseErrorEditor" [(ngModel)]="response" [options]="editorOptionsResponseError"></ngx-codemirror>
+                    <app-code-editor name="responseErrorEditor" [(ngModel)]="response" [options]="editorOptionsResponseError"></app-code-editor>
                 </div>
             }
         }

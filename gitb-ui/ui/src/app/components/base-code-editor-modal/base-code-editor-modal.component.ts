@@ -14,7 +14,7 @@
  */
 
 import {AfterViewInit, Component, ViewChild, ChangeDetectionStrategy} from '@angular/core';
-import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {CodeEditorComponent} from '../code-editor/code-editor.component';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {EditorOptions} from '../code-editor-modal/code-editor-options';
@@ -34,7 +34,7 @@ export class BaseCodeEditorModalComponent extends BaseComponent implements After
   indicators?: Indicator[]
   lineNumber?: number
 
-  @ViewChild('codeEditor', {static: false}) codeEditor?: CodemirrorComponent
+  @ViewChild('codeEditor', {static: false}) codeEditor?: CodeEditorComponent
 
   constructor(
     private readonly modalRef: NgbActiveModal,
@@ -47,11 +47,9 @@ export class BaseCodeEditorModalComponent extends BaseComponent implements After
   }
 
   ngAfterViewInit(): void {
-    this.codeEditor?.codeMirrorLoaded.subscribe(() => {
+    this.codeEditor?.loaded.subscribe(() => {
       if (this.applyLineStyles()) {
-        if (this.codeEditor?.codeMirror) {
-          this.codeEditor.codeMirror.refresh()
-        }
+        this.codeEditor?.refresh()
       }
     })
   }
@@ -61,33 +59,25 @@ export class BaseCodeEditorModalComponent extends BaseComponent implements After
   }
 
   copyToClipboard() {
-    if (this.codeEditor?.codeMirror) {
-      this.dataService.copyToClipboard(this.codeEditor.codeMirror.getValue()).subscribe(() => {
+    if (this.codeEditor?.view) {
+      this.dataService.copyToClipboard(this.codeEditor.getValue()).subscribe(() => {
         this.popupService.success('Content copied to clipboard.')
       })
     }
   }
 
   download() {
-    if (this.codeEditor?.codeMirror && this.editorOptions) {
-      const bb = new Blob([this.codeEditor.codeMirror.getValue()], {type: this.editorOptions.download!.mimeType})
+    if (this.codeEditor?.view && this.editorOptions) {
+      const bb = new Blob([this.codeEditor.getValue()], {type: this.editorOptions.download!.mimeType})
       saveAs(bb, this.editorOptions.download!.fileName)
     }
   }
 
-  jumpToPosition(line: number, ch: number) {
-    setTimeout(() => {
-      let pos = {
-        line: line,
-        ch: ch
-      }
-      if (this.codeEditor?.codeMirror) {
-        let coordinates = this.codeEditor.codeMirror.charCoords(pos, 'local')
-        let top = coordinates?.top
-        let middleHeight = this.codeEditor.codeMirror.getScrollerElement().offsetHeight / 2
-        this.codeEditor.codeMirror.scrollTo(null, top - middleHeight - 5)
-      }
-    }, 100)
+  /**
+   * Scroll to the (1-based) line, centering it in the editor.
+   */
+  jumpToLine(line: number) {
+    setTimeout(() => this.codeEditor?.scrollToLine(line), 100)
   }
 
 }

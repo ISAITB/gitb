@@ -131,8 +131,6 @@ export abstract class ReportSupport extends BaseComponent {
         value: valueToUse,
         readOnly: true,
         lineNumbers: true,
-        smartIndent: false,
-        electricChars: false,
         mode: mimeTypeToUse
       }
     }

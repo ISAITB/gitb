@@ -222,8 +222,6 @@ export class ErrorService {
       readOnly: true,
       copy: true,
       lineNumbers: false,
-      smartIndent: false,
-      electricChars: false,
       styleClass: 'editor-short',
       mode: contentType
     }

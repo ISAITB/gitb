@@ -1413,8 +1413,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             readOnly: true,
             copy: true,
             lineNumbers: false,
-            smartIndent: false,
-            electricChars: false,
             styleClass: 'editor-short',
             mode: 'text/plain'
           }

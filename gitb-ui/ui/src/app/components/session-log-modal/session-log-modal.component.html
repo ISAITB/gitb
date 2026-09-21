@@ -4,7 +4,7 @@
 <div class="modal-body">
 	<div class="editor editor-normal">
 		@if (editorOptions) {
-			<ngx-codemirror #codeEditor [(ngModel)]="content" [options]="editorOptions"></ngx-codemirror>
+			<app-code-editor #codeEditor [(ngModel)]="content" [options]="editorOptions"></app-code-editor>
 		}
 	</div>
     <div class="view-option-container">

@@ -15,7 +15,7 @@
 
 import {Component, Input, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {EditorOptions} from './code-editor-options';
-import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {CodeEditorComponent} from '../code-editor/code-editor.component';
 import {Indicator} from './indicator';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -38,7 +38,7 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
   @Input() lineNumber?: number
   @Input() alert?: Alert
 
-  @ViewChild('codeEditor', {static: false}) codeEditor!: CodemirrorComponent
+  @ViewChild('codeEditor', {static: false}) codeEditor!: CodeEditorComponent
 
   isNameVisible = false
   isDownloadVisible = false
@@ -89,18 +89,14 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
                               '<span class="indicator-desc">'+indicator.description+'</span>'+
                             '</div>';
         if (this.codeEditor) {
-          this.codeEditor.codeMirror?.addLineClass(indicator.location.line-1, 'background', 'indicator-widget-line')
-          this.codeEditor.codeMirror?.addLineWidget(indicator.location.line-1, widget, {
-            coverGutter: false,
-            noHScroll: true,
-            above: true
-          })
+          this.codeEditor.addLineClass(indicator.location.line, 'indicator-widget-line')
+          this.codeEditor.addLineWidget(indicator.location.line, widget)
         }
       }
       if (this.lineNumber != undefined) {
-        this.codeEditor.codeMirror?.addLineClass(this.lineNumber-1, 'background', 'selected-editor-line')
-        this.codeEditor.codeMirror?.markText({line: this.lineNumber-1, ch: 0}, {line: this.lineNumber, ch: 0}, {className: 'selected-editor-line-text'})
-        this.jumpToPosition(this.lineNumber, 0)
+        this.codeEditor.addLineClass(this.lineNumber, 'selected-editor-line')
+        this.codeEditor.markLine(this.lineNumber, 'selected-editor-line-text')
+        this.jumpToLine(this.lineNumber)
       }
       return true
     } else {

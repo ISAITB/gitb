@@ -65,7 +65,7 @@ import {TestStepReportTARComponent} from './components/diagram/report/test-step-
 import {AnyContentViewComponent} from './components/diagram/report/any-content-view/any-content-view.component';
 import {TestAssertionReportComponent} from './components/diagram/report/test-assertion-report/test-assertion-report.component';
 import {CodeEditorModalComponent} from './components/code-editor-modal/code-editor-modal.component';
-import {CodemirrorModule} from '@ctrl/ngx-codemirror';
+import {CodeEditorComponent} from './components/code-editor/code-editor.component';
 import {PendingButtonDirective} from './directives/pending-button.directive';
 import {ConformanceDashboardComponent} from './pages/admin/conformance-dashboard/conformance-dashboard.component';
 import {ConformanceCertificateModalComponent} from './modals/conformance-certificate-modal/conformance-certificate-modal.component';
@@ -347,6 +347,7 @@ import { MessageItemComponent } from './components/message-item/message-item.com
     TableComponent,
     TableRowComponent,
     ContactSupportComponent,
+    CodeEditorComponent,
     EditorComponent,
     FileSelectComponent,
     CustomPropertyFormComponent,
@@ -562,7 +563,6 @@ import { MessageItemComponent } from './components/message-item/message-item.com
         NgbDropdownModule,
         NgbPopoverModule,
         NgbNavModule,
-        CodemirrorModule,
         MarkdownModule.forRoot(),
         SubmitOnControlEnterDirective,
         NavTargetDirective

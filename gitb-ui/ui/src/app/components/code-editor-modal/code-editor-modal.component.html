@@ -4,7 +4,7 @@
 <div class="modal-body">
     <app-alert-display [alerts]="alerts"></app-alert-display>
 	<div class="editor" [ngClass]="styleClass">
-		<ngx-codemirror #codeEditor [(ngModel)]="editorOptions.value" [options]="editorOptions"></ngx-codemirror>
+		<app-code-editor #codeEditor [(ngModel)]="editorOptions.value" [options]="editorOptions"></app-code-editor>
 	</div>
 </div>
 <div class="modal-footer">

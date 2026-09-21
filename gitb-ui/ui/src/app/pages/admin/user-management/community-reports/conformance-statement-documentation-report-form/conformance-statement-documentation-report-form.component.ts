@@ -129,8 +129,6 @@ export class ConformanceStatementDocumentationReportFormComponent extends BaseRe
           value: response.body ?? '',
           readOnly: true,
           lineNumbers: true,
-          smartIndent: false,
-          electricChars: false,
           mode: 'application/xml',
           download: {
             fileName: Utils.fileNameFromContentDisposition(response, 'conformance_statement_documentation.xml'),

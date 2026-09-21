@@ -14,7 +14,6 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
-import * as CodeMirror from 'codemirror';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
@@ -54,8 +53,6 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
     this.editorOptions = {
       readOnly: true,
       lineNumbers: true,
-      smartIndent: false,
-      electricChars: false,
       mode: 'text/plain',
       download: {
         fileName: 'log.txt',
@@ -73,7 +70,7 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
           if (line.level >= this.minimumLogLevel) {
             this.contentLines.push(line)
             // Do not update the content directly because this causes a full editor refresh
-            this.codeEditor!.codeMirror!.replaceRange(line.text+'\n', CodeMirror.Pos(this.codeEditor!.codeMirror!.lastLine()))
+            this.codeEditor!.appendText(line.text+'\n')
             if (this.tail) {
               this.scrollToLast()
             }
@@ -87,7 +84,7 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
   }
 
   scrollToLast() {
-    this.jumpToPosition(this.codeEditor!.codeMirror!.lastLine(), 0)
+    this.jumpToLine(this.codeEditor!.lineCount)
   }
 
   private initialiseLines(newMessages: string[]) {
@@ -131,9 +128,8 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
   }
 
   applyLineStyle(lineNumber: number, lineData: LineInfo) {
-    if (this.codeEditor?.codeMirror) {
-      this.codeEditor.codeMirror.addLineClass(lineNumber, 'text', 'log-level '+this.logLevelToString(lineData.level))
-    }
+    // Line numbers used by the editor are 1-based.
+    this.codeEditor?.addLineClass(lineNumber + 1, 'log-level '+this.logLevelToString(lineData.level))
   }
 
   private logLevelToString(level: LogLevel) {

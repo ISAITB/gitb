@@ -7231,10 +7231,10 @@ Copyright (c) 2011-2024 Twitter, Inc.
 Copyright (c) 2000 - 2024 The Legion of the Bouncy Castle Inc. (https://www.bouncycastle.org)
 ```
 
-### codemirror
+### codemirror (codemirror, @codemirror/*)
 
 ```
-Copyright (c) 2007-2024 by Marijn Haverbeke and others
+Copyright (C) 2018-2021 by Marijn Haverbeke and others
 ```
 
 ### Dnsjava (dnsjava.*)
@@ -8272,12 +8272,6 @@ Copyright (c) 2011-2024, Christopher Jeffrey and contributors
 
 ```
 Copyright (c) 2016 valor-software
-```
-
-### ngx-codemirror
-
-```
-Copyright (c) Scott Cooper
 ```
 
 ### ngx-color-picker

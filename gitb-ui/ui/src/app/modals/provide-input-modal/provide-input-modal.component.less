@@ -15,28 +15,33 @@
 
 @import '../../../styles/less/_common.less';
 
-.provide-input-body ::ng-deep .CodeMirror {
+.provide-input-body ::ng-deep .cm-editor {
 	border: 1px solid @gray-button;
 	border-radius: @border-radius;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 .provide-input-body ::ng-deep {
     .is-invalid {
-        &.focused .CodeMirror {
+        &.focused .cm-editor {
             border-color: @bs-input-focus-highlight-invalid;
             box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color-invalid;
         }
-        .CodeMirror {
+        .cm-editor {
             border-color: @bs-input-border-color-invalid;
         }
     }
-    .focused .CodeMirror {
+    .focused .cm-editor {
         border-color: @bs-input-focus-highlight;
         outline: 0;
         box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
         clip-path: none !important;
     }
+    .cm-gutters {
+        border-top-left-radius: @border-radius;
+        border-bottom-left-radius: @border-radius;
+    }
 }
+
 textarea {
-	resize: vertical;
+    resize: vertical;
 }
