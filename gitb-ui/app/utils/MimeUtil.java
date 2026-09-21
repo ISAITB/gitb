@@ -60,6 +60,7 @@ public class MimeUtil {
     private static final String PBE_ALGORITHM = "PBEWithMD5AndDES";
     private static final int PBE_ITERATIONS = 1000;
     private static final int PBE_SALT_SIZE = 8;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public static String base64AsDataURL(String base64Content) {
         return base64AsDataURL(base64Content, null);
@@ -330,7 +331,7 @@ public class MimeUtil {
     public static String encryptString(String input, char[] key) {
         try {
             byte[] salt = new byte[PBE_SALT_SIZE];
-            new SecureRandom().nextBytes(salt);
+            RANDOM.nextBytes(salt);
             Cipher cipher = Cipher.getInstance(PBE_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, pbeKey(key), new PBEParameterSpec(salt, PBE_ITERATIONS));
             byte[] encrypted = cipher.doFinal(input.getBytes(StandardCharsets.UTF_8));
