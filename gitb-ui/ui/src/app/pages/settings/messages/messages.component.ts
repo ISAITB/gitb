@@ -214,14 +214,14 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     const cardEl = pageEl.querySelector('.card') as HTMLElement | null
     // The card body's own bottom padding (below its last child) plus the card's own border - not just
     // the padding, which alone left the card a few pixels past the footer's top edge.
-    const cardBottomChrome = (cardBodyEl ? (parseFloat(getComputedStyle(cardBodyEl).paddingBottom) || 0) : 0)
-      + (cardEl ? (parseFloat(getComputedStyle(cardEl).borderBottomWidth) || 0) : 0)
+    const cardBottomChrome = (cardBodyEl ? (Number.parseFloat(getComputedStyle(cardBodyEl).paddingBottom) || 0) : 0)
+      + (cardEl ? (Number.parseFloat(getComputedStyle(cardEl).borderBottomWidth) || 0) : 0)
     // .page-root (IndexComponent's own wrapper around the routed page, see index.component.less) carries
     // its own margin-bottom below our card - easy to miss since it's outside this component entirely. Not
     // sticky itself, so its own document-relative top is stable regardless of scroll position (see
     // app-split-view's class comment for why that matters).
     const pageRootEl = pageEl.closest('.page-root') as HTMLElement | null
-    const pageRootBottomMargin = pageRootEl ? (parseFloat(getComputedStyle(pageRootEl).marginBottom) || 0) : 0
+    const pageRootBottomMargin = pageRootEl ? (Number.parseFloat(getComputedStyle(pageRootEl).marginBottom) || 0) : 0
     const pageRootDocTop = pageRootEl ? (pageRootEl.getBoundingClientRect().top + window.scrollY) : 0
     // .page.index is a flex column (header-bar / .child / .footer-bar, see app.less) with .child set to
     // flex:1 - so while page-root's content is shorter than the space available to .child, flex-grow
