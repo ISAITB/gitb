@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {ParameterData} from '../endpoint-details/parameter-data';
 import {ParameterReference} from 'src/app/types/parameter-reference';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
@@ -32,6 +32,7 @@ import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-endpoint-parameter-tab-content',
     templateUrl: './endpoint-parameter-tab-content.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class EndpointParameterTabContentComponent implements OnInit {

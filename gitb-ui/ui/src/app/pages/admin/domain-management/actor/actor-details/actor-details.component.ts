@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ActorService} from 'src/app/services/actor.service';
@@ -35,6 +35,7 @@ import {NavigationTarget} from '../../../../../types/navigation-target';
     selector: 'app-actor-details',
     templateUrl: './actor-details.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit {

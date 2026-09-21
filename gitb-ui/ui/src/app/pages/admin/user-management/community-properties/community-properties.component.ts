@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {CreateParameterModalComponent} from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
@@ -36,6 +36,7 @@ import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-community-properties',
     templateUrl: './community-properties.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityPropertiesComponent implements OnInit {

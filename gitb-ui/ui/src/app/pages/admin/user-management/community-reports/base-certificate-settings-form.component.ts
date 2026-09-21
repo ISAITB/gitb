@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, ViewChild} from '@angular/core';
+import {Component, ElementRef, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {BaseReportSettingsFormComponent} from './base-report-settings-form.component';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {CertificateSettings} from 'src/app/types/certificate-settings';
@@ -27,6 +27,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class BaseCertificateSettingsFormComponent<T extends CertificateSettings> extends BaseReportSettingsFormComponent {

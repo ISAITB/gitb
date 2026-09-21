@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, Input, OnChanges, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnChanges, Output, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {CustomPropertyPresetValue} from 'src/app/types/custom-property-preset-value.type';
 import {CustomProperty} from './custom-property';
@@ -22,6 +22,7 @@ import {CustomProperty} from './custom-property';
     selector: 'app-custom-property-filter',
     templateUrl: './custom-property-filter.component.html',
     styleUrls: ['./custom-property-filter.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CustomPropertyFilterComponent implements OnChanges {

@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { Alert } from 'src/app/types/alert.type';
 
 @Component({
     selector: 'app-alert-display',
     templateUrl: './alert-display.component.html',
     styles: ' .inTab ::ng-deep .alert { margin-bottom: 10px; } ',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AlertDisplayComponent {

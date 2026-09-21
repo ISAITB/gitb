@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, forwardRef } from '@angular/core';
+import { Component, Input, forwardRef, ChangeDetectionStrategy } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
@@ -30,6 +30,7 @@ import { PopupService } from 'src/app/services/popup.service';
         }
     ],
     styleUrls: ['./color-picker.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ColorPickerComponent {

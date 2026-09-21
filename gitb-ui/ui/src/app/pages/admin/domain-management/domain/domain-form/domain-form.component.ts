@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {Domain} from 'src/app/types/domain';
 
@@ -21,6 +21,7 @@ import {Domain} from 'src/app/types/domain';
     selector: 'app-domain-form',
     templateUrl: './domain-form.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DomainFormComponent {

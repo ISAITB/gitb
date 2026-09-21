@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {CloseEvent} from './close-event';
@@ -23,6 +23,7 @@ import {NgbPopover} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-test-result-status-display',
     templateUrl: './test-result-status-display.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestResultStatusDisplayComponent implements TestResultStatusDisplayComponentApi, OnInit {

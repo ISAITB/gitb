@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {mergeMap, Observable, of} from 'rxjs';
 import {AccountService} from 'src/app/services/account.service';
 import {DataService} from 'src/app/services/data.service';
@@ -25,6 +25,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-home',
     templateUrl: './home.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class HomeComponent implements OnInit, AfterViewInit {

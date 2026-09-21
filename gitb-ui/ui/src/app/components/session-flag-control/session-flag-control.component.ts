@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostBinding, Input, OnChanges, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, HostBinding, Input, OnChanges, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
@@ -33,6 +33,7 @@ import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-bo
 @Component({
     selector: 'app-session-flag-control',
     templateUrl: './session-flag-control.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SessionFlagControlComponent implements OnChanges, CheckBoxOptionPanelComponentApi {

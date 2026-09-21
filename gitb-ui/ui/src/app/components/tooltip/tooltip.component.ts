@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-tooltip, [app-tooltip]',
     templateUrl: './tooltip.component.html',
     styleUrls: ['./tooltip.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TooltipComponent {

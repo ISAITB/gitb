@@ -5,7 +5,7 @@
                 <app-placeholder-selector [resources]="communityId != undefined" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
             </div>
             <div class="editorContainer">
-                <app-editor id="documentation" name="documentation" [ngModel]="documentation" (ngModelChange)="onDocumentationChange($event)"></app-editor>
+                <app-editor id="documentation" name="documentation" [ngModel]="documentation" [ngModelOptions]="{standalone: true}" (ngModelChange)="onDocumentationChange($event)"></app-editor>
                 <div app-tooltip class="col-auto ms-3" [tbTooltip]="tooltipText"></div>
             </div>
         </div>

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, OnDestroy, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {ItemMap} from './item-map';
 import {MultiSelectConfig} from './multi-select-config';
@@ -36,6 +36,7 @@ import {MultiSelectFilterComponentApi} from './multi-select-filter-component-api
       multi: true
     }
   ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MultiSelectFilterComponent<T extends EntityWithId> implements OnInit, OnDestroy, ControlValueAccessor, MultiSelectFilterComponentApi<T> {

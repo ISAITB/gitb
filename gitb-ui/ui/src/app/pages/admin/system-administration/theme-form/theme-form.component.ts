@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { Observable, map, of, share } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
@@ -27,6 +27,7 @@ import { ValidationState } from 'src/app/types/validation-state';
 @Component({
     selector: 'app-theme-form',
     templateUrl: './theme-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ThemeFormComponent implements OnInit, AfterViewInit {

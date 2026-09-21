@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {tap} from 'rxjs';
 import {saveAs} from 'file-saver';
 import {Constants} from 'src/app/common/constants';
@@ -32,6 +32,7 @@ import {NavigationTarget} from 'src/app/types/navigation-target';
     selector: 'app-test-suite-display',
     templateUrl: './test-suite-display.component.html',
     styleUrls: ['./test-suite-display.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayComponentApi {

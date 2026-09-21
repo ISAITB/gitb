@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { PasswordChangeData } from 'src/app/components/change-password-form/password-change-data.type';
 import { AccountService } from 'src/app/services/account.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -24,6 +24,7 @@ import { ValidationState } from 'src/app/types/validation-state';
 @Component({
     selector: 'app-password',
     templateUrl: './password.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PasswordComponent extends BaseComponent implements OnInit, AfterViewInit {

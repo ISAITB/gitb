@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import { DiagramLoaderService } from './diagram-loader.service';
 import { SessionData } from './session-data';
 import {TestSessionPresentationApi} from './test-session-presentation-api';
@@ -23,6 +23,7 @@ import {OutputMessageDisplayApi} from '../../output-message-display/output-messa
     selector: 'app-test-session-presentation',
     templateUrl: './test-session-presentation.component.html',
     styleUrl: './test-session-presentation.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestSessionPresentationComponent implements OnInit, TestSessionPresentationApi {

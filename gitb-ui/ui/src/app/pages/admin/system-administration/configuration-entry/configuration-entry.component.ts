@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ConfigStatus} from '../config-status';
 import {ConfigurationEntryComponentApi} from './configuration-entry-component-api';
@@ -22,6 +22,7 @@ import {ConfigurationEntryComponentApi} from './configuration-entry-component-ap
     selector: 'app-configuration-entry',
     templateUrl: './configuration-entry.component.html',
     styleUrls: ['./configuration-entry.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationEntryComponent implements ConfigurationEntryComponentApi {

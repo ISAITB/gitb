@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {map, mergeMap, Observable, share} from 'rxjs';
 import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
@@ -34,6 +34,7 @@ import {TestCaseDefinitionActors} from '../../../../../types/test-case-definitio
     selector: 'app-test-case-details',
     templateUrl: './test-case-details.component.html',
     styleUrls: ['./test-case-details.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestCaseDetailsComponent extends BaseComponent implements OnInit {

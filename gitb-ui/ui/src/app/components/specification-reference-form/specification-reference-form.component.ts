@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { SpecificationReferenceInfo } from 'src/app/types/specification-reference-info';
 
 @Component({
     selector: 'app-specification-reference-form',
     templateUrl: './specification-reference-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SpecificationReferenceFormComponent {

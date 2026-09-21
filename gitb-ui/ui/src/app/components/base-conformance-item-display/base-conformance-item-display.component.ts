@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, NgZone, OnDestroy, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, NgZone, OnDestroy, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {DataService} from 'src/app/services/data.service';
@@ -54,6 +54,7 @@ interface ConformanceListViewDisplayState {
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class BaseConformanceItemDisplayComponent extends BaseComponent implements AfterViewInit, OnDestroy {

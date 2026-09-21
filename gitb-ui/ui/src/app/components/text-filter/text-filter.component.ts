@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, Output, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {Constants} from 'src/app/common/constants';
 import {TextFilterComponentApi} from './text-filter-component-api';
@@ -29,6 +29,7 @@ import {TextFilterComponentApi} from './text-filter-component-api';
             multi: true
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TextFilterComponent implements ControlValueAccessor, TextFilterComponentApi {

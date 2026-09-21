@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {forkJoin, mergeMap, Observable, of, share} from 'rxjs';
 import {CommunityService} from 'src/app/services/community.service';
 import {DataService} from 'src/app/services/data.service';
@@ -33,6 +33,7 @@ import {DomainParameterService} from '../../services/domain-parameter.service';
     selector: 'app-placeholder-selector',
     templateUrl: './placeholder-selector.component.html',
     styleUrls: ['./placeholder-selector.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PlaceholderSelectorComponent implements OnInit {

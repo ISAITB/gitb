@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -25,6 +25,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BaseCodeEditorModalComponent extends BaseComponent implements AfterViewInit {

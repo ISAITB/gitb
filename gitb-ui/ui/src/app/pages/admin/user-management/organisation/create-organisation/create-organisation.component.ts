@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -38,6 +38,7 @@ import {OrganisationFormComponent} from '../organisation-form/organisation-form.
     selector: 'app-create-organisation',
     templateUrl: './create-organisation.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateOrganisationComponent extends BaseComponent implements OnInit, AfterViewInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {WizardStep} from './wizard-step';
 import {StartupWizardOptions} from '../../types/startup-wizard-options';
 import {DataService} from '../../services/data.service';
@@ -26,6 +26,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
   selector: 'app-startup-wizard-modal',
   standalone: false,
   templateUrl: './startup-wizard-modal.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './startup-wizard-modal.component.less'
 })
 export class StartupWizardModalComponent {

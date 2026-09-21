@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef} from '@angular/core';
+import {Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {DataService} from 'src/app/services/data.service';
 import {MenuItem} from 'src/app/types/menu-item.enum';
@@ -25,6 +25,7 @@ import {Utils} from 'src/app/common/utils';
     selector: 'app-menu-item',
     templateUrl: './menu-item.component.html',
     styleUrls: ['./menu-item.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MenuItemComponent implements OnInit, OnDestroy {

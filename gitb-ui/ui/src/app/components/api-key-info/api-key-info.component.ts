@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
+import {AfterViewInit, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {forkJoin, Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -38,6 +38,7 @@ import {ApiKeySpecificationInfo} from '../../types/api-key-specification-info';
     selector: 'app-api-key-info',
     templateUrl: './api-key-info.component.html',
     styleUrls: ['./api-key-info.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ApiKeyInfoComponent implements OnInit, AfterViewInit {

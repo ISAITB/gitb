@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {PopupNotification} from '../../types/popup-notification';
 import {PopupNotificationApi} from './popup-notification-api';
 import {NgClass} from '@angular/common';
@@ -24,6 +24,7 @@ import {Constants} from '../../common/constants';
   standalone: true,
   imports: [NgClass],
   templateUrl: './popup-notification.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './popup-notification.component.less',
 })
 export class PopupNotificationComponent implements OnInit, PopupNotificationApi {

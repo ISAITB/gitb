@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
+import {AfterViewInit, Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {AuthService} from 'src/app/services/auth.service';
 import {CommunityService} from 'src/app/services/community.service';
@@ -31,6 +31,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-link-account',
     templateUrl: './link-account.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LinkAccountComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit {

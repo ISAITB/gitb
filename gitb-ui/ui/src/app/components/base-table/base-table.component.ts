@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
@@ -26,6 +26,7 @@ import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class BaseTableComponent extends BaseComponent {

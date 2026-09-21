@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {PopupService} from 'src/app/services/popup.service';
 import {FileData} from 'src/app/types/file-data.type';
 import {ResourceActions} from '../../components/resource-management-tab/resource-actions';
@@ -24,6 +24,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-community-resource-bulk-upload-modal',
     templateUrl: './community-resource-bulk-upload-modal.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityResourceBulkUploadModalComponent implements OnInit {

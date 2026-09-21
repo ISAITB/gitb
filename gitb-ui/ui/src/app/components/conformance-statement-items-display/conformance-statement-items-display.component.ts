@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
@@ -27,6 +27,7 @@ import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
     selector: 'app-conformance-statement-items-display',
     templateUrl: './conformance-statement-items-display.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceStatementItemsDisplayComponent implements OnInit, ConformanceStatementItemsDisplayComponentApi {

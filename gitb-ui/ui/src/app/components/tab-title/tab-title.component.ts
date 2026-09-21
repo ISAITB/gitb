@@ -13,12 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
     selector: 'app-tab-title',
     templateUrl: './tab-title.component.html',
     styleUrls: ['./tab-title.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TabTitleComponent {

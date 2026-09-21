@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {TestCaseFilterApi} from './test-case-filter-api';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {Constants} from '../../common/constants';
@@ -28,6 +28,7 @@ import {TestCaseTagFilterInfo} from '../../types/test-case-tag-filter-info';
 @Component({
   selector: 'app-test-case-filter',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './test-case-filter.component.html'
 })
 export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {

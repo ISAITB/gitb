@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {map, Observable, of} from 'rxjs';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {ConformanceService} from '../../services/conformance.service';
@@ -32,6 +32,7 @@ import {Utils} from '../../common/utils';
 @Component({
   selector: 'app-statement-options-button',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './statement-options-button.component.html'
 })
 export class StatementOptionsButtonComponent<T extends ConformanceIds> implements StatementOptionsButtonApi<T> {

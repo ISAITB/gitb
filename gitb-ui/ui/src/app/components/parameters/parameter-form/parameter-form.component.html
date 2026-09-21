@@ -1,6 +1,6 @@
 <div class="row">
     <label class="col-3 col-form-label text-end" for="parameterName">* {{nameLabel}}:</label>
-    <div class="col-7"><input ngbAutofocus id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
+    <div class="col-7"><input ngbAutofocus id="parameterName" name="parameterName" [(ngModel)]="parameter.name" [ngModelOptions]="{standalone: true}" class="form-control" type="text" [invalid]="validation.get('name')"></div>
     @if (hasKey) {
         <div app-tooltip class="col-auto" tbTooltip="This will be displayed as a label for the property in data collection forms."></div>
     } @else {
@@ -10,14 +10,14 @@
 @if (hasKey) {
     <div class="row mt-3">
         <label class="col-3 col-form-label text-end" for="parameterKey">* Key:</label>
-        <div class="col-7"><input id="parameterKey" name="parameterKey" [(ngModel)]="parameter.testKey" class="form-control" type="text" [invalid]="validation.get('key')"></div>
+        <div class="col-7"><input id="parameterKey" name="parameterKey" [(ngModel)]="parameter.testKey" [ngModelOptions]="{standalone: true}" class="form-control" type="text" [invalid]="validation.get('key')"></div>
         <div app-tooltip class="col-auto" tbTooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
     </div>
 }
 <div class="row mt-3">
     <label class="col-3 col-form-label text-end" for="parameterDescription">Description:</label>
     <div class="col-7">
-        <textarea ctrlEnterSubmit id="parameterDescription" name="parameterDescription" [(ngModel)]="parameter.desc" class="form-control"></textarea>
+        <textarea ctrlEnterSubmit id="parameterDescription" name="parameterDescription" [(ngModel)]="parameter.desc" [ngModelOptions]="{standalone: true}" class="form-control"></textarea>
     </div>
     @if (hasKey) {
         <div app-tooltip class="col-auto" tbTooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></div>
@@ -29,19 +29,19 @@
     <legend class="col-3 col-form-label text-end pt-0">* Value type:</legend>
     <div class="col-7">
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_1" value="SIMPLE">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" [ngModelOptions]="{standalone: true}" id="kind_1" value="SIMPLE">
             <label class="form-check-label" for="kind_1">Simple
                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A plain text value."></div>
             </label>
         </div>
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_2" value="BINARY">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" [ngModelOptions]="{standalone: true}" id="kind_2" value="BINARY">
             <label class="form-check-label" for="kind_2">Binary
                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A file."></div>
             </label>
         </div>
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_3" value="SECRET">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" [ngModelOptions]="{standalone: true}" id="kind_3" value="SECRET">
             <label class="form-check-label" for="kind_3">Secret
                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A secret text value such as a password."></div>
             </label>
@@ -52,32 +52,32 @@
     <legend class="col-3 col-form-label text-end pt-0">* Properties:</legend>
     <div class="col-8">
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="use" name="use" [(ngModel)]="parameter.use" appTrueFalseValue [trueValue]="'R'" [falseValue]="'O'">
+            <input class="form-check-input" type="checkbox" id="use" name="use" [(ngModel)]="parameter.use" [ngModelOptions]="{standalone: true}" appTrueFalseValue [trueValue]="'R'" [falseValue]="'O'">
             <label class="form-check-label" for="use">Required</label>
         </div>
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="adminOnly" name="adminOnly" [(ngModel)]="parameter.adminOnly" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+            <input class="form-check-input" type="checkbox" id="adminOnly" name="adminOnly" [(ngModel)]="parameter.adminOnly" [ngModelOptions]="{standalone: true}" appTrueFalseValue [trueValue]="false" [falseValue]="true">
             <label class="form-check-label" for="adminOnly">Editable by users</label>
         </div>
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="notForTests" name="notForTests" [(ngModel)]="parameter.notForTests" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+            <input class="form-check-input" type="checkbox" id="notForTests" name="notForTests" [(ngModel)]="parameter.notForTests" [ngModelOptions]="{standalone: true}" appTrueFalseValue [trueValue]="false" [falseValue]="true">
             <label class="form-check-label" for="notForTests">Included in tests</label>
         </div>
         @if (!hideInExport && parameter.kind == 'SIMPLE') {
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="inExports" name="inExports" [(ngModel)]="parameter.inExports">
+                <input class="form-check-input" type="checkbox" id="inExports" name="inExports" [(ngModel)]="parameter.inExports" [ngModelOptions]="{standalone: true}">
                 <label class="form-check-label" for="inExports">Included in exports</label>
             </div>
         }
         @if (parameter.adminOnly) {
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="hidden" name="hidden" [(ngModel)]="parameter.hidden">
+                <input class="form-check-input" type="checkbox" id="hidden" name="hidden" [(ngModel)]="parameter.hidden" [ngModelOptions]="{standalone: true}">
                 <label class="form-check-label" for="hidden">Hidden</label>
             </div>
         }
         @if (!hideInRegistration && !parameter.hidden) {
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="inSelfRegistration" name="inSelfRegistration" [(ngModel)]="parameter.inSelfRegistration">
+                <input class="form-check-input" type="checkbox" id="inSelfRegistration" name="inSelfRegistration" [(ngModel)]="parameter.inSelfRegistration" [ngModelOptions]="{standalone: true}">
                 <label class="form-check-label" for="inSelfRegistration">Requested in self-registration</label>
             </div>
         }
@@ -87,7 +87,7 @@
     <div class="row mt-3">
         <label class="col-3 col-form-label text-end" for="depends">Depends on:</label>
         <div class="col-3">
-            <select id="depends" name="depends" class="form-select" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
+            <select id="depends" name="depends" class="form-select" [(ngModel)]="parameter.dependsOn" [ngModelOptions]="{standalone: true}" (change)="dependsOnChanged()">
                 <option value=""></option>
                 @for (v of dependsOnTargets; track $index) {
                     <option [value]="v.key">{{v.name}}</option>
@@ -99,11 +99,11 @@
                 <div>
                     @if (!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues) {
                         <div>
-                            <input type="text" class="form-control" name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" placeholder="Property value"/>
+                            <input type="text" class="form-control" name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" [ngModelOptions]="{standalone: true}" placeholder="Property value"/>
                         </div>
                     } @else {
                         <div>
-                            <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" class="form-select">
+                            <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" [ngModelOptions]="{standalone: true}" class="form-select">
                                 @for (v of dependsOnTargetsMap[parameter.dependsOn].presetValues; track $index) {
                                     <option [value]="v.value">{{v.label}}</option>
                                 }
@@ -127,7 +127,7 @@
             <label class="col-3 col-form-label text-end pt-0" for="hasPresetValues">Preset values:</label>
             <div class="col-8">
                 <div class="form-check">
-                    <input class="form-check-input" id="hasPresetValues" name="hasPresetValues" type="checkbox" [(ngModel)]="parameter.hasPresetValues">
+                    <input class="form-check-input" id="hasPresetValues" name="hasPresetValues" type="checkbox" [(ngModel)]="parameter.hasPresetValues" [ngModelOptions]="{standalone: true}">
                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to define a set of allowed values for this property. The configured values will be displayed in the defined order as a single-selection dropdown list."></div>
                 </div>
             </div>
@@ -159,8 +159,8 @@
                                         cdkDragPreviewContainer="parent"
                                         [cdkDragDisabled]="parameter.presetValues!.length == 1"
                                     >
-                                        <td class="drag-preview"><div class="cell-content"><input [attr.id]="'presetValue-'+index" [name]="'presetValue-'+index" class="form-control" type="text" [(ngModel)]="presetValue.value"/></div></td>
-                                        <td><div class="cell-content"><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></div></td>
+                                        <td class="drag-preview"><div class="cell-content"><input [attr.id]="'presetValue-'+index" [name]="'presetValue-'+index" class="form-control" type="text" [(ngModel)]="presetValue.value" [ngModelOptions]="{standalone: true}"/></div></td>
+                                        <td><div class="cell-content"><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label" [ngModelOptions]="{standalone: true}"/></div></td>
                                         <td><div class="cell-content"><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" tooltipClass="shortTooltip" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button></div></td>
                                         @if (parameter.presetValues!.length > 1) {
                                             <td class="drag-handle">
@@ -187,9 +187,9 @@
         <label class="col-3 col-form-label text-end" for="defaultValue">Default value:</label>
         <div class="col-7">
             @if (!parameter.hasPresetValues) {
-                <input id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control" type="text">
+                <input id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" [ngModelOptions]="{standalone: true}" class="form-control" type="text">
             } @else {
-                <select name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-select">
+                <select name="defaultValue" [(ngModel)]="parameter.defaultValue" [ngModelOptions]="{standalone: true}" class="form-select">
                     <option></option>
                     @for (v of parameter.presetValues; track v) {
                         <option [value]="v.value">{{v.label}}</option>

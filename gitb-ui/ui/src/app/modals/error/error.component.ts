@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ErrorData} from 'src/app/types/error-data.type';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
@@ -22,6 +22,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-error',
     templateUrl: './error.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ErrorComponent implements OnInit {

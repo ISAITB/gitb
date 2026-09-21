@@ -65,6 +65,9 @@
               "codemirror/mode/htmlmixed/htmlmixed",
               "codemirror/mode/htmlembedded/htmlembedded"
             ],
+            "externalDependencies": [
+              "marked-katex-extension"
+            ],
             "stylePreprocessorOptions": {
               "sass": {
                 "silenceDeprecations": ["mixed-decls", "color-functions", "global-builtin", "import"]
@@ -109,7 +112,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "buildTarget": "ui:build",
-            "proxyConfig": "src/proxy.conf.mjs"
+            "proxyConfig": "src/proxy.conf.mjs",
+            "prebundle": {
+              "exclude": ["ngx-markdown"]
+            }
           },
           "configurations": {
             "production": {

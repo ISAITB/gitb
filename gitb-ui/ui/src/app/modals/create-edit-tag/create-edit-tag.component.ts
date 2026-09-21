@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {TagData} from 'src/app/types/tag-data';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
@@ -21,6 +21,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-create-edit-tag',
     templateUrl: './create-edit-tag.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateEditTagComponent extends BaseComponent implements OnInit {

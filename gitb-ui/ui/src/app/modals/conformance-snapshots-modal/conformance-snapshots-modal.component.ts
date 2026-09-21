@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {Observable} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -29,6 +29,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-conformance-snapshots-modal',
     templateUrl: './conformance-snapshots-modal.component.html',
     styleUrls: ['./conformance-snapshots-modal.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceSnapshotsModalComponent extends BaseComponent implements OnInit {

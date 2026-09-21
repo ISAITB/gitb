@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {AuthProviderService} from 'src/app/services/auth-provider.service';
 import {DataService} from 'src/app/services/data.service';
@@ -24,6 +24,7 @@ import {Utils} from 'src/app/common/utils';
     selector: 'app-header-menu',
     templateUrl: './header-menu.component.html',
     styleUrls: ['./header-menu.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class HeaderMenuComponent {

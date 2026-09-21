@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { Endpoint } from 'src/app/types/endpoint';
 
 @Component({
     selector: 'app-endpoint-form',
     templateUrl: './endpoint-form.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class EndpointFormComponent {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {PreviewByIds} from './preview-by-ids';
 import {PreviewByFile} from './preview-by-file';
 import {PreviewForStatus} from './preview-for-status';
@@ -27,6 +27,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-preview-badge-modal',
     templateUrl: './preview-badge-modal.component.html',
     styleUrls: ['./preview-badge-modal.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PreviewBadgeModalComponent implements OnInit {

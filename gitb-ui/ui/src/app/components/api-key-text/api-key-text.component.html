@@ -8,9 +8,9 @@
             <span class="input-group-text">{{label}}</span>
         }
         @if (editing) {
-            <input #tempKeyField [name]="name" [attr.id]="idName" [(ngModel)]="keyTemp" class="form-control" [style.width]="inputWidth">
+            <input #tempKeyField [name]="name" [attr.id]="idName" [(ngModel)]="keyTemp" [ngModelOptions]="{standalone: true}" class="form-control" [style.width]="inputWidth">
         } @else {
-            <input [name]="name" [attr.id]="idName" [(ngModel)]="key" class="form-control" readonly="readonly" [style.width]="inputWidth">
+            <input [name]="name" [attr.id]="idName" [(ngModel)]="key" [ngModelOptions]="{standalone: true}" class="form-control" readonly="readonly" [style.width]="inputWidth">
         }
         @if (supportEdit) {
             @if (editing) {

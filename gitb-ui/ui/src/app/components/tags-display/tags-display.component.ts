@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {TagData} from 'src/app/types/tag-data';
 import {Constants} from '../../common/constants';
 import {CreateEditTagComponent} from '../../modals/create-edit-tag/create-edit-tag.component';
@@ -24,6 +24,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-tags-display',
     templateUrl: './tags-display.component.html',
     styleUrls: ['./tags-display.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TagsDisplayComponent implements OnInit {

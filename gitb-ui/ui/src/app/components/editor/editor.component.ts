@@ -13,14 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, forwardRef, Input, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, forwardRef, Input, NgZone, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DataService } from 'src/app/services/data.service';
 import { EditorComponent as HugeRteEditorComponent } from '@hugerte/hugerte-angular';
 
 @Component({
     selector: 'app-editor',
-    template: '<editor #editor [init]="editorConfig" [(ngModel)]="editorValue"></editor>',
+    template: '<editor #editor [init]="editorConfig" [(ngModel)]="editorValue" [ngModelOptions]="{standalone: true}"></editor>',
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
@@ -28,6 +28,7 @@ import { EditorComponent as HugeRteEditorComponent } from '@hugerte/hugerte-angu
             multi: true
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class EditorComponent implements OnInit, ControlValueAccessor {

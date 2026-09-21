@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BadgeInfo} from '../badge-info';
 import {FileData} from 'src/app/types/file-data.type';
 import {Constants} from 'src/app/common/constants';
@@ -25,6 +25,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-manage-badge',
     templateUrl: './manage-badge.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ManageBadgeComponent implements OnInit {

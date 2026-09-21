@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { AssertionReport } from '../../assertion-report';
 
 @Component({
     selector: 'app-test-assertion-report',
     templateUrl: './test-assertion-report.component.html',
     styleUrls: ['./test-assertion-report.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestAssertionReportComponent implements OnInit {

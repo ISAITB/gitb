@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {RoutingService} from '../../services/routing.service';
 import {finalize, mergeMap, Observable, of} from 'rxjs';
@@ -25,6 +25,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
   selector: 'app-usage-tip-modal',
   standalone: false,
   templateUrl: './usage-tip-modal.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './usage-tip-modal.component.less'
 })
 export class UsageTipModalComponent {

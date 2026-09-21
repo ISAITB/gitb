@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {EMPTY} from 'rxjs';
 import {map, mergeMap, share} from 'rxjs/operators';
@@ -31,6 +31,7 @@ import {ValidationState} from 'src/app/types/validation-state';
     selector: 'app-create-community-admin',
     templateUrl: './create-community-admin.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateCommunityAdminComponent extends BaseComponent implements OnInit, AfterViewInit {

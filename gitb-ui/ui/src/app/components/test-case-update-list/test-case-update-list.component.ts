@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {TestSuiteUploadTestCaseChoice} from 'src/app/modals/test-suite-upload-modal/test-suite-upload-test-case-choice';
 import {Constants} from '../../common/constants';
 
@@ -21,6 +21,7 @@ import {Constants} from '../../common/constants';
     selector: 'app-test-case-update-list',
     templateUrl: './test-case-update-list.component.html',
     styleUrls: ['./test-case-update-list.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestCaseUpdateListComponent {

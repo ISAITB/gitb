@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import * as CodeMirror from 'codemirror';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -27,6 +27,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-session-log-modal',
     templateUrl: './session-log-modal.component.html',
     styleUrls: ['./session-log-modal.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SessionLogModalComponent extends BaseCodeEditorModalComponent implements OnInit {

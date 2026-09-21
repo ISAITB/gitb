@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {HttpResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {SimpleDocumentationReportFormComponent} from '../simple-documentation-report-form/simple-documentation-report-form.component';
@@ -27,6 +27,7 @@ import {CommunityReportSettings} from 'src/app/types/community-report-settings';
 @Component({
     selector: 'app-test-case-documentation-report-form',
     templateUrl: './../simple-documentation-report-form/simple-documentation-report-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestCaseDocumentationReportFormComponent extends SimpleDocumentationReportFormComponent {

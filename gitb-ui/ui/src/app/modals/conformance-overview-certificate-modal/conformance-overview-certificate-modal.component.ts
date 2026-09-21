@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, Input, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {HttpResponse} from '@angular/common/http';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
@@ -30,6 +30,7 @@ import {Utils} from 'src/app/common/utils';
 @Component({
     selector: 'app-conformance-overview-certificate-modal',
     templateUrl: './conformance-overview-certificate-modal.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceOverviewCertificateModalComponent extends BaseComponent {

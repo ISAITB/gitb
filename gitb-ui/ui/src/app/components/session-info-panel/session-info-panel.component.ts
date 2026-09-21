@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EmbeddedViewRef, Input, OnDestroy, OnInit, Renderer2, TemplateRef, ViewChild, ViewContainerRef} from '@angular/core';
+import {Component, ElementRef, EmbeddedViewRef, Input, OnDestroy, OnInit, Renderer2, TemplateRef, ViewChild, ViewContainerRef, ChangeDetectionStrategy} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
@@ -24,6 +24,7 @@ import {SessionInfoPanelApi} from './session-info-panel-api';
     selector: 'app-session-info-panel',
     templateUrl: './session-info-panel.component.html',
     styleUrls: ['./session-info-panel.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SessionInfoPanelComponent implements OnInit, OnDestroy, SessionInfoPanelApi {

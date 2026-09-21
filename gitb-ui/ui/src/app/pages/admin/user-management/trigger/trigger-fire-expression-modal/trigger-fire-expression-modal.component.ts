@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {TriggerFireExpression} from '../../../../../types/trigger-fire-expression';
 import {DataService} from '../../../../../services/data.service';
 import {BaseComponent} from '../../../../base-component.component';
@@ -25,6 +25,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-trigger-fire-expression-modal',
     templateUrl: './trigger-fire-expression-modal.component.html',
     styleUrl: './trigger-fire-expression-modal.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TriggerFireExpressionModalComponent extends BaseComponent implements OnInit {

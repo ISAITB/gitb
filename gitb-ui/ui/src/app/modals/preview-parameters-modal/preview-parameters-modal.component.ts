@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {CustomProperty} from 'src/app/types/custom-property.type';
 import {Constants} from '../../common/constants';
@@ -23,6 +23,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-preview-parameters-modal',
     templateUrl: './preview-parameters-modal.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PreviewParametersModalComponent implements OnInit {

@@ -13,11 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: '[app-test-step-report-sr]',
     templateUrl: './test-step-report-sr.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestStepReportSRComponent {

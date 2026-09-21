@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {ColumnId, EXTRA_COLUMNS_FORM_ORDER, isOwnCase, SessionColumnCase, SessionColumnsService, WHAT_COLUMNS, WHO_COLUMNS} from '../../services/session-columns.service';
 
 @Component({
   selector: 'app-session-column-preferences',
   templateUrl: './session-column-preferences.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export class SessionColumnPreferencesComponent implements OnChanges {

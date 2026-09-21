@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {EMPTY, Observable} from 'rxjs';
 import {map, mergeMap, share} from 'rxjs/operators';
@@ -34,6 +34,7 @@ import {ValidationState} from 'src/app/types/validation-state';
     selector: 'app-user-details',
     templateUrl: './user-details.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class UserDetailsComponent extends BaseComponent implements OnInit {

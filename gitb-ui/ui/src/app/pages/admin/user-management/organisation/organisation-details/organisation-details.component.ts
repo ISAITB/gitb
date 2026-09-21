@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
@@ -48,6 +48,7 @@ import {ApiKeyInfoState} from '../../../../../components/api-key-info/api-key-in
 @Component({
     selector: 'app-organisation-details',
     templateUrl: './organisation-details.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class OrganisationDetailsComponent extends BaseTabbedComponent implements OnInit {

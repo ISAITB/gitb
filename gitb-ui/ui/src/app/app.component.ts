@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
 import {ScrollToTopComponent} from './components/scroll-to-top/scroll-to-top.component';
 import {MinimisedMessageComponent} from './components/minimised-message/minimised-message.component';
@@ -29,6 +29,7 @@ import {DataService} from './services/data.service';
     MinimisedMessageComponent,
     RouterOutlet
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './app.component.html'
 })
 export class AppComponent {

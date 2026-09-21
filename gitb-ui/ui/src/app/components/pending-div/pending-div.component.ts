@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, Input } from '@angular/core';
+import { AfterViewInit, Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 import {Constants} from '../../common/constants';
 
@@ -21,6 +21,7 @@ import {Constants} from '../../common/constants';
     selector: 'div[pending]',
     templateUrl: './pending-div.component.html',
     styleUrls: ['./pending-div.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PendingDivComponent implements AfterViewInit {

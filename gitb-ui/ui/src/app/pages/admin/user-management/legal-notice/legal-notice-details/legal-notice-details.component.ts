@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -30,6 +30,7 @@ import {ValidationState} from 'src/app/types/validation-state';
 @Component({
     selector: 'app-legal-notice-details',
     templateUrl: './legal-notice-details.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit {

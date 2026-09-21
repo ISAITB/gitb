@@ -1,4 +1,4 @@
-import {Component, HostBinding, OnInit} from '@angular/core';
+import {Component, HostBinding, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Constants} from '../../common/constants';
 import {TagData} from '../../types/tag-data';
@@ -9,6 +9,7 @@ import {DataService} from '../../services/data.service';
 @Component({
   selector: '[app-domain-tag-indicator]',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './domain-tag-indicator.component.html'
 })
 export class DomainTagIndicatorComponent implements OnInit {

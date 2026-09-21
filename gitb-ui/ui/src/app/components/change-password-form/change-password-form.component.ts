@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input} from '@angular/core';
+import {Component, EventEmitter, Input, ChangeDetectionStrategy} from '@angular/core';
 import {PasswordChangeData} from './password-change-data.type';
 import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-change-password-form',
     templateUrl: './change-password-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChangePasswordFormComponent {

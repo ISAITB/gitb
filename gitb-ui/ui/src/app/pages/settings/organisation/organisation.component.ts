@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {DataService} from 'src/app/services/data.service';
@@ -34,6 +34,7 @@ import {PagingEvent} from '../../../components/paging-controls/paging-event';
 @Component({
     selector: 'app-organisation',
     templateUrl: './../../admin/user-management/organisation/organisation-details/organisation-details.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class OrganisationComponent extends OrganisationDetailsComponent implements OnInit {

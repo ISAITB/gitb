@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {Utils} from '../../common/utils';
 
@@ -29,6 +29,7 @@ import {Utils} from '../../common/utils';
   selector: 'app-message-item',
   standalone: false,
   templateUrl: './message-item.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './message-item.component.less'
 })
 export class MessageItemComponent implements OnChanges {

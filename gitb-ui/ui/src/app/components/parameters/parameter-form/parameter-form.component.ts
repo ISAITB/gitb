@@ -14,7 +14,7 @@
  */
 
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {Parameter} from 'src/app/types/parameter';
@@ -26,6 +26,7 @@ import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-parameter-form',
     templateUrl: './parameter-form.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ParameterFormComponent implements OnInit {

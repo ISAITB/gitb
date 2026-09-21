@@ -1,11 +1,11 @@
 <div class="row">
     <label class="col-3 col-form-label text-end" for="key">* Theme key:</label>
-    <div class="col-8 col-md-5"><input #themeKey id="key" name="key" [(ngModel)]="theme.key" class="form-control" type="text" [readonly]="readonly" [invalid]="validation.get('key')"></div>
+    <div class="col-8 col-md-5"><input #themeKey id="key" name="key" [(ngModel)]="theme.key" [ngModelOptions]="{standalone: true}" class="form-control" type="text" [readonly]="readonly" [invalid]="validation.get('key')"></div>
     <div class="col-auto" app-tooltip tbTooltip="A unique key used to identify the theme and refer to it when specified as an environment variable."></div>
 </div>
 <div class="row mt-3">
     <label class="col-3 col-form-label text-end" for="description">Description:</label>
-    <div class="col-8 col-md-5"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="theme.description" class="form-control" [readonly]="readonly"></textarea></div>
+    <div class="col-8 col-md-5"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="theme.description" [ngModelOptions]="{standalone: true}" class="form-control" [readonly]="readonly"></textarea></div>
     <div app-tooltip class="col-auto" tbTooltip="A description to explain the purpose and concept of this theme."></div>
 </div>
 <app-form-section sectionTitle="Theme colours" [marginBefore]="true">
@@ -16,7 +16,7 @@
                     <app-color-picker
                         label="Header background"
                         tooltipText="The background colour for the header displayed on the top of each page."
-                        [(ngModel)]="theme.headerBackgroundColor"
+                        [(ngModel)]="theme.headerBackgroundColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -24,7 +24,7 @@
                     <app-color-picker
                         label="Header border"
                         tooltipText="The colour of the border appearing at the bottom of the header."
-                        [(ngModel)]="theme.headerBorderColor"
+                        [(ngModel)]="theme.headerBorderColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -32,7 +32,7 @@
                     <app-color-picker
                         label="Header separator"
                         tooltipText="The colour of the separator just above the header, between the header and the logo."
-                        [(ngModel)]="theme.headerSeparatorColor"
+                        [(ngModel)]="theme.headerSeparatorColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -40,7 +40,7 @@
                     <app-color-picker
                         label="Page titles"
                         tooltipText="The colour for the title of each page displayed on the header."
-                        [(ngModel)]="theme.pageTitleColor"
+                        [(ngModel)]="theme.pageTitleColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -48,7 +48,7 @@
                     <app-color-picker
                         label="Footer background"
                         tooltipText="The background colour for the footer displayed on the bottom of each page."
-                        [(ngModel)]="theme.footerBackgroundColor"
+                        [(ngModel)]="theme.footerBackgroundColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -56,7 +56,7 @@
                     <app-color-picker
                         label="Footer border"
                         tooltipText="The colour of the border appearing at the top of the footer."
-                        [(ngModel)]="theme.footerBorderColor"
+                        [(ngModel)]="theme.footerBorderColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -64,7 +64,7 @@
                     <app-color-picker
                         label="Footer text"
                         tooltipText="The colour for the text appearing in the footer."
-                        [(ngModel)]="theme.footerTextColor"
+                        [(ngModel)]="theme.footerTextColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -72,7 +72,7 @@
                     <app-color-picker
                         label="Card titles"
                         tooltipText="The colour for the title texts of all cards used to visually group forms and panels."
-                        [(ngModel)]="theme.cardTitleColor"
+                        [(ngModel)]="theme.cardTitleColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -80,7 +80,7 @@
                     <app-color-picker
                         label="Popup titles"
                         tooltipText="The colour for popup dialog title texts."
-                        [(ngModel)]="theme.modalTitleColor"
+                        [(ngModel)]="theme.modalTitleColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -88,7 +88,7 @@
                     <app-color-picker
                         label="Table titles"
                         tooltipText="The colour for table title texts. These are titles appearing as headings above certain tables."
-                        [(ngModel)]="theme.tableTitleColor"
+                        [(ngModel)]="theme.tableTitleColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -96,7 +96,7 @@
                     <app-color-picker
                         label="Tab titles"
                         tooltipText="The colour for tab titles in all pages using tabs."
-                        [(ngModel)]="theme.tabLinkColor"
+                        [(ngModel)]="theme.tabLinkColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -104,7 +104,7 @@
                     <app-color-picker
                         label="Form separators"
                         tooltipText="The colour for separators defining form sections."
-                        [(ngModel)]="theme.separatorTitleColor"
+                        [(ngModel)]="theme.separatorTitleColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -112,7 +112,7 @@
                     <app-color-picker
                         label="Headings"
                         tooltipText="The colour for headings appearing in custom rich content such as landing pages."
-                        [(ngModel)]="theme.headingColor"
+                        [(ngModel)]="theme.headingColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -120,7 +120,7 @@
                     <app-color-picker
                         label="Primary button labels"
                         tooltipText="The colour for texts or icons in primary buttons."
-                        [(ngModel)]="theme.primaryButtonLabelColor"
+                        [(ngModel)]="theme.primaryButtonLabelColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -128,7 +128,7 @@
                     <app-color-picker
                         label="Primary buttons"
                         tooltipText="The background colour for primary buttons."
-                        [(ngModel)]="theme.primaryButtonColor"
+                        [(ngModel)]="theme.primaryButtonColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -136,7 +136,7 @@
                     <app-color-picker
                         label="Normal button labels"
                         tooltipText="The colour for texts or icons in normal buttons."
-                        [(ngModel)]="theme.secondaryButtonLabelColor"
+                        [(ngModel)]="theme.secondaryButtonLabelColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -144,7 +144,7 @@
                     <app-color-picker
                         label="Normal buttons"
                         tooltipText="The background colour for normal buttons."
-                        [(ngModel)]="theme.secondaryButtonColor"
+                        [(ngModel)]="theme.secondaryButtonColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -152,7 +152,7 @@
                     <app-color-picker
                         label="Welcome login"
                         tooltipText="The background colour used for the main login card, as well as the highlight colour for secondary login option cards."
-                        [(ngModel)]="theme.welcomeLoginColor"
+                        [(ngModel)]="theme.welcomeLoginColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -160,7 +160,7 @@
                     <app-color-picker
                         label="Welcome login label"
                         tooltipText="The colour used for texts and icons in the welcome page's main login card."
-                        [(ngModel)]="theme.welcomeLoginLabelColor"
+                        [(ngModel)]="theme.welcomeLoginLabelColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -168,7 +168,7 @@
                     <app-color-picker
                         label="Welcome option label"
                         tooltipText="The colour used for texts and icons in the welcome page's secondary login option cards (when available)."
-                        [(ngModel)]="theme.welcomeOptionLabelColor"
+                        [(ngModel)]="theme.welcomeOptionLabelColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -176,7 +176,7 @@
                     <app-color-picker
                         label="Info alert background"
                         tooltipText="The background colour used for info-level alert boxes, notification popups and the welcome page's info panel."
-                        [(ngModel)]="theme.alertInfoBackgroundColor"
+                        [(ngModel)]="theme.alertInfoBackgroundColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -184,7 +184,7 @@
                     <app-color-picker
                         label="Info alert text"
                         tooltipText="The colour used for texts and icons in info-level alert boxes, notification popups and the welcome page's info panel."
-                        [(ngModel)]="theme.alertInfoTextColor"
+                        [(ngModel)]="theme.alertInfoTextColor" [ngModelOptions]="{standalone: true}"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>
@@ -232,7 +232,7 @@
     <div class="row mt-3">
         <div class="col-8 col-md-5 offset-3">
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="hasFooterLogo" name="hasFooterLogo" [ngModel]="theme.footerLogoDisplay != 'none'" (ngModelChange)="theme.footerLogoDisplay=($event?'inherit':'none')" [disabled]="readonly">
+                <input class="form-check-input" type="checkbox" id="hasFooterLogo" name="hasFooterLogo" [ngModel]="theme.footerLogoDisplay != 'none'" [ngModelOptions]="{standalone: true}" (ngModelChange)="theme.footerLogoDisplay=($event?'inherit':'none')" [disabled]="readonly">
                 <label for="hasFooterLogo">Show footer logo?</label>
             </div>
         </div>

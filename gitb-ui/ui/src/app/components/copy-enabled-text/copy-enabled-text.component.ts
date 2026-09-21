@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, HostListener, Input} from '@angular/core';
+import {Component, HostListener, Input, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {Constants} from '../../common/constants';
@@ -22,6 +22,7 @@ import {Constants} from '../../common/constants';
     selector: 'app-copy-enabled-text',
     templateUrl: './copy-enabled-text.component.html',
     styleUrls: ['./copy-enabled-text.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CopyEnabledTextComponent {

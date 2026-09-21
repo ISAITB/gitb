@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { RoutingService } from 'src/app/services/routing.service';
@@ -23,6 +23,7 @@ import { ReportSettings } from './report-settings';
     selector: 'app-community-reports',
     templateUrl: './community-reports.component.html',
     styleUrl: './community-reports.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityReportsComponent implements OnInit {

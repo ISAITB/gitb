@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ReplaySubject, Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
@@ -26,6 +26,7 @@ import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-con
     selector: 'app-file-select',
     templateUrl: './file-select.component.html',
     styleUrls: ['./file-select.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class FileSelectComponent implements OnInit, OnDestroy {

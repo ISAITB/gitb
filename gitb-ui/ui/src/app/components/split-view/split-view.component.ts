@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, ElementRef, HostListener, Input, NgZone, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, Input, NgZone, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Generic resizable two-pane split view: a "primary" pane (e.g. a table/list) on top and a "secondary"
@@ -59,6 +59,7 @@ import { AfterViewInit, Component, ElementRef, HostListener, Input, NgZone, OnCh
     selector: 'app-split-view',
     templateUrl: './split-view.component.html',
     styleUrls: ['./split-view.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SplitViewComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {

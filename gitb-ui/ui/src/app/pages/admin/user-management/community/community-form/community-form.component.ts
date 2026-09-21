@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {DataService} from 'src/app/services/data.service';
@@ -34,6 +34,7 @@ import {Utils} from 'src/app/common/utils';
 @Component({
     selector: 'app-community-form',
     templateUrl: './community-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityFormComponent extends BaseComponent implements OnInit {

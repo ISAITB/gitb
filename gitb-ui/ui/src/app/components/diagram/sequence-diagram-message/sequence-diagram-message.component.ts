@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
@@ -28,6 +28,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-sequence-diagram-message',
     templateUrl: './sequence-diagram-message.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {

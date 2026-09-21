@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -32,6 +32,7 @@ import {ValidationState} from 'src/app/types/validation-state';
     selector: 'app-create-error-template',
     templateUrl: './create-error-template.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateErrorTemplateComponent extends BaseComponent implements OnInit, AfterViewInit {

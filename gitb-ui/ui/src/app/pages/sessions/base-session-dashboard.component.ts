@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {TableColumnDefinition} from '../../types/table-column-definition.type';
 import {TestResultForDisplay} from '../../types/test-result-for-display';
@@ -57,6 +57,7 @@ interface SessionDashboardState {
 
 @Component({
   template: '',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export abstract class BaseSessionDashboardComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {

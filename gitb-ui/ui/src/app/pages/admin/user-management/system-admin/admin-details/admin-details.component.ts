@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -28,6 +28,7 @@ import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 @Component({
     selector: 'app-admin-details',
     templateUrl: './admin-details.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AdminDetailsComponent extends BaseComponent implements OnInit {

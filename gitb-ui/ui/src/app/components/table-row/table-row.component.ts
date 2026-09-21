@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {TableColumnData} from 'src/app/types/table-column-data.type';
 import {Constants} from 'src/app/common/constants';
@@ -28,6 +28,7 @@ import {NavigationTarget} from '../../types/navigation-target';
     selector: '[table-row-directive]',
     templateUrl: './table-row.component.html',
     styles: ['div.btn-toolbar {display: flex; flex-wrap: nowrap; justify-content: right;}'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TableRowComponent implements OnInit, OnChanges, TableRowApi {

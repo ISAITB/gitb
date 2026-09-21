@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, NgZone, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
@@ -48,6 +48,7 @@ import {NavigationTarget} from '../../../types/navigation-target';
     selector: 'app-conformance-dashboard',
     templateUrl: './conformance-dashboard.component.html',
     styleUrls: ['./conformance-dashboard.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceDashboardComponent extends BaseConformanceItemDisplayComponent implements OnInit {

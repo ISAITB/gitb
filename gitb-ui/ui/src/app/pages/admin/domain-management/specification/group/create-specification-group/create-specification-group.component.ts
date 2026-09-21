@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -27,6 +27,7 @@ import { SpecificationGroup } from 'src/app/types/specification-group';
     selector: 'app-create-specification-group',
     templateUrl: './create-specification-group.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateSpecificationGroupComponent extends BaseComponent implements OnInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {BaseTableComponent} from '../base-table/base-table.component';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
@@ -22,6 +22,7 @@ import {PagingControlsApi} from '../paging-controls/paging-controls-api';
     selector: '[table-directive]',
     templateUrl: './table.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TableComponent extends BaseTableComponent implements OnInit {

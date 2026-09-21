@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
+import {Component, EventEmitter, NgZone, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
@@ -42,6 +42,7 @@ import {Utils} from '../../../common/utils';
     selector: 'app-conformance-statements',
     templateUrl: './conformance-statements.component.html',
     styleUrls: ['./conformance-statements.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceStatementsComponent extends BaseConformanceItemDisplayComponent implements OnInit {

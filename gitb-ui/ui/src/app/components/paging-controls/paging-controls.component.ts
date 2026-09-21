@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {PagingStatus} from './paging-status';
 import {PagingEvent} from './paging-event';
 import {PagingPlacement} from './paging-placement';
@@ -26,6 +26,7 @@ import {Constants} from '../../common/constants';
   selector: 'app-paging-controls',
   standalone: false,
   templateUrl: './paging-controls.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './paging-controls.component.less'
 })
 export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit, PagingControlsApi {

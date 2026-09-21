@@ -1,4 +1,4 @@
-import {Component, HostBinding, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostBinding, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {DataService} from '../../services/data.service';
 import {TagData} from '../../types/tag-data';
@@ -9,6 +9,7 @@ import {CommunityService} from '../../services/community.service';
 @Component({
   selector: '[app-community-tag-indicator]',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './community-tag-indicator.component.html'
 })
 export class CommunityTagIndicatorComponent implements OnInit, OnDestroy {

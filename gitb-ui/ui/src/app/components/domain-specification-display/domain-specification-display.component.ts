@@ -14,7 +14,7 @@
  */
 
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {Component, EventEmitter, Input, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, Output, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {RoutingService} from 'src/app/services/routing.service';
@@ -28,6 +28,7 @@ import {NavigationTarget} from '../../types/navigation-target';
     selector: 'app-domain-specification-display',
     templateUrl: './domain-specification-display.component.html',
     styleUrls: ['./domain-specification-display.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DomainSpecificationDisplayComponent implements DomainSpecificationDisplayComponentApi {

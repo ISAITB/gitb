@@ -19,12 +19,13 @@ import {ParameterReference} from 'src/app/types/parameter-reference';
 import {ParameterModalOptions} from './parameter-modal-options';
 import {Parameter} from 'src/app/types/parameter';
 import {Constants} from 'src/app/common/constants';
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {ValidationState} from 'src/app/types/validation-state';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class BaseParameterModalComponent extends BaseComponent {

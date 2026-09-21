@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -55,6 +55,7 @@ interface TestSuiteListState {
     selector: 'app-test-suite-details',
     templateUrl: './test-suite-details.component.html',
     styleUrls: ['./test-suite-details.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {

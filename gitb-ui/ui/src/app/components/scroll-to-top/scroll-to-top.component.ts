@@ -13,11 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'app-scroll-to-top',
     template: '<a class="scroll-to-top" [class.visible]="visible" href id="scrollToTop" (click)="doClick();$event.preventDefault()"><i class="fa-solid fa-chevron-up"></i></a>',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: true
 })
 export class ScrollToTopComponent {

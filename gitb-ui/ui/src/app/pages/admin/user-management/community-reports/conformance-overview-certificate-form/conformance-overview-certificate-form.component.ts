@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter} from '@angular/core';
+import {Component, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
 import {BaseCertificateSettingsFormComponent} from '../base-certificate-settings-form.component';
 import {ConformanceOverviewCertificateSettings} from 'src/app/types/conformance-overview-certificate-settings';
 import {forkJoin, map, Observable, of, share} from 'rxjs';
@@ -36,6 +36,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-conformance-overview-certificate-form',
     templateUrl: './conformance-overview-certificate-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceOverviewCertificateFormComponent extends BaseCertificateSettingsFormComponent<ConformanceOverviewCertificateSettings> {

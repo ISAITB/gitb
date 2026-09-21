@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewChecked, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Constants } from '../../common/constants';
 import { MessageRowView } from '../../types/message-row-view';
@@ -34,6 +34,7 @@ import { CheckboxOptionState } from '../checkbox-option-panel/checkbox-option-st
   selector: 'app-message-table',
   standalone: false,
   templateUrl: './message-table.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './message-table.component.less'
 })
 export class MessageTableComponent implements OnChanges, AfterViewChecked {

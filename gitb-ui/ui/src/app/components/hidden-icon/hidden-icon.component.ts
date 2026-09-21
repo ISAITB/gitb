@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 
 @Component({
     selector: 'app-hidden-icon',
     templateUrl: './hidden-icon.component.html',
     styleUrls: ['./hidden-icon.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class HiddenIconComponent {

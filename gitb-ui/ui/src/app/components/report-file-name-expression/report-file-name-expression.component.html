@@ -1,5 +1,5 @@
 <div class="input-group">
-    <input type="text" class="form-control" [attr.id]="'fileNameExpression'+reportType" [attr.name]="'fileNameExpression'+reportType" [ngModel]="value" (ngModelChange)="onValueChange($event)" [readonly]="readonly">
+    <input type="text" class="form-control" [attr.id]="'fileNameExpression'+reportType" [attr.name]="'fileNameExpression'+reportType" [ngModel]="value" [ngModelOptions]="{standalone: true}" (ngModelChange)="onValueChange($event)" [readonly]="readonly">
     <span class="input-group-text">{{extension}}</span>
     <div class="btn-group" ngbDropdown placement="bottom-end">
         <button [attr.id]="'buttonFileNameExpressionPlaceholders'+reportType" #pop="ngbTooltip" (click)="dropdownToggleClicked(pop)" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle report-file-name-expression-dropdown-toggle" [disabled]="readonly" [attr.aria-controls]="'dropdownFileNameExpressionPlaceholders'+reportType" ngbTooltip="Copy placeholder text" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" tooltipClass="shortTooltip" container="body">

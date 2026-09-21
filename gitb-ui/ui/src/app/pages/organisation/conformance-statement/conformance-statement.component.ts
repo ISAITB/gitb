@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {finalize, forkJoin, mergeMap, Observable, of, Subscription, tap} from 'rxjs';
@@ -69,6 +69,7 @@ import {NavigationTarget} from '../../../types/navigation-target';
     selector: 'app-conformance-statement',
     templateUrl: './conformance-statement.component.html',
     styleUrls: ['./conformance-statement.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceStatementComponent extends BaseTabbedComponent implements OnInit, OnDestroy {

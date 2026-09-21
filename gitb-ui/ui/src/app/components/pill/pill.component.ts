@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { Constants } from '../../common/constants';
 import {Utils} from '../../common/utils';
 
@@ -27,6 +27,7 @@ import {Utils} from '../../common/utils';
   selector: 'app-pill',
   standalone: false,
   templateUrl: './pill.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './pill.component.less'
 })
 export class PillComponent {

@@ -13,12 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {Counters} from './counters';
 import {TestStatusBaseApi} from './test-status-base-api';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class TestStatusBase implements OnInit, TestStatusBaseApi {

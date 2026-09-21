@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import {HealthStatus} from '../../types/health-status';
 
 @Component({
   selector: 'app-service-health-icon',
   standalone: false,
   templateUrl: './service-health-icon.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './service-health-icon.component.less'
 })
 export class ServiceHealthIconComponent {

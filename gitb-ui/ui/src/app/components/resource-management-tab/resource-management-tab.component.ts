@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {ResourceActions} from './resource-actions';
 import {CommunityResource} from '../../types/community-resource';
@@ -37,6 +37,7 @@ import {ResourceState} from './resource-state';
   selector: 'app-resource-management-tab',
   standalone: false,
   templateUrl: './resource-management-tab.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './resource-management-tab.component.less'
 })
 export class ResourceManagementTabComponent implements AfterViewInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {DataService} from 'src/app/services/data.service';
@@ -31,6 +31,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-any-content-view',
     templateUrl: './any-content-view.component.html',
     styleUrls: ['./any-content-view.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AnyContentViewComponent extends ReportSupport implements OnInit {

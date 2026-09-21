@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {CommunityKeystore} from 'src/app/types/community-keystore';
 import {FileData} from 'src/app/types/file-data.type';
@@ -28,6 +28,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-community-keystore-modal',
     templateUrl: './community-keystore-modal.component.html',
     styleUrl: './community-keystore-modal.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityKeystoreModalComponent extends BaseComponent implements OnInit {

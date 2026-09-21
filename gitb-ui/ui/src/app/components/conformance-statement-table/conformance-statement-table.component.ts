@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
@@ -36,6 +36,7 @@ import {NavigationTarget} from '../../types/navigation-target';
   selector: 'app-conformance-statement-table',
   standalone: false,
   templateUrl: './conformance-statement-table.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './conformance-statement-table.component.less'
 })
 export class ConformanceStatementTableComponent extends BaseComponent implements OnInit, AfterViewInit, ConformanceStatementTableApi {

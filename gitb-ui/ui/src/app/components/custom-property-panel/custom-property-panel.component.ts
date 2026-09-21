@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { ValidationState } from 'src/app/types/validation-state';
 
@@ -21,6 +21,7 @@ import { ValidationState } from 'src/app/types/validation-state';
     selector: 'app-custom-property-panel',
     templateUrl: './custom-property-panel.component.html',
     styleUrl: './custom-property-panel.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CustomPropertyPanelComponent {

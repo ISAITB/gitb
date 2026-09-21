@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -27,6 +27,7 @@ import { TypedLabelConfig } from 'src/app/types/typed-label-config.type';
     selector: 'app-community-labels',
     templateUrl: './community-labels.component.html',
     styleUrls: ['./community-labels.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityLabelsComponent extends BaseComponent implements OnInit {

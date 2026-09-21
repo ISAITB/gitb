@@ -25,7 +25,8 @@ import {
   Renderer2,
   TemplateRef,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import {CheckboxOptionState} from './checkbox-option-state';
 import {CheckboxOption} from './checkbox-option';
@@ -41,6 +42,7 @@ import {Utils} from '../../common/utils';
     selector: 'app-checkbox-option-panel',
     templateUrl: './checkbox-option-panel.component.html',
     styleUrls: ['./checkbox-option-panel.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBoxOptionPanelComponentApi {

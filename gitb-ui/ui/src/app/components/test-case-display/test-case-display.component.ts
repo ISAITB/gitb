@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
@@ -38,6 +38,7 @@ import {NavigationTarget} from '../../types/navigation-target';
     selector: 'app-test-case-display',
     templateUrl: './test-case-display.component.html',
     styleUrls: ['./test-case-display.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestCaseDisplayComponent extends BaseComponent implements TestCaseDisplayComponentApi, OnInit {

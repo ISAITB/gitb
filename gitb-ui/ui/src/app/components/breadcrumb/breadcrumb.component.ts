@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {RoutingService} from 'src/app/services/routing.service';
 import {BreadcrumbItem} from './breadcrumb-item';
 import {DataService} from 'src/app/services/data.service';
@@ -28,6 +28,7 @@ import {Utils} from 'src/app/common/utils';
     selector: 'app-breadcrumb',
     templateUrl: './breadcrumb.component.html',
     styleUrls: ['./breadcrumb.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BreadcrumbComponent implements OnInit, OnDestroy {

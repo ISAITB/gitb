@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { map } from 'rxjs/operators';
 import { Constants } from '../../common/constants';
@@ -35,6 +35,7 @@ import { FilterUpdate } from '../../components/test-filter/filter-update';
   selector: 'app-compose-message-modal',
   standalone: false,
   templateUrl: './compose-message-modal.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './compose-message-modal.component.less'
 })
 export class ComposeMessageModalComponent extends BaseComponent implements OnInit {

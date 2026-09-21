@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
     selector: 'app-tag',
     templateUrl: './tag.component.html',
     styleUrls: ['./tag.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TagComponent implements OnInit {

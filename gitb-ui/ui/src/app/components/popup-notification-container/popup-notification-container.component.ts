@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {Component, OnDestroy, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {PopupService} from '../../services/popup.service';
 import {Observable, Subscription} from 'rxjs';
 import {PopupNotification} from '../../types/popup-notification';
@@ -26,6 +26,7 @@ import {AsyncPipe} from '@angular/common';
   standalone: true,
   templateUrl: './popup-notification-container.component.html',
   styleUrl: './popup-notification-container.component.less',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     PopupNotificationComponent,
     AsyncPipe

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, Input, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {HttpResponse} from '@angular/common/http';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
@@ -29,6 +29,7 @@ import {Utils} from 'src/app/common/utils';
   selector: 'app-conformance-certificate-modal',
   templateUrl: './conformance-certificate-modal.component.html',
   styleUrls: ['./conformance-certificate-modal.component.less'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export class ConformanceCertificateModalComponent implements OnInit {

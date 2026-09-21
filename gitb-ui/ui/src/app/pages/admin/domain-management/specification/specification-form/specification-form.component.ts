@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {Specification} from 'src/app/types/specification';
 
@@ -26,6 +26,7 @@ import {FilterUpdate} from '../../../../../components/test-filter/filter-update'
     selector: 'app-specification-form',
     templateUrl: './specification-form.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SpecificationFormComponent implements OnInit {

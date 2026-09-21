@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -39,6 +39,7 @@ interface DomainManagementListState {
     selector: 'app-domain-management',
     templateUrl: './domain-management.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DomainManagementComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {

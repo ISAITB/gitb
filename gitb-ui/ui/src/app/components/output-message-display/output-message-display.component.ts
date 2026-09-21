@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {OutputMessageDisplayApi} from './output-message-display-api';
 
 @Component({
   selector: 'app-output-message-display',
   standalone: false,
   templateUrl: './output-message-display.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './output-message-display.component.less'
 })
 export class OutputMessageDisplayComponent implements OnInit, OutputMessageDisplayApi {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {DiagramLoaderService} from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
@@ -37,6 +37,7 @@ import {SessionColumnCase, SessionColumnsService} from 'src/app/services/session
     selector: 'app-organisation-tests',
     templateUrl: './../../sessions/base-session-dashboard.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class OrganisationTestsComponent extends BaseSessionDashboardComponent implements OnInit {

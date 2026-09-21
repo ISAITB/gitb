@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -26,6 +26,7 @@ import {Constants} from '../../../../../common/constants';
     selector: 'app-create-domain',
     templateUrl: './create-domain.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateDomainComponent extends BaseComponent implements OnInit, AfterViewInit {

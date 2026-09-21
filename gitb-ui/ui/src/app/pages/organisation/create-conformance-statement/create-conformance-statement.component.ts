@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -36,6 +36,7 @@ import {CheckBoxOptionPanelComponentApi} from '../../../components/checkbox-opti
     selector: 'app-create-conformance-statement',
     templateUrl: './create-conformance-statement.component.html',
     styleUrls: ['./create-conformance-statement.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateConformanceStatementComponent implements OnInit, AfterViewInit, OnDestroy {

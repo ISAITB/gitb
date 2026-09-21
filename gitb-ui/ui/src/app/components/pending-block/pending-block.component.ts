@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-pending-block',
     templateUrl: './pending-block.component.html',
     styles: '.large { font-size: xx-large; }',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PendingBlockComponent {

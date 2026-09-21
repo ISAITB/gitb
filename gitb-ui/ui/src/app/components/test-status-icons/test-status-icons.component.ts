@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {TestStatusBase} from '../test-status-base/test-status-base';
@@ -23,6 +23,7 @@ import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
     selector: 'app-test-status-icons',
     templateUrl: './test-status-icons.component.html',
     styleUrls: ['./test-status-icons.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestStatusIconsComponent extends TestStatusBase implements TestStatusBaseApi, OnInit  {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ReplaySubject, Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
@@ -30,6 +30,7 @@ import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-con
         }
     ],
     styles: ['button {box-shadow: none;outline: none !important; width: 43px; }'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SecretInputComponent implements OnInit, AfterViewInit, ControlValueAccessor, OnDestroy {

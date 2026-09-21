@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { SpecificationReferenceInfo } from 'src/app/types/specification-reference-info';
 
@@ -21,6 +21,7 @@ import { SpecificationReferenceInfo } from 'src/app/types/specification-referenc
     selector: 'app-specification-reference-display',
     templateUrl: './specification-reference-display.component.html',
     styleUrl: './specification-reference-display.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SpecificationReferenceDisplayComponent {

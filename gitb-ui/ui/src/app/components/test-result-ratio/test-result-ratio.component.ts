@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {TestStatusBase} from '../test-status-base/test-status-base';
 import {Constants} from '../../common/constants';
 
@@ -21,6 +21,7 @@ import {Constants} from '../../common/constants';
     selector: 'app-test-result-ratio',
     templateUrl: './test-result-ratio.component.html',
     styleUrls: ['./test-result-ratio.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestResultRatioComponent extends TestStatusBase implements OnInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {AuthService} from 'src/app/services/auth.service';
@@ -24,6 +24,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-disconnect-role',
     templateUrl: './disconnect-role.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DisconnectRoleComponent extends BaseComponent {

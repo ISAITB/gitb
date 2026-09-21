@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -30,6 +30,7 @@ import {UsageTipService} from '../../../../../services/usage-tip.service';
     selector: 'app-create-system',
     templateUrl: './create-system.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateSystemComponent extends BaseComponent implements OnInit, AfterViewInit {

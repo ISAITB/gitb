@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {AccountService} from 'src/app/services/account.service';
 import {DataService} from 'src/app/services/data.service';
@@ -28,6 +28,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-contact-support',
     templateUrl: './contact-support.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ContactSupportComponent extends BaseComponent implements OnInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -29,6 +29,7 @@ import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
     selector: 'app-community-admin-details',
     templateUrl: './community-admin-details.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityAdminDetailsComponent extends BaseComponent implements OnInit {

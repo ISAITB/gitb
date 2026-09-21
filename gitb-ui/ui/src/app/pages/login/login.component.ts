@@ -14,7 +14,7 @@
  */
 
 import {HttpClient, HttpResponse} from '@angular/common/http';
-import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {forkJoin, Observable, of, throwError} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {Constants} from 'src/app/common/constants';
@@ -44,6 +44,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LoginComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit, OnDestroy {

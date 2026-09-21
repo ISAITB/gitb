@@ -13,12 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'app-menu-group',
     templateUrl: './menu-group.component.html',
     styleUrls: ['./menu-group.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MenuGroupComponent implements OnInit {

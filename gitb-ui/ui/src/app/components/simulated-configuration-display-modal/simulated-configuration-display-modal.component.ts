@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {SUTConfiguration} from 'src/app/types/sutconfiguration';
 import {AnyContent} from 'src/app/components/diagram/any-content';
@@ -25,6 +25,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-simulated-configuration-display-modal',
     templateUrl: './simulated-configuration-display-modal.component.html',
     styleUrls: ['./simulated-configuration-display-modal.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SimulatedConfigurationDisplayModalComponent implements OnInit {

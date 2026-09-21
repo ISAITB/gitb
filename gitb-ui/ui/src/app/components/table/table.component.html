@@ -11,7 +11,7 @@
                 @if (checkboxEnabled) {
                     <th class="th-min centered">
                         <div class="cell-content">
-                            <input type="checkbox" class="form-check-input" [(ngModel)]="allChecked" (change)="checkAll()">
+                            <input type="checkbox" class="form-check-input" [(ngModel)]="allChecked" [ngModelOptions]="{standalone: true}" (change)="checkAll()">
                         </div>
                     </th>
                 }

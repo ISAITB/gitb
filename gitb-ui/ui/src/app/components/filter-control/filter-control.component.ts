@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 import {FilterControlApi} from './filter-control-api';
 import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-filter-control',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './filter-control.component.html'
 })
 export class FilterControlComponent implements FilterControlApi {

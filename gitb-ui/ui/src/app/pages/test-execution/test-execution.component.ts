@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {Observable, of, Subscription, throwError, timer} from 'rxjs';
@@ -60,6 +60,7 @@ import {OutputMessageDisplayApi} from '../../components/output-message-display/o
   selector: 'app-test-execution',
   templateUrl: './test-execution.component.html',
   styleUrls: ['./test-execution.component.less'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export class TestExecutionComponent extends BaseComponent implements OnInit, OnDestroy {

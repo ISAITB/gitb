@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { formatDate, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
@@ -52,6 +52,7 @@ import { SplitViewComponent } from '../../../components/split-view/split-view.co
   selector: 'app-messages',
   standalone: false,
   templateUrl: './messages.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './messages.component.less'
 })
 export class MessagesComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {

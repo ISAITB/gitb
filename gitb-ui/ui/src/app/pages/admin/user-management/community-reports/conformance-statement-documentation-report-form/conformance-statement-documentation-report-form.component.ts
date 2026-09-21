@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {BaseReportSettingsFormComponent} from '../base-report-settings-form.component';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {ReportService} from 'src/app/services/report.service';
@@ -31,6 +31,7 @@ import {Utils} from '../../../../../common/utils';
 @Component({
     selector: 'app-conformance-statement-documentation-report-form',
     templateUrl: './conformance-statement-documentation-report-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceStatementDocumentationReportFormComponent extends BaseReportSettingsFormComponent {

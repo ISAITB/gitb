@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
 import {BaseComponent} from '../../pages/base-component.component';
@@ -27,6 +27,7 @@ import Parser = marked.Parser;
   selector: 'app-service-health-modal',
   standalone: false,
   templateUrl: './service-health-modal.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './service-health-modal.component.less'
 })
 export class ServiceHealthModalComponent extends BaseComponent implements OnInit {

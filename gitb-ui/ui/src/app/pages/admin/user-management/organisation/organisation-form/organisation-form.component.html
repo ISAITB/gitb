@@ -16,12 +16,12 @@
 } @else {
     <div class="row">
         <label class="col-3 col-form-label text-end" for="sname">* Short name:</label>
-        <div class="col-8 col-md-6"><input id="sname" name="sname" [(ngModel)]="organisation.sname" class="form-control" type="text"></div>
+        <div class="col-8 col-md-6"><input id="sname" name="sname" [(ngModel)]="organisation.sname" [ngModelOptions]="{standalone: true}" class="form-control" type="text"></div>
         <div app-tooltip class="col-auto" [tbTooltip]="'A short name to refer to the '+dataService.labelOrganisationLower()+' used in selection lists and tabular displays where space is limited.'"></div>
     </div>
     <div class="row mt-3">
         <label class="col-3 col-form-label text-end" for="fname">* Full name:</label>
-        <div class="col-8 col-md-6"><input id="fname" name="fname" [(ngModel)]="organisation.fname" class="form-control" type="text"></div>
+        <div class="col-8 col-md-6"><input id="fname" name="fname" [(ngModel)]="organisation.fname" [ngModelOptions]="{standalone: true}" class="form-control" type="text"></div>
         <div app-tooltip class="col-auto" [tbTooltip]="'The full name of the '+dataService.labelOrganisationLower()+' used in reports and detail screens.'"></div>
     </div>
     @if (showAdminInfo || showLandingPage) {
@@ -60,15 +60,15 @@
                         <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
                         <div class="col-8 col-md-6">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyOrgParams" name="copyOrgParams" [(ngModel)]="organisation.copyOrganisationParameters">
+                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyOrgParams" name="copyOrgParams" [(ngModel)]="organisation.copyOrganisationParameters" [ngModelOptions]="{standalone: true}">
                                 <label class="form-check-label" for="copyOrgParams">{{dataService.labelOrganisation()}} properties</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copySysParams" name="copySysParams" [(ngModel)]="organisation.copySystemParameters">
+                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copySysParams" name="copySysParams" [(ngModel)]="organisation.copySystemParameters" [ngModelOptions]="{standalone: true}">
                                 <label class="form-check-label" for="copySysParams">{{dataService.labelSystem()}} properties</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyStmtParams" name="copyStmtParams" [(ngModel)]="organisation.copyStatementParameters">
+                                <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyStmtParams" name="copyStmtParams" [(ngModel)]="organisation.copyStatementParameters" [ngModelOptions]="{standalone: true}">
                                 <label class="form-check-label" for="copyStmtParams">Conformance statement configurations</label>
                             </div>
                         </div>
@@ -103,7 +103,7 @@
                 <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
                 <div class="col-8 col-md-6">
                     <div class="form-check">
-                        <input class="form-check-input" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
+                        <input class="form-check-input" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" [ngModelOptions]="{standalone: true}" type="checkbox">
                         <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
                     </div>
                 </div>
@@ -111,7 +111,7 @@
             <div [ngbCollapse]="!organisation.template" [animation]="initialLoadComplete" (shown)="templateChoiceChanged()">
                 <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
-                    <div class="col-8 col-md-6"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
+                    <div class="col-8 col-md-6"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" [ngModelOptions]="{standalone: true}" class="form-control" type="text" [invalid]="validation.get('template')"></div>
                     <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
                 </div>
             </div>

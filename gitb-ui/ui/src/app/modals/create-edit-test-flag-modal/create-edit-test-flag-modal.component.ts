@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {DataService} from 'src/app/services/data.service';
@@ -27,6 +27,7 @@ import {ValidationState} from 'src/app/types/validation-state';
 @Component({
     selector: 'app-create-edit-test-flag-modal',
     templateUrl: './create-edit-test-flag-modal.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateEditTestFlagModalComponent extends BaseComponent implements OnInit {

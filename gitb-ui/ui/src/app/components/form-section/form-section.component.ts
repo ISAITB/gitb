@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-form-section',
     templateUrl: './form-section.component.html',
     styleUrl: './form-section.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class FormSectionComponent implements OnInit {

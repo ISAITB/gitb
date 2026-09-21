@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
@@ -38,6 +38,7 @@ interface UserManagementListState {
     selector: 'app-user-management',
     templateUrl: './user-management.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class UserManagementComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {

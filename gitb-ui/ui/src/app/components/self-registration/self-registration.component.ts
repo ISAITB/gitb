@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {CommunityService} from 'src/app/services/community.service';
@@ -31,6 +31,7 @@ import {TableComponent} from '../table/table.component';
     styles: [
         '.self-reg-option-table.is-invalid { border-color: var(--bs-form-invalid-color); }'
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SelfRegistrationComponent extends BaseComponent implements OnInit, AfterViewInit {

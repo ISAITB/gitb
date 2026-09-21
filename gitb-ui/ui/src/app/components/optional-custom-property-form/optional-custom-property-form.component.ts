@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 import { OptionalCustomPropertyFormData } from './optional-custom-property-form-data.type';
 
 @Component({
     selector: 'app-optional-custom-property-form',
     templateUrl: './optional-custom-property-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class OptionalCustomPropertyFormComponent implements OnInit {

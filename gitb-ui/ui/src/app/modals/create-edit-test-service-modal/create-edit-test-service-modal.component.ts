@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {BaseComponent} from '../../pages/base-component.component';
 import {TestServiceWithParameter} from '../../types/test-service-with-parameter';
 import {ConfirmationDialogService} from '../../services/confirmation-dialog.service';
@@ -29,6 +29,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
   selector: 'app-create-edit-test-service-modal',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './create-edit-test-service-modal.component.html'
 })
 export class CreateEditTestServiceModalComponent extends BaseComponent implements OnInit, AfterViewInit {

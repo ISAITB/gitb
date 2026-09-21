@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ReportService} from 'src/app/services/report.service';
 import {AnyContent} from '../../any-content';
@@ -28,6 +28,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     selector: '[app-test-step-report-tar]',
     templateUrl: './test-step-report-tar.component.html',
     styleUrls: ['./test-step-report-tar.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestStepReportTARComponent extends ReportSupport implements OnInit {

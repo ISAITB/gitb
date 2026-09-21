@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -28,6 +28,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-create-edit-community-resource-modal',
     templateUrl: './create-edit-community-resource-modal.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateEditCommunityResourceModalComponent extends BaseComponent implements OnInit {

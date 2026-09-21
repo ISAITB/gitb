@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {SystemFormData} from './system-form-data';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import {DataService} from 'src/app/services/data.service';
@@ -30,6 +30,7 @@ import {Constants} from '../../../../../common/constants';
     selector: 'app-system-form',
     templateUrl: './system-form.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SystemFormComponent implements OnInit {

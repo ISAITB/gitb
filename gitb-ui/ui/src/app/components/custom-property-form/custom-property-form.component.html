@@ -38,7 +38,7 @@
                                 } @else {
                                     <select (change)="checkPrerequisites(property, true)"
                                             [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}"
-                                            [(ngModel)]="property.value" class="form-select"
+                                            [(ngModel)]="property.value" [ngModelOptions]="{standalone: true}" class="form-select"
                                             [invalid]="validation?.get(tbPropertyType+property.id)">
                                         <option value=""></option>
                                         @for (v of property.presetValues; track $index) {
@@ -56,7 +56,7 @@
                                     </p>
                                 } @else {
                                     <input (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id"
-                                           name="{{'prop-'+property.id}}" [(ngModel)]="property.value"
+                                           name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [ngModelOptions]="{standalone: true}"
                                            class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)"
                                            type="text"/>
                                 }
@@ -79,7 +79,7 @@
                                             <input class="form-check-input" type="checkbox"
                                                    [attr.id]="'update-'+property.id"
                                                    name="{{'prop-update-'+property.id}}"
-                                                   [(ngModel)]="property.changeValue">
+                                                   [(ngModel)]="property.changeValue" [ngModelOptions]="{standalone: true}">
                                             <label class="form-check-label"
                                                    [attr.for]="'update-'+property.id">Update</label>
                                         </div>
@@ -98,7 +98,7 @@
                                             <app-secret-input [inputId]="'prop-'+property.id"
                                                               [inputName]="'prop-'+property.id"
                                                               name="{{'secret-prop-'+property.id}}"
-                                                              [(ngModel)]="property.value"
+                                                              [(ngModel)]="property.value" [ngModelOptions]="{standalone: true}"
                                                               [invalid]="validation?.get(tbPropertyType+property.id)"></app-secret-input>
                                         }
                                     </div>

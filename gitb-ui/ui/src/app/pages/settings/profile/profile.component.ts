@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnDestroy, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DisconnectRoleComponent} from 'src/app/modals/disconnect-role/disconnect-role.component';
 import {AccountService} from 'src/app/services/account.service';
@@ -33,6 +33,7 @@ import {SessionColumnCase} from 'src/app/services/session-columns.service';
     selector: 'app-profile',
     templateUrl: './profile.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ProfileComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {

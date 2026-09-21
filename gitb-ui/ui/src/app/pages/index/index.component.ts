@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from '../../services/data.service';
 import {UserGuideService} from '../../services/user-guide.service';
 import {HtmlService} from '../../services/html.service';
@@ -37,6 +37,7 @@ import {MessageComposeService} from '../../services/message-compose.service';
     selector: 'app-index',
     templateUrl: './index.component.html',
     styleUrls: ['./index.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class IndexComponent implements OnInit, OnDestroy {

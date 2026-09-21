@@ -14,7 +14,7 @@
  */
 
 import {HttpResponse} from '@angular/common/http';
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {from, Observable} from 'rxjs';
 import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import {CommunityKeystoreModalComponent} from 'src/app/modals/community-keystore-modal/community-keystore-modal.component';
@@ -30,6 +30,7 @@ import {Utils} from 'src/app/common/utils';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class BaseReportSettingsFormComponent extends BaseComponent implements OnInit {

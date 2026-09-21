@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { DiagramEvents } from '../diagram-events';
 import { StepData } from '../step-data';
@@ -22,6 +22,7 @@ import { StepData } from '../step-data';
     selector: 'app-sequence-diagram-message-status',
     templateUrl: './sequence-diagram-message-status.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SequenceDiagramMessageStatusComponent implements OnInit {

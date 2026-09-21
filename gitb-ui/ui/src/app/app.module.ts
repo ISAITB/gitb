@@ -15,7 +15,7 @@
 
 import {BrowserModule} from '@angular/platform-browser';
 import {NgModule} from '@angular/core';
-import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {provideHttpClient, withInterceptorsFromDi, withXhr} from '@angular/common/http';
 import {MarkdownModule} from 'ngx-markdown';
 import {CookieService} from 'ngx-cookie-service';
 import {ColorPickerComponent as NgxColorPickerComponent, ColorPickerDirective} from 'ngx-color-picker';
@@ -569,6 +569,6 @@ import { MessageItemComponent } from './components/message-item/message-item.com
     ], providers: [
         CookieService,
         { provide: HUGERTE_SCRIPT_SRC, useValue: 'hugerte/hugerte.min.js' },
-        provideHttpClient(withInterceptorsFromDi())
+        provideHttpClient(withXhr(), withInterceptorsFromDi())
     ] })
 export class AppModule { }

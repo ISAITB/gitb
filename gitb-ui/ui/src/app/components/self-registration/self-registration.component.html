@@ -47,7 +47,7 @@
                             <div class="row pt-3">
                                 <label class="col-3 col-form-label text-end" for="token">* Community token:</label>
                                 <div class="col-7">
-                                    <input id="token" [(ngModel)]="model.selfRegToken" class="form-control" type="text" [invalid]="validation?.get('token')"/>
+                                    <input id="token" [(ngModel)]="model.selfRegToken" [ngModelOptions]="{standalone: true}" class="form-control" type="text" [invalid]="validation?.get('token')"/>
                                 </div>
                                 <div app-tooltip class="col-auto" tbTooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community's administrator."></div>
                             </div>
@@ -65,7 +65,7 @@
                                     <div class="col-9">
                                         @if (!model.selfRegOption.joinExisting) {
                                             <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_new" [value]="'new'" (change)="registrationTypeChanged()">
+                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" [ngModelOptions]="{standalone: true}" name="organisationChoice" id="type_new" [value]="'new'" (change)="registrationTypeChanged()">
                                                 <label class="form-check-label" for="type_new">New {{ dataService.labelOrganisationLower() }}
                                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="`Register a new ${dataService.labelOrganisationLower()}.`"></div>
                                                 </label>
@@ -73,7 +73,7 @@
                                         }
                                         @if (model.selfRegOption.organisationTokensEnabled) {
                                             <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_token" [value]="'token'" (change)="registrationTypeChanged()">
+                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" [ngModelOptions]="{standalone: true}" name="organisationChoice" id="type_token" [value]="'token'" (change)="registrationTypeChanged()">
                                                 <label class="form-check-label" for="type_token">Existing {{ dataService.labelOrganisationLower() }}
                                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="`Register in an existing ${dataService.labelOrganisationLower()} by providing a token.`"></div>
                                                 </label>
@@ -81,7 +81,7 @@
                                         }
                                         @if (model.selfRegOption.hasDefaultOrganisation) {
                                             <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_default" [value]="'default'" (change)="registrationTypeChanged()">
+                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" [ngModelOptions]="{standalone: true}" name="organisationChoice" id="type_default" [value]="'default'" (change)="registrationTypeChanged()">
                                                 <label class="form-check-label" for="type_default">Default {{ dataService.labelOrganisationLower() }}
                                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="`Register in the community default ${dataService.labelOrganisationLower()}.`"></div>
                                                 </label>
@@ -96,7 +96,7 @@
                                 <div class="row pt-3">
                                     <label class="col-3 col-form-label text-end" for="orgToken">* {{dataService.labelOrganisation()}} token:</label>
                                     <div class="col-7">
-                                        <input id="orgToken" [(ngModel)]="model.orgToken" class="form-control" type="text" [invalid]="validation?.get('orgToken')">
+                                        <input id="orgToken" [(ngModel)]="model.orgToken" [ngModelOptions]="{standalone: true}" class="form-control" type="text" [invalid]="validation?.get('orgToken')">
                                     </div>
                                     <div app-tooltip class="col-auto" tbTooltip="The token used to directly register in a specific, existing {{dataService.labelOrganisationLower()}}. You need to request this from the community or {{dataService.labelOrganisationLower()}} administrator."></div>
                                 </div>
@@ -104,14 +104,14 @@
                                 <div class="row pt-3">
                                     <label class="col-3 col-form-label text-end" for="orgShortName">* Short name:</label>
                                     <div class="col-7">
-                                        <input id="orgShortName" name="orgShortName" [(ngModel)]="model.orgShortName" class="form-control" type="text"/>
+                                        <input id="orgShortName" name="orgShortName" [(ngModel)]="model.orgShortName" [ngModelOptions]="{standalone: true}" class="form-control" type="text"/>
                                     </div>
                                     <div app-tooltip class="col-auto" tbTooltip="A short name for your {{dataService.labelOrganisationLower()}} to appear in reports."></div>
                                 </div>
                                 <div class="row mt-3">
                                     <label class="col-3 col-form-label text-end" for="orgFullName">* Full name:</label>
                                     <div class="col-7">
-                                        <input id="orgFullName" name="orgFullName" [(ngModel)]="model.orgFullName" class="form-control" type="text"/>
+                                        <input id="orgFullName" name="orgFullName" [(ngModel)]="model.orgFullName" [ngModelOptions]="{standalone: true}" class="form-control" type="text"/>
                                     </div>
                                     <div app-tooltip class="col-auto" tbTooltip="The complete name of your {{dataService.labelOrganisationLower()}}."></div>
                                 </div>
@@ -119,7 +119,7 @@
                                     <div class="row mt-3">
                                         <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>
                                         <div class="col-7">
-                                            <select id="template" name="template" class="form-select" [disabled]="templateReadonly" [(ngModel)]="model.template" [invalid]="validation?.get('template')">
+                                            <select id="template" name="template" class="form-select" [disabled]="templateReadonly" [(ngModel)]="model.template" [ngModelOptions]="{standalone: true}" [invalid]="validation?.get('template')">
                                                 <option value="" disabled></option>
                                                 @for (template of model.selfRegOption.templates; track template.id) {
                                                     <option [ngValue]="template">{{template.name}}</option>
@@ -156,21 +156,21 @@
                         <div class="row py-3">
                             <label class="col-3 col-form-label text-end" for="adminName">* Name:</label>
                             <div class="col-7">
-                                <input id="adminName" name="adminName" [(ngModel)]="model.adminName" class="form-control" type="text"/>
+                                <input id="adminName" name="adminName" [(ngModel)]="model.adminName" [ngModelOptions]="{standalone: true}" class="form-control" type="text"/>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="This may be your name or a description in case this account will be shared by multiple people."></div>
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="adminEmail">* Username:</label>
                             <div class="col-7">
-                                <input id="adminEmail" name="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text" [invalid]="validation?.get('adminEmail')"/>
+                                <input id="adminEmail" name="adminEmail" [(ngModel)]="model.adminEmail" [ngModelOptions]="{standalone: true}" class="form-control" type="text" [invalid]="validation?.get('adminEmail')"/>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="This is your account's username."></div>
                         </div>
                         <div class="row">
                             <label class="col-3 col-form-label text-end" for="adminPassword">* Password:</label>
                             <div class="col-7">
-                                <app-secret-input inputId="adminPassword" inputName="adminPassword" name="adminPasswordSecret" [autocomplete]="'new-password'" [(ngModel)]="model.adminPassword" [validation]="validation?.get('new')"></app-secret-input>
+                                <app-secret-input inputId="adminPassword" inputName="adminPassword" name="adminPasswordSecret" [autocomplete]="'new-password'" [(ngModel)]="model.adminPassword" [ngModelOptions]="{standalone: true}" [validation]="validation?.get('new')"></app-secret-input>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="The account's password, to be provided with the username when logging in."></div>
                         </div>

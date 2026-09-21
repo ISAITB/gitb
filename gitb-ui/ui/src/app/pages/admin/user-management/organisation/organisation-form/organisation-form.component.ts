@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import {DataService} from 'src/app/services/data.service';
 import {ErrorTemplate} from 'src/app/types/error-template';
@@ -36,6 +36,7 @@ import {Constants} from '../../../../../common/constants';
     selector: 'app-organisation-form',
     templateUrl: './organisation-form.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class OrganisationFormComponent implements OnInit {

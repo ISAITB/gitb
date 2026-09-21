@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {RoutingService} from '../../../services/routing.service';
 import {Constants} from '../../../common/constants';
 
@@ -21,6 +21,7 @@ import {Constants} from '../../../common/constants';
   selector: 'app-data-management',
   standalone: false,
   templateUrl: './data-management.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './data-management.component.less'
 })
 export class DataManagementComponent implements OnInit {

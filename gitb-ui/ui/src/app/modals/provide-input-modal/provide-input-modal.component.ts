@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
 import {AnyContent} from 'src/app/components/diagram/any-content';
 import {DataService} from 'src/app/services/data.service';
@@ -30,6 +30,7 @@ import {Utils} from '../../common/utils';
     selector: 'app-provide-input-modal',
     templateUrl: './provide-input-modal.component.html',
     styleUrls: ['./provide-input-modal.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {

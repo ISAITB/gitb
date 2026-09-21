@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {FilterState} from 'src/app/types/filter-state';
@@ -54,6 +54,7 @@ import {TestFlagForUser} from 'src/app/types/test-flag-for-user';
     selector: 'app-test-filter',
     templateUrl: './test-filter.component.html',
     styleUrls: ['./test-filter.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestFilterComponent implements OnInit, AfterViewInit {

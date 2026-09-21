@@ -13,7 +13,7 @@
 * the specific language governing permissions and limitations under the Licence.
 */
 
-import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {UserService} from 'src/app/services/user.service';
@@ -75,6 +75,7 @@ import {ConfigurationEntryComponentApi} from './configuration-entry/configuratio
     selector: 'app-system-administration',
     templateUrl: './system-administration.component.html',
     styleUrls: ['./system-administration.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SystemAdministrationComponent extends BaseTabbedComponent implements OnInit {

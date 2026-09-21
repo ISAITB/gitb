@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { IdLabel } from 'src/app/types/id-label';
 import { ImportItemState } from '../import-item-state';
@@ -22,6 +22,7 @@ import { ImportItemState } from '../import-item-state';
     selector: '[app-import-item-preview]',
     templateUrl: './import-item-preview.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ImportItemPreviewComponent implements OnInit {

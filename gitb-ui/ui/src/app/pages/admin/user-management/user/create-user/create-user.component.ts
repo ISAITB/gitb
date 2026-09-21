@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {EMPTY, Observable} from 'rxjs';
 import {map, mergeMap, share} from 'rxjs/operators';
@@ -33,6 +33,7 @@ import {ValidationState} from 'src/app/types/validation-state';
     selector: 'app-create-user',
     templateUrl: './create-user.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateUserComponent extends BaseComponent implements OnInit, AfterViewInit {

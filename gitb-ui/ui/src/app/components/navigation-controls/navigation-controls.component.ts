@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {RoutingService} from '../../services/routing.service';
 import {DataService} from '../../services/data.service';
 import {NavigationControlsConfig} from './navigation-controls-config';
@@ -24,6 +24,7 @@ import {Utils} from '../../common/utils';
 @Component({
   selector: 'app-navigation-controls',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './navigation-controls.component.html'
 })
 export class NavigationControlsComponent implements OnInit {

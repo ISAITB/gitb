@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {Actor} from 'src/app/types/actor';
 
@@ -21,6 +21,7 @@ import {Actor} from 'src/app/types/actor';
     selector: 'app-actor-form',
     templateUrl: './actor-form.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ActorFormComponent {

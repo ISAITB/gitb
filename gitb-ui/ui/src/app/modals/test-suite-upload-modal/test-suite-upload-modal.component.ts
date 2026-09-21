@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -41,6 +41,7 @@ import {ValidationState} from 'src/app/types/validation-state';
     selector: 'app-test-suite-upload-modal',
     templateUrl: './test-suite-upload-modal.component.html',
     styleUrls: ['./test-suite-upload-modal.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestSuiteUploadModalComponent extends BaseComponent implements OnInit {

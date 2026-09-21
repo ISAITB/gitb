@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnDestroy, OnInit} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
@@ -39,6 +39,7 @@ import {FilterUpdate} from '../../../components/test-filter/filter-update';
     selector: 'app-import',
     templateUrl: './import.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ImportComponent extends BaseComponent implements OnInit, OnDestroy, AfterViewInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -31,6 +31,7 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
     selector: 'app-endpoint-details',
     templateUrl: './endpoint-details.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class EndpointDetailsComponent extends BaseTabbedComponent implements OnInit {

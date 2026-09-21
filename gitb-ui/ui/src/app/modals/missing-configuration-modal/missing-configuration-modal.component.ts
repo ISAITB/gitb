@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
 import {OrganisationParameter} from 'src/app/types/organisation-parameter';
 import {SystemParameter} from 'src/app/types/system-parameter';
@@ -25,6 +25,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-missing-configuration-modal',
     templateUrl: './missing-configuration-modal.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MissingConfigurationModalComponent implements OnInit {

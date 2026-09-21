@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { FileData } from 'src/app/types/file-data.type';
@@ -28,6 +28,7 @@ import { ValidationState } from 'src/app/types/validation-state';
     selector: 'app-custom-property-form',
     templateUrl: './custom-property-form.component.html',
     styleUrls: ['./custom-property-form.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CustomPropertyFormComponent implements OnInit {

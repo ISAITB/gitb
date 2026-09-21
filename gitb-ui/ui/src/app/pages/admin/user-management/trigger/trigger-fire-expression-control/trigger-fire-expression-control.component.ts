@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {TriggerFireExpression} from '../../../../../types/trigger-fire-expression';
 import {DataService} from '../../../../../services/data.service';
 import {Constants} from '../../../../../common/constants';
@@ -22,6 +22,7 @@ import {Constants} from '../../../../../common/constants';
     selector: 'app-trigger-fire-expression-control',
     templateUrl: './trigger-fire-expression-control.component.html',
     styleUrl: './trigger-fire-expression-control.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TriggerFireExpressionControlComponent implements OnInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, ViewChild} from '@angular/core';
+import {Component, ElementRef, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {BaseReportSettingsFormComponent} from '../base-report-settings-form.component';
 import {ReportService} from 'src/app/services/report.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -30,6 +30,7 @@ import {Utils} from '../../../../../common/utils';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class CommunityXmlReportFormComponent extends BaseReportSettingsFormComponent {

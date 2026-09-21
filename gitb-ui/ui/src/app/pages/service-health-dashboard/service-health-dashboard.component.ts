@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {RoutingService} from '../../services/routing.service';
 import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
@@ -39,6 +39,7 @@ import {UsageTipService} from '../../services/usage-tip.service';
   selector: 'app-service-health-dashboard',
   standalone: false,
   templateUrl: './service-health-dashboard.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './service-health-dashboard.component.less'
 })
 export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {

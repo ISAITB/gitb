@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -70,6 +70,7 @@ interface CommunityOrganisationsListState {
     selector: 'app-community-details',
     templateUrl: './community-details.component.html',
     styleUrls: ['./community-details.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit, OnDestroy {

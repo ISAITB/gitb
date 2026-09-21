@@ -53,7 +53,7 @@
     }
     @if (toggleEnabled) {
         <div class="form-switch ms-3">
-            <input name="toggle" class="form-check-input" type="checkbox" role="switch" aria-label="Toggle" [(ngModel)]="toggled">
+            <input name="toggle" class="form-check-input" type="checkbox" role="switch" aria-label="Toggle" [(ngModel)]="toggled" [ngModelOptions]="{standalone: true}">
         </div>
     }
 </ng-template>

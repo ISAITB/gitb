@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {
@@ -70,6 +70,7 @@ interface DomainListState {
     selector: 'app-domain-details',
     templateUrl: './domain-details.component.html',
     styleUrls: ['./domain-details.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {

@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {BaseSessionDashboardComponent} from '../../sessions/base-session-dashboard.component';
 import {Constants} from '../../../common/constants';
 
 @Component({
     selector: 'app-session-dashboard',
     templateUrl: './../../sessions/base-session-dashboard.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SessionDashboardComponent extends BaseSessionDashboardComponent {

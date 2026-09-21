@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -51,6 +51,7 @@ import {MultiSelectFilterComponentApi} from '../../../../components/multi-select
     selector: 'app-trigger',
     templateUrl: './trigger.component.html',
     styleUrls: ['./trigger.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TriggerComponent extends BaseComponent implements OnInit, AfterViewInit {

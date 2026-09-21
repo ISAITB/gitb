@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -33,6 +33,7 @@ import { Constants } from 'src/app/common/constants';
     selector: 'app-export',
     templateUrl: './export.component.html',
     styleUrls: ['./export.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ExportComponent extends BaseComponent implements OnInit, AfterViewInit {

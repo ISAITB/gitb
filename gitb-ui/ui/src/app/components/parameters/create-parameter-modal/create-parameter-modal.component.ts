@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {Parameter} from 'src/app/types/parameter';
 import {BaseParameterModalComponent} from '../base-parameter-modal.component';
@@ -23,6 +23,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-create-parameter-modal',
     templateUrl: './create-parameter-modal.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateParameterModalComponent extends BaseParameterModalComponent implements OnInit {

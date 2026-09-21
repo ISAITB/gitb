@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 import {TestResultComments} from '../../types/test-result-comments';
@@ -30,6 +30,7 @@ import {TestResultMinimal} from '../../types/test-result-minimal';
   selector: 'app-test-result-comments-modal',
   standalone: false,
   templateUrl: './test-result-comments-modal.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './test-result-comments-modal.component.less',
 })
 export class TestResultCommentsModalComponent extends BaseComponent implements OnInit {

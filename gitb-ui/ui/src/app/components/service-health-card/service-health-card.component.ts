@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
 import {ServiceHealthCardComponentApi} from './service-health-card-component-api';
@@ -26,6 +26,7 @@ import {Constants} from '../../common/constants';
   selector: 'app-service-health-card',
   standalone: false,
   templateUrl: './service-health-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './service-health-card.component.less'
 })
 export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, forwardRef, Input, Output} from '@angular/core';
+import {Component, EventEmitter, forwardRef, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 
 @Component({
@@ -27,6 +27,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
       multi: true
     }
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './radio-card.component.less'
 })
 export class RadioCardComponent<T> implements ControlValueAccessor {

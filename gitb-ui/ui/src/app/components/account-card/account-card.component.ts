@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import { UserAccount } from 'src/app/types/user-account';
 import {DataService} from '../../services/data.service';
 import {Constants} from '../../common/constants';
@@ -22,6 +22,7 @@ import {Constants} from '../../common/constants';
   selector: 'app-account-card',
   standalone: false,
   templateUrl: './account-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './account-card.component.less'
 })
 export class AccountCardComponent implements OnInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit, ViewChild} from '@angular/core';
+import {Component, Input, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {EditorOptions} from './code-editor-options';
 import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
 import {Indicator} from './indicator';
@@ -27,6 +27,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-code-editor-modal',
     templateUrl: './code-editor-modal.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CodeEditorModalComponent extends BaseCodeEditorModalComponent implements OnInit {

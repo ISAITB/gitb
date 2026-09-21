@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {EditorOptions} from 'src/app/components/code-editor-modal/code-editor-options';
@@ -28,6 +28,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-test-trigger-modal',
     templateUrl: './test-trigger-modal.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestTriggerModalComponent extends BaseComponent implements OnInit {

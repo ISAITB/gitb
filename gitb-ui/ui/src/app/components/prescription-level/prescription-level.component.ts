@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-prescription-level',
     templateUrl: './prescription-level.component.html',
     styleUrls: ['./prescription-level.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PrescriptionLevelComponent {

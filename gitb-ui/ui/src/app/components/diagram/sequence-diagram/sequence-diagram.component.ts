@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
 import {ActorRole} from '../../../types/actor-role';
@@ -26,6 +26,7 @@ import {Utils} from '../../../common/utils';
     selector: 'app-sequence-diagram',
     templateUrl: './sequence-diagram.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SequenceDiagramComponent implements OnInit {

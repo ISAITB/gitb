@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -31,6 +31,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     selector: 'app-create-landing-page',
     templateUrl: './create-landing-page.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateLandingPageComponent extends BaseComponent implements OnInit, AfterViewInit {

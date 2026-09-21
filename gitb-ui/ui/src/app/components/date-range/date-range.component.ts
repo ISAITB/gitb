@@ -22,7 +22,8 @@ import {
   Renderer2,
   TemplateRef,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import {Constants} from '../../common/constants';
 import {NgbDate, NgbDateParserFormatter, NgbDateStruct, NgbInputDatepicker} from '@ng-bootstrap/ng-bootstrap';
@@ -35,6 +36,7 @@ import {DateRange} from './date-range';
   standalone: false,
   templateUrl: './date-range.component.html',
   styleUrl: './date-range.component.less',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     { provide: NgbDateParserFormatter, useClass: CustomDateParserFormatter },
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => DateRangeComponent), multi: true }

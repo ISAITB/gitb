@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, inject, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, inject, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Location} from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
 import {BaseComponent} from './base-component.component';
@@ -22,6 +22,7 @@ import {NgbNav} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export abstract class BaseTabbedComponent extends BaseComponent implements AfterViewInit {

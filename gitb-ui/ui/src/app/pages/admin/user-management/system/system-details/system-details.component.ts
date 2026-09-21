@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {SystemFormData} from '../system-form/system-form-data';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import {ActivatedRoute} from '@angular/router';
@@ -32,6 +32,7 @@ import {NavigationTarget} from 'src/app/types/navigation-target';
     selector: 'app-system-details',
     templateUrl: './system-details.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SystemDetailsComponent extends BaseComponent implements OnInit {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { MessageChainItem } from '../../types/message-chain-item';
 import {Constants} from '../../common/constants';
 
@@ -29,6 +29,7 @@ import {Constants} from '../../common/constants';
   selector: 'app-message-chain',
   standalone: false,
   templateUrl: './message-chain.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './message-chain.component.less'
 })
 export class MessageChainComponent {

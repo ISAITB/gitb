@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {RoutingService} from 'src/app/services/routing.service';
@@ -32,6 +32,7 @@ import {ErrorDescription} from 'src/app/types/error-description';
     selector: 'app-theme-details',
     templateUrl: './theme-details.component.html',
     styleUrls: ['./theme-details.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnInit {

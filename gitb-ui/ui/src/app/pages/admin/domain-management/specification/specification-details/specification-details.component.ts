@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {finalize, forkJoin, map, mergeMap, Observable, of, share, Subject, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -49,6 +49,7 @@ interface SpecificationListState {
 @Component({
     selector: 'app-specification-details',
     templateUrl: './specification-details.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {

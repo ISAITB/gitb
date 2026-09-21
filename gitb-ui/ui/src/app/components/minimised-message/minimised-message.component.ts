@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
@@ -28,6 +28,7 @@ import { MessageComposeService } from '../../services/message-compose.service';
   standalone: true,
   imports: [CommonModule, NgbTooltipModule],
   templateUrl: './minimised-message.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './minimised-message.component.less'
 })
 export class MinimisedMessageComponent implements OnInit, OnDestroy {

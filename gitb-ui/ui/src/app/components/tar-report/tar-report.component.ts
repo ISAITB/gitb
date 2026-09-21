@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
 import { AssertionReport } from '../diagram/assertion-report';
 import {Constants} from '../../common/constants';
 
@@ -21,6 +21,7 @@ import {Constants} from '../../common/constants';
     selector: 'app-tar-report',
     templateUrl: './tar-report.component.html',
     styleUrls: ['./tar-report.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TarReportComponent implements OnInit {

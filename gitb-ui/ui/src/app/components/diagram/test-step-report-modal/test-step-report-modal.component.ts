@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {ReportService} from 'src/app/services/report.service';
 import {StepReport} from '../report/step-report';
 import {StepData} from '../step-data';
@@ -27,6 +27,7 @@ import {Utils} from '../../../common/utils';
     selector: 'app-test-step-report-modal',
     templateUrl: './test-step-report-modal.component.html',
     styles: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestStepReportModalComponent {

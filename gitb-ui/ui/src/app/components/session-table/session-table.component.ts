@@ -26,7 +26,8 @@ import {
   Renderer2,
   SimpleChanges,
   ViewChild,
-  ViewChildren
+  ViewChildren,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
@@ -58,6 +59,7 @@ import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-bo
     selector: '[app-session-table]',
     templateUrl: './session-table.component.html',
     styleUrls: ['./session-table.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SessionTableComponent extends BaseTableComponent implements OnInit, OnChanges, OnDestroy {

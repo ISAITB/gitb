@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {ReportService} from 'src/app/services/report.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -26,6 +26,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-conformance-statement-report-form',
     templateUrl: './../community-xml-report-form/community-xml-report-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConformanceStatementReportFormComponent extends CommunityXmlReportFormComponent {

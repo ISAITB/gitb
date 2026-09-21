@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {Observable, map, share} from 'rxjs';
 import {BaseReportSettingsFormComponent} from '../base-report-settings-form.component';
 import {ConformanceService} from 'src/app/services/conformance.service';
@@ -30,6 +30,7 @@ import {Constants} from 'src/app/common/constants';
 @Component({
     selector: 'app-test-data-archive-report-form',
     templateUrl: './test-data-archive-report-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TestDataArchiveReportFormComponent extends BaseReportSettingsFormComponent {

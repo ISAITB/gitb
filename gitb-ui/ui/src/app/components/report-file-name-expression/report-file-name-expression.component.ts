@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
@@ -30,6 +30,7 @@ import {Utils} from '../../common/utils';
     selector: 'app-report-file-name-expression',
     templateUrl: './report-file-name-expression.component.html',
     styleUrl: './report-file-name-expression.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ReportFileNameExpressionComponent implements OnChanges {
