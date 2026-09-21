@@ -19,6 +19,10 @@ export interface TableColumnDefinition {
     title: string,
     iconFn?: (columnData: any) => string,
     iconTooltipFn?: (columnData: any) => string,
+    /** Optional per-row colour override for `iconFn`'s icon (e.g. a flag's configured colour). */
+    iconColourFn?: (columnData: any) => string,
+    /** Optional text label rendered alongside `iconFn`'s icon (e.g. a flag's name next to its coloured icon). */
+    iconLabelFn?: (columnData: any) => string,
     headerClass?: string,
     cellClass?: string,
     sortable?: boolean,

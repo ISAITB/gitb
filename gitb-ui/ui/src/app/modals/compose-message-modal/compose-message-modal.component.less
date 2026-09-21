@@ -1,0 +1,46 @@
+@import "../../../styles/less/_common.less";
+
+.compose-field-row {
+    .compose-label {
+        min-width: 90px;
+        text-align: right;
+        padding-right: 15px;
+        padding-top: 6px;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .compose-tooltip {
+        margin-left: 15px;
+    }
+}
+
+// Overrides the HugeRTE skin's own default spacing below its root element, which otherwise leaves a
+// visible gap between the editor and its immediate parent in this modal.
+::ng-deep .tox-tinymce {
+    margin-bottom: 0 !important;
+}
+
+.recipient-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.recipient-col {
+    min-width: 320px;
+    flex-grow: 1;
+
+    // When the Test Bed administrator's two selectors share a row, split the row exactly 50/50 (half the
+    // 15px gap subtracted from each) rather than just letting flex-grow fill leftover space unevenly.
+    // min-width preserves the existing wrap-to-full-width-rows threshold on narrow screens.
+    &.recipient-col-half {
+        flex: 1 1 calc(50% - 7.5px);
+        min-width: 200px;
+    }
+}
+.important-icon {
+    color: @error-color;
+}
+

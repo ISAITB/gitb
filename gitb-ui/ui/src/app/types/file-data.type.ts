@@ -19,5 +19,6 @@ export interface FileData {
     size: number
     type: string
     file?: File
+    uuid?: string
 
 }

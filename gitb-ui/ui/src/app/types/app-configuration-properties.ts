@@ -42,11 +42,14 @@ export interface AppConfigurationProperties {
   savedFileMaxSize: number
   mode: string
   automationApiEnabled: boolean
+  testServiceCallbacksApiKeysEnabled: boolean
   versionNumber: string
   hasDefaultLegalNotice: boolean
   conformanceStatementReportMaxTestCases: number
   headerNameAuthenticationCookiePath: string
   welcomePageTitle: string
   preparingForShutdown: boolean
+  dateFormat: string
+  dateTimeFormat: string
 
 }

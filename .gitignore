@@ -52,3 +52,12 @@ test/resources/repository
 /gitb-ui/project/project/.bloop/
 /gitb-ui/project/project/project/
 /gitb-ui/project/project/
+/CLAUDE.md
+/.claude/
+/.worktrees/
+/.screenshots/
+.worktreeinclude
+/deps.txt
+/gitb-ui/deps.txt
+.playwright-cli/
+.screenshots/

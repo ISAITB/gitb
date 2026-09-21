@@ -1,8 +1,8 @@
 <div class="rootDiv">
     @if (icon) {
-        <button #button id="button-options" #pop="ngbTooltip" type="button" [pending]="pending" [icon]="true" [class.open]="open" [class.btn-sm]="smallButton" class="btn btn-secondary text-nowrap" (click)="buttonClicked(pop); $event.stopPropagation()" tooltipClass="shortTooltip" container="body" [ngbTooltip]="label" [triggers]="'mouseover:mouseout'" [openDelay]="Constants.TOOLTIP_DELAY"><i [class]="icon"></i></button>
+        <button #button id="button-options" #pop="ngbTooltip" type="button" [pending]="pending" [icon]="true" [class.open]="open" [class.btn-sm]="smallButton" class="btn btn-secondary text-nowrap" (click)="buttonClicked(pop); $event.stopPropagation(); $event.preventDefault()" tooltipClass="shortTooltip" container="body" [ngbTooltip]="label" [triggers]="'mouseover:mouseout'" [openDelay]="Constants.TOOLTIP_DELAY"><i [class]="icon"></i></button>
     } @else {
-        <button #button id="button-options" type="button" [class.open]="open" [class.btn-sm]="smallButton" [labelIcon]="labelIcon" [pending]="pending" class="btn btn-secondary text-nowrap dropdown-toggle" (click)="buttonClicked(); $event.stopPropagation()"><span class="me-2">{{label}}</span></button>
+        <button #button id="button-options" type="button" [class.open]="open" [class.btn-sm]="smallButton" [labelIcon]="labelIcon" [pending]="pending" class="btn btn-secondary text-nowrap dropdown-toggle" (click)="buttonClicked(); $event.stopPropagation(); $event.preventDefault()"><span class="me-2">{{label}}</span></button>
     }
     <ng-template #popupTemplate>
         <div class="optionForm" [class.singleSelection]="singleSelection">
@@ -10,18 +10,26 @@
                 @for (optionSet of options; track index1; let index1 = $index) {
                     <div class="row">
                         @for (option of optionSet; track index2; let index2 = $index) {
-                            <div class="col-12 itemContainer" (click)="handleClick(option.key); $event.stopPropagation()">
-                                <div class="d-flex">
-                                    @if (singleSelection) {
-                                        <div class="optionLabel">@if (option.iconClass) { <div class="optionIcon"><i [ngClass]="option.iconClass!"></i></div> } <div>{{option.label}}</div></div>
-                                    } @else {
-                                        <input class="form-check-input" type="checkbox" [attr.id]="'option-'+index1+'-'+index2" [attr.name]="'option-'+index1+'-'+index2" [(ngModel)]="currentState[option.key]" (ngModelChange)="updated.emit(currentState)">
-                                        <label class="form-check-label disable-select" [attr.for]="'option-'+index1+'-'+index2">
-                                            <span class="optionLabel">@if (option.iconClass) { <i class="optionIcon" [ngClass]="option.iconClass!"></i> } {{option.label}}</span>
-                                        </label>
-                                    }
+                            @if (option.target) {
+                                <a class="col-12 itemContainer plain-link" [navTarget]="option.target" (click)="handleClick(option, $event); $event.stopPropagation()">
+                                    <div class="d-flex">
+                                        <div class="optionLabel">@if (option.iconClass) { @if (option.iconBackground) { <span class="optionIcon" [style.text-shadow]="(option.iconShadowColor?'0 0 1px '+option.iconShadowColor:null)"><span class="fa-stack"><i class="fa-stack-2x" [ngClass]="option.iconBackgroundClass ?? 'fa-solid fa-circle'" [style.color]="option.iconBackground"></i><i class="fa-stack-1x" [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i></span></span> } @else { <div class="optionIcon"><i [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i></div> } } <div>{{option.label}}</div></div>
+                                    </div>
+                                </a>
+                            } @else {
+                                <div class="col-12 itemContainer" (click)="handleClick(option); $event.stopPropagation()">
+                                    <div class="d-flex">
+                                        @if (singleSelection) {
+                                            <div class="optionLabel">@if (option.iconClass) { @if (option.iconBackground) { <span class="optionIcon" [style.text-shadow]="(option.iconShadowColor?'0 0 1px '+option.iconShadowColor:null)"><span class="fa-stack"><i class="fa-stack-2x" [ngClass]="option.iconBackgroundClass ?? 'fa-solid fa-circle'" [style.color]="option.iconBackground"></i><i class="fa-stack-1x" [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i></span></span> } @else { <div class="optionIcon"><i [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i></div> } } <div>{{option.label}}</div></div>
+                                        } @else {
+                                            <input class="form-check-input" type="checkbox" [attr.id]="'option-'+index1+'-'+index2" [attr.name]="'option-'+index1+'-'+index2" [(ngModel)]="currentState[option.key]" (ngModelChange)="updated.emit(currentState)" [disabled]="option.disabled || false">
+                                            <label class="form-check-label disable-select" [attr.for]="'option-'+index1+'-'+index2" [class.text-muted]="option.disabled">
+                                                <span class="optionLabel">@if (option.iconClass) { @if (option.iconBackground) { <span class="optionIcon" [style.text-shadow]="(option.iconShadowColor?'0 0 1px '+option.iconShadowColor:null)"><span class="fa-stack"><i class="fa-stack-2x" [ngClass]="option.iconBackgroundClass ?? 'fa-solid fa-circle'" [style.color]="option.iconBackground"></i><i class="fa-stack-1x" [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i></span></span> } @else { <i class="optionIcon" [ngClass]="option.iconClass!" [style.color]="option.iconColour"></i> } } {{option.label}}</span>
+                                            </label>
+                                        }
+                                    </div>
                                 </div>
-                            </div>
+                            }
                         }
                         @if (!$last) {
                             <div class="separator"></div>
@@ -29,6 +37,15 @@
                     </div>
                 }
             </div>
+            @if (bulkSelection && !singleSelection) {
+                <div class="panelFooter">
+                    <div class="separator"></div>
+                    <div class="btn-toolbar">
+                        <button type="button" class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.SELECT" [disable]="allSelected()" (click)="selectAll(); $event.stopPropagation()">All</button>
+                        <button type="button" class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.NONE" [disable]="noneSelected()" (click)="selectNone(); $event.stopPropagation()">None</button>
+                    </div>
+                </div>
+            }
         </div>
     </ng-template>
 </div>

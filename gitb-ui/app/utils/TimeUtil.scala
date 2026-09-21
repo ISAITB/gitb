@@ -15,46 +15,65 @@
 
 package utils
 
-import models.Constants
+import config.Configurations
 
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
+import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.time.{ZoneId, ZonedDateTime}
-import java.util.{Calendar, Date, TimeZone}
+import java.util.Date
 
 object TimeUtil {
 
   private val MS_IN_A_SECOND = 1000L
-  private val DATE_FORMATTER_UTC = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-  private val UTC_ZONE = ZoneId.of("UTC")
 
-  private val formatUTC: SimpleDateFormat = {
-    val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    format.setTimeZone(TimeZone.getTimeZone("UTC"))
-    format
-  }
-
+  /**
+   * Parses a date/time string (as submitted by the UI as a filter bound) as wall-clock time in the application's
+   * configured/default timezone and date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
+   */
   def dateFromFilterString(dateStr: Option[String]): Option[Date] = {
-    if (dateStr.isEmpty) {
-      None
-    } else {
-      Some(new SimpleDateFormat(Constants.FilterDateFormat).parse(dateStr.get))
-    }
+    dateStr.map(str => Date.from(Instant.from(Configurations.DATE_TIME_FORMATTER.parse(str))))
   }
 
-  def serializeTimestamp(t:Timestamp): String = {
-    new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date(t.getTime))
+  /**
+   * Formats the provided instant for display using the application's configured/default timezone and
+   * date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
+   */
+  def serializeTimestamp(t: Timestamp): String = {
+    Configurations.DATE_TIME_FORMATTER.format(t.toInstant)
   }
 
-  def serializeTimestampUTC(t:Timestamp): String = {
-    ZonedDateTime.of(t.toLocalDateTime, ZoneId.systemDefault())
-      .withZoneSameInstant(UTC_ZONE)
-      .format(DATE_FORMATTER_UTC)
+  /**
+   * Formats the provided date (an instant) for display in the application's configured/default timezone
+   * (see [[Configurations.TIME_ZONE]]), using the given (arbitrary, not necessarily the configured)
+   * pattern. Prefer [[formatDateTime]] or [[formatFileDate]] when formatting using one of the currently
+   * configured patterns, to avoid re-parsing the pattern string on every call.
+   */
+  def formatDate(date: Date, pattern: String): String = {
+    DateTimeFormatter.ofPattern(pattern).withZone(Configurations.TIME_ZONE).format(date.toInstant)
   }
 
-  def parseTimestamp(timestamp:String): Timestamp = {
-    new Timestamp(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse(timestamp).getTime)
+  /**
+   * Formats the provided date (an instant) for display using the application's configured/default
+   * timezone and date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
+   */
+  def formatDateTime(date: Date): String = {
+    Configurations.DATE_TIME_FORMATTER.format(date.toInstant)
+  }
+
+  /**
+   * Formats the provided date (an instant) for use in report file names, using the application's
+   * configured/default timezone and file name date format (see [[Configurations.DATE_FILE_FORMATTER]]).
+   */
+  def formatFileDate(date: Date): String = {
+    Configurations.DATE_FILE_FORMATTER.format(date.toInstant)
+  }
+
+  /**
+   * Parses a date/time string (as submitted by the UI, e.g. as a filter bound) as wall-clock time in the
+   * application's configured/default timezone and date/time format (see [[Configurations.DATE_TIME_FORMATTER]]).
+   */
+  def parseTimestamp(timestamp: String): Timestamp = {
+    Timestamp.from(Instant.from(Configurations.DATE_TIME_FORMATTER.parse(timestamp)))
   }
 
   def getCurrentTimestamp(): Timestamp = {
@@ -69,18 +88,8 @@ object TimeUtil {
     }
   }
 
-  def getTimeDifferenceInSeconds(timestamp:String):Long = {
-    getTimeDifference(timestamp) / MS_IN_A_SECOND
-  }
-
   def getTimeDifferenceInSeconds(timestamp:Timestamp):Long = {
     (getCurrentTimestamp().getTime - timestamp.getTime) / MS_IN_A_SECOND
-  }
-
-  private def getTimeDifference(timestamp:String): Long = {
-    val d = formatUTC.parse(timestamp)
-    val curr = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime
-    curr.getTime - d.getTime
   }
 
 }

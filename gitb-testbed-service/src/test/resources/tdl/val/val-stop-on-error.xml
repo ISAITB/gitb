@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-stop-on-error" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Failed verify with stopOnError stops session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <verify handler="StringValidator" desc="failing check">
+            <input name="actual">'wrong'</input>
+            <input name="expected">'right'</input>
+        </verify>
+        <!-- Unreachable step -->
+        <verify handler="ExpressionValidator" desc="should be skipped">
+            <input name="expression">true()</input>
+        </verify>
+    </steps>
+</testcase>

@@ -24,34 +24,22 @@ import com.gitb.engine.messaging.handlers.model.TransactionContext;
 import com.gitb.messaging.Message;
 import com.gitb.types.*;
 import com.gitb.utils.ConfigurationUtils;
-import org.apache.http.HttpConnectionFactory;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpStatus;
-import org.apache.http.HttpVersion;
-import org.apache.http.config.ConnectionConfig;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.impl.BHttpConnectionBase;
-import org.apache.http.impl.DefaultBHttpClientConnection;
-import org.apache.http.impl.DefaultBHttpClientConnectionFactory;
-import org.apache.http.impl.DefaultBHttpServerConnection;
-import org.apache.http.message.BasicHttpEntityEnclosingRequest;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
+import java.io.ByteArrayOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Created by serbay on 9/23/14.
@@ -59,23 +47,10 @@ import java.util.Objects;
 public class HttpSender extends AbstractTransactionSender {
     private static final Logger logger = LoggerFactory.getLogger(HttpSender.class);
 
-    private static final int BUFFER_SIZE = 8 * 1024;
-    private static final HttpConnectionFactory<DefaultBHttpClientConnection> httpConnectionFactory;
+    private static final int DEFAULT_STATUS_CODE = 200;
 
-    static {
-        ConnectionConfig connectionConfig = ConnectionConfig
-                .custom()
-                .setBufferSize(BUFFER_SIZE)
-                .setCharset(Charset.defaultCharset())
-                .build();
-
-        httpConnectionFactory = new DefaultBHttpClientConnectionFactory(connectionConfig);
-    }
-
-    /**
-     * Default HTTP Connection object
-     */
-    protected BHttpConnectionBase connection;
+    /** Default HTTP Connection object, shared with a peer {@link HttpReceiver} acting on the same transaction. */
+    private SimpleHttpConnection connection;
 
     public HttpSender(SessionContext session, TransactionContext transaction) {
         super(session, transaction);
@@ -107,21 +82,21 @@ public class HttpSender extends AbstractTransactionSender {
         super.send(configurations, message);
 
         //use the connection retrieved from the transaction
-        connection = transaction.getParameter(BHttpConnectionBase.class);
+        connection = transaction.getParameter(SimpleHttpConnection.class);
 
-        //if the connection is null, that means transaction has just begun, so create new
+        //if the connection is null, that means transaction has just begun, so create new (as the client side, since we are sending first)
         if (connection == null) {
-            connection = httpConnectionFactory.createConnection(getSocket());
-            transaction.setParameter(BHttpConnectionBase.class, connection);
+            connection = new SimpleHttpConnection(getSocket(), SimpleHttpConnection.Role.CLIENT);
+            transaction.setParameter(SimpleHttpConnection.class, connection);
         }
 
-        //connection is a client connection and will send HTTP requests
-        if (connection instanceof DefaultBHttpClientConnection) {
+        //connection was created as a client connection (by this class) and will send HTTP requests
+        if (connection.role() == SimpleHttpConnection.Role.CLIENT) {
             sendHttpRequest(configurations, message);
         }
 
-        //connection has received an HTTP request and will send a response
-        if (connection instanceof DefaultBHttpServerConnection) {
+        //connection was created as a server connection (by the peer HttpReceiver) and will send an HTTP response
+        if (connection.role() == SimpleHttpConnection.Role.SERVER) {
             sendHttpResponse(configurations, message);
         }
 
@@ -131,111 +106,130 @@ public class HttpSender extends AbstractTransactionSender {
     private void sendHttpRequest(List<Configuration> configurations, Message message) throws Exception {
         logger.debug(addMarker(), "Connection created: {}", connection);
 
-        BasicHttpEntityEnclosingRequest request = createHttpRequest(configurations, message);
+        Http11Request request = createHttpRequest(configurations, message);
 
-        ((DefaultBHttpClientConnection) connection).sendRequestHeader(request);
-        logger.debug(addMarker(), "Sent request: {}", request);
-        ((DefaultBHttpClientConnection) connection).flush();
+        Http11Wire.writeRequestLine(connection.outputStream(), request.method(), request.path());
+        Http11Wire.writeHeaders(connection.outputStream(), request.headers());
+        connection.flush();
+        logger.debug(addMarker(), "Sent request: {} {}", request.method(), request.path());
 
-        ((DefaultBHttpClientConnection) connection).sendRequestEntity(request);
-        logger.debug(addMarker(), "Sent entity: {} - {}", request, request.getEntity());
-
-        ((DefaultBHttpClientConnection) connection).flush();
-        logger.debug(addMarker(), "Flushed connection: {}", connection);
+        Http11Wire.writeBody(connection.outputStream(), request.body());
+        connection.flush();
+        logger.debug(addMarker(), "Sent entity: {} bytes", request.body() == null ? 0 : request.body().length);
     }
 
     private void sendHttpResponse(List<Configuration> configurations, Message message) throws Exception {
-        BasicHttpResponse response = createHttpResponse(configurations, message);
+        Http11Response response = createHttpResponse(configurations, message);
 
-        ((DefaultBHttpServerConnection) connection).sendResponseHeader(response);
-        logger.debug(addMarker(), "Sent response: {}", response);
+        Http11Wire.writeStatusLine(connection.outputStream(), response.statusCode(), response.reasonPhrase());
+        Http11Wire.writeHeaders(connection.outputStream(), response.headers());
+        connection.flush();
+        logger.debug(addMarker(), "Sent response: {}", response.statusCode());
 
-        ((DefaultBHttpServerConnection) connection).sendResponseEntity(response);
-        logger.debug(addMarker(), "Sent response entity: {} - {}", response, response.getEntity());
-
-        ((DefaultBHttpServerConnection) connection).flush();
-        logger.debug(addMarker(), "Flushed connection: {}", connection);
+        Http11Wire.writeBody(connection.outputStream(), response.body());
+        connection.flush();
+        logger.debug(addMarker(), "Sent response entity: {} bytes", response.body() == null ? 0 : response.body().length);
     }
 
-    protected BasicHttpEntityEnclosingRequest createHttpRequest(List<Configuration> configurations, Message message) {
+    protected Http11Request createHttpRequest(List<Configuration> configurations, Message message) {
         String method = getHttpMethod(configurations, message);
         String path = getHttpPath(configurations, message);
-        Map<String, String> headers = getHttpHeaders(message);
+        Map<String, String> customHeaders = getHttpHeaders(message);
 
-        BasicHttpEntityEnclosingRequest request = new BasicHttpEntityEnclosingRequest(method, path);
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        byte[] body = buildBody(message, headers);
 
-        byte[] messageContent = getHttpBody(message);
-        if (messageContent != null) {
-            ByteArrayEntity entity = new ByteArrayEntity(messageContent);
-            request.setEntity(entity);
-            request.addHeader(entity.getContentEncoding());
-            request.addHeader(entity.getContentType());
-            request.addHeader(HTTP.CONTENT_LEN, String.valueOf(entity.getContentLength()));
-            request.addHeader(HTTP.TARGET_HOST, getHost() + ":" + getPort());
-        } else {
-            ListType partInput = (ListType) message.getFragments().get(HttpMessagingHandler.HTTP_PARTS_FIELD_NAME);
-            if (partInput != null) {
-                // Send the request as a multipart request.
-                if (!partInput.isEmpty() && "map".equals(partInput.getContainedType())) {
-                    List<MapType> parts = (List<MapType>) partInput.getValue();
-                    MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
-                    for (MapType partInfo: parts) {
-                        String name = (String)(partInfo.getItem("name")).getValue();
-                        StringType fileName = (StringType)partInfo.getItem("file_name");
-                        DataType content = partInfo.getItem("content");
-                        if (fileName == null) {
-                            // Text part.
-                            if (!(content instanceof StringType)) {
-                                content = content.convertTo(DataType.STRING_DATA_TYPE);
-                            }
-                            entityBuilder.addTextBody(name, (String)content.getValue());
-                        } else {
-                            // Binary/File part.
-                            String fileNameValue = (fileName).getValue();
-                            String contentType = (String)(partInfo.getItem("content_type")).getValue();
-                            if (!(content instanceof BinaryType)) {
-                                content = content.convertTo(DataType.BINARY_DATA_TYPE);
-                            }
-                            entityBuilder.addBinaryBody(name, (byte[])content.getValue(), ContentType.getByMimeType(contentType), fileNameValue);
-                        }
-                    }
-                    HttpEntity entity = entityBuilder.build();
-                    request.setEntity(entity);
-                    request.addHeader(entity.getContentEncoding());
-                    request.addHeader(entity.getContentType());
-                    request.addHeader(HTTP.CONTENT_LEN, String.valueOf(entity.getContentLength()));
-                    request.addHeader(HTTP.TARGET_HOST, getHost() + ":" + getPort());
-                } else {
-                    logger.warn(addMarker(), "Input for " + HttpMessagingHandler.HTTP_PARTS_FIELD_NAME + " must contain map items");
-                }
-            } else {
-                request.addHeader(HTTP.CONTENT_LEN, "0");
-                request.addHeader(HTTP.TARGET_HOST, getHost() + ":" + getPort());
-            }
-        }
+        headers.putAll(customHeaders);
 
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            request.setHeader(entry.getKey(), entry.getValue());
-        }
-
-        return request;
+        return new Http11Request(method, path, headers, body);
     }
 
-    protected BasicHttpResponse createHttpResponse(List<Configuration> configurations, Message message) {
-        BasicHttpEntityEnclosingRequest request = createHttpRequest(configurations, message);
-        BasicHttpResponse response;
+    protected Http11Response createHttpResponse(List<Configuration> configurations, Message message) {
+        Http11Request request = createHttpRequest(configurations, message);
 
-        Configuration statusCode = ConfigurationUtils.getConfiguration(configurations, HttpMessagingHandler.HTTP_STATUS_CODE_CONFIG_NAME);
-        if (statusCode == null) { //send default response status code
-            response = new BasicHttpResponse(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, null);
+        int statusCode;
+        Configuration statusCodeConfig = ConfigurationUtils.getConfiguration(configurations, HttpMessagingHandler.HTTP_STATUS_CODE_CONFIG_NAME);
+        if (statusCodeConfig == null) { //send default response status code
+            statusCode = DEFAULT_STATUS_CODE;
         } else { //send status code provided as configuration
-            int status = Integer.parseInt(statusCode.getValue());
-            response = new BasicHttpResponse(HttpVersion.HTTP_1_1, status, null);
+            statusCode = Integer.parseInt(statusCodeConfig.getValue());
         }
 
-        response.setHeaders(request.getAllHeaders());
-        response.setEntity(request.getEntity());
-        return response;
+        return new Http11Response(statusCode, Http11Wire.reasonPhrase(statusCode), request.headers(), request.body());
+    }
+
+    /**
+     * Builds the request/response body, populating the {@code Content-Length} and {@code Host} headers to match
+     * (both for a raw body and for a multipart body). Mirrors the previous entity-construction logic, including
+     * the fact that no headers or body are set at all when the {@code http_parts} input is present but malformed.
+     */
+    private byte[] buildBody(Message message, LinkedHashMap<String, String> headers) {
+        byte[] messageContent = getHttpBody(message);
+        if (messageContent != null) {
+            headers.put("Content-Length", String.valueOf(messageContent.length));
+            headers.put("Host", getHost() + ":" + getPort());
+            return messageContent;
+        }
+
+        ListType partInput = (ListType) message.getFragments().get(HttpMessagingHandler.HTTP_PARTS_FIELD_NAME);
+        if (partInput != null) {
+            // Send the request as a multipart request.
+            if (!partInput.isEmpty() && "map".equals(partInput.getContainedType())) {
+                @SuppressWarnings("unchecked")
+                List<MapType> parts = (List<MapType>) partInput.getValue();
+                MultipartBody multipart = buildMultipartBody(parts);
+                headers.put("Content-Type", multipart.contentType());
+                headers.put("Content-Length", String.valueOf(multipart.body().length));
+                headers.put("Host", getHost() + ":" + getPort());
+                return multipart.body();
+            } else {
+                logger.warn(addMarker(), "Input for " + HttpMessagingHandler.HTTP_PARTS_FIELD_NAME + " must contain map items");
+                return null;
+            }
+        } else {
+            headers.put("Content-Length", "0");
+            headers.put("Host", getHost() + ":" + getPort());
+            return new byte[0];
+        }
+    }
+
+    private MultipartBody buildMultipartBody(List<MapType> parts) {
+        String boundary = "----------------------------" + UUID.randomUUID().toString().replace("-", "");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (MapType partInfo: parts) {
+            String name = (String)(partInfo.getItem("name")).getValue();
+            StringType fileName = (StringType)partInfo.getItem("file_name");
+            DataType content = partInfo.getItem("content");
+            writeAscii(out, "--" + boundary + Http11Wire.CRLF);
+            if (fileName == null) {
+                // Text part.
+                if (!(content instanceof StringType)) {
+                    content = content.convertTo(DataType.STRING_DATA_TYPE);
+                }
+                writeAscii(out, "Content-Disposition: form-data; name=\"" + name + "\"" + Http11Wire.CRLF);
+                writeAscii(out, "Content-Type: text/plain; charset=ISO-8859-1" + Http11Wire.CRLF);
+                writeAscii(out, Http11Wire.CRLF);
+                writeAscii(out, (String) content.getValue());
+            } else {
+                // Binary/File part.
+                String fileNameValue = fileName.getValue();
+                String contentType = (String)(partInfo.getItem("content_type")).getValue();
+                if (!(content instanceof BinaryType)) {
+                    content = content.convertTo(DataType.BINARY_DATA_TYPE);
+                }
+                writeAscii(out, "Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + fileNameValue + "\"" + Http11Wire.CRLF);
+                writeAscii(out, "Content-Type: " + contentType + Http11Wire.CRLF);
+                writeAscii(out, Http11Wire.CRLF);
+                out.writeBytes((byte[]) content.getValue());
+            }
+            writeAscii(out, Http11Wire.CRLF);
+        }
+        writeAscii(out, "--" + boundary + "--" + Http11Wire.CRLF);
+        return new MultipartBody("multipart/form-data; boundary=" + boundary, out.toByteArray());
+    }
+
+    private static void writeAscii(ByteArrayOutputStream out, String text) {
+        out.writeBytes(text.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     protected byte[] getHttpBody(Message message) {
@@ -324,5 +318,16 @@ public class HttpSender extends AbstractTransactionSender {
         ActorConfiguration actorConfiguration = transaction.getWith();
         Configuration port = Objects.requireNonNull(ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME));
         return Objects.requireNonNull(port).getValue();
+    }
+
+    /** Minimal request representation, replacing the previous {@code BasicHttpEntityEnclosingRequest}. */
+    protected record Http11Request(String method, String path, LinkedHashMap<String, String> headers, byte[] body) {
+    }
+
+    /** Minimal response representation, replacing the previous {@code BasicHttpResponse}. */
+    protected record Http11Response(int statusCode, String reasonPhrase, LinkedHashMap<String, String> headers, byte[] body) {
+    }
+
+    private record MultipartBody(String contentType, byte[] body) {
     }
 }

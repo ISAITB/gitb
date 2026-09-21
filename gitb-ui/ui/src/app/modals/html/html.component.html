@@ -5,10 +5,13 @@
 }
 <div class="modal-body html-modal">
     <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
-    <div id="content" [innerHtml]="html | sanitizeHtml"></div>
+    <div id="content" [innerHtml]="html | sanitizeHtml" class="no-margin-on-last-p"></div>
 </div>
 <div class="modal-footer html-modal">
     <div class="btn-toolbar">
         <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
+        @if (showDownload) {
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" class="btn btn-secondary" [pending]="downloadPending" (click)="download.emit()">Download</button>
+        }
     </div>
 </div>

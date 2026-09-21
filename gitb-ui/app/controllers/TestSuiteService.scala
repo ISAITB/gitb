@@ -120,6 +120,34 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 		}
 	}
 
+	def previewTestSuiteDocumentationInReports(): Action[AnyContent] = authorizedAction.async { request =>
+		authorizationManager.canPreviewDocumentation(request).flatMap { _ =>
+			val userId = ParameterExtractor.extractUserId(request)
+			val documentation = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOCUMENTATION))
+			communityManager.getUserCommunityId(userId).map { communityId =>
+				val reportPath = Paths.get(
+					repositoryUtils.getTempReportFolder().getAbsolutePath,
+					"reports",
+					"preview_"+UUID.randomUUID().toString+".pdf"
+				)
+				try {
+					reportManager.generateTestSuiteDocumentationPreviewReport(reportPath, communityId, documentation)
+					Ok.sendFile(
+						content = reportPath.toFile,
+						fileName = _ => Some("report_preview.pdf"),
+						onClose = () => {
+							FileUtils.deleteQuietly(reportPath.toFile)
+						}
+					)
+				} catch {
+					case e: Exception =>
+						FileUtils.deleteQuietly(reportPath.toFile)
+						throw e
+				}
+			}
+		}
+	}
+
 	def undeployTestSuite(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canDeleteTestSuite(request, testSuiteId).flatMap { _ =>
 			testSuiteManager.undeployTestSuiteWrapper(testSuiteId).map { _ =>

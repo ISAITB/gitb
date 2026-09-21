@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHandler {
 
-    private static final String SOAP_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope";
+    private static final String SOAP_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/";
     private static final String TESTBED_CLIENT_NODE = "TestbedClient";
     private static final Logger LOG = LoggerFactory.getLogger(TestbedServiceCallbackHandler.class);
     private static TestbedServiceCallbackHandler instance = null;
@@ -83,6 +83,10 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
             }
         });
         frontEndToClientMap.clear();
+    }
+
+    public void registerForTest(String sessionId, TestbedClient client) {
+        sessionToClientMap.put(sessionId, client);
     }
 
     @Override

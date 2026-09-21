@@ -1,0 +1,46 @@
+@if (chain.length > 0) {
+    <div class="message-chain">
+        @if (continuesToContent && connectorPosition === 'before') {
+            <div class="message-chain-line continues"></div>
+        }
+        <div>
+            <button class="btn btn-sm btn-secondary" (click)="toggleChain()">
+                @if (chainExpanded) {
+                    <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.COLLAPSE_CIRCLE"></i></span>Hide earlier messages
+                } @else {
+                    <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.EXPAND_CIRCLE"></i></span>Show earlier messages
+                }
+            </button>
+        </div>
+        <div [ngbCollapse]="!chainExpanded" [animation]="true">
+            <div class="message-chain-line"></div>
+            @for (item of chain; track item.id; let last = $last) {
+                <div class="message-chain-item">
+                    <app-message-item
+                        [itemId]="item.id"
+                        [subject]="item.subject"
+                        [body]="item.body"
+                        [important]="!!item.important"
+                        [date]="item.date"
+                        peerLabel="From"
+                        [peerName]="item.senderName"
+                        [peerSubText]="item.senderUserName"
+                        [collapsedByDefault]="false"
+                        [showOptions]="interactive"
+                        [replyPending]="!!item.replyPending"
+                        [markReadOrUnreadPending]="!!item.markReadOrUnreadPending"
+                        [deletePending]="!!item.deletePending"
+                        [showDelete]="false"
+                        [showMarkReadOrUnread]="false"
+                        (replyRequested)="replyRequested.emit({ id: item.id, subject: item.subject })"></app-message-item>
+                </div>
+                @if (!last) {
+                    <div class="message-chain-line"></div>
+                }
+            }
+        </div>
+        @if (continuesToContent && connectorPosition === 'after') {
+            <div class="message-chain-line continues"></div>
+        }
+    </div>
+}

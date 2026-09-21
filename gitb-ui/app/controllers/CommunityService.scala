@@ -20,9 +20,9 @@ import controllers.CommunityService.SelfRegistrationInfo
 import controllers.util.ParameterExtractor.{optionalLongBodyParameter, requiredBodyParameter}
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
-import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
+import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager, TestFlagManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
-import models.{ActualUserInfo, Communities, Enums, Organizations, Users}
+import models._
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
@@ -68,6 +68,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
                                   cc: ControllerComponents,
                                   communityManager: CommunityManager,
                                   organisationManager: OrganizationManager,
+                                  testFlagManager: TestFlagManager,
                                   authorizationManager: AuthorizationManager,
                                   authenticationManager: AuthenticationManager)
                                  (implicit ec: ExecutionContext) extends AbstractController(cc) {
@@ -127,7 +128,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       val withDefaultOrganisation = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.COMMUNITY_SELFREG_DEFAULT_ORGANISATION).getOrElse(false)
       val withDefaultUserPreferences = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.PREFERENCES).getOrElse(false)
       communityManager.getCommunityById(communityId, withDefaultOrganisation, withDefaultUserPreferences).map { community =>
-        val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
+        val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -155,6 +156,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
       val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
       val allowXmlReports = requiredBodyParameter(request, ParameterNames.ALLOW_XML_REPORTS).toBoolean
+      val allowObsoleteSessionDeletion = requiredBodyParameter(request, ParameterNames.ALLOW_OBSOLETE_SESSION_DELETION).toBoolean
+      val allowAdminSenderNames = requiredBodyParameter(request, ParameterNames.ALLOW_ADMIN_SENDER_NAMES).toBoolean
+      val allowOrganisationSenderNames = requiredBodyParameter(request, ParameterNames.ALLOW_ORGANISATION_SENDER_NAMES).toBoolean
       val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
       var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
       var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -213,7 +217,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens,
         selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinJoinAsAdmin,
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-        allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
+        allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion,
+        allowAdminSenderNames, allowOrganisationSenderNames,
         domainId, selfRegDefaultOrganisation, Some(ParameterExtractor.extractUserPreferenceDefaults(request)), forceUserPreferences, tags
       ).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -493,11 +498,24 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   def getUserCommunity: Action[AnyContent] = authorizedAction.async { request =>
     val userId = ParameterExtractor.extractUserId(request)
     authorizationManager.canViewOwnCommunity(request).flatMap { _ =>
-      communityManager.getUserCommunity(userId).flatMap { community =>
-        communityManager.getCommunityLabels(community.id).map { labels =>
-          val json: String = JsonUtil.serializeCommunity(community, Some(labels), includeAdminInfo = false)
-          ResponseConstructor.constructJsonResponse(json)
-        }
+      communityManager.getCommunityInfoForLogin(userId).map { communityInfo =>
+        val json: String = JsonUtil.jsCommunityInfoForLogin(communityInfo).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  /**
+    * All communities' test flags for the Test Bed administrator's login cache (the session dashboard has
+    * no single "community in scope" to lazily key a per-community fetch off). Returns an empty result if
+    * the total flag count exceeds the configured safety cap - the client then falls back to fetching a
+    * specific community's flags on demand once one is in scope.
+    */
+  def getAllCommunityTestFlags: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewAllCommunityTestFlags(request).flatMap { _ =>
+      testFlagManager.getAllTestFlagsForAdminLogin.map { flagsByCommunity =>
+        val json: String = JsonUtil.jsAllCommunityTestFlagsForAdminLogin(flagsByCommunity.getOrElse(Map.empty)).toString()
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

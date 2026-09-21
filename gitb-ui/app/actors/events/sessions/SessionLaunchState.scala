@@ -158,7 +158,8 @@ class SessionLaunchState {
         organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
         systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == "SIMPLE"))),
         testServiceParameters = data.get.testServiceParameters,
-        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None
+        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None,
+        settings = Some(TypedActorConfiguration.fromSettings())
       )
     } else {
       // Include all configuration values
@@ -168,7 +169,8 @@ class SessionLaunchState {
         organisationParameters = Some(data.get.organisationParameters),
         systemParameters = Some(data.get.systemParameters),
         testServiceParameters = data.get.testServiceParameters,
-        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None
+        predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None,
+        settings = Some(TypedActorConfiguration.fromSettings())
       )
     }
   }

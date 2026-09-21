@@ -47,9 +47,24 @@ export class AccountService {
         this.updatePreferenceForStatementsCollapsed(!statementDetailsVisible).subscribe(() => {})
       }
     })
+    this.dataService.onStatementsListViewChange$.subscribe((listView) => {
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForStatementsListView(listView).subscribe(() => {})
+      }
+    })
+    this.dataService.onMessagesSplitViewChange$.subscribe((splitView) => {
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForMessagesSplitView(splitView).subscribe(() => {})
+      }
+    })
     this.dataService.onPageSizeChange$.subscribe((pageSize) => {
       if (!this.dataService.isDemoAccount()) {
         this.updatePreferenceForPageSize(pageSize).subscribe(() => {})
+      }
+    })
+    this.dataService.onSessionColumnsChange$.subscribe(({ key, value }) => {
+      if (!this.dataService.isDemoAccount()) {
+        this.updatePreferenceForSessionColumns(key, value).subscribe(() => {})
       }
     })
   }
@@ -152,7 +167,11 @@ export class AccountService {
       menu_collapsed: preferences.menuCollapsed,
       statements_collapsed: preferences.statementsCollapsed,
       page_size: preferences.pageSize,
-      home_page_type: preferences.homePageType
+      home_page_type: preferences.homePageType,
+      own_sessions: preferences.ownSessions,
+      all_sessions: preferences.allSessions,
+      statements_list_view: preferences.statementsListView,
+      messages_split_view: preferences.messagesSplitView,
     }
     if (name != undefined) {
       data.user_name = name
@@ -184,10 +203,41 @@ export class AccountService {
     })
   }
 
+  updatePreferenceForStatementsListView(value: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForStatementsListView().url,
+      data: {
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForMessagesSplitView(value: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForMessagesSplitView().url,
+      data: {
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
   updatePreferenceForPageSize(value: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.updatePreferenceForPageSize().url,
       data: {
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForSessionColumns(key: string, value: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForSessionColumns().url,
+      data: {
+        key: key,
         value: value
       },
       authenticate: true

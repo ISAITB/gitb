@@ -27,12 +27,10 @@ import com.gitb.engine.commands.interaction.RestartCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.TestStepStatusEventBus;
-import com.gitb.engine.events.model.ErrorStatusEvent;
-import com.gitb.engine.events.model.InputEvent;
-import com.gitb.engine.events.model.StatusEvent;
-import com.gitb.engine.events.model.TestStepStatusEvent;
+import com.gitb.engine.events.model.*;
 import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -76,12 +74,19 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected final TestCaseScope scope;
 	protected final String stepId;
 	protected final StepContext stepContext;
+	private ExitScopeType exitScopeToReport;
+	protected boolean receivedPrepareForStop = false;
+	protected boolean receivedStop = false;
 
 	public AbstractTestStepActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
 		this.scope = scope;
 		this.stepId = stepId;
 		this.step = step;
 		this.stepContext = stepContext;
+	}
+
+	protected void setExitScopeToReport(ExitScopeType exitScopeToReport) {
+		this.exitScopeToReport = exitScopeToReport;
 	}
 
 	protected Marker addMarker() {
@@ -104,13 +109,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	 * Stop your execution
 	 */
 	protected void stop() {
-		// Do nothing by default
+		this.receivedStop = true;
 	}
 
 	/**
 	 * Prepare to stop the execution
 	 */
 	protected void prepareForStop(PrepareForStopCommand command) {
+		this.receivedPrepareForStop = true;
 		for (ActorRef child : getContext().getChildren()) {
 			try {
 				if (!child.equals(command.getOriginalSource())) {
@@ -248,14 +254,6 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		updateTestStepStatus(throwable, testStepReport);
 	}
 
-	protected void inform(StepStatus status) {
-		inform(status, null);
-	}
-
-	protected void inform(StepStatus status, TestStepReportType testStepReport) {
-		updateTestStepStatus(status, testStepReport);
-	}
-
 	protected void inform(StatusEvent event) {
 		inform(event, null);
 	}
@@ -324,6 +322,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 
 		// Notify the parent step.
+		if (exitScopeToReport != null) {
+			/*
+			 * We have an exit to bubble up. Wrap the original event to add the scope of the exit for further processing
+			 * by the step's parent.
+			 */
+			statusEvent = new ExitEvent(statusEvent, exitScopeToReport);
+		}
+
 		context.parent().tell(statusEvent, self());
 		// Complete the current step's report for feedback (if needed).
 		if (reportTestStepStatus && stepId != null && !stepId.isEmpty()) {
@@ -461,6 +467,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
         } else {
             return new PossibleDomainIdentifier(null, AliasManager.getInstance().resolveProcessingHandler(handlerValue));
         }
+	}
+
+	protected boolean isRunnable() {
+		return !receivedPrepareForStop && !receivedStop && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED;
 	}
 
 }

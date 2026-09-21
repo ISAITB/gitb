@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-base64-decode" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Base64Processor decode</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- Base64 of 'World' is 'V29ybGQ=' -->
+        <assign to="encoded">'V29ybGQ='</assign>
+        <process handler="Base64Processor" operation="decode" output="decoded">
+            <input name="input">$encoded</input>
+        </process>
+        <verify handler="StringValidator" desc="decoded value">
+            <input name="actual">$decoded</input>
+            <input name="expected">'World'</input>
+        </verify>
+    </steps>
+</testcase>

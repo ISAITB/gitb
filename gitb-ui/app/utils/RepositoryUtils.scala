@@ -15,7 +15,6 @@
 
 package utils
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.gitb.core._
 import com.gitb.tdl.TestCaseEntry
 import com.gitb.utils.XMLUtils
@@ -30,6 +29,7 @@ import org.apache.commons.lang3.{RandomStringUtils, StringUtils, Strings}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import tools.jackson.databind.json.JsonMapper
 import utils.RepositoryUtils.{ParsedTestCase, TdlTestSuiteInfo, TestCaseGroupWithIndexes, TestCaseInfo}
 
 import java.io.{File, StringWriter}
@@ -67,7 +67,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
-	private final val objectMapper = new ObjectMapper()
+	private final val objectMapper = JsonMapper.shared()
 
 	private final val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
 	private final val TEST_CASE_ELEMENT_LABEL: String = "testcase"
@@ -87,6 +87,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	private final val DATA_PATH_LOCK: String = "data.lock"
 	private final val STATUS_UPDATES_PATH: String = "status-updates"
 
+	// The report types that support a custom XSLT stylesheet (all others - e.g. the PDF-only
+	// documentation reports and the test data archive - have no stylesheet/XML customisation
+	// option at all, so there's no point probing the filesystem or computing a filename for them).
+	private final val REPORT_TYPES_WITH_STYLESHEETS: Set[ReportType] = Set(
+		ReportType.ConformanceStatementReport, ReportType.ConformanceOverviewReport,
+		ReportType.TestCaseReport, ReportType.TestStepReport,
+		ReportType.ConformanceStatementCertificate, ReportType.ConformanceOverviewCertificate,
+		ReportType.ConformanceStatementDocumentationReport
+	)
+
 	private def isChildPath(expectedParent: Path, expectedChild: Path): Boolean = {
 		expectedChild.normalize().toAbsolutePath.startsWith(expectedParent.normalize().toAbsolutePath)
 	}
@@ -103,6 +113,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 				report = getCommunityReportStylesheet(communityId, ReportType.TestCaseReport)
 				if (report.isEmpty) {
 					report = getCommunityReportStylesheet(communityId, ReportType.TestStepReport)
+					if (report.isEmpty) {
+						report = getCommunityReportStylesheet(communityId, ReportType.ConformanceStatementDocumentationReport)
+					}
 				}
 			}
 		}
@@ -110,9 +123,13 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	}
 
 	def getCommunityReportStylesheet(communityId: Long, reportType: ReportType): Option[Path] = {
-		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
-		val filePath = stylesheetFolder.resolve(stylesheetName(reportType))
-		Some(filePath).filter(Files.exists(_))
+		if (REPORT_TYPES_WITH_STYLESHEETS.contains(reportType)) {
+			val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
+			val filePath = stylesheetFolder.resolve(stylesheetName(reportType))
+			Some(filePath).filter(Files.exists(_))
+		} else {
+			None
+		}
 	}
 
 	private def stylesheetName(reportType: ReportType): String = {
@@ -123,6 +140,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 			case ReportType.TestStepReport => "test_step.xslt"
 			case ReportType.ConformanceStatementCertificate => "conformance_statement_certificate.xslt"
 			case ReportType.ConformanceOverviewCertificate => "conformance_overview_certificate.xslt"
+			case ReportType.ConformanceStatementDocumentationReport => "conformance_statement_documentation.xslt"
 			case _ => throw new IllegalArgumentException("Unsupported report type %s".formatted(reportType.id))
 		}
 	}
@@ -479,6 +497,27 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
 	def getRestApiDocsDocumentation(): File = {
 		new File(getTempFolder(), "openapi.json")
+	}
+
+	def getDevelopmentApiKeyFile(): File = {
+		new File(getRepositoryPath(), "development-api-key.txt")
+	}
+
+	/**
+	 * Persist (or remove) the development API key file on the repository volume.
+	 * <p/>
+	 * The file is only ever written when running in development mode, to keep this file system location free of
+	 * secrets on production instances. If the instance is not (or no longer) in development mode, any existing
+	 * file is removed instead.
+	 */
+	def updateDevelopmentApiKeyFile(value: Option[String]): Unit = {
+		val keyFile = getDevelopmentApiKeyFile()
+		if (value.isDefined && Configurations.TESTBED_MODE == Constants.DevelopmentMode) {
+			Files.createDirectories(keyFile.getParentFile.toPath)
+			Files.writeString(keyFile.toPath, value.get, Charset.forName("UTF-8"))
+		} else {
+			FileUtils.deleteQuietly(keyFile)
+		}
 	}
 
 	def getTempArchivedSessionWorkspaceFolder(): File = {
@@ -1191,10 +1230,12 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	def getPathForTestSessionObj(sessionId: String, sessionStartTime: Option[Timestamp], isExpected: Boolean): SessionFolderInfo = {
 		var startTime: LocalDateTime = null
 		if (sessionStartTime.isDefined) {
-			startTime = sessionStartTime.get.toLocalDateTime
+			// Interpreted in the application's configured/default timezone (see Configurations.TIME_ZONE) so that the
+			// resulting folder bucketing matches what is displayed to users.
+			startTime = sessionStartTime.get.toInstant.atZone(Configurations.TIME_ZONE).toLocalDateTime
 		} else {
 			// We have no DB entry only in the case of preliminary steps.
-			startTime = LocalDateTime.now()
+			startTime = LocalDateTime.now(Configurations.TIME_ZONE)
 		}
 		val statusUpdateFolderPath = getStatusUpdatesFolder().getAbsolutePath
 		val path = Paths.get(

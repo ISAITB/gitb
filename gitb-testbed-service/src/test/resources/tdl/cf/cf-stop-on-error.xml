@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-stop-on-error" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>stopOnError stops after verify failure</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x">'actual'</assign>
+        <!-- This verify will fail, stopping further execution -->
+        <verify handler="StringValidator" desc="failing verify">
+            <input name="actual">$x</input>
+            <input name="expected">'expected'</input>
+        </verify>
+        <!-- This step must not run -->
+        <assign to="x">'should-not-reach'</assign>
+    </steps>
+</testcase>

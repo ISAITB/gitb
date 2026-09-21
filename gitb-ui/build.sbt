@@ -1,18 +1,20 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
-val pekkoVersion = "1.4.0"
-val jacksonVersion = "2.21.1"
-val jacksonAnnotationsVersion = "2.21"
-val cxfVersion = "4.2.2"
-val gitbCommonsVersion = "1.29.5"
-val gitbTypesVersion = "1.29.5"
-val bouncyCastleVersion = "1.84"
+val pekkoVersion = "1.7.0"
+val jacksonVersion = "3.2.2"
+val jackson2Version = "2.22.2"
+val jacksonAnnotationsVersion = "2.22"
+val cxfVersion = "4.2.3"
+val gitbCommonsVersion = "1.30.0"
+val gitbTypesVersion = "1.30.0"
+val bouncyCastleVersion = "1.86"
 val commonsTextVersion = "1.15.0"
-val mySqlConnectorVersion = "9.7.0"
-val pac4jVersion = "6.5.1"
-val nettyVersion = "4.2.13.Final"
-val pdfBoxVersion = "3.0.7"
+val mySqlConnectorVersion = "26.7.0"
+val pac4jVersion = "6.5.8"
+val nettyVersion = "4.2.18.Final"
+val pdfBoxVersion = "3.0.8"
+val jaxbVersion = "4.0.9"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -26,22 +28,20 @@ ThisBuild / libraryDependencySchemes ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 )
 
-javacOptions ++= Seq("--release", "21")
-scalacOptions ++= Seq("-release", "21")
-
 libraryDependencies ++= Seq(
   guice,
   ehcache,
   cacheApi,
   ws,
   "eu.europa.ec.itb" % "gitb-types-jakarta" % gitbTypesVersion,
+  "eu.europa.ec.itb" % "gitb-types-model" % gitbTypesVersion,
   "eu.europa.ec.itb" % "gitb-types-specs" % gitbTypesVersion,
-  "com.gitb" % "gitb-core" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-lib" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-reports" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-validator-tdl" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-xml-resources" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-remote" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-core" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-model") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-lib" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-model") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-reports" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-model") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-validator-tdl" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-model") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-xml-resources" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-model") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-remote" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-model") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.mysql" % "mysql-connector-j" % mySqlConnectorVersion exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
-  "org.pac4j" %% "play-pac4j" % "13.0.2-PLAY3.0",
+  "org.pac4j" %% "play-pac4j" % "13.0.3-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % pac4jVersion exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.pac4j" % "pac4j-http" % pac4jVersion,
@@ -61,11 +61,13 @@ libraryDependencies ++= Seq(
   "io.netty" % "netty-transport-native-kqueue" % nettyVersion,
   // - END.
   "org.apache.commons" % "commons-lang3" % "3.20.0",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
+  "tools.jackson.module" %% "jackson-module-scala" % jacksonVersion,
+  "tools.jackson.core" % "jackson-databind" % jacksonVersion,
+  "tools.jackson.core" % "jackson-core" % jacksonVersion,
+  "tools.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationsVersion,
-  "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson2Version,
+  "com.fasterxml.jackson.core" % "jackson-databind" % jackson2Version,
   "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
@@ -73,34 +75,33 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "3.2.3",
-  "org.webjars" % "jquery" % "3.7.1",
+  "org.apache.neethi" % "neethi" % "3.2.3",
+  "org.apache.tika" % "tika-core" % "3.3.2",
+  "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.32.5",
+  "org.webjars" % "swagger-ui" % "5.32.15",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
-  "org.eclipse.angus" % "angus-activation" % "2.0.3",
-  "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
+  "org.glassfish.jaxb"  % "jaxb-runtime" % jaxbVersion,
+  "org.eclipse.angus" % "angus-activation" % "2.0.3", // Should match the version in the org.glassfish.jaxb:jaxb-bom@jaxbVersion
+  "jakarta.activation" % "jakarta.activation-api" % "2.1.4", // Should match the version in the org.glassfish.jaxb:jaxb-bom@jaxbVersion
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5", // Should match the version in the org.glassfish.jaxb:jaxb-bom@jaxbVersion
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.3",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.6",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.6", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
   "org.apache.pdfbox" % "pdfbox" % pdfBoxVersion,
   "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
-  "org.jasypt" % "jasypt" % "1.9.3",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "12.0.2", // 12.0.3+ brings in Jackson 3
-  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260102.1",
+  "org.flywaydb" % "flyway-mysql" % "12.10.0",
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260313.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.6",
-  "com.nimbusds" % "nimbus-jose-jwt" % "10.8",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.10",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
-  "com.bucket4j" % "bucket4j_jdk17-core" % "8.16.1",
-  "com.github.ben-manes.caffeine" % "caffeine" % "3.2.3"
+  "com.bucket4j" % "bucket4j_jdk17-core" % "8.20.0",
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.2.4"
 )
 
 // Deactivate repeatable builds to speed up via parallelization

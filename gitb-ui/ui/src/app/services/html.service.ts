@@ -16,6 +16,7 @@
 import {Injectable} from '@angular/core';
 import {HtmlComponent} from '../modals/html/html.component';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -26,7 +27,7 @@ export class HtmlService {
     private readonly modalService: NgbModal
   ) { }
 
-  showHtml(headerText: string|undefined, html: string, customClass?: string):void {
+  showHtml(headerText: string|undefined, html: string, customClass?: string, downloadHandler?: () => Observable<any>):void {
     if (customClass == undefined) {
       customClass = 'modal-lg'
     }
@@ -34,6 +35,15 @@ export class HtmlService {
     const modalInstance = modal.componentInstance as HtmlComponent
     modalInstance.headerText = headerText
     modalInstance.html = html
+    modalInstance.showDownload = downloadHandler != undefined
+    if (downloadHandler != undefined) {
+      modalInstance.download.subscribe(() => {
+        modalInstance.downloadPending = true
+        downloadHandler().subscribe().add(() => {
+          modalInstance.downloadPending = false
+        })
+      })
+    }
   }
 
 }

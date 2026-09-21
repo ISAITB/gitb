@@ -22,7 +22,7 @@ import models.BadgeInfo
 import models.Enums.{LabelType, TestResultStatus}
 import org.apache.commons.io.FileUtils
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import utils.{JsonUtil, RepositoryUtils}
+import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -64,7 +64,8 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
                 val reportMetadata: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.METADATA)
                 val hidden = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HIDDEN).toBoolean
                 val groupId = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.GROUP_ID)
-                specificationManager.updateSpecification(specId, sname, fname, descr, reportMetadata, hidden, groupId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
+                val documentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeEditorContent)
+                specificationManager.updateSpecification(specId, sname, fname, descr, reportMetadata, hidden, groupId, documentation, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
                   ResponseConstructor.constructEmptyResponse
                 }
               }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-call-basic" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Call invokes embedded scriptlet and session passes</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <scriptlets>
+        <scriptlet id="greet">
+            <params>
+                <var name="name" type="string"/>
+            </params>
+            <steps>
+                <assign to="greeting">'Hello ' || $name</assign>
+            </steps>
+        </scriptlet>
+    </scriptlets>
+    <steps stopOnError="true">
+        <assign to="result">'not set'</assign>
+        <call path="greet" output="callOut">
+            <input name="name">'World'</input>
+        </call>
+        <verify handler="ExpressionValidator" desc="session completes after call">
+            <input name="expression">true()</input>
+        </verify>
+    </steps>
+</testcase>

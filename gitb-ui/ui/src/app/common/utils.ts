@@ -13,8 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { HttpHeaders } from "@angular/common/http"
+import { HttpHeaders, HttpResponse } from "@angular/common/http"
 import { HttpRequestConfig } from "../types/http-request-config.type"
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from './constants';
 
 export class Utils {
 
@@ -61,6 +63,21 @@ export class Utils {
       return [...new Set(array)]
     }
 
+    /**
+     * Extracts the file name set by the backend on the "Content-Disposition" response header (e.g. for generated
+     * report downloads), falling back to the provided default if the header is missing or unparseable.
+     */
+    public static fileNameFromContentDisposition(response: HttpResponse<any>, fallback: string): string {
+        const contentDisposition = response.headers.get('Content-Disposition')
+        if (contentDisposition != null) {
+            const match = /filename="?([^";]+)"?/.exec(contentDisposition)
+            if (match != null) {
+                return match[1]
+            }
+        }
+        return fallback
+    }
+
     public static removeFromArray<T>(array: T[]|undefined, predicate: (item: T, index: number, array: T[]) => boolean): T[] {
       const removed: T[] = [];
       if (array != undefined) {
@@ -72,6 +89,28 @@ export class Utils {
         }
       }
       return removed;
+    }
+
+    /**
+     * Determines whether a click on a navigation link (`<a [navTarget]>`) is a plain, same-tab
+     * navigation as opposed to one that opens the link elsewhere (a modifier click, or a
+     * non-primary mouse button). Used to guard side effects that should only apply to the current
+     * tab (e.g. recording a "return to source" location, or clearing display state) - since a
+     * modified click still fires the DOM "click" event even though the browser opens the link in
+     * a new tab/window rather than navigating away from the current page.
+     */
+    public static isPlainNavigationClick(event: MouseEvent): boolean {
+        return event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey
+    }
+
+    public static dismissTooltip(pop?: NgbTooltip): void {
+      if (pop) {
+        pop.disableTooltip = true
+        pop.close()
+        setTimeout(() => {
+          pop.disableTooltip = false
+        }, Constants.TOOLTIP_DELAY + 50)
+      }
     }
 
 }

@@ -8,15 +8,6 @@
     <div class="col-8 col-md-5"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="theme.description" class="form-control" [readonly]="readonly"></textarea></div>
     <div app-tooltip class="col-auto" tbTooltip="A description to explain the purpose and concept of this theme."></div>
 </div>
-<div class="row mt-3">
-    <label class="col-3 col-form-label text-end pt-0" for="active">Active:</label>
-    <div class="col-8 col-md-5">
-        <div class="form-check">
-            <input class="form-check-input" id="active" name="active" [(ngModel)]="theme.active" type="checkbox" [disabled]="readonly">
-            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="The active theme is the one used to style the Test Bed's interface."></div>
-        </div>
-    </div>
-</div>
 <app-form-section sectionTitle="Theme colours" [marginBefore]="true">
     <div class="row pt-3">
         <div class="offset-1 col-10">
@@ -154,6 +145,46 @@
                         label="Normal buttons"
                         tooltipText="The background colour for normal buttons."
                         [(ngModel)]="theme.secondaryButtonColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Welcome login"
+                        tooltipText="The background colour used for the main login card, as well as the highlight colour for secondary login option cards."
+                        [(ngModel)]="theme.welcomeLoginColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Welcome login label"
+                        tooltipText="The colour used for texts and icons in the welcome page's main login card."
+                        [(ngModel)]="theme.welcomeLoginLabelColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Welcome option label"
+                        tooltipText="The colour used for texts and icons in the welcome page's secondary login option cards (when available)."
+                        [(ngModel)]="theme.welcomeOptionLabelColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Info alert background"
+                        tooltipText="The background colour used for info-level alert boxes, notification popups and the welcome page's info panel."
+                        [(ngModel)]="theme.alertInfoBackgroundColor"
+                        [readonly]="readonly"
+                    ></app-color-picker>
+                </div>
+                <div class="col-auto">
+                    <app-color-picker
+                        label="Info alert text"
+                        tooltipText="The colour used for texts and icons in info-level alert boxes, notification popups and the welcome page's info panel."
+                        [(ngModel)]="theme.alertInfoTextColor"
                         [readonly]="readonly"
                     ></app-color-picker>
                 </div>

@@ -45,6 +45,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -202,6 +203,9 @@ public class XMLUtils {
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setFeature(Constants.XERCES_FEATURE_PREFIX + Constants.SCHEMA_FULL_CHECKING, true);
+            if (schemaVersion == XmlSchemaVersion.VERSION_1_1) {
+                factory.setFeature(Constants.XERCES_FEATURE_PREFIX + Constants.CTA_FULL_XPATH_CHECKING_FEATURE, true);
+            }
             schema = factory.newSchema(schemaToValidateWith);
         } catch (SAXException e) {
             throw new IllegalStateException("Unable to configure schema", e);
@@ -441,6 +445,33 @@ public class XMLUtils {
         xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
         return xmlInputFactory;
+    }
+
+    /**
+     * Build a hardened, namespace-aware {@link SAXSource} to stream the provided XML content directly into a
+     * {@link Transformer} (used for XSLT-based Schematron validation), instead of adapting a DOM that was built for
+     * another purpose (e.g. the non-namespace-aware, line-numbered DOM from {@link #readXMLWithLineNumbers}).
+     * <p/>
+     * This reuses {@link #getSecureSAXParserFactory()} - the same hardened, Xerces-backed factory as every other
+     * parser in this class - so this source gets the same DOCTYPE/entity protections, plus namespace awareness
+     * (needed so the transformer sees real namespace URIs instead of having to reconstruct them from the source
+     * document's {@code xmlns} attributes). The stream is handed to the parser as-is (not wrapped in a
+     * {@link Reader}) so the parser's own encoding/BOM detection from the XML declaration applies, exactly as
+     * {@link #readXMLWithLineNumbers} does.
+     *
+     * @param input The XML content to stream.
+     * @return The secure SAX source.
+     */
+    public static SAXSource getSecureSaxSource(InputStream input) {
+        try {
+            SAXParserFactory factory = getSecureSAXParserFactory();
+            factory.setNamespaceAware(true);
+            factory.setValidating(false);
+            XMLReader reader = factory.newSAXParser().getXMLReader();
+            return new SAXSource(reader, new InputSource(input));
+        } catch (ParserConfigurationException | SAXException e) {
+            throw new IllegalStateException("Could not create secure XML SAX source", e);
+        }
     }
 
     public static byte[] convertDocumentToByteArray(Document document) throws TransformerException {

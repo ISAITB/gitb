@@ -63,7 +63,7 @@ object HealthCheckService {
 
   object HealthCheckType extends Enumeration(1) {
     type HealthCheckType = Value
-    val AntivirusService, EmailService, TrustedTimestampService, UserInterfaceCommunication, TestEngineCallbacks, TestEngineCommunication, SoftwareVersion = Value
+    val AntivirusService, EmailService, TrustedTimestampService, UserInterfaceCommunication, TestEngineCallbacks, TestEngineCommunication, SoftwareVersion, TestServiceCallbacks = Value
   }
 
   private val currentStatusMap = new AtomicReference[Map[HealthCheckType, CachedHealthStatus]](
@@ -74,7 +74,8 @@ object HealthCheckService {
       HealthCheckType.UserInterfaceCommunication -> CachedHealthStatus(None, ServiceHealthStatusType.Unknown),
       HealthCheckType.TestEngineCallbacks -> CachedHealthStatus(None, ServiceHealthStatusType.Unknown),
       HealthCheckType.TestEngineCommunication -> CachedHealthStatus(None, ServiceHealthStatusType.Unknown),
-      HealthCheckType.SoftwareVersion -> CachedHealthStatus(None, ServiceHealthStatusType.Unknown)
+      HealthCheckType.SoftwareVersion -> CachedHealthStatus(None, ServiceHealthStatusType.Unknown),
+      HealthCheckType.TestServiceCallbacks -> CachedHealthStatus(None, ServiceHealthStatusType.Unknown)
     )
   )
 
@@ -155,7 +156,8 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
           checkEmailServiceInternal(),
           checkSoftwareVersionInternal(),
           checkTestEngineCallbacksInternal(),
-          checkTestEngineCommunicationInternal()
+          checkTestEngineCommunicationInternal(),
+          checkTestServiceCallbacksInternal()
         )
         Future.sequence(checks).map { _ =>
           determineCachedOverallStatus()
@@ -396,6 +398,49 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
     }
   }
 
+  def checkTestServiceCallbacks(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCheckCoreServiceHealth(request).flatMap { _ =>
+      checkTestServiceCallbacksInternal().map { healthInfo =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsServiceHealthInfo(healthInfo).toString)
+      }
+    }
+  }
+
+  private def enabledOrDisabled(flag: Boolean): String = {
+    if (flag) "**enabled**" else "**disabled**"
+  }
+
+  private def checkTestServiceCallbacksInternal(): Future[ServiceHealthInfo] = {
+    Future.successful {
+      val callbacksEnabled = Configurations.TEST_SERVICE_CALLBACKS_SOAP_ENABLED || Configurations.TEST_SERVICE_CALLBACKS_REST_ENABLED
+      val restStatus = enabledOrDisabled(Configurations.TEST_SERVICE_CALLBACKS_REST_ENABLED)
+      val soapStatus = enabledOrDisabled(Configurations.TEST_SERVICE_CALLBACKS_SOAP_ENABLED)
+      if (!callbacksEnabled) {
+        ServiceHealthInfo(ServiceHealthStatusType.Ok,
+          "Callbacks from custom test services are disabled.",
+          readClasspathResource("health/testServiceCallbacks/ok_disabled.md")
+        )
+      } else if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
+        ServiceHealthInfo(ServiceHealthStatusType.Ok,
+          "Callbacks from custom test services are enabled and require the use of valid API keys.",
+          readClasspathResource("health/testServiceCallbacks/ok_enabled.md").formatted(restStatus, soapStatus)
+        )
+      } else if (Configurations.TESTBED_MODE == Constants.DevelopmentMode) {
+        ServiceHealthInfo(ServiceHealthStatusType.Info,
+          "Callbacks from custom test services are enabled but API keys are not required.",
+          readClasspathResource("health/testServiceCallbacks/info.md").formatted(restStatus, soapStatus)
+        )
+      } else {
+        ServiceHealthInfo(ServiceHealthStatusType.Warning,
+          "Callbacks from custom test services are enabled but API keys are not required.",
+          readClasspathResource("health/testServiceCallbacks/warning.md").formatted(restStatus, soapStatus)
+        )
+      }
+    }.andThen {
+      case Success(value) => updateHealthStatus(HealthCheckType.TestServiceCallbacks, value.status)
+    }
+  }
+
   def checkTestEngineCommunication(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canCheckCoreServiceHealth(request).flatMap { _ =>
       checkTestEngineCommunicationInternal().map { healthInfo =>
@@ -514,7 +559,7 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
               // Extract software information
               val softwareInfo = JsonUtil.parseJsSoftwareVersionInfo(Json.parse(jwsObject.getPayload().toString()))
               val releaseNoteContent = softwareInfo.latest.releaseNotes.map(x => " (see [release notes](%s))".formatted(x)).getOrElse("")
-              val releaseDateContent = DateTimeFormatter.ofPattern("dd/MM/yyyy").format(ZonedDateTime.ofInstant(softwareInfo.latest.releaseDate, ZoneOffset.UTC))
+              val releaseDateContent = DateTimeFormatter.ofPattern(Configurations.DATE_FORMAT_DATE).format(ZonedDateTime.ofInstant(softwareInfo.latest.releaseDate, ZoneOffset.UTC))
               // Parse current release's timestamp
               val currentBuildTime = LocalDateTime.parse(Configurations.BUILD_TIMESTAMP, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).toInstant(ZoneOffset.UTC)
               if (currentBuildTime.isBefore(softwareInfo.latest.releaseDate)) {

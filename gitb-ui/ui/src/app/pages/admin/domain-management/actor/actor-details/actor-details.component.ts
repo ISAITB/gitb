@@ -29,6 +29,7 @@ import {EndpointRepresentation} from './endpoint-representation';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {EndpointParameter} from 'src/app/types/endpoint-parameter';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
+import {NavigationTarget} from '../../../../../types/navigation-target';
 
 @Component({
     selector: 'app-actor-details',
@@ -43,6 +44,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   endpointRepresentations: EndpointRepresentation[] = []
   dataStatus = {status: Constants.STATUS.PENDING}
   parameterStatus = {status: Constants.STATUS.NONE}
+  communityId?: number
   domainId!: number
   specificationId!: number
   actorId!: number
@@ -55,12 +57,13 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   savePending = false
   deletePending = false
   parametersLoaded = new EventEmitter<EndpointParameter[]|undefined>()
+  private viewReturnTarget?: string
 
   constructor(
     private readonly conformanceService: ConformanceService,
     private readonly actorService: ActorService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly popupService: PopupService,
     public readonly dataService: DataService,
     router: Router,
@@ -74,9 +77,15 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+    }
     this.conformanceService.getActor(this.actorId, this.specificationId).subscribe((data) => {
       this.actor = data
       if (this.actor.badges) {
@@ -144,7 +153,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   saveChanges() {
     if (!this.saveDisabled()) {
       this.savePending = true
-      this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
+      this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.documentation, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
         .subscribe(() => {
           this.popupService.success(this.dataService.labelActor()+' updated.')
           this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})
@@ -155,7 +164,9 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   back() {
-    this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
+    })
   }
 
   saveDisabled() {
@@ -169,10 +180,14 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
     )
   }
 
-  onEndpointSelect(endpoint: EndpointRepresentation) {
-    this.routingService.toEndpoint(this.domainId, this.specificationId, this.actorId, endpoint.id)
+  endpointRowTarget = (endpoint: EndpointRepresentation): NavigationTarget => {
+    return this.routingService.linkToEndpoint(this.domainId, this.specificationId, this.actorId, endpoint.id)
   }
 
+  /** Forwarded from app-endpoint-parameter-tab-content's (createEndpoint) output - its own "Create
+   * endpoint" dropdown item (endpoint-parameter-tab-content.component.html:12), a separate control
+   * from the standalone "Create endpoint" button above (converted to a link) since it lives inside
+   * a shared, reusable component. */
   createEndpoint() {
     this.routingService.toCreateEndpoint(this.domainId, this.specificationId, this.actorId)
   }

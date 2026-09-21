@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {
@@ -57,6 +57,14 @@ import {
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {UsageTipService} from '../../../../../services/usage-tip.service';
 import {TagData} from '../../../../../types/tag-data';
+import {DisplayState} from '../../../../../types/display-state';
+import {NavigationTarget} from '../../../../../types/navigation-target';
+
+/** Persisted search/paging state for the Specifications and Shared test suites tabs - restored when
+ * returning here (e.g. via Back from a specification's/test suite's detail page). */
+interface DomainListState {
+  filter?: string
+}
 
 @Component({
     selector: 'app-domain-details',
@@ -64,7 +72,7 @@ import {TagData} from '../../../../../types/tag-data';
     styleUrls: ['./domain-details.component.less'],
     standalone: false
 })
-export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit {
+export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   private static readonly MESSAGING_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/messaging/
   private static readonly VALIDATION_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/validation/
@@ -131,6 +139,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   specificationGroupsLoaded = false
   managingSpecificationOrder = false
   hasMultipleSpecifications = false
+  showBackButton = false
+  private viewReturnTarget?: string
   protected readonly PagingPlacement = PagingPlacement;
 
   constructor(
@@ -141,7 +151,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: NgbModal,
     private readonly popupService: PopupService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly usageTipService: UsageTipService,
     route: ActivatedRoute,
     router: Router
@@ -161,6 +171,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
+    this.showBackButton = this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && !this.dataService.community!.domainId) || this.viewReturnTarget != undefined
     this.conformanceService.getDomain(this.domainId)
     .subscribe((data) => {
       this.domain = data
@@ -186,6 +198,25 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.specificationStatus.status != Constants.STATUS.NONE) {
+      const state: DisplayState<DomainListState> = {
+        key: String(this.domainId),
+        state: { filter: this.specificationFilter },
+        paging: this.specificationPagingControls?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.DOMAIN_SPECIFICATIONS, state)
+    }
+    if (this.sharedTestSuiteStatus.status != Constants.STATUS.NONE) {
+      const state: DisplayState<DomainListState> = {
+        key: String(this.domainId),
+        state: { filter: this.sharedTestSuiteFilter },
+        paging: this.sharedTestSuiteTable?.getPagingControls()?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.DOMAIN_SHARED_TEST_SUITES, state)
+    }
+  }
+
   toggleSpecificationGroupCollapse(collapse: boolean) {
     for (let spec of this.domainSpecifications) {
       if (spec.group) {
@@ -199,7 +230,19 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
   loadSpecifications(forceLoad?: boolean) {
-    if (this.specificationStatus.status == Constants.STATUS.NONE || forceLoad) {
+    if (this.specificationStatus.status == Constants.STATUS.NONE) {
+      let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+      const existingState = this.getDisplayState<DomainListState>(Constants.DISPLAY_STATE_KEY.DOMAIN_SPECIFICATIONS, true)
+      if (existingState && existingState.key == String(this.domainId)) {
+        if (existingState.state) {
+          this.specificationFilter = existingState.state.filter
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+      this.loadSpecificationsInternal(targetPaging)
+    } else if (forceLoad) {
       this.loadSpecificationsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
     } else {
       this.updateSpecificationPaging(this.specificationPage, this.specificationTotal)
@@ -207,7 +250,19 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
   loadSharedTestSuites(forceLoad?: boolean) {
-    if (this.sharedTestSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+    if (this.sharedTestSuiteStatus.status == Constants.STATUS.NONE) {
+      let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+      const existingState = this.getDisplayState<DomainListState>(Constants.DISPLAY_STATE_KEY.DOMAIN_SHARED_TEST_SUITES, true)
+      if (existingState && existingState.key == String(this.domainId)) {
+        if (existingState.state) {
+          this.sharedTestSuiteFilter = existingState.state.filter
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+      this.loadSharedTestSuitesInternal(targetPaging)
+    } else if (forceLoad) {
       this.refreshSharedTestSuites()
     } else {
       this.updateTestSuitePaging(this.sharedTestSuitePage, this.sharedTestSuiteTotal)
@@ -448,7 +503,9 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	back() {
-    this.routingService.toDomains()
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      this.routingService.toDomains()
+    })
   }
 
 	onSpecificationSelect(specification: DomainSpecification) {
@@ -465,8 +522,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     }
   }
 
-  onSharedTestSuiteSelect(testSuite: TestSuite) {
-    this.routingService.toSharedTestSuite(this.domainId, testSuite.id)
+  sharedTestSuiteRowTarget = (testSuite: TestSuite): NavigationTarget => {
+    return this.routingService.linkToSharedTestSuite(this.domainId, testSuite.id)
   }
 
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
@@ -541,14 +598,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         this.loadSharedTestSuites(true)
       }
     })
-  }
-
-	createSpecification() {
-    this.routingService.toCreateSpecification(this.domainId)
-  }
-
-  createSpecificationGroup() {
-    this.routingService.toCreateSpecificationGroup(this.domainId)
   }
 
   private reloadCurrentSpecificationPage() {

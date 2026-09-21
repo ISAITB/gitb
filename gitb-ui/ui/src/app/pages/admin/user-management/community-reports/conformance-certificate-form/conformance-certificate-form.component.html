@@ -1,23 +1,40 @@
 @if (settings) {
     <form>
         <div class="row">
-            <legend class="col-3 col-form-label text-end pt-0">* Report configuration:</legend>
+            <label class="col-3 col-form-label text-end">* Report file name:</label>
+            <div class="col-8 col-md-6">
+                <div class="row row-cols-auto align-items-center gx-3">
+                    <div class="col-auto">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="customiseFileName" name="customiseFileName" [(ngModel)]="customiseFileName" (change)="onCustomiseFileNameChange()">
+                            <label class="form-check-label" for="customiseFileName">Customise?</label>
+                        </div>
+                    </div>
+                    <div class="col-auto flex-grow-1">
+                        <app-report-file-name-expression [reportType]="reportType" [value]="customiseFileName ? reportSettings!.fileNameExpression : reportSettings!.defaultFileNameExpression" (valueChange)="reportSettings!.fileNameExpression = $event" [readonly]="!customiseFileName"></app-report-file-name-expression>
+                    </div>
+                </div>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The naming expression used to define the report's file name."></div>
+        </div>
+        <div class="row mt-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Report configuration:</legend>
             <div class="col-8">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" [(ngModel)]="reportSettings!.customPdfs" name="choice" id="choice_default" [value]="false" (change)="reportConfigurationTypeChanged()">
                     <label class="form-check-label" for="choice_default">Configure default report
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Use the default PDF certificate format and customise the information to include."></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Use the default PDF certificate format and customise the information to include."></div>
                     </label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" [(ngModel)]="reportSettings!.customPdfs" name="choice" id="choice_custom" [value]="true"  (change)="reportConfigurationTypeChanged()">
                     <label class="form-check-label" for="choice_custom">Use external service
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Configure a service to handle the PDF certificate generation based on the conformance statement XML report."></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Configure a service to handle the PDF certificate generation based on the conformance statement XML report."></div>
                     </label>
                 </div>
             </div>
         </div>
-        <div [ngbCollapse]="!reportSettings!.customPdfs">
+        <div [ngbCollapse]="!reportSettings!.customPdfs" [animation]="false">
             <div class="row pt-3">
                 <label class="col-3 col-form-label text-end" for="customPdfService">* Service address:</label>
                 <div class="col-8 col-md-6">
@@ -55,7 +72,7 @@
                 </div>
             </div>
         </div>
-        <div [ngbCollapse]="reportSettings!.customPdfs">
+        <div [ngbCollapse]="reportSettings!.customPdfs" [animation]="false">
             <div class="row pt-3">
                 <label class="col-3 col-form-label text-end">Title:</label>
                 <div class="col-8 col-md-6">
@@ -79,37 +96,37 @@
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="includeDetails" name="includeDetails" [(ngModel)]="settings.includeDetails">
                         <label class="form-check-label" for="includeDetails">Details
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Add the conformance statement details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+'.'"></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Add the conformance statement details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+'.'"></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="includeTestStatus" name="includeTestStatus" [(ngModel)]="settings.includeTestStatus">
                         <label class="form-check-label" for="includeTestStatus">Result overview
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a summary text on the number of successfully passed and failed test cases."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a summary text on the number of successfully passed and failed test cases."></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="includeTestCases" name="includeTestCases" [(ngModel)]="settings.includeTestCases">
                         <label class="form-check-label" for="includeTestCases">Test cases
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add the individual test cases. Doing so will include a table showing the status for each test case in the conformance statement."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add the individual test cases. Doing so will include a table showing the status for each test case in the conformance statement."></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="includeMessage" name="includeMessage" [(ngModel)]="settings.includeMessage">
                         <label class="form-check-label" for="includeMessage">Message
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="includeSignature" name="includeSignature" [(ngModel)]="settings.includeSignature">
                         <label class="form-check-label" for="includeSignature">Signature
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="includePageNumbers" name="includePageNumbers" [(ngModel)]="settings.includePageNumbers">
                         <label class="form-check-label" for="includePageNumbers">Page numbers
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Include a footer on each page displaying the current and total number of pages in the report."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Include a footer on each page displaying the current and total number of pages in the report."></div>
                         </label>
                     </div>
                 </div>

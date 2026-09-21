@@ -18,6 +18,7 @@ package com.gitb.reports;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.reports.dto.ConformanceOverview;
+import com.gitb.reports.dto.ConformanceStatementDocumentation;
 import com.gitb.reports.dto.ConformanceStatementOverview;
 import com.gitb.reports.dto.TestCaseOverview;
 import com.gitb.reports.dto.tar.ContextItem;
@@ -49,6 +50,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +61,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -71,6 +75,8 @@ public class ReportGenerator {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReportGenerator.class);
     private static final ReportGenerator INSTANCE = new ReportGenerator();
+    private static final String PAGE_BREAK_PLACEHOLDER = "$PAGE_BREAK";
+    private static final String REPORT_MESSAGE_SELECTOR = "div.report-message";
     private final JAXBContext jaxbContext;
     private final Map<String, Template> templateCache;
     private final Map<String, TemplateMethodModelEx> extensionFunctions;
@@ -83,7 +89,8 @@ public class ReportGenerator {
                     TAR.class,
                     TestCaseOverviewReportType.class,
                     TestCaseReportType.class,
-                    TestStepStatus.class);
+                    TestStepStatus.class,
+                    ConformanceStatementDocumentationReportType.class);
         } catch (JAXBException e) {
             throw new IllegalStateException("Error initialising report generator", e);
         }
@@ -113,6 +120,106 @@ public class ReportGenerator {
         });
     }
 
+    private boolean hasPageBreakPlaceholder(Boolean includeMessage, String message) {
+        return Boolean.TRUE.equals(includeMessage) && message != null && message.contains(PAGE_BREAK_PLACEHOLDER);
+    }
+
+    /**
+     * Resolves "$PAGE_BREAK" placeholder tokens found within the custom report message block(s) (marked with the
+     * "report-message" CSS class in the certificate templates) into CSS page breaks:
+     * - If an element follows the placeholder (within the message), "page-break-before: always;" is applied to it.
+     * - If the placeholder is trailing (nothing follows it within the message), "page-break-after: always;" is
+     *   applied to the message container itself, so that the report content following the message starts on a new page.
+     * The placeholder text (and its surrounding whitespace) is removed in all cases.
+     */
+    private void processPageBreaks(Document doc) {
+        for (Element container : doc.select(REPORT_MESSAGE_SELECTOR)) {
+            processPageBreaksInContainer(container);
+        }
+    }
+
+    private void processPageBreaksInContainer(Element container) {
+        TextNode targetNode;
+        while ((targetNode = findTextNodeWithPlaceholder(container)) != null) {
+            Element anchor = (parentOf(targetNode) instanceof Element parentElement) ? parentElement : container;
+            String updatedText = targetNode.getWholeText().replaceAll("\\s*\\Q"+PAGE_BREAK_PLACEHOLDER+"\\E\\s*", " ").trim();
+            if (updatedText.isEmpty()) {
+                targetNode.remove();
+            } else {
+                targetNode.text(updatedText);
+            }
+            // Determine the next element to break before, scoped to the message container's own content.
+            Element nextElement = findNextElementWithin(anchor, container);
+            if (anchor != container && isEffectivelyEmpty(anchor)) {
+                // The placeholder was on its own line/block - drop the now-empty wrapper.
+                anchor.remove();
+            }
+            if (nextElement != null) {
+                addPageBreakStyle(nextElement, "page-break-before");
+            } else if (!isEffectivelyEmpty(container)) {
+                addPageBreakStyle(container, "page-break-after");
+            }
+        }
+    }
+
+    private TextNode findTextNodeWithPlaceholder(Element root) {
+        for (var child : root.childNodes()) {
+            if (child instanceof TextNode textNode) {
+                if (textNode.getWholeText().contains(PAGE_BREAK_PLACEHOLDER)) {
+                    return textNode;
+                }
+            } else if (child instanceof Element childElement) {
+                TextNode found = findTextNodeWithPlaceholder(childElement);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Element findNextElementWithin(Element anchor, Element container) {
+        Element current = anchor;
+        while (current != null && current != container) {
+            Element sibling = current.nextElementSibling();
+            if (sibling != null) {
+                return sibling;
+            }
+            current = (parentOf(current) instanceof Element parentElement) ? parentElement : null;
+        }
+        return null;
+    }
+
+    /**
+     * Equivalent to node.parent(), but resolved through the base org.jsoup.nodes.Node#parent() (which always
+     * returns Node) rather than through the Element/LeafNode-level overrides that (depending on the jsoup version)
+     * covariantly narrow the return type to Element. Binding to those overrides at compile time can otherwise
+     * produce a NoSuchMethodError if the runtime classpath resolves an older jsoup jar without the narrower override.
+     */
+    private org.jsoup.nodes.Node parentOf(org.jsoup.nodes.Node node) {
+        return node.parent();
+    }
+
+    private boolean isEffectivelyEmpty(Element element) {
+        return element.text().trim().isEmpty() && element.children().isEmpty();
+    }
+
+    private void addPageBreakStyle(Element element, String property) {
+        String existingStyle = element.attr("style").trim();
+        if (existingStyle.contains(property)) {
+            return;
+        }
+        StringBuilder styleBuilder = new StringBuilder(existingStyle);
+        if (!styleBuilder.isEmpty() && styleBuilder.charAt(styleBuilder.length() - 1) != ';') {
+            styleBuilder.append(';');
+        }
+        if (!styleBuilder.isEmpty()) {
+            styleBuilder.append(' ');
+        }
+        styleBuilder.append(property).append(": always;");
+        element.attr("style", styleBuilder.toString());
+    }
+
     private void loadFonts(PdfRendererBuilder builder) {
         builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSans.ttf"), "FreeSans", 400, BaseRendererBuilder.FontStyle.NORMAL, true);
         builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSansBold.ttf"), "FreeSans", 700, BaseRendererBuilder.FontStyle.NORMAL, true);
@@ -129,6 +236,10 @@ public class ReportGenerator {
     }
 
     public void writeClasspathReport(String reportPath, Map<String, Object> parameters, OutputStream outputStream, ReportSpecs specs) {
+        writeClasspathReport(reportPath, parameters, outputStream, specs, false);
+    }
+
+    private void writeClasspathReport(String reportPath, Map<String, Object> parameters, OutputStream outputStream, ReportSpecs specs, boolean applyPageBreaks) {
         ReportSpecs specsToUse = Objects.requireNonNullElseGet(specs, ReportSpecs::build);
         // Add custom extension functions.
         parameters = Objects.requireNonNullElse(parameters, new HashMap<>());
@@ -174,11 +285,13 @@ public class ReportGenerator {
                 }
             });
 
-            if (tempHtmlFile != null) {
-                builder.withW3cDocument(new W3CDom().fromJsoup(Jsoup.parse(tempHtmlFile, StandardCharsets.UTF_8.name())), "reports");
-            } else {
-                builder.withW3cDocument(new W3CDom().fromJsoup(Jsoup.parse(tempHtmlString)), "reports");
+            var doc = (tempHtmlFile != null)
+                    ? Jsoup.parse(tempHtmlFile, StandardCharsets.UTF_8.name())
+                    : Jsoup.parse(tempHtmlString);
+            if (applyPageBreaks) {
+                processPageBreaks(doc);
             }
+            builder.withW3cDocument(new W3CDom().fromJsoup(doc), "reports");
 
             builder.toStream(outputStream);
             builder.run();
@@ -289,16 +402,32 @@ public class ReportGenerator {
         return value;
     }
 
+    private boolean isResolvedFileReference(String value) {
+        // A value already resolved to a display-friendly file reference (e.g. "[1_1.pdf]") by the caller
+        // (see the test session data export in gitb-ui), rather than genuine base64 content. Valid base64
+        // never contains '[' or ']', so this is an unambiguous, cheap check to make before any decode attempt.
+        return Strings.CS.startsWith(value, "[") && Strings.CS.endsWith(value, "]");
+    }
+
     private ContextItem toContextItem(AnyContent content, ReportSpecs specs) {
         ContextItem item = null;
         if (content != null && content.isForDisplay()) {
             if (content.getItem().isEmpty()) {
+                Map<String,String> metadata = Optional.ofNullable(content.getMetadata())
+                        .map(tokens -> StringUtils.split(tokens, ';'))
+                        .map(tokens -> Arrays.stream(tokens)
+                                .map(token -> StringUtils.split(token, '='))
+                                .collect(Collectors.toMap(pair -> pair[0].trim(), pair -> pair[1].trim())))
+                        .orElse(null);
+                String value = null;
+                boolean isEscapedHtml = isEscapedHtml(content, metadata);
                 if (StringUtils.isNotBlank(content.getValue())) {
-                    String value;
                     if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.URI) {
                         value = "["+content.getValue()+"]";
                     } else if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64) {
-                        if (content.getMimeType() != null && specs.getMimeTypesToConvertToStrings().contains(content.getMimeType())) {
+                        if (isResolvedFileReference(content.getValue())) {
+                            value = content.getValue();
+                        } else if (content.getMimeType() != null && specs.getMimeTypesToConvertToStrings().contains(content.getMimeType())) {
                             value = contextValueAsString(new String(Base64.getDecoder().decode(content.getValue())));
                         } else {
                             value = "[File content]";
@@ -306,10 +435,16 @@ public class ReportGenerator {
                     } else {
                         value = contextValueAsString(content.getValue());
                     }
-                    item = new ContextItem(StringUtils.defaultString(content.getName()), truncateIfNeeded(value, specs));
-                } else {
-                    item = new ContextItem(StringUtils.defaultString(content.getName()), (String)null);
+                    if (truncationNeeded(value, specs)) {
+                        if (isEscapedHtml) {
+                            value = "[HTML content]";
+                        } else {
+                            value = truncate(value, specs);
+                        }
+                    }
                 }
+                String level = metadata != null ? metadata.get("level") : null;
+                item = new ContextItem(StringUtils.defaultString(content.getName()), value, level, isEscapedHtml);
             } else {
                 var children = content.getItem().stream()
                         .filter(AnyContent::isForDisplay)
@@ -325,16 +460,22 @@ public class ReportGenerator {
         return item;
     }
 
-    private String truncateIfNeeded(String value, ReportSpecs specs) {
-        if (specs.getContextItemTruncateLimit() > 0) {
-            var truncatedValue = StringUtils.truncate(value, specs.getContextItemTruncateLimit());
-            if (value.length() > truncatedValue.length()) {
-                truncatedValue += " [...]";
-            }
-            return truncatedValue;
-        } else {
-            return value;
+    private boolean isEscapedHtml(AnyContent content, Map<String, String> metadata) {
+        return content.getMimeType() != null && metadata != null
+                && Objects.equals(metadata.get("sanitized"), "true")
+                && content.getMimeType().startsWith("text/html");
+    }
+
+    private boolean truncationNeeded(String value, ReportSpecs specs) {
+        return specs.getContextItemTruncateLimit() > 0 && value.length() > specs.getContextItemTruncateLimit();
+    }
+
+    private String truncate(String value, ReportSpecs specs) {
+        var truncatedValue = StringUtils.truncate(value, specs.getContextItemTruncateLimit());
+        if (value.length() > truncatedValue.length()) {
+            truncatedValue += " [...]";
         }
+        return truncatedValue;
     }
 
     private void addContextItems(TAR report, List<ContextItem> items, ReportSpecs specs) {
@@ -348,9 +489,7 @@ public class ReportGenerator {
         specs = Objects.requireNonNullElseGet(specs, ReportSpecs::build);
         Report report = new Report();
         if (reportType.getDate() != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            sdf.setTimeZone(TimeZone.getDefault());
-            report.setReportDate(sdf.format(reportType.getDate().toGregorianCalendar().getTime()));
+            report.setReportDate(specs.getDateTimeFormatter().format(reportType.getDate().toGregorianCalendar().toInstant()));
         }
         report.setReportResult(reportType.getResult().value());
         report.setTitle(Objects.requireNonNullElse(title, "Report"));
@@ -395,13 +534,12 @@ public class ReportGenerator {
 
     public void writeConformanceOverviewReport(ConformanceOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            overview.setReportDate(sdf.format(new Date()));
+            overview.setReportDate(specs.getDateTimeFormatter().format(Instant.now()));
         }
         try {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("data", overview);
-            writeClasspathReport("reports/ConformanceOverview.ftl", parameters, outputStream, specs);
+            writeClasspathReport("reports/ConformanceOverview.ftl", parameters, outputStream, specs, hasPageBreakPlaceholder(overview.getIncludeMessage(), overview.getMessage()));
         } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while generating report", e);
         }
@@ -409,15 +547,57 @@ public class ReportGenerator {
 
     public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            overview.setReportDate(sdf.format(new Date()));
+            overview.setReportDate(specs.getDateTimeFormatter().format(Instant.now()));
         }
         try {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("data", overview);
-            writeClasspathReport("reports/ConformanceStatementOverview.ftl", parameters, outputStream, specs);
+            writeClasspathReport("reports/ConformanceStatementOverview.ftl", parameters, outputStream, specs, hasPageBreakPlaceholder(overview.getIncludeMessage(), overview.getMessage()));
         } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while generating report", e);
+        }
+    }
+
+    public void writeConformanceStatementDocumentationReport(ConformanceStatementDocumentation data, OutputStream outputStream, ReportSpecs specs) {
+        if (data.getReportDate() == null) {
+            data.setReportDate(specs.getDateTimeFormatter().format(Instant.now()));
+        }
+        if (data.getIncludeTestCaseDocumentation()) {
+            // Force the includeTestCaseDocumentation flag is no test suite has documentation (to avoid an empty heading).
+            boolean hasAnyTestCaseDocumentation = false;
+            if (data.getTestSuites() != null) {
+                hasAnyTestCaseDocumentation = data.getTestSuites().stream()
+                        .filter(ts -> ts.getTestCases() != null)
+                        .flatMap(ts -> ts.getTestCases().stream())
+                        .anyMatch(tc -> tc.getDocumentation() != null && !tc.getDocumentation().isBlank());
+            }
+            if (!hasAnyTestCaseDocumentation) data.setIncludeTestCaseDocumentation(false);
+        }
+        if (data.getIncludeTestSuiteDocumentation()) {
+            // Force the includeTestSuiteDocumentation flag is no test suite has documentation (to avoid an empty heading).
+            boolean hasAnyTestSuiteDocumentation = false;
+            if (data.getTestSuites() != null) {
+                hasAnyTestSuiteDocumentation = data.getTestSuites().stream()
+                        .anyMatch(ts -> ts.getDocumentation() != null && !ts.getDocumentation().isBlank());
+            }
+            if (!hasAnyTestSuiteDocumentation) data.setIncludeTestSuiteDocumentation(false);
+        }
+        try {
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("data", data);
+            writeClasspathReport("reports/ConformanceStatementDocumentation.ftl", parameters, outputStream, specs);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unexpected error while generating report", e);
+        }
+    }
+
+    public void writeConformanceStatementDocumentationXmlReport(ConformanceStatementDocumentationReportType report, OutputStream outputStream) {
+        try {
+            Marshaller marshaller = jaxbContext.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            marshaller.marshal(new ObjectFactory().createConformanceStatementDocumentationReport(report), outputStream);
+        } catch(Exception e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -473,11 +653,12 @@ public class ReportGenerator {
         }
     }
 
-    public void writeTestCaseDocumentationPreviewReport(String documentation, OutputStream outputStream, ReportSpecs specs) {
+    public void writeHtmlReport(String documentation, String title, OutputStream outputStream, ReportSpecs specs) {
         try {
             Map<String, Object> parameters = new HashMap<>();
+            parameters.put("title", title);
             parameters.put("documentation", documentation);
-            writeClasspathReport("reports/TestCaseDocumentationPreview.ftl", parameters, outputStream, specs);
+            writeClasspathReport("reports/HtmlReport.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -518,6 +699,8 @@ public class ReportGenerator {
             if (specs.isIncludeLogs()) {
                 parameters.put("logMessages", testCaseOverview.getLogMessages());
             }
+            parameters.put("userComment", testCaseOverview.getUserComment());
+            parameters.put("adminComment", testCaseOverview.getAdminComment());
             writeClasspathReport("reports/TestCaseOverview.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException(e);

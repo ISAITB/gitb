@@ -24,37 +24,32 @@ case class SessionConfigurationData(statementParameters: Option[List[TypedActorC
                                     organisationParameters: Option[TypedActorConfiguration],
                                     systemParameters: Option[TypedActorConfiguration],
                                     testServiceParameters: Option[List[TypedActorConfiguration]],
-                                    predefinedVariables: Option[TypedActorConfiguration]) {
+                                    predefinedVariables: Option[TypedActorConfiguration],
+                                    settings: Option[TypedActorConfiguration]) {
 
   def apply(aggregatedConfiguration: util.List[ActorConfiguration]): Unit = {
     import scala.jdk.CollectionConverters._
     if (statementParameters.nonEmpty) {
-      aggregatedConfiguration.addAll(statementParameters.get.map(toActorConfiguration).asJava)
+      aggregatedConfiguration.addAll(statementParameters.get.map(_.toActorConfiguration()).asJava)
     }
     if (domainParameters.nonEmpty) {
-      aggregatedConfiguration.add(toActorConfiguration(domainParameters.get))
+      aggregatedConfiguration.add(domainParameters.get.toActorConfiguration())
     }
     if (organisationParameters.nonEmpty) {
-      aggregatedConfiguration.add(toActorConfiguration(organisationParameters.get))
+      aggregatedConfiguration.add(organisationParameters.get.toActorConfiguration())
     }
     if (systemParameters.nonEmpty) {
-      aggregatedConfiguration.add(toActorConfiguration(systemParameters.get))
+      aggregatedConfiguration.add(systemParameters.get.toActorConfiguration())
     }
     if (testServiceParameters.nonEmpty) {
-      aggregatedConfiguration.addAll(testServiceParameters.get.map(toActorConfiguration).asJava)
+      aggregatedConfiguration.addAll(testServiceParameters.get.map(_.toActorConfiguration()).asJava)
     }
     if (predefinedVariables.nonEmpty) {
-      aggregatedConfiguration.add(toActorConfiguration(predefinedVariables.get))
+      aggregatedConfiguration.add(predefinedVariables.get.toActorConfiguration())
     }
-  }
-
-  private def toActorConfiguration(typedActorConfiguration: TypedActorConfiguration) = {
-    val actorConfiguration = new ActorConfiguration()
-    actorConfiguration.setActor(typedActorConfiguration.actor)
-    actorConfiguration.setEndpoint(typedActorConfiguration.endpoint)
-    import scala.jdk.CollectionConverters._
-    actorConfiguration.getConfig.addAll(typedActorConfiguration.config.map(_.data).asJava)
-    actorConfiguration
+    if (settings.nonEmpty) {
+      aggregatedConfiguration.add(settings.get.toActorConfiguration())
+    }
   }
 
 }

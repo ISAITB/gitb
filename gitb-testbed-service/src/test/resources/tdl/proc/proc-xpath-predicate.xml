@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-xpath-predicate" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XPathProcessor with predicate filter</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<items><item id="1">alpha</item><item id="2">beta</item><item id="3">gamma</item></items>']]></assign>
+        <process handler="XPathProcessor" output="item2">
+            <input name="input">$xmlDoc</input>
+            <input name="expression">"/items/item[@id='2']"</input>
+        </process>
+        <verify handler="StringValidator" desc="second item">
+            <input name="actual">$item2</input>
+            <input name="expected">'beta'</input>
+        </verify>
+    </steps>
+</testcase>

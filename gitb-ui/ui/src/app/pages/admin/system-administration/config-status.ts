@@ -22,6 +22,6 @@ export interface ConfigStatus {
     enabled?: boolean
     fromDefault?: boolean
     fromEnv?: boolean
-    deferredExpand?: EventEmitter<boolean>
+    deferredExpand?: boolean
 
 }

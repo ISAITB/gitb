@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-tokgen-uuid" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TokenGenerator UUID</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <process handler="TokenGenerator" operation="uuid" output="uuid"/>
+        <verify handler="ExpressionValidator" desc="UUID is non-empty">
+            <input name="expression">string-length($uuid) &gt; 0</input>
+        </verify>
+        <!-- UUID pattern: 8-4-4-4-12 hex chars -->
+        <verify handler="RegExpValidator" desc="UUID format">
+            <input name="input">$uuid</input>
+            <input name="expression">'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'</input>
+        </verify>
+    </steps>
+</testcase>

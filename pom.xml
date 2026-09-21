@@ -7,11 +7,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.15</version>
+        <version>4.1.1</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.29.5</version>
+    <version>1.30.0</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -26,27 +26,29 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>12.2.2</version.plugin.dependency-check-maven>
-        <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
-        <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
-        <version.plugin.jaxb2-maven-plugin>3.1.0</version.plugin.jaxb2-maven-plugin>
-        <version.plugin.license-maven-plugin>2.5.0</version.plugin.license-maven-plugin>
-        <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
-        <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
+        <version.plugin.dependencyCheckMaven>12.2.2</version.plugin.dependencyCheckMaven>
+        <version.plugin.mavenDeployPlugin>3.1.4</version.plugin.mavenDeployPlugin>
+        <version.plugin.mavenCompilerPlugin>3.15.0</version.plugin.mavenCompilerPlugin>
+        <version.plugin.jaxb2MavenPlugin>4.1.0</version.plugin.jaxb2MavenPlugin>
+        <version.plugin.licenseMavenPlugin>2.7.1</version.plugin.licenseMavenPlugin>
+        <version.plugin.antrunPlugin>3.2.0</version.plugin.antrunPlugin>
+        <version.plugin.versionsMavenPlugin>2.21.0</version.plugin.versionsMavenPlugin>
+        <version.plugin.mavenSitePlugin>3.22.0</version.plugin.mavenSitePlugin>
+        <version.plugin.projectInfoReports>3.9.0</version.plugin.projectInfoReports>
         <!-- Dependency versions -->
-        <version.gitbTypes>1.29.5</version.gitbTypes>
-        <version.springBoot>3.5.15</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
-        <tomcat.version>10.1.55</tomcat.version>
-        <version.bouncycastle>1.84</version.bouncycastle>
-        <version.helgerSchematron>9.0.1</version.helgerSchematron>
+        <version.gitbTypes>1.30.0</version.gitbTypes>
+        <version.springBoot>4.1.1</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
+        <tomcat.version>11.0.25</tomcat.version>
+        <version.bouncycastle>1.86</version.bouncycastle>
+        <version.helgerSchematron>9.2.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.2.2</version.cxf>
-        <version.httpComponents>4.5.14</version.httpComponents>
-        <version.commonsCodec>1.20.0</version.commonsCodec>
+        <version.cxf>4.2.3</version.cxf> <!-- When upgrading ensure that the neethi version is up to date. -->
+        <version.neethi>3.2.3</version.neethi>
+        <version.commonsCodec>1.22.1</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
-        <version.commonsIo>2.21.0</version.commonsIo>
+        <version.commonsIo>2.22.0</version.commonsIo>
         <version.commonsLang3>3.20.0</version.commonsLang3>
-        <version.tika>3.2.3</version.tika>
+        <version.tika>3.3.2</version.tika>
         <!--
             Xerces versions to support the XML Schema v1.1 distribution (not published on Maven
             The version in the following sections must remain consistent with the latest Xerces
@@ -59,39 +61,80 @@
         <version.serializer>2.7.3</version.serializer>
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
-        <version.jaxbApi>4.0.5</version.jaxbApi>
-        <version.jaxbRuntime>4.0.6</version.jaxbRuntime>
-        <version.saxon>12.8</version.saxon>
+        <version.jaxb>4.0.8</version.jaxb>
+        <version.saxon>12.10</version.saxon>
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
-        <version.commonsConfiguration>2.15.0</version.commonsConfiguration>
+        <version.commonsConfiguration>2.15.1</version.commonsConfiguration>
         <version.commonsText>1.15.0</version.commonsText>
-        <version.pekko>1.4.0</version.pekko>
+        <version.pekko>1.7.0</version.pekko>
         <version.rgxgen>3.1</version.rgxgen>
-        <version.saajImpl>3.0.4</version.saajImpl>
-        <version.helgerCommons>12.0.0</version.helgerCommons>
-        <version.dnsJava>3.6.3</version.dnsJava>
+        <version.saajImpl>3.0.6</version.saajImpl>
+        <version.helgerCommons>12.3.2</version.helgerCommons>
+        <version.dnsJava>3.6.5</version.dnsJava>
         <version.commonsFileUpload>1.6.0</version.commonsFileUpload>
-        <version.commonsCollections>4.5.0</version.commonsCollections>
-        <version.xmlUnit>2.10.3</version.xmlUnit>
+        <version.commonsCollections>4.6.0</version.commonsCollections>
+        <version.xmlUnit>2.13.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
-        <version.freeMarker>2.3.34</version.freeMarker>
-        <version.openhtmltopdf>1.1.37</version.openhtmltopdf>
-        <version.org.jsoup>1.15.4</version.org.jsoup>
-        <version.jena>5.2.0</version.jena>
+        <version.freeMarker>2.3.35</version.freeMarker>
+        <version.openhtmltopdf>1.1.86</version.openhtmltopdf>
+        <version.org.jsoup>1.23.2</version.org.jsoup>
+        <version.jena>6.1.0</version.jena>
         <!-- Ensure the libthrift version matches the one used within Jena. -->
-        <version.libthrift>0.23.0</version.libthrift>
-        <version.topbraid>1.4.4</version.topbraid>
-        <version.json-schema-validator>2.0.1</version.json-schema-validator>
-        <version.jayway>2.9.0</version.jayway>
-        <version.jackson>2.21.1</version.jackson>
-        <version.jacksonAnnotations>2.21</version.jacksonAnnotations>
-        <version.pdfbox>3.0.7</version.pdfbox>
+        <version.libthrift>0.24.0</version.libthrift>
+        <version.topbraid>1.5.0</version.topbraid>
+        <version.json-schema-validator>3.0.7</version.json-schema-validator>
+        <version.jayway>3.0.0</version.jayway>
+        <version.jackson>3.2.2</version.jackson>
+        <version.jackson2>2.22.2</version.jackson2> <!-- Used for libraries that have not upgraded to Jackson 3 (the package is different so no conflicts) -->
+        <version.jacksonAnnotations>2.22</version.jacksonAnnotations>
+        <version.pdfbox>3.0.8</version.pdfbox>
+        <version.verapdf>1.30.2</version.verapdf>
+        <!--
+            veraPDF's profile loading (org.verapdf.pdfa.validation.profiles.Profiles) unmarshals its
+            bundled PDF/A and PDF/UA profile XMLs using the legacy javax.xml.bind (JAXB 2) API, for
+            which it depends on com.sun.xml.bind:jaxb-impl. Spring Boot's own dependency management
+            pins that same groupId/artifactId to a much newer version that has been repurposed as a
+            jakarta.xml.bind-based bridge (it no longer contains the javax.xml.bind.v2.ContextFactory
+            provider class veraPDF needs) - so it must be pinned back here to the last release still
+            built against the javax.xml.bind.v2 API. Nothing else in this project depends on
+            com.sun.xml.bind:jaxb-impl (it is unrelated to, and does not affect, the jakarta.xml.bind
+            stack used elsewhere, e.g. by CXF).
+        -->
+        <version.jaxbImplLegacy>2.3.9</version.jaxbImplLegacy>
+        <version.swaggerUi>5.32.15</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
+        <version.owaspHtmlSanitizer>20260313.1</version.owaspHtmlSanitizer>
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
         <engineVersion>${project.version}</engineVersion>
     </properties>
+
+    <licenses>
+        <license>
+            <name>European Union Public Licence (EUPL) Version 1.2</name>
+            <url>https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>European Commission, DIGIT, Interoperable Europe Unit</name>
+        <url>https://interoperable-europe.ec.europa.eu/</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>European Commission, DIGIT, Interoperable Europe Unit</name>
+            <email>DIGIT-ITB@ec.europa.eu</email>
+            <organization>European Commission</organization>
+            <organizationUrl>https://interoperable-europe.ec.europa.eu/</organizationUrl>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/ISAITB/gitb/issues</url>
+    </issueManagement>
 
     <repositories>
         <repository>
@@ -100,17 +143,24 @@
         </repository>
         <repository>
             <id>itbRepoRead</id>
+            <!-- Property set in profile settings that is used in development. Not needed if gitb-types-* dependencies are non-snapshot or if these are installed locally. -->
             <url>${itbRepoReadUrl}</url>
         </repository>
     </repositories>
 
     <distributionManagement>
+        <site>
+            <id>local-staging</id>
+            <url>file://${maven.multiModuleProjectDirectory}/target/staging</url>
+        </site>
         <repository>
             <id>itbRepoWrite</id>
+            <!-- Property set in profile settings that is used in development. Not needed if gitb-types-* dependencies are non-snapshot or if these are installed locally. -->
             <url>${itbRepoWriteUrl}</url>
         </repository>
         <snapshotRepository>
             <id>itbRepoWrite</id>
+            <!-- Property set in profile settings that is used in development. Not needed if gitb-types-* dependencies are non-snapshot or if these are installed locally. -->
             <url>${itbRepoWriteUrl}</url>
         </snapshotRepository>
     </distributionManagement>
@@ -121,16 +171,16 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${version.plugin.maven-compiler-plugin}</version>
+                    <version>${version.plugin.mavenCompilerPlugin}</version>
                     <configuration>
                         <release>21</release>
-                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                        <forceLegacyJavacApi>true</forceLegacyJavacApi>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>${version.plugin.dependency-check-maven}</version>
+                    <version>${version.plugin.dependencyCheckMaven}</version>
                     <configuration>
                         <nvdApiServerId>nvdApi</nvdApiServerId>
                         <ossIndexUsername>${ossIndexUsername}</ossIndexUsername>
@@ -152,17 +202,22 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${version.plugin.maven-deploy-plugin}</version>
+                    <version>${version.plugin.mavenDeployPlugin}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${version.plugin.mavenSitePlugin}</version>
+                </plugin>                
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>jaxb2-maven-plugin</artifactId>
-                    <version>${version.plugin.jaxb2-maven-plugin}</version>
+                    <version>${version.plugin.jaxb2MavenPlugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>${version.plugin.license-maven-plugin}</version>
+                    <version>${version.plugin.licenseMavenPlugin}</version>
                     <configuration>
                         <fileTemplate>${project.basedir}/etc/licence/third-party-licence-template.ftl</fileTemplate>
                         <outputDirectory>${project.build.directory}/generated-sources/license/temp</outputDirectory>
@@ -177,13 +232,15 @@
                             <licenseMerge>MIT License|The MIT License|MIT</licenseMerge>
                             <licenseMerge>Eclipse Distribution License - v1.0|EDL 1.0|Eclipse Distribution License - v 1.0</licenseMerge>
                             <licenseMerge>Eclipse Public License - v1.0|Eclipse Public License - v 1.0</licenseMerge>
-                            <licenseMerge>Eclipse Public License - v2.0|EPL-2.0|EPL 2.0|Eclipse Public License 2.0</licenseMerge>
-                            <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception</licenseMerge>
+                            <licenseMerge>Eclipse Public License - v2.0|EPL 2.0|EPL-2.0|Eclipse Public License 2.0</licenseMerge>
+                            <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception|CDDL/GPLv2+CE</licenseMerge>
                             <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|LGPL-2.1-only|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
-                            <licenseMerge>The 3-Clause BSD License|BSD-3-Clause</licenseMerge>
+                            <licenseMerge>The 3-Clause BSD License|BSD-3-Clause|BSD 3-Clause License</licenseMerge>
                             <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
+                            <licenseMerge>The 0-Clause BSD License|BSD</licenseMerge>
                             <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
                             <licenseMerge>Mozilla Public License Version 1.1|MPL 1.1</licenseMerge>
+                            <licenseMerge>Mozilla Public License Version 2.0|Mozilla Public License, Version 2.0|Mozilla Public License 2.0 (MPL-2.0)|</licenseMerge>
                             <licenseMerge>European Union Public Licence (EUPL) Version 1.2</licenseMerge>
                         </licenseMerges>
                         <includedLicenses>
@@ -197,6 +254,7 @@
                             <includedLicense>European Union Public Licence (EUPL) Version 1.2</includedLicense>
                             <includedLicense>The 3-Clause BSD License</includedLicense>
                             <includedLicense>The 2-Clause BSD License</includedLicense>
+                            <includedLicense>The 0-Clause BSD License</includedLicense>
                             <includedLicense>Mozilla Public License Version 2.0</includedLicense>
                             <includedLicense>Common Public License 1.0</includedLicense>
                             <includedLicense>CUP Parser Generator Copyright Notice, License, and Disclaimer</includedLicense>
@@ -214,7 +272,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${version.plugin.antrun-plugin}</version>
+                    <version>${version.plugin.antrunPlugin}</version>
                     <executions>
                         <execution>
                             <!-- Generate licence report -->
@@ -251,7 +309,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
-                    <version>${version.plugin.versions-maven-plugin}</version>
+                    <version>${version.plugin.versionsMavenPlugin}</version>
                     <configuration>
                         <generateBackupPoms>false</generateBackupPoms>
                     </configuration>
@@ -259,8 +317,8 @@
                         <execution>
                             <phase>none</phase>
                             <!--
-                                Run manually with `mvn versions:set -DnewVersion=1.29.5`
-                                For a new development cycle run `mvn versions:set -DnewVersion=1.29.5-SNAPSHOT`
+                                Run manually with `mvn versions:set -DnewVersion=1.30.0`
+                                For a new development cycle run `mvn versions:set -DnewVersion=1.30.0-SNAPSHOT`
                                 The version number should be aligned with the gitb-types-jakarta dependency.
                             -->
                         </execution>
@@ -279,11 +337,17 @@
             </plugin>
         </plugins>
     </build>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types-jakarta</artifactId>
+                <version>${version.gitbTypes}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.europa.ec.itb</groupId>
+                <artifactId>gitb-types-model</artifactId>
                 <version>${version.gitbTypes}</version>
             </dependency>
             <dependency>
@@ -322,6 +386,11 @@
                 <version>${version.cxf}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.neethi</groupId>
+                <artifactId>neethi</artifactId>
+                <version>${version.neethi}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>
                 <version>${version.springBoot}</version>
@@ -351,16 +420,6 @@
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-frontend-jaxws</artifactId>
                 <version>${version.cxf}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${version.httpComponents}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpmime</artifactId>
-                <version>${version.httpComponents}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -434,16 +493,6 @@
                 Section END.
             -->
             <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jaxbApi}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.jaxbRuntime}</version>
-            </dependency>
-            <dependency>
                 <groupId>net.sf.saxon</groupId>
                 <artifactId>Saxon-HE</artifactId>
                 <version>${version.saxon}</version>
@@ -457,11 +506,6 @@
                 <groupId>jakarta.jws</groupId>
                 <artifactId>jakarta.jws-api</artifactId>
                 <version>${version.jwsApi}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.activation</groupId>
-                <artifactId>jakarta.activation-api</artifactId>
-                <version>${version.activation}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -539,6 +583,11 @@
                 <version>${version.helgerCommons}</version>
             </dependency>
             <dependency>
+                <groupId>com.helger.commons</groupId>
+                <artifactId>ph-cache</artifactId>
+                <version>${version.helgerCommons}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.xmlunit</groupId>
                 <artifactId>xmlunit-core</artifactId>
                 <version>${version.xmlUnit}</version>
@@ -579,11 +628,6 @@
                 <version>${version.topbraid}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.thrift</groupId>
-                <artifactId>libthrift</artifactId>
-                <version>${version.libthrift}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>json-schema-validator</artifactId>
                 <version>${version.json-schema-validator}</version>
@@ -595,13 +639,38 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.jacksonAnnotations}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson2}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson2}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${version.jackson2}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${version.jacksonAnnotations}</version>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${version.jackson}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.pdfbox</groupId>
@@ -614,12 +683,97 @@
                 <version>${version.pdfbox}</version>
             </dependency>
             <dependency>
+                <groupId>org.verapdf</groupId>
+                <artifactId>validation-model</artifactId>
+                <version>${version.verapdf}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${version.jaxbImplLegacy}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${version.freeMarker}</version>
             </dependency>
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>${version.swaggerUi}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>owasp-java-html-sanitizer</artifactId>
+                <version>${version.owaspHtmlSanitizer}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${version.libthrift}</version>
+            </dependency>
+            <!-- JAXB BOM to align JAXB-related APIs and implementations. -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-bom</artifactId>
+                <version>${version.jaxb}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <reporting>
+        <plugins>
+            <!--
+                Generate project reports with `mvn install site site:stage`.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>${version.plugin.projectInfoReports}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <!-- index only = suppress all default reports -->
+                            <report>index</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>${version.plugin.versionsMavenPlugin}</version>
+                <reportSets>
+                    <!-- Aggregate report: root only -->
+                    <reportSet>
+                        <id>aggregate</id>
+                        <inherited>false</inherited>
+                        <configuration>
+                            <onlyProjectDependencies>true</onlyProjectDependencies>
+                            <processDependencyManagement>true</processDependencyManagement>
+                        </configuration>
+                        <reports>
+                            <report>dependency-updates-aggregate-report</report>
+                            <report>plugin-updates-report</report>
+                        </reports>
+                    </reportSet>
+                    <!-- Per-module reports: run in each module -->
+                    <reportSet>
+                        <id>modules</id>
+                        <configuration>
+                            <onlyProjectDependencies>true</onlyProjectDependencies>
+                            <processDependencyManagement>true</processDependencyManagement>
+                        </configuration>
+                        <reports>
+                            <report>dependency-updates-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <modules>
         <module>gitb-common</module>
@@ -632,4 +786,5 @@
         <module>gitb-validator-tdl</module>
         <module>gitb-xml-resources</module>
     </modules>
+
 </project>

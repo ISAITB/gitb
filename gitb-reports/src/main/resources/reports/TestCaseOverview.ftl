@@ -31,6 +31,66 @@
             .step {
                 margin-bottom: 30px;
             }
+            .comment-container {
+              border-radius: 5px;
+              border: 1px solid #000000;
+            }
+            .comment-header {
+              display: table;
+              padding: 10px;
+              border-top-left-radius: 5px;
+              border-top-right-radius: 5px;
+              border-bottom: 1px solid #000000;
+              background-color: #ededed;
+              width: 100%;
+            }
+            .comment-spacer {
+              margin-top: 4px;
+              height: 22px;
+              margin-bottom: 4px;
+              margin-left: 30px;
+              border-left: 1px solid #000000;
+            }
+            .comment-header-icon {
+              display: table-cell;
+              width: 22px;
+              white-space: nowrap;
+            }
+            .comment-header-icon > img {
+              width: 10px;
+            }
+            .comment-header-author {
+              display: table-cell;
+              margin-left: 10px;
+              vertical-align: middle;
+              padding-top: 5px;
+              padding-bottom: 5px;
+            }
+            .comment-header-date-container, .comment-header-forced-container {
+              display: table-cell;
+              margin-left: 10px;
+              width: 1px;
+            }
+            .comment-header-date, .comment-header-forced {
+              border-radius: 8px;
+              border: 1px solid #000000;
+              background: #FFFFFF;
+              padding: 4px 8px;
+              white-space: nowrap;
+              margin-left: 10px;
+            }
+            .comment-content {
+              padding-left: 10px;
+              padding-right: 10px;
+              padding-top: 4px;
+              padding-bottom: 4px;
+            }
+            .comment-container.admin .comment-header {
+              background-color: #d9edf7;
+            }
+            .comment-container.admin .comment-header-icon > img {
+              width: 16px;
+            }
 	    </style>
     </head>
     <body id="top">
@@ -160,11 +220,20 @@
                     <table>
                         <tr>
                             <td class="cell-label">Annexes:</td>
-                            <td class="cell-value">
-                                <div class="value-inline">
-                                    <#if documentation??><a class="page-link" href="#annex-documentation">Test case documentation</a></#if>
-                                    <#if documentation?? && logMessages??><span class="inline-text-separator">|</span></#if><#if logMessages??><a class="page-link" href="#annex-log">Test session log</a></#if>
-                                </div>
+                            <td class="cell-value"><#t>
+                                <div class="value-inline"><#t>
+                                    <#if userComment?? || adminComment??><#t>
+                                      <a class="page-link" href="#annex-comments">Test session comments</a><#t>
+                                    </#if><#t>
+                                    <#if documentation??><#t>
+                                      <#if userComment?? || adminComment??><span class="inline-text-separator">|</span></#if><#t>
+                                      <a class="page-link" href="#annex-documentation">Test case documentation</a><#t>
+                                    </#if><#t>
+                                    <#if logMessages??><#t>
+                                      <#if userComment?? || adminComment?? || documentation??><span class="inline-text-separator">|</span></#if><#t>
+                                      <a class="page-link" href="#annex-log">Test session log</a><#t>
+                                    </#if><#t>
+                                </div><#t>
                             </td>
                         </tr>
                     </table>
@@ -186,6 +255,30 @@
                         <@testStepReport.printStep step "step-"+(step?counter) step.title "step-reports" />
                     </div>
                 </#list>
+            </div>
+        </#if>
+
+        <#if userComment?? || adminComment??>
+            <page-before/>
+            <div id="annex-comments" class="comments">
+                <div class="title">Test session comments</div>
+                <div class="comments-content">
+                  <#if userComment?? && adminComment??>
+                    <#if adminComment.showFirst()>
+                      <@common.printAdminComment adminComment />
+                      <div class="comment-spacer"></div><#t>
+                      <@common.printUserComment userComment organisation />
+                    <#else>
+                      <@common.printUserComment userComment organisation />
+                      <div class="comment-spacer"></div><#t>
+                      <@common.printAdminComment adminComment />
+                    </#if>
+                  <#elseif userComment??>
+                    <@common.printUserComment userComment organisation />
+                  <#elseif adminComment??>
+                    <@common.printAdminComment adminComment />
+                  </#if>
+                </div><#t>
             </div>
         </#if>
 

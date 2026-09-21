@@ -38,7 +38,7 @@ export class SpecificationService {
     })
   }
 
-  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, groupId: number|undefined, badges: BadgesInfo) {
+  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, documentation: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -50,6 +50,9 @@ export class SpecificationService {
     }
     if (description != undefined) {
       params.description = description
+    }
+    if (documentation != undefined) {
+      params.documentation = documentation
     }
     if (reportMetadata != undefined) {
       params.metadata = reportMetadata

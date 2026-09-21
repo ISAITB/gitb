@@ -18,6 +18,7 @@ package com.gitb.engine.actors.processors;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.events.TestStepStatusEventBus;
+import com.gitb.engine.events.model.ExitEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
@@ -39,10 +40,12 @@ import javax.xml.datatype.DatatypeConfigurationException;
  * If step executor actor
  */
 public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
-	public static final String NAME = "if-s-p";
 
+	public static final String NAME = "if-s-p";
 	public static final String THEN_BRANCH_ID = "[T]";
 	public static final String ELSE_BRANCH_ID = "[F]";
+
+	private ActorRef activeBranchActor;
 
     public IfStepProcessorActor(IfStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
 		super(step, scope, stepId, stepContext);
@@ -63,22 +66,21 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
                 .processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE)
                 .getValue();
 
-		ActorRef branch = null;
-		if(condition) {
-			branch = SequenceProcessorActor.create(getContext(), step.getThen(), scope, stepId + THEN_BRANCH_ID, this.stepContext);
+		if (condition) {
+			activeBranchActor = SequenceProcessorActor.create(getContext(), step.getThen(), scope, stepId + THEN_BRANCH_ID, this.stepContext);
 			if (step.getElse() != null) {
 				sendSkippedStatusEvent(stepId + ELSE_BRANCH_ID);
 			}
 		} else {
 			if (step.getElse() != null) {
-				branch = SequenceProcessorActor.create(getContext(), step.getElse(), scope, stepId + ELSE_BRANCH_ID, this.stepContext);
+				activeBranchActor = SequenceProcessorActor.create(getContext(), step.getElse(), scope, stepId + ELSE_BRANCH_ID, this.stepContext);
 			}
             sendSkippedStatusEvent(stepId + THEN_BRANCH_ID);
 		}
 
-		if (branch != null) {
+		if (activeBranchActor != null) {
 			StartCommand command = new StartCommand(scope.getContext().getSessionId());
-			branch.tell(command, self());
+			activeBranchActor.tell(command, self());
 		} else {
 			completed();
 		}
@@ -96,8 +98,12 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) {
+		if (event instanceof ExitEvent exitEvent) {
+			// Simply propagate the exit scope to a potentially interested parent step.
+			setExitScopeToReport(exitEvent.getExitScope());
+		}
         StepStatus status = event.getStatus();
-		if(status == StepStatus.COMPLETED) {
+		if (status == StepStatus.COMPLETED) {
 			completed();
 		} else if (status == StepStatus.WARNING) {
 			childrenHasWarning();

@@ -1,0 +1,107 @@
+@import '../../../styles/less/_common.less';
+
+.comments-disabled-message {
+    padding-bottom: 16px;
+}
+
+.comment-root {
+    &.admin-comment {
+        .comment-container {
+            .comment-header, .comment-content {
+                border-color: @blue-info-border;
+                ::ng-deep .tag-container {
+                    color: @blue-info-text;
+                    border-color: @blue-info-border;
+                }
+            }
+            .comment-header {
+                background-color: @blue-info-background;
+                color: @blue-info-text;
+                &:hover {
+                    background-color: @blue-info-hover;
+                }
+            }
+        }
+    }
+}
+
+.result-container {
+    .btn-group {
+        .dropdown-toggle::after {
+            margin-left: auto;
+        }
+    }
+    .result-option {
+        .result-icon {
+            i {
+                font-size: 14px;
+                margin-right: 8px;
+            }
+        }
+    }
+}
+
+.comments-container-line {
+    border-left: 2px solid @gray-light;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    margin-top: 2px;
+    margin-left: 24px;
+    margin-bottom: 2px;
+}
+
+.comments-container {
+    //gap: 16px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    position: relative;
+    .comment-container {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        border-radius: @border-radius;
+        .comment-header {
+            border-width: 1px;
+            border-style: solid;
+            border-color: @gray-light;
+            background-color: @gray-light-1;
+            border-radius: @border-radius;
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            padding: 10px 15px;
+            &.expanded {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            &:hover {
+                cursor: pointer;
+                background-color: @gray-highlight;
+            }
+            .comment-header-icon {
+                min-width: 34px;
+                display: flex;
+                justify-content: flex-start;
+            }
+            .comment-header-author {
+                flex-grow: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-right: 10px;
+            }
+        }
+        .comment-content {
+            padding: 15px;
+            border-width: 1px;
+            border-style: solid;
+            border-color: @gray-light-2;
+            border-top-width: 0;
+            border-bottom-left-radius: @border-radius;
+            border-bottom-right-radius: @border-radius;
+            min-height: 54px;
+            background-color: @white;
+        }
+    }
+}

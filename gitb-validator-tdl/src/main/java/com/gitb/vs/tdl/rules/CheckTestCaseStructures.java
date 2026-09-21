@@ -196,6 +196,11 @@ public class CheckTestCaseStructures extends AbstractCheck {
                         }
                     } else if (stepObj instanceof Sequence) {
                         checkSteps((Sequence)stepObj);
+                    } else if (stepObj instanceof ReceiveOrListen receiveOrListen && receiveOrListen.getResult() != null) {
+                        if (receiveOrListen.getResult().getSteps() != null) {
+                            checkSteps(receiveOrListen.getResult().getSteps());
+                        }
+                        handleResultOutput(receiveOrListen);
                     }
                 }
             }
@@ -225,6 +230,12 @@ public class CheckTestCaseStructures extends AbstractCheck {
             }
             if (step instanceof TestStep) {
                 handleDocumentation(((TestStep)step).getDocumentation());
+            }
+        }
+
+        private void handleResultOutput(ReceiveOrListen step) {
+            for (TestCaseObserver observer: observers) {
+                observer.handleResultOutput(step);
             }
         }
 

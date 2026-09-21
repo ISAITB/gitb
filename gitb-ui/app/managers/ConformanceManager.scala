@@ -15,14 +15,14 @@
 
 package managers
 
-import actors.events.ConformanceStatementUpdatedEvent
+import actors.events.{ConformanceStatementSucceededEvent, ConformanceStatementUpdatedEvent}
 import com.gitb.tr.TestResultType
 import config.Configurations
 import managers.ConformanceManager._
 import managers.triggers.TriggerHelper
 import models.Enums.{ConformanceStatementItemType, OrganizationType, TestResultStatus, UserRole}
 import models.snapshot._
-import models.statement.{AvailableStatementsSearchCriteria, ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
+import models.statement.{AvailableStatementsSearchCriteria, ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria, TestCaseTagInfo}
 import models.{FileInfo, PagingStatus, _}
 import org.apache.commons.lang3.Strings
 import persistence.db.PersistenceSchema
@@ -321,6 +321,14 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
       }
       statement.withChildren(retainedChildren)
       retainedChildren.nonEmpty
+    }
+  }
+
+  def fireConformanceStatementCompletionTriggers(communityId: Long, systemId: Long, sessionId: String): Future[Unit] = {
+    getCompletedConformanceStatementsForTestSession(systemId, sessionId).map { completedActors =>
+      completedActors.foreach { actorId =>
+        triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+      }
     }
   }
 
@@ -1077,6 +1085,58 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		}
 	}
 
+	/**
+	 * Return the resolved HTML documentation for a conformance statement page.
+	 * Actor documentation takes precedence; if absent, specification documentation is used.
+	 * Queries live tables or snapshot tables depending on whether snapshotId is defined.
+	 */
+	def getConformanceStatementDocumentation(actorId: Long, snapshotId: Option[Long]): Future[Option[String]] = {
+		DB.run(
+			if (snapshotId.isDefined) {
+				for {
+					actorDoc <- PersistenceSchema.conformanceSnapshotActorDocumentation
+						.filter(d => d.id === actorId && d.snapshotId === snapshotId.get)
+						.map(_.documentation).result.headOption
+					result <- {
+						if (actorDoc.isDefined) {
+							DBIO.successful(actorDoc)
+						} else {
+							// Fall back to specification documentation from the snapshot.
+							PersistenceSchema.conformanceSnapshotResults
+								.filter(r => r.actorId === actorId && r.snapshotId === snapshotId.get)
+								.map(_.specificationId)
+								.result.headOption
+								.flatMap {
+									case Some(specId) =>
+										PersistenceSchema.conformanceSnapshotSpecificationDocumentation
+											.filter(d => d.id === specId && d.snapshotId === snapshotId.get)
+											.map(_.documentation).result.headOption
+									case None => DBIO.successful(None)
+								}
+						}
+					}
+				} yield result
+			} else {
+				for {
+					actorDoc <- PersistenceSchema.actorDocumentation.filter(_.id === actorId).map(_.documentation).result.headOption
+					result <- {
+						if (actorDoc.isDefined) {
+							DBIO.successful(actorDoc)
+						} else {
+							// Fall back to specification documentation.
+							PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.headOption
+								.flatMap {
+									case Some(specId) =>
+										PersistenceSchema.specificationDocumentation.filter(_.id === specId).map(_.documentation).result.headOption
+									case None => DBIO.successful(None)
+								}
+						}
+					}
+				} yield result
+			}
+		)
+	}
+
 	def getActorIdsToDisplayInStatementsWrapper(statements: Iterable[ConformanceStatement], snapshotId: Option[Long]): Future[Set[Long]] = {
 		DB.run(getActorIdsToDisplayInStatements(statements, snapshotId))
 	}
@@ -1562,6 +1622,23 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				}
 				toDBIO(dbActions)
 			}
+			// Copy specification and actor documentation to snapshot.
+			_ <- {
+				val specIds = communityResults.map(_._5._1).toSet
+				val actorIds = communityResults.map(_._4._1).toSet
+				for {
+					specDocs <- PersistenceSchema.specificationDocumentation.filter(_.id inSet specIds).result
+					_ <- DBIO.seq(specDocs.map(doc =>
+						PersistenceSchema.conformanceSnapshotSpecificationDocumentation +=
+							models.snapshot.ConformanceSnapshotSpecificationDocumentation(doc.id, snapshotId, doc.documentation)
+					): _*)
+					actorDocs <- PersistenceSchema.actorDocumentation.filter(_.id inSet actorIds).result
+					_ <- DBIO.seq(actorDocs.map(doc =>
+						PersistenceSchema.conformanceSnapshotActorDocumentation +=
+							models.snapshot.ConformanceSnapshotActorDocumentation(doc.id, snapshotId, doc.documentation)
+					): _*)
+				} yield ()
+			}
 			// Copy conformance and conformance overview certificate settings
 			_ <- copyConformanceCertificateSettingsToSnapshot(snapshotId, communityId)
 			// Copy badges
@@ -1735,7 +1812,9 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			_ <- PersistenceSchema.conformanceSnapshotTestCases.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotTestSuites.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotActors.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotActorDocumentation.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotSpecifications.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotSpecificationDocumentation.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotSpecificationGroups.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotDomains.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotSystems.filter(_.snapshotId === snapshot).delete
@@ -1950,6 +2029,48 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				toDBIO(actions)
 			}
 		} yield ()
+	}
+
+	/**
+	 * Distinct tags recorded across the statement's test cases, for use as filter options - along with
+	 * whether the statement also has test cases without any tags. Tags are recorded separately per test
+	 * case (not shared/reused rows), so distinctness here is based on (name, foreground, background) via
+	 * [[TestCaseTagInfo.normalise]], not on any shared identity.
+	 */
+	def getConformanceStatementTagsForFiltering(systemId: Long, actorId: Long, snapshotId: Option[Long]): Future[(Seq[TestCaseTagInfo], Boolean)] = {
+		DB.run {
+			val query = if (snapshotId.isDefined) {
+				PersistenceSchema.conformanceSnapshotResults
+					.join(PersistenceSchema.conformanceSnapshotTestCases).on((q, tc) => q.snapshotId === tc.snapshotId && q.testCaseId === tc.id)
+					.filter(_._1.snapshotId === snapshotId.get)
+					.filter(_._1.systemId === systemId)
+					.filter(_._1.actorId === actorId)
+					.map(_._2.tags)
+					.distinct
+			} else {
+				PersistenceSchema.conformanceResults
+					.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+					.filter(_._1.sut === systemId)
+					.filter(_._1.actor === actorId)
+					.map(_._2.tags)
+					.distinct
+			}
+			query.result.map { results =>
+				var hasUntagged = false
+				val tags = mutable.LinkedHashMap[String, TestCaseTagInfo]()
+				results.foreach { tagsJson =>
+					if (tagsJson.isEmpty || tagsJson.get.isEmpty) {
+						hasUntagged = true
+					} else {
+						utils.JsonUtil.parseJsTags(tagsJson.get).foreach { tag =>
+							val info = TestCaseTagInfo.normalise(tag)
+							tags.put(info.key, info)
+						}
+					}
+				}
+				(tags.values.toSeq.sortBy(_.name), hasUntagged)
+			}
+		}
 	}
 
 	def getConformanceStatementTestSuitesForFiltering(systemId: Long, actorId: Long, snapshotId: Option[Long]): Future[Iterable[TestSuiteMinimalInformation]] = {

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {finalize, forkJoin, map, mergeMap, Observable, of, share, Subject, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -37,13 +37,21 @@ import {MultiSelectConfig} from '../../../../../components/multi-select-filter/m
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../../../components/table/table-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {DisplayState} from '../../../../../types/display-state';
+import {NavigationTarget} from '../../../../../types/navigation-target';
+
+/** Persisted search/paging state for the Test suites tab - restored when returning here (e.g. via
+ * Back from a test suite's detail page). */
+interface SpecificationListState {
+  filter?: string
+}
 
 @Component({
     selector: 'app-specification-details',
     templateUrl: './specification-details.component.html',
     standalone: false
 })
-export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit {
+export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   @ViewChild("testSuiteTable") testSuiteTable?: TableApi
   @ViewChild("actorTable") actorTable?: TableApi
@@ -55,6 +63,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   sharedTestSuites: TestSuite[] = []
   availableSharedTestSuitesLoaded = false
   domainId!: number
+  communityId?: number
   specificationId!: number
   actorStatus = {status: Constants.STATUS.NONE}
   testSuiteStatus = {status: Constants.STATUS.NONE}
@@ -87,13 +96,14 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
   linkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
   unlinkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
+  private viewReturnTarget?: string
 
   constructor(
     public readonly dataService: DataService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly specificationService: SpecificationService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     route: ActivatedRoute,
     router: Router,
     private readonly popupService: PopupService,
@@ -108,9 +118,26 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.testSuiteStatus.status != Constants.STATUS.NONE) {
+      const state: DisplayState<SpecificationListState> = {
+        key: String(this.specificationId),
+        state: { filter: this.testSuiteFilter },
+        paging: this.testSuiteTable?.getPagingControls()?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.SPECIFICATION_TEST_SUITES, state)
+    }
+  }
+
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+    }
     this.linkSharedSelectionConfig = {
       name: 'sharedTestSuitesAvailable',
       textField: 'identifier',
@@ -189,21 +216,36 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
   loadTestSuites(forceLoad?: boolean) {
-    if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+    if (this.testSuiteStatus.status == Constants.STATUS.NONE) {
       this.linkSharedSelectionConfig.clearItems?.emit()
       this.unlinkSharedSelectionConfig.clearItems?.emit()
-      this.loadTestSuitesInternal(forceLoad).subscribe(() => {
+      let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+      const existingState = this.getDisplayState<SpecificationListState>(Constants.DISPLAY_STATE_KEY.SPECIFICATION_TEST_SUITES, true)
+      if (existingState && existingState.key == String(this.specificationId)) {
+        if (existingState.state) {
+          this.testSuiteFilter = existingState.state.filter
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+      this.loadTestSuitesInternal(targetPaging).subscribe(() => {
+      })
+    } else if (forceLoad) {
+      this.linkSharedSelectionConfig.clearItems?.emit()
+      this.unlinkSharedSelectionConfig.clearItems?.emit()
+      this.loadTestSuitesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, true).subscribe(() => {
       })
     } else {
       this.updateTestSuitePaging(this.testSuitePage, this.testSuiteTotal)
     }
   }
 
-  loadTestSuitesInternal(forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
+  loadTestSuitesInternal(pagingInfo?: PagingEvent, forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
     if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
       this.testSuites = []
       this.sharedTestSuites = []
-      const specTestSuites$ = this.refreshTestSuites()
+      const specTestSuites$ = this.loadSpecificationTestSuites(pagingInfo ?? { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
       const sharedTestSuites$ = this.conformanceService.getSpecSharedTestSuites(this.specificationId)
       return forkJoin([specTestSuites$, sharedTestSuites$]).pipe(
         mergeMap((data) => {
@@ -295,9 +337,6 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     return finished$.asObservable()
   }
 
-  createActor() {
-    this.routingService.toCreateActor(this.domainId, this.specificationId)
-  }
 
 	uploadTestSuite() {
     const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
@@ -397,12 +436,12 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     })
   }
 
-	onActorSelect(actor: Actor) {
-    this.routingService.toActor(this.domainId, this.specificationId, actor.id)
+	actorRowTarget = (actor: Actor): NavigationTarget => {
+    return this.routingService.linkToActor(this.domainId, this.specificationId, actor.id)
   }
 
-	onTestSuiteSelect(testSuite: TestSuite) {
-    this.routingService.toTestSuite(this.domainId, this.specificationId, testSuite.id)
+	testSuiteRowTarget = (testSuite: TestSuite): NavigationTarget => {
+    return this.routingService.linkToTestSuite(this.domainId, this.specificationId, testSuite.id)
   }
 
 	deleteSpecification() {
@@ -422,7 +461,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 	saveSpecificationChanges() {
     if (!this.saveDisabled()) {
       this.savePending = true
-      this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
+      this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.documentation, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
         .subscribe(() => {
           this.popupService.success(this.dataService.labelSpecification()+' updated.')
           this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})
@@ -441,11 +480,13 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	back() {
-    if (this.sharedTestSuiteId) {
-      this.routingService.toSharedTestSuite(this.domainId, this.sharedTestSuiteId)
-    } else {
-      this.routingService.toDomain(this.domainId)
-    }
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.sharedTestSuiteId) {
+        this.routingService.toSharedTestSuite(this.domainId, this.sharedTestSuiteId)
+      } else {
+        this.routingService.toDomain(this.domainId)
+      }
+    })
   }
 
 }

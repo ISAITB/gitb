@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-flow-parallel" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Parallel flow both branches succeed</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <flow>
+            <thread>
+                <steps>
+                    <assign to="branch1">'done'</assign>
+                </steps>
+            </thread>
+            <thread>
+                <steps>
+                    <assign to="branch2">'done'</assign>
+                </steps>
+            </thread>
+        </flow>
+        <verify handler="ExpressionValidator" desc="session succeeds after parallel flow">
+            <input name="expression">true()</input>
+        </verify>
+    </steps>
+</testcase>

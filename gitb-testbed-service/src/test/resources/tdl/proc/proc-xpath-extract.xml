@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-xpath-extract" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XPathProcessor extract element value</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<person><name>Bob</name><city>London</city></person>']]></assign>
+        <process handler="XPathProcessor" output="city">
+            <input name="input">$xmlDoc</input>
+            <input name="expression">"/person/city"</input>
+        </process>
+        <verify handler="StringValidator" desc="extracted city">
+            <input name="actual">$city</input>
+            <input name="expected">'London'</input>
+        </verify>
+    </steps>
+</testcase>

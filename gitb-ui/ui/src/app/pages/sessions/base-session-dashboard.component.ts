@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {TableColumnDefinition} from '../../types/table-column-definition.type';
 import {TestResultForDisplay} from '../../types/test-result-for-display';
@@ -24,7 +24,7 @@ import {ReportService} from '../../services/report.service';
 import {ConfirmationDialogService} from '../../services/confirmation-dialog.service';
 import {TestService} from '../../services/test.service';
 import {PopupService} from '../../services/popup.service';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {DiagramLoaderService} from '../../components/diagram/test-session-presentation/diagram-loader.service';
 import {RoutingService} from '../../services/routing.service';
 import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
@@ -36,16 +36,31 @@ import {FieldInfo} from '../../types/field-info';
 import {TestResultData} from '../../types/test-result-data';
 import {SessionTableComponent} from '../../components/session-table/session-table.component';
 import {PagingEvent} from '../../components/paging-controls/paging-event';
-import {TestResult} from '../../types/test-result';
 import {CheckboxOption} from '../../components/checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from '../../components/checkbox-option-panel/checkbox-option-state';
+import {SessionColumnCase, SessionColumnsService} from '../../services/session-columns.service';
+import {BaseComponent} from '../base-component.component';
+import {Utils} from '../../common/utils';
+
+/** The full state of a session dashboard page, persisted so that returning here via a "View XYZ"
+ * Back control restores filters, paging, sort and the previously expanded session. */
+interface SessionDashboardState {
+  filters?: {[key: string]: any}
+  activeSortColumn: string
+  activeSortOrder: string
+  completedSortColumn: string
+  completedSortOrder: string
+  activePaging?: PagingEvent
+  completedPaging?: PagingEvent
+  expandedSessionId?: string
+}
 
 @Component({
   template: '',
   standalone: false
 })
-export abstract class BaseSessionDashboardComponent implements OnInit, AfterViewInit {
+export abstract class BaseSessionDashboardComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  protected readonly Constants = Constants;
   protected static EXPORT_PDF_OPTION = '0'
   protected static EXPORT_XML_OPTION = '1'
   protected static EXPORT_DATA_OPTION = '2'
@@ -75,7 +90,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.FLAG, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.COMMENTS ],
     updatePending: false,
     updateDisabled: false
   }
@@ -96,9 +111,20 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   completedSortColumn = "endTime"
   copyForOtherRoleOption = false
   expandFirstSession = false
+  restoredState?: SessionDashboardState
+  restoredFilters?: {[key: string]: any}
+  private restoredExpandSessionId?: string
 
   @ViewChild("completedSessions") completedSessionsTable?: SessionTableComponent
   @ViewChild("activeSessions") activeSessionsTable?: SessionTableComponent
+
+  activeColumnChooserOptions?: CheckboxOption[][]
+  completedColumnChooserOptions?: CheckboxOption[][]
+  private currentColumnIds: string[] = []
+  /** Whether we arrived here via RoutingService.returnToSource() (a "View XYZ" Back navigation).
+   * Captured from transient router state (not sessionStorage) so it can never leak into a later,
+   * unrelated visit to this page. */
+  private readonly arrivedViaReturn: boolean
 
   constructor(
     public readonly dataService: DataService,
@@ -109,8 +135,13 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     private readonly popupService: PopupService,
     protected readonly route: ActivatedRoute,
     private readonly diagramLoaderService: DiagramLoaderService,
-    protected readonly routingService: RoutingService
-  ) { }
+    protected readonly routingService: RoutingService,
+    protected readonly sessionColumnsService: SessionColumnsService,
+    router: Router
+  ) {
+    super()
+    this.arrivedViaReturn = router.currentNavigation()?.extras?.state?.['restore'] === true
+  }
 
   ngOnInit(): void {
     this.showActiveSessions = this.showActiveTestSessions()
@@ -118,24 +149,43 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     this.showDeleteControls = this.showTestSessionDeleteControls()
     this.showTogglePendingAdminInteraction = this.showTogglePendingAdminInteractionControl()
     this.copyForOtherRoleOption = this.showCopyForOtherRoleOption()
-    const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
-    if (sessionIdValue != undefined) {
-      this.sessionIdToShow = sessionIdValue
-    }
-    const testCaseIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID)
-    if (testCaseIdValue != undefined) {
-      this.testCaseIdToShow = Number(testCaseIdValue)
-    }
-    const systemIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)
-    if (systemIdValue != undefined) {
-      this.systemIdToShow = Number(systemIdValue)
-    }
-    this.expandFirstSession = this.sessionIdToShow != undefined || (this.systemIdToShow != undefined && this.testCaseIdToShow != undefined)
     if (!this.dataService.isSystemAdmin) {
       this.communityId = this.dataService.community!.id
     }
+    // Only pages that offer "View XYZ" navigation controls can be the target of a recorded return -
+    // this also keeps community session dashboard's state from clashing with the admin one's, as
+    // both currently share the same base state-restoration logic.
+    if (this.showSessionNavigationControls) {
+      this.restoredState = this.consumeRestoredState()
+    }
+    if (this.restoredState) {
+      // Returning here from a "View XYZ" navigation: restore the full previous state instead of
+      // the query-param based deep link below.
+      this.restoredFilters = this.restoredState.filters
+      this.activeSortColumn = this.restoredState.activeSortColumn
+      this.activeSortOrder = this.restoredState.activeSortOrder
+      this.completedSortColumn = this.restoredState.completedSortColumn
+      this.completedSortOrder = this.restoredState.completedSortOrder
+      this.restoredExpandSessionId = this.restoredState.expandedSessionId
+    } else {
+      const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
+      if (sessionIdValue != undefined) {
+        this.sessionIdToShow = sessionIdValue
+      }
+      const testCaseIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID)
+      if (testCaseIdValue != undefined) {
+        this.testCaseIdToShow = Number(testCaseIdValue)
+      }
+      const systemIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)
+      if (systemIdValue != undefined) {
+        this.systemIdToShow = Number(systemIdValue)
+      }
+      this.expandFirstSession = this.sessionIdToShow != undefined || (this.systemIdToShow != undefined && this.testCaseIdToShow != undefined)
+    }
     this.activeTestsColumns = this.getActiveTestsColumns()
     this.completedTestsColumns = this.getCompletedTestsColumns()
+    this.currentColumnIds = this.sessionColumnsService.activeIds(this.dataService.getSessionColumnPreference(this.getColumnCase()), this.getColumnCase(), this.dataService.isSystemAdmin)
+    this.buildColumnChooserOptions()
     if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined)) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
     }
@@ -148,6 +198,13 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     if (this.includeCustomPropertyFilters()) {
       this.filterState.filters.push(Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY)
     }
+    if (this.restoredState) {
+      // Reflect the restored sort on the column headers (same approach as onColumnChooserUpdated).
+      const activeOrder = this.activeSortOrder as 'asc'|'desc'
+      const completedOrder = this.completedSortOrder as 'asc'|'desc'
+      this.activeTestsColumns = this.activeTestsColumns.map(c => ({...c, order: c.field === this.activeSortColumn ? activeOrder : null})) as TableColumnDefinition[]
+      this.completedTestsColumns = this.completedTestsColumns.map(c => ({...c, order: c.field === this.completedSortColumn ? completedOrder : null})) as TableColumnDefinition[]
+    }
     this.showDeleteObsoleteControl = this.showDeleteObsolete()
     this.setBreadcrumbs()
   }
@@ -155,8 +212,59 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.filterState.updatePending = true
-      this.applyFilters()
+      if (this.restoredState) {
+        if (this.showActiveSessions) {
+          this.getActiveTests(this.restoredState.activePaging ?? { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+        }
+        this.getCompletedTests(this.restoredState.completedPaging ?? { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+      } else {
+        this.applyFilters()
+      }
     })
+  }
+
+  ngOnDestroy(): void {
+    if (this.showSessionNavigationControls) {
+      this.saveCurrentState()
+    }
+  }
+
+  /** The key under which this page's display state is saved/restored - distinct per page (and, for
+   * organisation tests, per organisation) so unrelated pages/organisations don't clash. */
+  protected stateKey(): string {
+    return Constants.DISPLAY_STATE_KEY.SESSION_DASHBOARD
+  }
+
+  private consumeRestoredState(): SessionDashboardState|undefined {
+    if (this.arrivedViaReturn) {
+      const saved = this.getDisplayState<SessionDashboardState>(this.stateKey(), true)
+      if (saved?.state) {
+        return saved.state
+      }
+    }
+    return undefined
+  }
+
+  private saveCurrentState() {
+    // Among all currently expanded rows (there may be several, across both tables), restore the one
+    // most recently expanded - this is the one the user was acting on (e.g. clicked "View" from).
+    let expandedRow: TestResultForDisplay|undefined
+    for (const row of this.activeTests.concat(this.completedTests)) {
+      if (row.expanded && (expandedRow == undefined || (row.expandedOrder ?? 0) > (expandedRow.expandedOrder ?? 0))) {
+        expandedRow = row
+      }
+    }
+    const state: SessionDashboardState = {
+      filters: this.filterState?.filterData ? this.filterState.filterData() : undefined,
+      activeSortColumn: this.activeSortColumn,
+      activeSortOrder: this.activeSortOrder,
+      completedSortColumn: this.completedSortColumn,
+      completedSortOrder: this.completedSortOrder,
+      activePaging: this.currentActivePagingInfo(),
+      completedPaging: this.currentCompletedPagingInfo(),
+      expandedSessionId: expandedRow?.session
+    }
+    this.saveDisplayState(this.stateKey(), { key: this.stateKey(), state: state })
   }
 
   protected includeOrganisationFilter(): boolean {
@@ -175,28 +283,67 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     return true
   }
 
+  /** Column case shared by the active and completed session tables. Override in subclasses for own-sessions views. */
+  protected getColumnCase(): SessionColumnCase {
+    return SessionColumnCase.All
+  }
+
   protected getActiveTestsColumns(): TableColumnDefinition[] {
-    return [
-      { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
-      { field: 'actor', title: this.dataService.labelActor(), sortable: true },
-      { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' }
-    ]
+    const cc = this.getColumnCase()
+    return this.sessionColumnsService.buildTableColumns(cc, this.dataService.getSessionColumnPreference(cc), this.dataService.isSystemAdmin, false)
   }
 
   protected getCompletedTestsColumns(): TableColumnDefinition[] {
-    return [
-      { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
-      { field: 'actor', title: this.dataService.labelActor(), sortable: true },
-      { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
-      { field: 'endTime', title: 'End time', sortable: true, order: 'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME, headerClass: 'th-min centered', cellClass: 'td-min centered' },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
-    ]
+    const cc = this.getColumnCase()
+    return this.sessionColumnsService.buildTableColumns(cc, this.dataService.getSessionColumnPreference(cc), this.dataService.isSystemAdmin, true)
+  }
+
+  protected buildColumnChooserOptions(): void {
+    const cc = this.getColumnCase()
+    this.activeColumnChooserOptions = this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin, true, true)
+    this.completedColumnChooserOptions = this.sessionColumnsService.buildChooserOptions(cc, this.currentColumnIds, this.dataService.isSystemAdmin, true, false)
+  }
+
+  /**
+   * Handles a live toggle in the column chooser - applies the new column set to both the active and
+   * completed tables.
+   */
+  onColumnChooserUpdated(state: CheckboxOptionState, completed: boolean): void {
+    const cc = this.getColumnCase()
+    let newIds = Object.keys(state).filter(k => state[k])
+    if (!completed) {
+      const completedStartTimeActive = this.currentColumnIds.includes('startTime')
+      newIds = newIds.filter(id => id !== 'startTime')
+      if (completedStartTimeActive) {
+        newIds = [...newIds, 'startTime']
+      }
+    }
+    this.currentColumnIds = newIds
+    const serialized = this.sessionColumnsService.serialize(this.currentColumnIds)
+    this.activeTestsColumns = this.sessionColumnsService.buildTableColumns(cc, serialized, this.dataService.isSystemAdmin, false)
+    this.completedTestsColumns = this.sessionColumnsService.buildTableColumns(cc, serialized, this.dataService.isSystemAdmin, true)
+    // Reset sort (and refetch) if the currently sorted column is no longer visible.
+    if (this.showActiveSessions && !this.activeTestsColumns.some(c => c.field === this.activeSortColumn)) {
+      this.activeSortColumn = 'startTime'
+      this.activeSortOrder = 'asc'
+      this.activeTestsColumns = this.activeTestsColumns.map(c => ({...c, order: c.field === 'startTime' ? 'asc' : null})) as TableColumnDefinition[]
+      this.getActiveTests(this.currentActivePagingInfo())
+    }
+    if (!this.completedTestsColumns.some(c => c.field === this.completedSortColumn)) {
+      this.completedSortColumn = 'endTime'
+      this.completedSortOrder = 'desc'
+      this.completedTestsColumns = this.completedTestsColumns.map(c => ({...c, order: c.field === 'endTime' ? 'desc' : null})) as TableColumnDefinition[]
+      this.getCompletedTests(this.currentCompletedPagingInfo())
+    }
+    // Refresh both tables' chooser popups to update disabled flags.
+    this.buildColumnChooserOptions()
+    this.activeSessionsTable?.refreshColumnChooser(this.activeColumnChooserOptions!)
+    this.completedSessionsTable?.refreshColumnChooser(this.completedColumnChooserOptions!)
+  }
+
+  onColumnChooserClosed(): void {
+    const cc = this.getColumnCase()
+    this.dataService.setSessionColumnPreference(cc, this.sessionColumnsService.serialize(this.currentColumnIds))
   }
 
   protected setBreadcrumbs() {
@@ -226,11 +373,15 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       searchCriteria.testSuiteIds = filterData[Constants.FILTER_TYPE.TEST_SUITE]
       searchCriteria.testCaseIds = filterData[Constants.FILTER_TYPE.TEST_CASE]
       searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
+      searchCriteria.flagIds = filterData[Constants.FILTER_TYPE.FLAG]
+      searchCriteria.includeUnflagged = filterData.includeUnflagged
       searchCriteria.startTimeBeginStr = filterData.startTimeBeginStr
       searchCriteria.startTimeEndStr = filterData.startTimeEndStr
       searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
       searchCriteria.endTimeEndStr = filterData.endTimeEndStr
       searchCriteria.sessionId = filterData.sessionId
+      searchCriteria.hasComments = filterData.hasComments
+      searchCriteria.commentText = filterData.commentText
     } else if (this.sessionIdToShow != undefined || this.systemIdToShow != undefined || this.testCaseIdToShow != undefined) {
       if (this.sessionIdToShow != undefined) {
         searchCriteria.sessionId = this.sessionIdToShow
@@ -325,6 +476,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       testCase: testResult.test?.sname,
       organization: testResult.organization?.sname,
       system: testResult.system?.sname,
+      community: testResult.community?.sname,
       startTime: testResult.result.startTime,
       specificationId: testResult.specification?.id,
       actorId: testResult.actor?.id,
@@ -342,13 +494,22 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
     result.testSuiteId = testResult.testSuite?.id
     result.testCaseId = testResult.test?.id
-    if (this.expandFirstSession) {
-      // We have been asked to open a session. Set it as expand and keep it once.
+    if (this.expandFirstSession || (this.restoredExpandSessionId != undefined && result.session === this.restoredExpandSessionId)) {
+      // We have been asked to open a session (either the first result of a query-param deep link, or
+      // the session that was expanded when the user last left this page). Defer the expansion until
+      // the diagram has loaded (shows a spinner on the row and then animates open), matching a
+      // user-initiated expansion. Keep it once.
       this.expandFirstSession = false
-      result.expanded = true
+      this.restoredExpandSessionId = undefined
+      result.expansionPending = true
       this.sessionIdToShow = undefined
       this.testCaseIdToShow = undefined
       this.systemIdToShow = undefined
+      if (completed) {
+        setTimeout(() => {
+          this.completedSessionsTable?.loadSessionComments(result)
+        })
+      }
     }
     return result
   }
@@ -464,13 +625,13 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     }
   }
 
-  private onReportExport(testResult: TestResultForDisplay, contentType: string, fileName: string) {
+  private onReportExport(testResult: TestResultForDisplay, contentType: string, fallbackFileName: string) {
     return this.reportService.exportTestCaseReport(testResult.session, testResult.testCaseId!, contentType)
       .pipe(
-        mergeMap((data) => {
-          const blobData = new Blob([data], {type: contentType});
-          saveAs(blobData, fileName);
-          return of(data)
+        mergeMap((response) => {
+          const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+          saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
+          return of(response)
         }),
         share()
       )
@@ -478,9 +639,9 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
 
   private onExportTestData(testResult: TestResultForDisplay) {
     testResult.optionPending = true
-    this.reportService.exportTestSessionData(testResult.session).subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/zip'});
-      saveAs(blobData, 'test_case_data.zip');
+    this.reportService.exportTestSessionData(testResult.session).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/zip'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, 'test_data.zip'));
     }).add(() => {
       testResult.optionPending = false
     })
@@ -745,6 +906,9 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     displayedResult.endTime = loadedResult.result.endTime
     displayedResult.result = loadedResult.result.result
     displayedResult.obsolete = loadedResult.result.obsolete
+    displayedResult.flagId = loadedResult.result.flagId
+    const flag = this.dataService.getTestFlag(displayedResult.communityId, displayedResult.flagId)
+    displayedResult.flagDisplay = flag ? { colour: flag.colour, name: flag.name } : undefined
     if (displayedResult.diagramState && loadedResult.result.outputMessage) {
       displayedResult.diagramState.outputMessage = loadedResult.result.outputMessage
       displayedResult.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(loadedResult.result.result)

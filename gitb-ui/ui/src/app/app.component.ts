@@ -16,7 +16,9 @@
 import {Component} from '@angular/core';
 import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
 import {ScrollToTopComponent} from './components/scroll-to-top/scroll-to-top.component';
+import {MinimisedMessageComponent} from './components/minimised-message/minimised-message.component';
 import {RouterOutlet} from '@angular/router';
+import {DataService} from './services/data.service';
 
 @Component({
   selector: 'app-root',
@@ -24,10 +26,13 @@ import {RouterOutlet} from '@angular/router';
   imports: [
     PopupNotificationContainerComponent,
     ScrollToTopComponent,
+    MinimisedMessageComponent,
     RouterOutlet
   ],
   templateUrl: './app.component.html'
 })
 export class AppComponent {
+
+  constructor(public dataService: DataService) { }
 
 }

@@ -18,16 +18,19 @@ package com.gitb.engine.processing;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
+import com.gitb.engine.TestServiceInformation;
 import com.gitb.engine.testcase.TestCaseContext;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.remote.ClientConfiguration;
 import com.gitb.remote.processing.RemoteProcessingModuleClient;
+import com.gitb.remote.processing.RemoteProcessingModuleRestClient;
+import com.gitb.tdl.HandlerApiType;
 import com.gitb.utils.ErrorUtils;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Properties;
 
 public final class ProcessingContext {
@@ -36,10 +39,12 @@ public final class ProcessingContext {
     private String session;
     private final String testSessionId;
     private final Long handlerTimeout;
+    private final HandlerApiType declaredHandlerApiType;
 
-    public ProcessingContext(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId, Long handlerTimeout) {
+    public ProcessingContext(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId, Long handlerTimeout, HandlerApiType declaredHandlerApiType) {
         this.handlerTimeout = handlerTimeout;
         this.testSessionId = testSessionId;
+        this.declaredHandlerApiType = declaredHandlerApiType;
         this.handler = resolveHandler(handler, handlerDomainIdentifier, transactionProperties, testSessionId);
     }
 
@@ -77,18 +82,32 @@ public final class ProcessingContext {
 
     private IProcessingHandler getRemoteProcessor(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId) {
         TestCaseContext context = SessionManager.getInstance().getContext(testSessionId);
+        TestServiceInformation serviceInformation = context.getRegisteredTestServiceInformation(handlerDomainIdentifier);
+        HandlerApiType apiType = HandlerUtils.determineHandlerApiType(serviceInformation, declaredHandlerApiType);
         try {
-            return new RemoteProcessingModuleClient(
-                    new URI(handler).toURL(),
-                    context.prepareRemoteServiceCallProperties(handlerDomainIdentifier, transactionProperties),
-                    testSessionId,
-                    context.getTestCaseIdentifier(),
-                    new ClientConfiguration(handlerTimeout)
-            );
+            switch (apiType) {
+                case REST -> {
+                    return new RemoteProcessingModuleRestClient(
+                            URI.create(handler),
+                            context.prepareRemoteServiceCallProperties(transactionProperties, serviceInformation),
+                            testSessionId,
+                            context.getTestCaseIdentifier(),
+                            () -> new ClientConfiguration(handlerTimeout)
+                    );
+                }
+                case SOAP -> {
+                    return new RemoteProcessingModuleClient(
+                            URI.create(handler).toURL(),
+                            context.prepareRemoteServiceCallProperties(transactionProperties, serviceInformation),
+                            testSessionId,
+                            context.getTestCaseIdentifier(),
+                            new ClientConfiguration(handlerTimeout)
+                    );
+                }
+                default -> throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Unsupported handler API type [%s]".formatted(apiType)));
+            }
         } catch (MalformedURLException e) {
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote processing module found with an malformed URL [" + handler + "]"), e);
-        } catch (URISyntaxException e) {
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote processing module found with an invalid URI syntax [" + handler + "]"), e);
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote processing module found with an malformed URL [%s]".formatted(handler)), e);
         }
     }
 

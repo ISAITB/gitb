@@ -39,6 +39,7 @@ import scala.language.postfixOps
 class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   communityResourceManager: CommunityResourceManager,
                                   triggerHelper: TriggerHelper,
+                                  testFlagManager: TestFlagManager,
                                   testResultManager: TestResultManager,
                                   organizationManager: OrganizationManager,
                                   landingPageManager: LandingPageManager,
@@ -322,19 +323,38 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   /**
-    * Gets the user community
+    * Gets the user community information for login
     */
-  def getUserCommunity(userId: Long): Future[Community] = {
-    DB.run(PersistenceSchema.users
-      .join(PersistenceSchema.organizations).on(_.organization === _.id)
-      .join(PersistenceSchema.communities).on(_._2.community === _.id)
-      .joinLeft(PersistenceSchema.domains).on(_._2.domain === _.id)
-      .filter(_._1._1._1.id === userId)
-      .map(x => (x._2, x._1._2))
-      .result
-      .head
-    ).map { result =>
-      new Community(result._2, result._1, None)
+  def getCommunityInfoForLogin(userId: Long): Future[CommunityInfoForLogin] = {
+    DB.run {
+      for {
+        // Community and domain
+        communityAndRole <- PersistenceSchema.users
+          .join(PersistenceSchema.organizations).on(_.organization === _.id)
+          .join(PersistenceSchema.communities).on(_._2.community === _.id)
+          .joinLeft(PersistenceSchema.domains).on(_._2.domain === _.id)
+          .filter(_._1._1._1.id === userId)
+          .map(x => (x._2, x._1._2, x._1._1._1.role))
+          .result
+          .head
+          .map(result => (new Community(result._2, result._1, None), result._3))
+        community = communityAndRole._1
+        role = communityAndRole._2
+        // Labels
+        labels <- getCommunityLabelsInternal(community.id).map(_.toList)
+        // Report settings
+        statementDocumentationReportEnabled <- PersistenceSchema.conformanceStatementDocumentationReportSettings
+          .filter(_.community === community.id)
+          .map(_.enabled)
+          .result
+          .headOption
+          .map(_.getOrElse(false))
+        // Flags
+        flags <- PersistenceSchema.testFlags.filter(_.community === community.id).sortBy(x => (x.displayOrder.asc, x.name.asc)).result.map(_.toList)
+      } yield (community, labels, statementDocumentationReportEnabled, flags, role)
+    }.map { case (community, labels, statementDocumentationReportEnabled, flags, role) =>
+      val isAdmin = role == models.Enums.UserRole.CommunityAdmin.id.toShort
+      CommunityInfoForLogin(community, labels, statementDocumentationReportEnabled, flags, isAdmin)
     }
   }
 
@@ -391,7 +411,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
           allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
-          allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true,
+          allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, allowObsoleteSessionDeletion = true,
+          allowAdminSenderNames = false, allowOrganisationSenderNames = false,
           apiKeyToUse, None, None, domainId
         ), None)
       }
@@ -522,7 +543,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
                                                 selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean,
+                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean, allowObsoleteSessionDeletion: Boolean,
+                                                allowAdminSenderNames: Boolean, allowOrganisationSenderNames: Boolean,
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean, tags: Option[String], onSuccess: mutable.ListBuffer[() => _]) = {
     for {
       // Update short name.
@@ -552,11 +574,11 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
           c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView,
-          c.allowUserManagement, c.allowXmlReports, c.interactionNotification, c.tags
+          c.allowUserManagement, c.allowXmlReports, c.allowObsoleteSessionDeletion, c.allowAdminSenderNames, c.allowOrganisationSenderNames, c.interactionNotification, c.tags
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
           allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView,
-          allowUserManagement, allowXmlReports, interactionNotification, tags
+          allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion, allowAdminSenderNames, allowOrganisationSenderNames, interactionNotification, tags
         )
       // Update user preferences.
       _ <- {
@@ -687,7 +709,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           community.selfRegJoinExisting, community.selfRegJoinAsAdmin,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
-          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, community.allowXmlReports, None, domainIdToUse,
+          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, community.allowXmlReports, community.allowObsoleteSessionDeletion,
+          community.allowAdminSenderNames, community.allowOrganisationSenderNames, None, domainIdToUse,
           checkApiKeyUniqueness = false, None, overrideExistingUserPreferences = false, community.tags, onSuccess
         )
       }
@@ -706,7 +729,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       selfRegForceOrganisationTokenInput: Boolean, selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
-                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean,
+                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean, allowObsoleteSessionDeletion: Boolean,
+                      allowAdminSenderNames: Boolean, allowOrganisationSenderNames: Boolean,
                       domainId: Option[Long], selfRegDefaultOrganisation: Option[Long], userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean,
                       tags: Option[String]): Future[Unit] = {
 
@@ -720,7 +744,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion,
+            allowAdminSenderNames, allowOrganisationSenderNames,
             None, domainId, checkApiKeyUniqueness = false, userPreferences, overrideExistingUserPreferences, tags, onSuccess
           )
         } else {
@@ -776,14 +801,17 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- legalNoticeManager.deleteLegalNoticeByCommunity(communityId)
       _ <- errorTemplateManager.deleteErrorTemplateByCommunity(communityId)
       _ <- triggerHelper.deleteTriggersByCommunity(communityId)
+      _ <- testFlagManager.deleteTestFlagsByCommunity(communityId)
       _ <- testResultManager.updateForDeletedCommunity(communityId)
       _ <- deleteConformanceCertificateSettings(communityId)
       _ <- deleteConformanceOverviewCertificateSettings(communityId)
+      _ <- deleteConformanceStatementDocumentationReportSettings(communityId)
       _ <- deleteOrganisationParametersByCommunity(communityId)
       _ <- deleteSystemParametersByCommunity(communityId)
       _ <- communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls)
       _ <- deleteCommunityKeystoreInternal(communityId)
       _ <- deleteCommunityReportStylesheets(communityId, onSuccessCalls)
+      _ <- PersistenceSchema.communityReportSettings.filter(_.community === communityId).delete
       _ <- PersistenceSchema.communityLabels.filter(_.community === communityId).delete
       _ <- PersistenceSchema.userPreferenceDefaults.filter(_.community === communityId).delete
       _ <- PersistenceSchema.communities.filter(_.id === communityId).delete
@@ -1580,6 +1608,34 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def deleteConformanceCertificateSettings(communityId: Long): DBIO[_] = {
     PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
+  }
+
+  def conformanceStatementDocumentationReportEnabled(communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.conformanceStatementDocumentationReportSettings
+        .filter(_.community === communityId)
+        .map(_.enabled)
+        .result
+        .headOption
+    ).map(_.getOrElse(false))
+  }
+
+  def getConformanceStatementDocumentationReportSettingsWrapper(communityId: Long, defaultIfMissing: Boolean): Future[Option[ConformanceStatementDocumentationReportSettings]] = {
+    DB.run(PersistenceSchema.conformanceStatementDocumentationReportSettings.filter(_.community === communityId).result.headOption).map { settings =>
+      if (settings.isEmpty && defaultIfMissing) {
+        Some(ConformanceStatementDocumentationReportSettings(
+          id = 0L, enabled = false, includeOverview = true, includeStatementDocumentation = true,
+          includeTestCaseListing = true, includeTestSuiteDocumentation = true, includeTestCaseDocumentation = true,
+          includeSignature = false, community = communityId
+        ))
+      } else {
+        settings
+      }
+    }
+  }
+
+  def deleteConformanceStatementDocumentationReportSettings(communityId: Long): DBIO[_] = {
+    PersistenceSchema.conformanceStatementDocumentationReportSettings.filter(_.community === communityId).delete
   }
 
   def deleteConformanceOverviewCertificateSettings(communityId: Long): DBIO[_] = {

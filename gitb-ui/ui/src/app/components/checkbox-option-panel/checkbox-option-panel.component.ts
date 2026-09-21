@@ -35,6 +35,7 @@ import {share} from 'rxjs/operators';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
 import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from '../../common/utils';
 
 @Component({
     selector: 'app-checkbox-option-panel',
@@ -55,10 +56,14 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   @Input() referenceItem?: any
   @Input() labelIcon?: string
   @Input() smallButton = false
+  /** Renders small "All"/"None" buttons in a footer, acting on every option in the panel. Off by default. */
+  @Input() bulkSelection = false
   @Output() updated = new EventEmitter<CheckboxOptionState>()
   @Output() opening = new EventEmitter<void>()
   @Output() opened = new EventEmitter<void>()
   @Output() closed = new EventEmitter<void>()
+  /** Emitted for options with a `target` (navigation happens via the option's own [navTarget]) so a caller can still run pre-navigation side effects (e.g. recording a "return to source" location). */
+  @Output() navigate = new EventEmitter<MouseEvent>()
 
   @ViewChild("button") buttonElement?: ElementRef<HTMLButtonElement>
   @ViewChild('popupTemplate') popupTemplate?: TemplateRef<any>;
@@ -95,17 +100,12 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     }
     window.removeEventListener('scroll', this.updatePosition);
     window.removeEventListener('resize', this.updatePosition);
+    window.removeEventListener('keydown', this.onPopupKeyDown);
     this.closed.emit()
   }
 
   buttonClicked(pop?: NgbTooltip) {
-    if (pop) {
-      pop.disableTooltip = true
-      pop.close()
-      setTimeout(() => {
-        pop.disableTooltip = false
-      }, this.Constants.TOOLTIP_DELAY + 50)
-    }
+    Utils.dismissTooltip(pop)
     let obs$: Observable<any>
     if (!this.open) {
       this.opening.emit()
@@ -160,8 +160,31 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
       }, 0)
       window.addEventListener('scroll', this.updatePosition);
       window.addEventListener('resize', this.updatePosition);
+      window.addEventListener('keydown', this.onPopupKeyDown);
       this.dataService.signalButtonPopup(this)
     }
+  }
+
+  /**
+   * Roving keyboard navigation within the open popup, mirroring native listbox/dropdown behaviour
+   * (and matching the page-size dropdown): arrow keys move focus between the enabled checkboxes,
+   * starting at the first one if none is focused yet. Space/Enter then toggle the focused checkbox
+   * natively - no extra handling needed for that part.
+   */
+  private onPopupKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      this.moveFocus(event.key === 'ArrowDown' ? 1 : -1)
+    }
+  };
+
+  private moveFocus(direction: number): void {
+    if (!this.containerDiv) return;
+    const inputs = Array.from(this.containerDiv.querySelectorAll('input[type="checkbox"]:not(:disabled)')) as HTMLInputElement[];
+    if (inputs.length === 0) return;
+    const currentIndex = inputs.indexOf(document.activeElement as HTMLInputElement);
+    const nextIndex = currentIndex === -1 ? 0 : Math.min(inputs.length - 1, Math.max(0, currentIndex + direction));
+    inputs[nextIndex].focus();
   }
 
   private updatePosition = () => {
@@ -172,6 +195,9 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     const popup = this.containerDiv.firstElementChild as HTMLElement;
     if (!popup) return;
     if (this.placement == 'left') {
+      // The 2px gap matches ng-bootstrap's dropdown default Popper offset, kept consistent with
+      // the 'bottom' placement's gap below.
+      const gap = 2;
       const popupHeight = popup.offsetHeight;
       let top = btnRect.top + scrollY;
       if (btnRect.top + popupHeight > window.innerHeight) {
@@ -182,9 +208,22 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
         }
       }
       popup.style.top = `${top}px`;
-      popup.style.left = `${btnRect.left + scrollX - popup.offsetWidth}px`;
+      popup.style.left = `${btnRect.left + scrollX - popup.offsetWidth - gap}px`;
     } else {
-      popup.style.top = `${btnRect.bottom + scrollY}px`;
+      // Same flip-if-no-room approach as the 'left' placement above, but along the vertical axis:
+      // open below the button by default, flipping to open above it if there isn't enough room
+      // below (and there is room above). The 2px gap matches ng-bootstrap's dropdown (e.g. the
+      // page-size selector), which uses a default Popper offset of 2px between button and menu.
+      const gap = 2;
+      const popupHeight = popup.offsetHeight;
+      let top = btnRect.bottom + scrollY + gap;
+      if (btnRect.bottom + gap + popupHeight > window.innerHeight) {
+        const flippedTop = btnRect.top + scrollY - popupHeight - gap;
+        if (flippedTop >= scrollY) {
+          top = flippedTop;
+        }
+      }
+      popup.style.top = `${top}px`;
       popup.style.left = `${btnRect.left + scrollX}px`;
     }
   };
@@ -196,7 +235,9 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   }
 
   documentClick(event: Event): void {
-    if (!this.eRef.nativeElement.contains(event.target) && this.open) {
+    if (this.open &&
+        !this.eRef.nativeElement.contains(event.target as Node) &&
+        !this.containerDiv?.contains(event.target as Node)) {
       this.close()
     }
   }
@@ -231,15 +272,54 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     }
   }
 
-  handleClick(key: string) {
+  /**
+   * For an option with a `target`, navigation happens via the option's own [navTarget] (a real
+   * router link) rather than here - emitting `updated` for it too would cause a second, imperative
+   * navigation on top of the link's own. Such options only need the popup closed, and give the
+   * caller a chance (via `navigate`) to run any pre-navigation side effect.
+   */
+  handleClick(option: CheckboxOption, event?: MouseEvent) {
     if (this.singleSelection) {
-      this.currentState = {}
-      this.currentState[key] = true
-      const event:CheckboxOptionState = {}
-      event[key] = true
-      this.updated.emit(event)
+      if (option.target == undefined) {
+        this.currentState = {}
+        this.currentState[option.key] = true
+        const emitted: CheckboxOptionState = {}
+        emitted[option.key] = true
+        this.updated.emit(emitted)
+      } else if (event != undefined) {
+        this.navigate.emit(event)
+      }
       this.close()
     }
+  }
+
+  allSelected(): boolean {
+    return this.options == undefined || this.options.every(optionSet => optionSet.every(option => option.disabled || this.currentState[option.key] === true))
+  }
+
+  noneSelected(): boolean {
+    return this.options == undefined || this.options.every(optionSet => optionSet.every(option => option.disabled || this.currentState[option.key] !== true))
+  }
+
+  selectAll(): void {
+    this.setAll(true)
+  }
+
+  selectNone(): void {
+    this.setAll(false)
+  }
+
+  private setAll(value: boolean): void {
+    if (this.options) {
+      for (let optionSet of this.options) {
+        for (let option of optionSet) {
+          if (!option.disabled) {
+            this.currentState[option.key] = value
+          }
+        }
+      }
+    }
+    this.updated.emit(this.currentState)
   }
 
 }

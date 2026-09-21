@@ -73,6 +73,7 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
 
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    this.routingService.communityChildBreadcrumbs(this.communityId)
     const properties$ = this.communityService.getOrganisationParameters(this.communityId)
     const landingPages$ = this.landingPageService.getLandingPagesByCommunity(this.communityId)
     const legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)

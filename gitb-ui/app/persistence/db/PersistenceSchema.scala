@@ -58,11 +58,14 @@ object PersistenceSchema {
     def allowCommunityView = column[Boolean]("allow_community_view")
     def allowUserManagement = column[Boolean]("allow_user_management")
     def allowXmlReports = column[Boolean]("allow_xml_reports")
+    def allowObsoleteSessionDeletion = column[Boolean]("allow_obsolete_session_deletion")
+    def allowAdminSenderNames = column[Boolean]("allow_admin_sender_names")
+    def allowOrganisationSenderNames = column[Boolean]("allow_organisation_sender_names")
     def apiKey = column[String]("api_key")
     def latestStatusLabel = column[Option[String]]("latest_status_label")
     def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
     def domain = column[Option[Long]] ("domain")
-    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: allowObsoleteSessionDeletion :: allowAdminSenderNames :: allowOrganisationSenderNames :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -148,6 +151,13 @@ object PersistenceSchema {
   val specifications = TableQuery[SpecificationsTable]
   val insertSpecification = specifications returning specifications.map(_.id)
 
+  class SpecificationDocumentationTable(tag: Tag) extends Table[SpecificationDocumentation](tag, "specificationdocumentation") {
+    def id = column[Long]("id", O.PrimaryKey)
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id, documentation) <> (SpecificationDocumentation.tupled, SpecificationDocumentation.unapply)
+  }
+  val specificationDocumentation = TableQuery[SpecificationDocumentationTable]
+
   class ActorsTable(tag: Tag) extends Table[Actors](tag, "Actors") {
     def id      = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def actorId = column[String]("actorId")
@@ -163,6 +173,13 @@ object PersistenceSchema {
   }
   val actors = TableQuery[ActorsTable]
   val insertActor = actors returning actors.map(_.id)
+
+  class ActorDocumentationTable(tag: Tag) extends Table[ActorDocumentation](tag, "actordocumentation") {
+    def id = column[Long]("id", O.PrimaryKey)
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id, documentation) <> (ActorDocumentation.tupled, ActorDocumentation.unapply)
+  }
+  val actorDocumentation = TableQuery[ActorDocumentationTable]
 
   class EndpointsTable(tag: Tag) extends Table[Endpoints](tag, "Endpoints") {
 	  def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -221,9 +238,12 @@ object PersistenceSchema {
     def authTokenUsername = column[Option[String]]("auth_token_username")
     def authTokenPassword = column[Option[String]]("auth_token_password")
     def authTokenPasswordType = column[Option[Short]]("auth_token_password_type")
+    def authHttpHeaderName = column[Option[String]]("auth_http_header_name")
+    def authHttpHeaderValue = column[Option[String]]("auth_http_header_value")
     def monitorHealth = column[Boolean]("monitor_health")
     def parameter = column[Long]("parameter")
-    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, monitorHealth, parameter) <> (models.TestService.tupled, models.TestService.unapply)
+    def apiKey = column[String]("api_key")
+    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, authHttpHeaderName, authHttpHeaderValue, monitorHealth, parameter, apiKey) <> (models.TestService.tupled, models.TestService.unapply)
   }
   val testServices = TableQuery[TestServicesTable]
 
@@ -359,7 +379,10 @@ object PersistenceSchema {
 	  def startTime = column[Timestamp]("start_time")
 	  def endTime = column[Option[Timestamp]]("end_time", O.SqlType("TIMESTAMP"))
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
-    def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, outputMessage) <> (TestResult.tupled, TestResult.unapply)
+    def flagId = column[Option[Long]]("flag_id")
+    // HList-based mapping (rather than tuple + tupled/unapply) since this now has 22 columns, which is
+    // right at Scala's Tuple/Function arity limit and runs into Slick Shape resolution issues there.
+    def * = (testSessionId :: sutId :: sut :: organizationId :: organization :: communityId :: community :: testCaseId :: testCase :: testSuiteId :: testSuite :: actorId :: actor :: specificationId :: specification :: domainId :: domain :: result :: startTime :: endTime :: outputMessage :: flagId :: HNil).mapTo[TestResult]
   }
   val testResults = TableQuery[TestResultsTable]
 
@@ -538,8 +561,9 @@ object PersistenceSchema {
     def customPdfs = column[Boolean]("custom_pdf")
     def customPdfsWithCustomXml = column[Boolean]("custom_pdf_with_custom_xml")
     def customPdfService  = column[Option[String]]("custom_pdf_service")
+    def fileNameExpression = column[Option[String]]("file_name_expression")
     def community = column[Long]("community")
-    def * = (reportType, signPdfs, customPdfs, customPdfsWithCustomXml, customPdfService, community) <> (CommunityReportSettings.tupled, CommunityReportSettings.unapply)
+    def * = (reportType, signPdfs, customPdfs, customPdfsWithCustomXml, customPdfService, fileNameExpression, community) <> (CommunityReportSettings.tupled, CommunityReportSettings.unapply)
   }
   val communityReportSettings = TableQuery[CommunityReportSettingsTable]
 
@@ -606,6 +630,21 @@ object PersistenceSchema {
   }
   val conformanceOverviewCertificateMessages = TableQuery[ConformanceOverviewCertificateMessagesTable]
   val insertConformanceOverviewCertificateMessage = conformanceOverviewCertificateMessages returning conformanceOverviewCertificateMessages.map(_.id)
+
+  class ConformanceStatementDocumentationReportSettingsTable(tag: Tag) extends Table[ConformanceStatementDocumentationReportSettings](tag, "ConformanceStatementDocumentationReportSettings") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def enabled = column[Boolean]("enabled")
+    def includeOverview = column[Boolean]("include_overview")
+    def includeStatementDocumentation = column[Boolean]("include_statement_documentation")
+    def includeTestCaseListing = column[Boolean]("include_test_case_listing")
+    def includeTestSuiteDocumentation = column[Boolean]("include_test_suite_documentation")
+    def includeTestCaseDocumentation = column[Boolean]("include_test_case_documentation")
+    def includeSignature = column[Boolean]("include_signature")
+    def community = column[Long]("community")
+    def * = (id, enabled, includeOverview, includeStatementDocumentation, includeTestCaseListing, includeTestSuiteDocumentation, includeTestCaseDocumentation, includeSignature, community) <> (ConformanceStatementDocumentationReportSettings.tupled, ConformanceStatementDocumentationReportSettings.unapply)
+  }
+  val conformanceStatementDocumentationReportSettings = TableQuery[ConformanceStatementDocumentationReportSettingsTable]
+  val insertConformanceStatementDocumentationReportSettings = conformanceStatementDocumentationReportSettings returning conformanceStatementDocumentationReportSettings.map(_.id)
 
   class OrganisationParametersTable(tag: Tag) extends Table[OrganisationParameters](tag, "OrganisationParameters") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -700,6 +739,64 @@ object PersistenceSchema {
   }
   val triggers = TableQuery[TriggersTable]
   val insertTriggers = triggers returning triggers.map(_.id)
+
+  class TestFlagsTable(tag: Tag) extends Table[TestFlags](tag, "TestFlags") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def colour = column[String]("colour")
+    def publicName = column[Option[String]]("public_name")
+    def publicColour = column[Option[String]]("public_colour")
+    def adminOnly = column[Boolean]("admin_only")
+    def displayOrder = column[Short]("display_order")
+    def community = column[Long]("community")
+    def * = (id, name, description, colour, publicName, publicColour, adminOnly, displayOrder, community) <> (TestFlags.tupled, TestFlags.unapply)
+  }
+  val testFlags = TableQuery[TestFlagsTable]
+  val insertTestFlags = testFlags returning testFlags.map(_.id)
+
+  class MessagesTable(tag: Tag) extends Table[Messages](tag, "Messages") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def subject = column[Option[String]]("subject")
+    def body = column[Option[String]]("body", O.SqlType("TEXT"))
+    def bodyText = column[Option[String]]("body_text", O.SqlType("TEXT"))
+    def createdAt = column[Timestamp]("created_at", O.SqlType("TIMESTAMP"))
+    def deletedBySenderAt = column[Option[Timestamp]]("deleted_by_sender_at", O.SqlType("TIMESTAMP"))
+    def parentMessageId = column[Option[Long]]("parent_message_id")
+    def threadId = column[Long]("thread_id")
+    def senderId = column[Option[Long]]("sender_id")
+    def senderNameSnapshot = column[String]("sender_name_snapshot")
+    def senderUserId = column[Option[Long]]("sender_user_id")
+    def senderUserNameSnapshot = column[Option[String]]("sender_user_name_snapshot")
+    def senderType = column[Short]("sender_type")
+    def singleRecipientType = column[Option[Short]]("single_recipient_type")
+    def singleRecipientNameSnapshot = column[Option[String]]("single_recipient_name_snapshot")
+    def recipientCount = column[Int]("recipient_count")
+    def important = column[Boolean]("important")
+    def * = (id :: subject :: body :: bodyText :: createdAt :: deletedBySenderAt :: parentMessageId :: threadId :: senderId :: senderNameSnapshot :: senderUserId :: senderUserNameSnapshot :: important :: senderType :: singleRecipientType :: singleRecipientNameSnapshot :: recipientCount :: HNil).mapTo[Messages]
+  }
+  val messages = TableQuery[MessagesTable]
+  val insertMessage = messages returning messages.map(_.id)
+
+  class MessageRecipientsTable(tag: Tag) extends Table[MessageRecipients](tag, "MessageRecipients") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def messageId = column[Long]("message_id")
+    def recipientId = column[Option[Long]]("recipient_id")
+    def recipientNameSnapshot = column[String]("recipient_name_snapshot")
+    def deliveredAt = column[Timestamp]("delivered_at", O.SqlType("TIMESTAMP"))
+    def deletedByRecipientAt = column[Option[Timestamp]]("deleted_by_recipient_at", O.SqlType("TIMESTAMP"))
+    def recipientType = column[Short]("recipient_type")
+    def * = (id, messageId, recipientId, recipientNameSnapshot, deliveredAt, deletedByRecipientAt, recipientType) <> (MessageRecipients.tupled, MessageRecipients.unapply)
+  }
+  val messageRecipients = TableQuery[MessageRecipientsTable]
+  val insertMessageRecipient = messageRecipients returning messageRecipients.map(_.id)
+
+  class MessageUnreadStatusTable(tag: Tag) extends Table[MessageUnreadStatus](tag, "MessageUnreadStatus") {
+    def recipientId = column[Long]("recipient_id")
+    def userId = column[Long]("user_id")
+    def * = (recipientId, userId) <> (MessageUnreadStatus.tupled, MessageUnreadStatus.unapply)
+  }
+  val messageUnreadStatus = TableQuery[MessageUnreadStatusTable]
 
   class TriggerDataTable(tag: Tag) extends Table[TriggerData](tag, "TriggerData") {
     def dataType = column[Short]("data_type")
@@ -942,6 +1039,22 @@ object PersistenceSchema {
   }
   val conformanceSnapshotOverviewCertificateMessages = TableQuery[ConformanceSnapshotOverviewCertificateMessageTable]
 
+  class ConformanceSnapshotSpecificationDocumentationTable(tag: Tag) extends Table[ConformanceSnapshotSpecificationDocumentation](tag, "conformancesnapshotspecificationdocumentation") {
+    def id = column[Long]("id")
+    def snapshotId = column[Long]("snapshot_id")
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id :: snapshotId :: documentation :: HNil).mapTo[ConformanceSnapshotSpecificationDocumentation]
+  }
+  val conformanceSnapshotSpecificationDocumentation = TableQuery[ConformanceSnapshotSpecificationDocumentationTable]
+
+  class ConformanceSnapshotActorDocumentationTable(tag: Tag) extends Table[ConformanceSnapshotActorDocumentation](tag, "conformancesnapshotactordocumentation") {
+    def id = column[Long]("id")
+    def snapshotId = column[Long]("snapshot_id")
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id :: snapshotId :: documentation :: HNil).mapTo[ConformanceSnapshotActorDocumentation]
+  }
+  val conformanceSnapshotActorDocumentation = TableQuery[ConformanceSnapshotActorDocumentationTable]
+
   class ThemesTable(tag: Tag) extends Table[Theme](tag, "Themes") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def key = column[String] ("theme_key")
@@ -973,7 +1086,13 @@ object PersistenceSchema {
     def secondaryButtonLabelColor = column[String] ("secondary_btn_label_color")
     def secondaryButtonHoverColor = column[String] ("secondary_btn_hover_color")
     def secondaryButtonActiveColor = column[String] ("secondary_btn_active_color")
-    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: primaryButtonColor :: primaryButtonLabelColor :: primaryButtonHoverColor :: primaryButtonActiveColor :: secondaryButtonColor :: secondaryButtonLabelColor :: secondaryButtonHoverColor :: secondaryButtonActiveColor :: HNil).mapTo[Theme]
+    def welcomeLoginColor = column[String] ("welcome_login_color")
+    def welcomeLoginLabelColor = column[String] ("welcome_login_label_color")
+    def welcomeOptionLabelColor = column[String] ("welcome_option_label_color")
+    def alertInfoBackgroundColor = column[String] ("alert_info_background_color")
+    def alertInfoTextColor = column[String] ("alert_info_text_color")
+    def alertInfoBorderColor = column[String] ("alert_info_border_color")
+    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: primaryButtonColor :: primaryButtonLabelColor :: primaryButtonHoverColor :: primaryButtonActiveColor :: secondaryButtonColor :: secondaryButtonLabelColor :: secondaryButtonHoverColor :: secondaryButtonActiveColor :: welcomeLoginColor :: welcomeLoginLabelColor :: welcomeOptionLabelColor :: alertInfoBackgroundColor :: alertInfoTextColor :: alertInfoBorderColor :: HNil).mapTo[Theme]
   }
   val themes = TableQuery[ThemesTable]
   val insertTheme = themes returning themes.map(_.id)
@@ -993,8 +1112,12 @@ object PersistenceSchema {
     def statementsCollapsed = column[Boolean]("statements_collapsed")
     def pageSize = column[Short]("page_size")
     def homePageType = column[Short]("home_page_type")
+    def ownSessions = column[String]("own_sessions")
+    def allSessions = column[String]("all_sessions")
+    def statementsListView = column[Boolean]("statements_list_view")
+    def messagesSplitView = column[Boolean]("messages_split_view")
     def user = column[Long] ("user")
-    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: user :: HNil).mapTo[UserPreferences]
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: statementsListView :: messagesSplitView :: user :: HNil).mapTo[UserPreferences]
   }
   val userPreferences = TableQuery[UserPreferencesTable]
 
@@ -1004,9 +1127,28 @@ object PersistenceSchema {
     def statementsCollapsed = column[Boolean]("statements_collapsed")
     def pageSize = column[Short]("page_size")
     def homePageType = column[Short]("home_page_type")
+    def ownSessions = column[String]("own_sessions")
+    def allSessions = column[String]("all_sessions")
+    def statementsListView = column[Boolean]("statements_list_view")
+    def messagesSplitView = column[Boolean]("messages_split_view")
     def community = column[Long] ("community")
-    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: community :: HNil).mapTo[UserPreferenceDefaults]
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: homePageType :: ownSessions :: allSessions :: statementsListView :: messagesSplitView :: community :: HNil).mapTo[UserPreferenceDefaults]
   }
   val userPreferenceDefaults = TableQuery[UserPreferenceDefaultsTable]
+
+  class TestResultCommentsTable(tag: Tag) extends Table[TestResultComments](tag, "TestResultComments") {
+    def testSessionId = column[String]("test_session_id", O.PrimaryKey)
+    def userComment = column[Option[String]]("user_comment")
+    def userCommentTime = column[Option[Timestamp]]("user_comment_time", O.SqlType("TIMESTAMP"))
+    def userCommentAllowed = column[Boolean]("user_comment_allowed")
+    def adminComment = column[Option[String]]("admin_comment")
+    def adminCommentTime = column[Option[Timestamp]]("admin_comment_time", O.SqlType("TIMESTAMP"))
+    def resultForced = column[Option[String]]("result_forced")
+    def resultOriginal = column[Option[String]]("result_original")
+    def outputMessageForced = column[Option[String]]("output_message_forced", O.SqlType("TEXT"))
+    def outputMessageOriginal = column[Option[String]]("output_message_original", O.SqlType("TEXT"))
+    def * = (testSessionId :: userComment :: userCommentTime :: userCommentAllowed :: adminComment :: adminCommentTime :: resultForced :: resultOriginal :: outputMessageForced :: outputMessageOriginal :: HNil).mapTo[TestResultComments]
+  }
+  val testResultComments = TableQuery[TestResultCommentsTable]
 
 }

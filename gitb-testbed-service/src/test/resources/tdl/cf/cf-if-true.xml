@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-if-true" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>If true branch</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="flag" type="boolean">true()</assign>
+        <assign to="result">'initial'</assign>
+        <if>
+            <cond>$flag</cond>
+            <then>
+                <assign to="result">'then-branch'</assign>
+                <log>'then-branch executed'</log>
+            </then>
+        </if>
+        <verify handler="StringValidator" desc="then branch ran">
+            <input name="actual">$result</input>
+            <input name="expected">'then-branch'</input>
+        </verify>
+    </steps>
+</testcase>

@@ -8,7 +8,7 @@
                         <input class="form-check-input" type="checkbox" role="switch" id="viewTypeToggle" [(ngModel)]="prepareForShutdown" (change)="togglePrepareForShutdown()">
                         <label class="form-check-label" for="viewTypeToggle">
                             Prepare for shutdown
-                            <div app-tooltip class="col-auto d-inline-flex ms-2" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Toggle the shutdown preparation mode. When enabled, launching new test sessions is disabled and a persistent warning is displayed to users to alert them of the pending shutdown."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Toggle the shutdown preparation mode. When enabled, launching new test sessions is disabled and a persistent warning is displayed to users to alert them of the pending shutdown."></div>
                         </label>
                     </div>
                 </div>
@@ -26,25 +26,61 @@
                     <div class="configContainer">
                         <app-configuration-entry
                             configTitle="Custom welcome page content"
-                            configDescription="Display a custom title and message on the Test Bed's welcome page."
+                            configDescription="Display a custom title, message and option card texts on the Test Bed's welcome page."
                             [(status)]="welcomePageStatus"
                         >
                             <form>
-                                <div class="row mb-3">
-                                    <div class="col-6 minimum-width-text">
-                                        <div class="input-group">
-                                            <span class="input-group-text">Title</span>
-                                            <input type="text" id="welcomePageTitle" name="welcomePageTitle" class="form-control" [(ngModel)]="welcomePageTitle">
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="welcomePageOverride" name="welcomePageOverride" [(ngModel)]="welcomePageOverride">
+                                            <label class="form-check-label" for="welcomePageOverride">Override default content?</label>
+                                        </div>
+                                    </div>
+                                    @if (welcomePageOverride) {
+                                        <div class="col-auto">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="includeWelcomeMessage" name="includeWelcomeMessage" [(ngModel)]="includeWelcomeMessage">
+                                                <label class="form-check-label" for="includeWelcomeMessage">Include welcome message?</label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div [ngbCollapse]="!welcomePageOverride" [animation]="true">
+                                    <div class="pt-3">
+                                        <div class="form-container">
+                                            <div [ngbCollapse]="!includeWelcomeMessage" [animation]="true">
+                                                <app-form-section sectionTitle="Welcome message">
+                                                    <div class="row pt-3">
+                                                        <div class="col-12">
+                                                            <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row py-3">
+                                                        <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                                    </div>
+                                                </app-form-section>
+                                            </div>
+                                            <app-form-section sectionTitle="Section texts">
+                                                @for (info of welcomeTextInfos; track info.key) {
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" [attr.for]="info.id">* {{info.label}}:</label>
+                                                        <div class="col-8 col-xl-6">
+                                                            <input type="text" class="form-control" [id]="info.id" [name]="info.id" [(ngModel)]="welcomePageTexts[info.key]">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip [tbTooltip]="info.tooltip"></div>
+                                                    </div>
+                                                }
+                                            </app-form-section>
                                         </div>
                                     </div>
                                 </div>
-                                <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
                                 <div class="row mt-3">
-                                    <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
-                                </div>
-                                <div class="btn-toolbar mt-3">
-                                    <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage) || !textProvided(welcomePageTitle)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
-                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                                    <div class="col-auto">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="welcomePageStatus.pending || (welcomePageOverride && !welcomePageTextsOk())" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </app-configuration-entry>
@@ -52,6 +88,7 @@
                     <!-- Demo account. -->
                     <div class="configContainer">
                         <app-configuration-entry
+                            #demoAccountEntry
                             configTitle="Demo account"
                             configDescription="Enable access to demos using a configured demo account."
                             (beforeExpand)="expandingDemoAccount()"
@@ -114,6 +151,7 @@
                     <!-- Email settings. -->
                     <div class="configContainer">
                         <app-configuration-entry
+                            #emailSettingsEntry
                             configTitle="Email settings"
                             configDescription="Enable email notifications and exchanges with Test Bed users."
                             (beforeExpand)="expandingEmailSettings()"
@@ -340,9 +378,87 @@
                             </form>
                         </app-configuration-entry>
                     </div>
+                    <!-- Report and display settings -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            #reportSettingsEntry
+                            configTitle="Report and display settings"
+                            configDescription="Manage settings related to producing reports, and other display and reporting features."
+                            (beforeExpand)="expandingReportSettings()"
+                            [(status)]="reportSettingsStatus"
+                        >
+                            @if (reportSettingsDataLoaded) {
+                                <form>
+                                    <div class="row">
+                                        <div class="col-auto">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="reportSettingsEnabled" name="reportSettingsEnabled" [(ngModel)]="reportSettings.enabled">
+                                                <label class="form-check-label" for="reportSettingsEnabled">Override default settings?</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div [ngbCollapse]="!reportSettings.enabled" [animation]="true">
+                                        <div class="pt-3">
+                                            <div class="form-container">
+                                                <app-form-section sectionTitle="Time zone and date formats">
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end">Time zone:</label>
+                                                        <div class="col-8 col-xl-6">
+                                                            <app-multi-select-filter [config]="timeZoneSelectConfig" [(ngModel)]="selectedTimeZone" name="timeZone"></app-multi-select-filter>
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The time zone to use when displaying dates and timestamps on the user interface and in PDF reports. Note that XML reports and internal processing always use UTC."></div>
+                                                    </div>
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" for="reportDateFormat">* Date format:</label>
+                                                        <div class="col-8 col-xl-3">
+                                                            <input type="text" class="form-control" id="reportDateFormat" name="reportDateFormat" [(ngModel)]="reportSettings.dateFormats!.date">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The pattern used to display dates (without a time component) on the user interface and in PDF reports, e.g. dd/MM/yyyy. The formatting characters follow the Java date/time formatting strings."></div>
+                                                    </div>
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" for="reportDateTimeFormat">* Date/time format:</label>
+                                                        <div class="col-8 col-xl-3">
+                                                            <input type="text" class="form-control" id="reportDateTimeFormat" name="reportDateTimeFormat" [(ngModel)]="reportSettings.dateFormats!.dateTime">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The pattern used to display dates together with a time component on the user interface and in PDF reports, e.g. dd/MM/yyyy HH:mm:ss. The formatting characters follow the Java date/time formatting strings."></div>
+                                                    </div>
+                                                    <div class="row pt-3">
+                                                        <label class="col-3 col-form-label text-end" for="reportDateFileFormat">* File name date format:</label>
+                                                        <div class="col-8 col-xl-3">
+                                                            <input type="text" class="form-control" id="reportDateFileFormat" name="reportDateFileFormat" [(ngModel)]="reportSettings.dateFormats!.dateFile">
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The pattern used to format the DATE placeholder when it is referenced in a report file naming expression, e.g. yyyy-MM-dd. The formatting characters follow the Java date/time formatting strings."></div>
+                                                    </div>
+                                                </app-form-section>
+                                                <app-form-section sectionTitle="Report file names" [marginBefore]="true">
+                                                    @for (info of reportTypeInfos; track info.type) {
+                                                        <div class="row pt-3">
+                                                            <label class="col-3 col-form-label text-end">* {{info.label}}:</label>
+                                                            <div class="col-8 col-xl-6">
+                                                                <app-report-file-name-expression [reportType]="info.type" [value]="reportSettings.fileNameExpressions[info.type]" (valueChange)="reportSettings.fileNameExpressions[info.type] = $event"></app-report-file-name-expression>
+                                                            </div>
+                                                            <div class="col-auto" app-tooltip [tbTooltip]="'The file naming expression used when generating the ' + info.label.toLowerCase() + '.'"></div>
+                                                        </div>
+                                                    }
+                                                </app-form-section>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-auto">
+                                            <div class="btn-toolbar">
+                                                <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="reportSettingsStatus.pending || !reportSettingsOk()" [pending]="reportSettingsStatus.pending" (click)="saveReportSettings()">Save</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            }
+                        </app-configuration-entry>
+                    </div>
                     <!-- REST API. -->
                     <div class="configContainer">
                         <app-configuration-entry
+                            #restApiEntry
                             configTitle="REST API"
                             configDescription="Allow operations by means of the Test Bed's REST API and control usage rates."
                             (beforeExpand)="expandingRestApi()"
@@ -371,6 +487,17 @@
                                                                           (update)="updateRestApiAdminKey()"></app-api-key-text>
                                                     </div>
                                                     <div class="col-auto" app-tooltip tbTooltip="This is the API key to use as an authorisation header when calling operations reserved to the Test Bed administrator."></div>
+                                                </div>
+                                                <div class="row pt-3">
+                                                    <label class="col-3 col-form-label text-end" for="restApiDevelopmentKey">Development API key:</label>
+                                                    <div class="col-8 col-md-5">
+                                                        <app-api-key-text idName="restApiDevelopmentKey" name="restApiDevelopmentKey"
+                                                                          [key]="restApiDevelopmentKey"
+                                                                          [supportUpdate]="true"
+                                                                          [updatePending]="updateRestApiDevelopmentKeyPending"
+                                                                          (update)="updateRestApiDevelopmentKey()"></app-api-key-text>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="This API key can be used to authorise read-only development operations (e.g. test suite validation) and is intended for use by automated tools and AI agents. While running in development mode it is also written to a file named 'development-api-key.txt' at the root of the Test Bed's repository, allowing it to be looked up without UI access."></div>
                                                 </div>
                                                 <div class="row pt-3">
                                                     <label class="col-3 col-form-label text-end pt-0" for="restApiLimitsEnabled">Restrict API usage:</label>
@@ -552,11 +679,72 @@
                             </form>
                         </app-configuration-entry>
                     </div>
+                    <!-- Test service callbacks -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Test service callbacks"
+                            configDescription="Allow custom test services to make callbacks to the test engine as part of test sessions."
+                            [(status)]="testServiceCallbacksStatus"
+                        >
+                            <form>
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="testServiceCallbacksEnabled" name="testServiceCallbacksEnabled" [(ngModel)]="testServiceCallbacksSettings.enabled">
+                                            <label class="form-check-label" for="testServiceCallbacksEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div [ngbCollapse]="!testServiceCallbacksSettings.enabled" [animation]="true">
+                                    <div class="pt-3">
+                                        <div class="form-container">
+                                            <div class="row">
+                                                <legend class="col-3 col-form-label text-end pt-0">Enabled callback APIs:</legend>
+                                                <div class="col-8">
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="checkbox" id="testServiceCallbacksRest" name="testServiceCallbacksRest" [(ngModel)]="testServiceCallbacksSettings.restEnabled" [class.is-invalid]="!testServiceCallbacksSettingsOk()">
+                                                        <label class="form-check-label" for="testServiceCallbacksRest">GITB test service REST API
+                                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Support callbacks using the RESTful GITB test service API."></div>
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="checkbox" id="testServiceCallbacksSoap" name="testServiceCallbacksSoap" [(ngModel)]="testServiceCallbacksSettings.soapEnabled" [class.is-invalid]="!testServiceCallbacksSettingsOk()">
+                                                        <label class="form-check-label" for="testServiceCallbacksSoap">GITB test service SOAP API
+                                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Support callbacks using the SOAP-based GITB test service API."></div>
+                                                        </label>
+                                                    </div>
+                                                    @if (!testServiceCallbacksSettingsOk()) {
+                                                        <div class="invalid-feedback d-block">At least one API type must be enabled if callbacks are expected.</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="row pt-3">
+                                                <label class="col-3 col-form-label text-end pt-0" for="testServiceCallbacksApiKeys">Callback API keys:</label>
+                                                <div class="col-7">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="testServiceCallbacksApiKeys" name="testServiceCallbacksApiKeys" [(ngModel)]="testServiceCallbacksSettings.apiKeysEnabled">
+                                                        <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Require a valid API key to be included in callbacks. A test service's API key is managed as part of its details and is expected to be included as the ITB-API-KEY HTTP header in calls to the test engine." [inline]="true"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-auto">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="testServiceCallbacksStatus.pending || !testServiceCallbacksSettingsOk()" [pending]="testServiceCallbacksStatus.pending" (click)="saveTestServiceCallbacks()">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
                     <!-- Idle session timeout. -->
                     <div class="configContainer" >
                         <app-configuration-entry
                             configTitle="Test session timeouts"
-                            configDescription="Terminate test sessions exceeding a maximum duration."
+                            configDescription="Terminate test sessions exceeding a maximum duration and clean up dead sessions."
                             [(status)]="sessionTimeoutStatus"
                         >
                             <form>
@@ -589,6 +777,16 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-auto" app-tooltip tbTooltip="The number of seconds after which to terminate a test session that is pending manual input from a non-administrator user."></div>
+                                                </div>
+                                                <div class="row pt-3 flex-nowrap">
+                                                    <label class="col-4 col-form-label text-end" for="sessionTimeoutDead">* Dead sessions:</label>
+                                                    <div class="col-auto">
+                                                        <div class="input-group minimum-width-number-grouped">
+                                                            <input id="sessionTimeoutDead" name="sessionTimeoutDead" placeholder="Timeout" [(ngModel)]="sessionTimeoutSettings.deadTimeout" class="form-control" type="number">
+                                                            <div class="input-group-text">seconds</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The number of seconds after which to terminate a dead test session. A test session is considered dead if due to an unexpected event such as a test engine crash, it is listed as active but is missing from the test engine. Dead test sessions cannot be restored but you may want to review them in view of tasks such as informing affected users."></div>
                                                 </div>
                                                 <div class="row pt-3 flex-nowrap">
                                                     <label class="col-4 col-form-label text-end" for="sessionTimeoutOther">* Other sessions:</label>
@@ -649,7 +847,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateTestBedAdmin()">Create system administrator</a>
                             </div>
                         </div>
                         <div class="card">
@@ -661,7 +859,7 @@
                                  [contentRefreshing]="adminsRefreshing"
                                  (pageNavigation)="doAdminPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="adminSelect($event)"
+                                 [rowTarget]="adminRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -675,7 +873,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLandingPage()">Create landing page</a>
                             </div>
                         </div>
                         <div class="card">
@@ -687,7 +885,7 @@
                                  [contentRefreshing]="landingPagesRefreshing"
                                  (pageNavigation)="doLandingPagePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="landingPageSelect($event)"
+                                 [rowTarget]="landingPageRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -701,7 +899,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLegalNotice()">Create legal notice</a>
                             </div>
                         </div>
                         <div class="card">
@@ -713,7 +911,7 @@
                                  [contentRefreshing]="legalNoticesRefreshing"
                                  (pageNavigation)="doLegalNoticePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="legalNoticeSelect($event)"
+                                 [rowTarget]="legalNoticeRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -727,7 +925,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateErrorTemplate()">Create error template</a>
                             </div>
                         </div>
                         <div class="card">
@@ -739,7 +937,7 @@
                                  [contentRefreshing]="errorTemplatesRefreshing"
                                  (pageNavigation)="doErrorTemplatePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="errorTemplateSelect($event)"
+                                 [rowTarget]="errorTemplateRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -753,7 +951,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="createThemeTarget()">Create theme</a>
                             </div>
                         </div>
                         <div class="card">
@@ -765,7 +963,7 @@
                                  [contentRefreshing]="themesRefreshing"
                                  (pageNavigation)="doThemePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="themeSelect($event)"
+                                 [rowTarget]="themeRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>

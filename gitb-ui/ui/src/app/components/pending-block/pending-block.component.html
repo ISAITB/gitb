@@ -1,5 +1,5 @@
 @if (pending) {
-    <span [class.mini-tab]="!icon" [class.large]="large"><i [class]="Constants.BUTTON_ICON.PENDING"></i></span>
+    <span [class.mini-tab]="!icon" [class.large]="large"><i [class]="small?Constants.BUTTON_ICON.PENDING_SMALL:Constants.BUTTON_ICON.PENDING"></i></span>
     @if (!pending || !icon) {
         <ng-content></ng-content>
     }

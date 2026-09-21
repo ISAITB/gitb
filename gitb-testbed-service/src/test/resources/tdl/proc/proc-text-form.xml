@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-text-form" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TextProcessor form (application/x-www-form-urlencoded) encode and decode</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="original">'a b+c'</assign>
+        <process handler="TextProcessor" operation="formEncode" output="encoded">
+            <input name="input">$original</input>
+        </process>
+        <verify handler="StringValidator" desc="encoded value is as expected">
+            <input name="actual">$encoded</input>
+            <input name="expected">'a+b%2Bc'</input>
+        </verify>
+        <process handler="TextProcessor" operation="formDecode" output="decoded">
+            <input name="input">$encoded</input>
+        </process>
+        <verify handler="StringValidator" desc="round-trip matches original">
+            <input name="actual">$decoded</input>
+            <input name="expected">$original</input>
+        </verify>
+        <!-- uriEncode and formEncode differ on the same input: this is the whole reason both exist. -->
+        <process handler="TextProcessor" operation="uriEncode" output="uriEncoded">
+            <input name="input">$original</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="uriEncode and formEncode disagree on how a space is encoded">
+            <input name="expression">$uriEncoded != $encoded</input>
+        </verify>
+    </steps>
+</testcase>

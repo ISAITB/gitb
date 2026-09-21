@@ -43,10 +43,17 @@
             padding: 8px;
         }
         &.timeFilter {
-            min-width: 200px;
+            // Must clear the date-range control's own min-width plus the .filterValue padding,
+            // otherwise the control overflows the cell and paints over its neighbour.
+            min-width: (@date-range-min-width + 16px);
         }
         &.sessionFilter {
-            min-width: 350px;
+            flex-basis: 260px;
+            min-width: 250px;
+        }
+        &.commentFilter {
+            flex-basis: 260px;
+            min-width: 200px;
         }
         &.filler {
             flex-grow: 1;

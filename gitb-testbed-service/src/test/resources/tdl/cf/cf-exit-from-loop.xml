@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-exit-from-loop" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Exit inside while loop stops session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="counter" type="number">0</assign>
+        <while>
+            <cond>true()</cond>
+            <do>
+                <assign to="counter" type="number">$counter + 1</assign>
+                <log>'iteration ' || $counter</log>
+                <if>
+                    <cond>$counter = 2</cond>
+                    <then>
+                        <exit success="true"/>
+                    </then>
+                </if>
+            </do>
+        </while>
+    </steps>
+</testcase>

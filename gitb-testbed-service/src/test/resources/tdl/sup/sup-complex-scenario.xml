@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-complex-scenario" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Multi-step pipeline: assign, process, verify, if, log</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="prefix">'ITEM'</assign>
+        <assign to="counter" type="number">0</assign>
+        <process handler="TokenGenerator" output="uid">
+            <operation>uuid</operation>
+        </process>
+        <process handler="TemplateProcessor" output="label">
+            <operation>GITB</operation>
+            <input name="template">'${prefix}-${uid}'</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="label starts with ITEM">
+            <input name="expression">starts-with($label, 'ITEM-')</input>
+        </verify>
+        <if>
+            <cond>string-length($uid) &gt; 0</cond>
+            <then>
+                <assign to="counter" type="number">$counter + 1</assign>
+                <log>'UUID generated: ' || $uid</log>
+            </then>
+        </if>
+        <verify handler="ExpressionValidator" desc="if branch executed">
+            <input name="expression">$counter = 1</input>
+        </verify>
+    </steps>
+</testcase>

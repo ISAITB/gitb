@@ -65,6 +65,11 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
       this.communityId = Constants.DEFAULT_COMMUNITY_ID
       this.tooltipForDefaultCheck = 'Check this to make this legal notice the default one assumed for all communities.'
     }
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.systemConfigurationBreadcrumbs()
+    } else {
+      this.routingService.communityChildBreadcrumbs(this.communityId)
+    }
     const base = this.route.snapshot.data['base'] as LegalNotice|undefined
     if (base != undefined) {
       this.notice.name = base.name

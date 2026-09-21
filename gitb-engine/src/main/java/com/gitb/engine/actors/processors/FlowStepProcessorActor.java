@@ -16,10 +16,13 @@
 package com.gitb.engine.actors.processors;
 
 import com.gitb.core.StepStatus;
+import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
+import com.gitb.engine.events.model.ExitEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
+import com.gitb.tdl.ExitScopeType;
 import com.gitb.tdl.FlowStep;
 import com.gitb.tdl.Sequence;
 import org.apache.pekko.actor.ActorRef;
@@ -79,17 +82,27 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 		} else if (status == WARNING) {
 			childrenHasWarning = true;
 		}
-        if (status == ERROR || status == WARNING || status == COMPLETED) {
+        if (status == ERROR || status == WARNING || status == COMPLETED || status == StepStatus.SKIPPED) {
 			if (event.getSender() != null) {
 				childMap.remove(event.getSender().path().uid());
-				if (childMap.isEmpty()) {
-					if (childrenHasError) {
-						childrenHasError();
-					} else if (childrenHasWarning) {
-						childrenHasWarning();
-					} else {
-						completed();
-					}
+			}
+			if (event instanceof ExitEvent exitEvent) {
+				if (exitEvent.getExitScope() == ExitScopeType.FLOW) {
+					// Notify child sequence threads to ensure their processing stops as soon as possible.
+					var command = new PrepareForStopCommand(scope.getContext().getSessionId(), self());
+					childMap.values().forEach(childActor -> childActor.tell(command, self()));
+				} else {
+					// Propagate for other parent steps to react to.
+					setExitScopeToReport(exitEvent.getExitScope());
+				}
+			}
+			if (childMap.isEmpty()) {
+				if (childrenHasError) {
+					childrenHasError();
+				} else if (childrenHasWarning) {
+					childrenHasWarning();
+				} else {
+					completed();
 				}
 			}
 		}

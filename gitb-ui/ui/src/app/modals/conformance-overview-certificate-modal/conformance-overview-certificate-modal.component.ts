@@ -14,6 +14,7 @@
  */
 
 import {Component, ElementRef, EventEmitter, Input, ViewChild} from '@angular/core';
+import {HttpResponse} from '@angular/common/http';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {ReportService} from 'src/app/services/report.service';
@@ -24,6 +25,7 @@ import {Observable} from 'rxjs';
 import {ConformanceOverviewMessage} from 'src/app/pages/admin/user-management/community-reports/conformance-overview-message';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-conformance-overview-certificate-modal',
@@ -119,11 +121,11 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
     if (this.reportLevel == 'domain') domainId = this.identifier
     if (this.reportLevel == 'group') groupId = this.identifier
     if (this.reportLevel == 'specification') specId = this.identifier
-    let fileName: string
+    let fallbackFileName: string
     let contentType: string
-    let exportObservable: Observable<ArrayBuffer>
+    let exportObservable: Observable<HttpResponse<ArrayBuffer>>
     if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE) {
-      fileName = "conformance_overview_certificate.pdf"
+      fallbackFileName = "conformance_overview_certificate.pdf"
       contentType = "application/pdf"
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
         if (this.settings) {
@@ -143,13 +145,13 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
         exportObservable = this.reportService.exportOwnConformanceOverviewCertificateReport(this.systemId, domainId, groupId, specId, this.snapshotId)
       }
     } else {
-        fileName = "conformance_overview_report.pdf"
+        fallbackFileName = "conformance_overview_report.pdf"
         contentType = "application/pdf"
         exportObservable = this.reportService.exportConformanceOverviewReport(this.systemId, domainId, groupId, specId, this.snapshotId)
     }
-    exportObservable.subscribe((data) => {
-      const blobData = new Blob([data], {type: contentType});
-      saveAs(blobData, fileName);
+    exportObservable.subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
       this.modalInstance.dismiss()
     }).add(() => {
       this.exportPending = false

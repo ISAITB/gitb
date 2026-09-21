@@ -61,9 +61,11 @@ export class CreateSystemComponent extends BaseComponent implements OnInit, Afte
     if (this.fromCommunityManagement) {
       this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.routingService.organisationChildBreadcrumbs(this.communityId, this.organisationId)
     } else {
       this.organisationId = this.dataService.vendor!.id
       this.communityId = this.dataService.community!.id
+      this.routingService.ownOrganisationBreadcrumbs()
     }
     const onlyPublicProperties = !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
     this.communityService.getSystemParameters(this.communityId, false, onlyPublicProperties).subscribe((data) => {

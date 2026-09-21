@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-xpath-all-pass" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XPathValidator all expressions pass</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<order><status>approved</status><amount>150</amount></order>']]></assign>
+        <!-- XPathValidator requires expression input to be a string (quoted XPath) -->
+        <verify handler="XPathValidator" desc="status is approved">
+            <input name="xml">$xmlDoc</input>
+            <input name="expression">"/order/status = 'approved'"</input>
+        </verify>
+        <verify handler="XPathValidator" desc="amount is positive">
+            <input name="xml">$xmlDoc</input>
+            <input name="expression">"number(/order/amount) > 0"</input>
+        </verify>
+    </steps>
+</testcase>

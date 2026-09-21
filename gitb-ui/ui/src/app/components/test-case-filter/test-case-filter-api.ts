@@ -20,5 +20,6 @@ export interface TestCaseFilterApi {
   refreshOptions: (options: TestCaseFilterOptions|undefined, keepCurrentState: boolean) => void
   documentEscape: () => void;
   documentClick: (event: Event) => void;
+  clearCachedTags: () => void;
 
 }

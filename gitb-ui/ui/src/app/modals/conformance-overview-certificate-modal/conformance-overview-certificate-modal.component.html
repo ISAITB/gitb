@@ -45,43 +45,43 @@
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="includeDetailsOverview" name="includeDetailsOverview" [(ngModel)]="settings.includeDetails">
                             <label class="form-check-label" for="includeDetailsOverview">Details
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Add the conformance overview details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+' (as applicable depending on the report\'s level).'"></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Add the conformance overview details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+' (as applicable depending on the report\'s level).'"></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="includeTestStatusOverview" name="includeTestStatusOverview" [(ngModel)]="settings.includeTestStatus">
                             <label class="form-check-label" for="includeTestStatusOverview">Result overview
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a summary text on the number of successfully passed and failed conformance statements."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a summary text on the number of successfully passed and failed conformance statements."></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="includeTestCasesOverview" name="includeTestCasesOverview" [(ngModel)]="settings.includeTestCases">
                             <label class="form-check-label" for="includeTestCasesOverview">Statement list
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a listing of all conformance statement included in the overview displaying the status per statement."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a listing of all conformance statement included in the overview displaying the status per statement."></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="includeTestCaseDetailsOverview" name="includeTestCaseDetailsOverview" [(ngModel)]="settings.includeTestCaseDetails">
                             <label class="form-check-label" for="includeTestCaseDetailsOverview">Statement details
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add the details for all conformance statements. Each statement included in the overview will be added as a separate page to the report."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add the details for all conformance statements. Each statement included in the overview will be added as a separate page to the report."></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="includeMessageOverview" name="includeMessageOverview" [(ngModel)]="settings.includeMessage">
                             <label class="form-check-label" for="includeMessageOverview">Message
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="includeSignatureOverview" name="includeSignatureOverview" [(ngModel)]="settings.includeSignature">
                             <label class="form-check-label" for="includeSignatureOverview">Signature
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
                             </label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="includePageNumbersOverview" name="includePageNumbersOverview" [(ngModel)]="settings.includePageNumbers">
                             <label class="form-check-label" for="includePageNumbersOverview">Page numbers
-                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Include a footer on each page displaying the current and total number of pages in the report."></div>
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Include a footer on each page displaying the current and total number of pages in the report."></div>
                             </label>
                         </div>
                     </div>

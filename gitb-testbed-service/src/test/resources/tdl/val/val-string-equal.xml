@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-string-equal" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>StringValidator exact equality</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="val">'exact match'</assign>
+        <verify handler="StringValidator" desc="exact string equality">
+            <input name="actual">$val</input>
+            <input name="expected">'exact match'</input>
+        </verify>
+    </steps>
+</testcase>

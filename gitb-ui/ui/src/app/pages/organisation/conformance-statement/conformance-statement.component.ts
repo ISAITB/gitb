@@ -38,6 +38,7 @@ import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {OrganisationParameter} from 'src/app/types/organisation-parameter';
 import {SystemParameter} from 'src/app/types/system-parameter';
 import {ConformanceTestCase} from './conformance-test-case';
+import {Utils} from 'src/app/common/utils';
 import {ConformanceTestSuite} from './conformance-test-suite';
 import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
 import {CustomProperty} from 'src/app/types/custom-property.type';
@@ -62,6 +63,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TestStatusBaseApi} from '../../../components/test-status-base/test-status-base-api';
 import {TestStatusBase} from '../../../components/test-status-base/test-status-base';
 import {PreviewBadgeModalComponent} from '../../../modals/preview-badge-modal/preview-badge-modal.component';
+import {NavigationTarget} from '../../../types/navigation-target';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -87,6 +89,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   domainId?: number
   specId?: number
   actorId!: number
+  private viewReturnTarget?: string
   updatingTests = true
   loadingTests: LoadingStatus = {status: Constants.STATUS.NONE}
   loadingConfiguration: LoadingStatus = {status: Constants.STATUS.NONE}
@@ -118,6 +121,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   animatedDetails = false
   clickableDetails = false
   statementLabel: string = ''
+  documentationReportEnabled = false
 
   testSuiteSelectionConfig: MultiSelectConfig<TestSuiteMinimalInfo> = {
     name: "testSuiteChoice",
@@ -138,8 +142,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     disabled: false,
     testSuiteId: undefined,
     testCaseFilterText: undefined,
+    tagKeys: undefined,
+    untagged: undefined,
     selectedTestSuite: undefined,
     testCaseFilterOptions: {
+      tagsLoader: () => this.conformanceService.getConformanceStatementTagsForFiltering(this.systemId, this.actorId, this.snapshotId),
       initialState: {
         showOptional: true,
         showDisabled: false,
@@ -161,6 +168,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   executionModeButton = this.executionModeLabelInteractive
 
   statement?: ConformanceStatementItem
+  statementDocumentation?: string
   systemName?: string
   organisationName?: string
   snapshotLabel?: string
@@ -225,6 +233,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
@@ -235,11 +244,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       this.snapshotId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID))
     }
     this.isReadonly = this.snapshotId != undefined
-    // Remember where 'back' needs to take us
-    if (sessionStorage) {
-      const fromDashboard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
-      if (!fromDashboard) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "false")
-    }
     this.toggleOverviewVisibility(this.dataService.conformanceStatementDetailVisibility, true)
     this.conformanceStatementDetailVisibilitySubscription = this.dataService.onConformanceStatementDetailVisibilityChange$.subscribe((visible) => {
       this.toggleOverviewVisibility(visible)
@@ -251,6 +255,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
           if (existingDisplayState.state) {
             // Restore search criteria
             this.testCaseSearchCriteria = existingDisplayState.state
+            if (this.testCaseSearchCriteria.testCaseFilterOptions) {
+              // The loader function is not JSON-serialisable so it does not survive the sessionStorage
+              // round-trip - reattach it to the restored options.
+              this.testCaseSearchCriteria.testCaseFilterOptions.tagsLoader = () => this.conformanceService.getConformanceStatementTagsForFiltering(this.systemId, this.actorId, this.snapshotId)
+            }
           }
           return this.loadConformanceTestsInternal({
             targetPage: (existingDisplayState.paging != undefined)?existingDisplayState.paging.currentPage:1,
@@ -307,7 +316,19 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         // Statement definition.
         this.prepareStatement(statementData.statement)
         this.statement = statementData.statement
+        this.statementDocumentation = statementData.documentation
         this.statementLabel = this.breadcrumbLabel()
+        if (this.snapshotId == undefined) {
+          if (this.dataService.isSystemAdmin) {
+            if (this.communityIdOfStatement != Constants.DEFAULT_COMMUNITY_ID) {
+              this.conformanceService.conformanceStatementDocumentationReportEnabled(this.communityIdOfStatement).subscribe((result) => {
+                this.documentationReportEnabled = result.exists
+              })
+            }
+          } else {
+            this.documentationReportEnabled = this.dataService.community?.statementDocumentationReportEnabled === true
+          }
+        }
         this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.statementLabel, this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
         // IDs.
         this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
@@ -520,6 +541,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     this.testCaseSearchCriteria.incomplete = choices.showIncomplete
     this.testCaseSearchCriteria.optional = choices.showOptional
     this.testCaseSearchCriteria.disabled = choices.showDisabled
+    this.testCaseSearchCriteria.tagKeys = choices.tagKeys
+    this.testCaseSearchCriteria.untagged = choices.untagged
     this.applySearchFilters()
   }
 
@@ -653,6 +676,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       || this.testCaseSearchCriteria.disabled
       || this.testCaseSearchCriteria.testSuiteId != undefined
       || this.textProvided(this.testCaseSearchCriteria.testCaseFilterText)
+      || this.testCaseSearchCriteria.tagKeys != undefined
     const pagingStatus = this.pagingControls?.getCurrentStatus()
     const activePaging = pagingStatus != undefined && pagingStatus.currentPage > 1
     if (activeFiltering || activePaging) {
@@ -667,6 +691,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         state.state.testCaseFilterOptions.initialState.showSuccessful = state.state.succeeded
         state.state.testCaseFilterOptions.initialState.showOptional = state.state.optional
         state.state.testCaseFilterOptions.initialState.showDisabled = state.state.disabled
+        state.state.testCaseFilterOptions.initialState.tagKeys = state.state.tagKeys
+        state.state.testCaseFilterOptions.initialState.untagged = state.state.untagged
       }
       this.saveDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, state)
     } else {
@@ -778,19 +804,42 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   onExportConformanceCertificate() {
     this.exportPending = true
     this.reportService.exportOwnConformanceCertificateReport(this.actorId, this.systemId, this.snapshotId)
-    .subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/pdf'});
-      saveAs(blobData, "conformance_certificate.pdf");
+    .subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_certificate.pdf"));
     }).add(() => {
       this.exportPending = false
     })
   }
 
-  toTestCaseHistory(testCase: ConformanceTestCase) {
+  onExportConformanceStatementDocumentation() {
+    this.exportPending = true
+    this.reportService.exportConformanceStatementDocumentationReport(this.actorId, this.systemId)
+    .subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, "conformance_statement_documentation.pdf"));
+    }).add(() => {
+      this.exportPending = false
+    })
+  }
+
+  viewSessionsTarget = (testCase: ConformanceTestCase): NavigationTarget => {
     if (this.organisationId == this.dataService.vendor?.id) {
-      this.routingService.toTestHistory(this.organisationId, undefined, this.systemId,  testCase.id)
+      return this.routingService.linkToTestHistory(this.organisationId, undefined, this.systemId, testCase.id)
     } else {
-      this.routingService.toSessionDashboard(undefined, this.systemId, testCase.id)
+      return this.routingService.linkToSessionDashboard(undefined, this.systemId, testCase.id)
+    }
+  }
+
+  /**
+   * Called on click of the "View test sessions" option (which navigates via its own [navTarget])
+   * so the "return to source" location can still be recorded before leaving this page - guarded to
+   * a plain (unmodified, primary-button) click since a modified click opens the destination in a
+   * new tab/window rather than navigating away from this one.
+   */
+  onViewSessionsNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
     }
   }
 
@@ -819,24 +868,15 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   back() {
-    if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
-    } else {
-      let fromDashBoard = false
-      if (sessionStorage) {
-        fromDashBoard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
-        sessionStorage.removeItem(Constants.SESSION_DATA.FROM_DASHBOARD)
-      }
-      if (fromDashBoard) {
-        let communityId: number|undefined
-        if (this.dataService.isSystemAdmin) {
-          communityId = this.communityId
-        }
-        this.routingService.toConformanceDashboard(communityId, this.organisationId, this.systemId, this.snapshotId)
+    // If we were brought here via a "View XYZ"/"View statement" navigation, return there instead of
+    // following the default hierarchical navigation below.
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.communityId == undefined) {
+        this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
       } else {
         this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
       }
-    }
+    })
   }
 
   protected calculateWrapping() {
@@ -848,6 +888,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   refresh() {
     this.refreshPending = true
     this.loadConformanceTests().subscribe(() => {
+        this.testCaseResultFilter?.clearCachedTags()
         this.refreshPending = false
     })
   }
@@ -868,6 +909,12 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   onTestCaseOptionsOpened(testCase: ConformanceTestCase) {
     this.testSuiteDisplayComponents?.forEach((component) => {
       component.closeOptions(testCase)
+    })
+  }
+
+  toggleTestCaseExpand(expand: boolean) {
+    this.testSuiteDisplayComponents?.forEach((component) => {
+      component.expandAll(expand)
     })
   }
 
@@ -916,39 +963,51 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     }
   }
 
-  viewSystem() {
-    if (this.organisationId == this.dataService.vendor?.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnSystemDetails(this.systemId!)
-    } else {
-      this.routingService.toSystemDetails(this.communityIdOfStatement!, this.organisationId!, this.systemId!)
+  /**
+   * Called on click of any of the "View X" options below (which navigate via their own
+   * [navTarget]) so the "return to source" location can still be recorded before leaving this
+   * page - guarded to a plain (unmodified, primary-button) click since a modified click opens the
+   * destination in a new tab/window rather than navigating away from this one.
+   */
+  optionNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
     }
   }
 
-  viewOrganisation() {
+  systemTarget(): NavigationTarget {
     if (this.organisationId == this.dataService.vendor?.id) {
       // This is the user's own organisation
-      this.routingService.toOwnOrganisationDetails()
+      return this.routingService.linkToOwnSystemDetails(this.systemId!)
+    } else {
+      return this.routingService.linkToSystemDetails(this.communityIdOfStatement!, this.organisationId!, this.systemId!)
+    }
+  }
+
+  organisationTarget(): NavigationTarget {
+    if (this.organisationId == this.dataService.vendor?.id) {
+      // This is the user's own organisation
+      return this.routingService.linkToOwnOrganisationDetails()
     } else {
       // Another organisation
-      this.routingService.toOrganisationDetails(this.communityIdOfStatement!, this.organisationId!)
+      return this.routingService.linkToOrganisationDetails(this.communityIdOfStatement!, this.organisationId!)
     }
   }
 
-  viewCommunity() {
-    this.routingService.toCommunity(this.communityIdOfStatement!)
+  communityTarget(): NavigationTarget {
+    return this.routingService.linkToCommunity(this.communityIdOfStatement!)
   }
 
-  viewActor() {
-    this.routingService.toActor(this.domainId!, this.specId!, this.actorId!)
+  actorTarget(): NavigationTarget {
+    return this.routingService.linkToActor(this.domainId!, this.specId!, this.actorId!)
   }
 
-  viewSpecification() {
-    this.routingService.toSpecification(this.domainId!, this.specId!)
+  specificationTarget(): NavigationTarget {
+    return this.routingService.linkToSpecification(this.domainId!, this.specId!)
   }
 
-  viewDomain() {
-    this.routingService.toDomain(this.domainId!)
+  domainTarget(): NavigationTarget {
+    return this.routingService.linkToDomain(this.domainId!)
   }
 
   isNavigable(identifier: number|undefined): boolean {

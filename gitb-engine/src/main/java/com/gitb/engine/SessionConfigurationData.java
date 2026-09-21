@@ -30,6 +30,7 @@ public class SessionConfigurationData {
     private ActorConfiguration systemConfiguration;
     private final List<ActorConfiguration> testServiceConfigurations = new ArrayList<>();
     private ActorConfiguration predefinedVariables;
+    private ActorConfiguration settings;
 
     public SessionConfigurationData(List<ActorConfiguration> allConfigurations) {
         if (allConfigurations != null) {
@@ -48,6 +49,8 @@ public class SessionConfigurationData {
                     testServiceConfigurations.add(serviceConfig);
                 } else if (ACTOR_CONFIG_VARIABLES.equals(configuration.getActor())) {
                     predefinedVariables = configuration;
+                } else if (ACTOR_CONFIG_SETTINGS.equals(configuration.getActor())) {
+                    settings = configuration;
                 } else {
                     actorConfigurations.add(configuration);
                 }
@@ -77,6 +80,10 @@ public class SessionConfigurationData {
 
     public ActorConfiguration getPredefinedVariables() {
         return predefinedVariables;
+    }
+
+    public ActorConfiguration getSettings() {
+        return settings;
     }
 
 }

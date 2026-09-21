@@ -45,7 +45,13 @@ case class Theme(
                   secondaryButtonColor: String,
                   secondaryButtonLabelColor: String,
                   secondaryButtonHoverColor: String,
-                  secondaryButtonActiveColor: String
+                  secondaryButtonActiveColor: String,
+                  welcomeLoginColor: String,
+                  welcomeLoginLabelColor: String,
+                  welcomeOptionLabelColor: String,
+                  alertInfoBackgroundColor: String,
+                  alertInfoTextColor: String,
+                  alertInfoBorderColor: String
                 ) {
 
   def withImagePaths(headerLogoPath: String, footerLogoPath: String, faviconPath: String): Theme = {

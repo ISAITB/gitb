@@ -48,6 +48,8 @@ import {EndpointParameter} from '../types/endpoint-parameter';
 import {CookieOptions, CookieService} from 'ngx-cookie-service';
 import {LocationData} from '../types/location-data';
 import {TagData} from '../types/tag-data';
+import {TestFlagForUser} from '../types/test-flag-for-user';
+import {CommunityTestFlags} from '../types/community-test-flags';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
 import {MenuItemStatusChange} from '../types/menu-item-status-change';
 import {MenuItem} from '../types/menu-item.enum';
@@ -66,6 +68,9 @@ export class DataService {
   public user?: User
   public vendor?: Organisation
   public community?: Community
+  /** Test Bed administrator only - every community's test flags, loaded once at login (see profile-resolver.ts).
+   * For other roles the current community's flags are already carried on `community.testFlags`. */
+  public allCommunityTestFlags?: CommunityTestFlags[]
   public labels?: {[key: number]: TypedLabelConfig}
   public isSystemAdmin = false
   public isVendorUser = false
@@ -85,8 +90,15 @@ export class DataService {
   public latestPageChange?: PageChange
   public menuVisibility: boolean = false
   public conformanceStatementDetailVisibility: boolean = false
+  public statementsListView: boolean = false
+  public messagesSplitView: boolean = false
   public homePageType: number = Constants.HOME_PAGE_TYPE.LANDING_PAGE
+  public sessionColumnPrefs: {[key: string]: string} = {}
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
+  // Id of the post-login "You have unread messages." popup notification (see IndexComponent.
+  // handlePostUserLoad), so that MessagesComponent - a different component - can close it
+  // programmatically when the user visits "My messages", not just clear the menu badge.
+  public unreadMessagesNotificationId: string|null = null
 
   private onBannerChangeSource = new Subject<string>()
   public onBannerChange$ = this.onBannerChangeSource.asObservable()
@@ -108,6 +120,12 @@ export class DataService {
   public onMenuVisibilityChange$ = this.menuVisibilityChangeSource.asObservable()
   private conformanceStatementDetailVisibilityChangeSource = new Subject<boolean>()
   public onConformanceStatementDetailVisibilityChange$ = this.conformanceStatementDetailVisibilityChangeSource.asObservable()
+  private statementsListViewChangeSource = new Subject<boolean>()
+  public onStatementsListViewChange$ = this.statementsListViewChangeSource.asObservable()
+  private messagesSplitViewChangeSource = new Subject<boolean>()
+  public onMessagesSplitViewChange$ = this.messagesSplitViewChangeSource.asObservable()
+  private sessionColumnsChangeSource = new Subject<{key: string, value: string}>()
+  public onSessionColumnsChange$ = this.sessionColumnsChangeSource.asObservable()
   private preparingForShutdownSource = new ReplaySubject<boolean>(1)
   public onPreparingForShutdown$ = this.preparingForShutdownSource.asObservable()
 
@@ -181,12 +199,15 @@ export class DataService {
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
+      testServiceCallbacksApiKeysEnabled: (this.configuration?.testServiceCallbacksApiKeysEnabled != undefined)?this.configuration!.testServiceCallbacksApiKeysEnabled:false,
       versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
       hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
       conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,
       headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH",
       welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:'',
-      preparingForShutdown: this.configuration?.preparingForShutdown === true
+      preparingForShutdown: this.configuration?.preparingForShutdown,
+      dateFormat: this.configuration?.dateFormat??'dd/MM/yyyy',
+      dateTimeFormat: this.configuration?.dateTimeFormat??'dd/MM/yyyy HH:mm:ss'
     }
   }
 
@@ -215,7 +236,13 @@ export class DataService {
     this.defaultPagingTableSize = user.preferences?.pageSize??Constants.TABLE_PAGE_SIZE
     this.menuVisibility = user.preferences?.menuCollapsed === false // Collapsed by default
     this.conformanceStatementDetailVisibility = user.preferences?.statementsCollapsed !== true // Not collapsed by default
+    this.statementsListView = user.preferences?.statementsListView === true // Tree view by default
+    this.messagesSplitView = user.preferences?.messagesSplitView === true // Continuous view by default
     this.homePageType = user.preferences?.homePageType??Constants.HOME_PAGE_TYPE.LANDING_PAGE
+    this.sessionColumnPrefs = {
+      own_sessions: user.preferences?.ownSessions ?? '',
+      all_sessions: user.preferences?.allSessions ?? '',
+    }
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
@@ -302,6 +329,53 @@ export class DataService {
 
   signalCommunityUpdated() {
     this.onCommunityLoaded.next()
+  }
+
+  setAllCommunityTestFlags(data: CommunityTestFlags[]) {
+    this.allCommunityTestFlags = data
+  }
+
+  /**
+   * The test flags applicable for the given community, from whichever login-time cache applies to the
+   * current role - empty if the community defines none (or, for the Test Bed administrator, if the id
+   * is unknown or wasn't included in the all-communities cache, e.g. because the cap described on
+   * `allCommunityTestFlags` was exceeded at login).
+   */
+  /** Resolves a single flag's cached name/colour by id, for display (tag, column) purposes - `undefined`
+   * if unknown (e.g. cache miss, or the flag was since deleted). */
+  getTestFlag(communityId: number|undefined, flagId: number|undefined): TestFlagForUser|undefined {
+    if (flagId == undefined) return undefined
+    return this.getApplicableTestFlags(communityId).find(f => f.id == flagId)
+  }
+
+  getApplicableTestFlags(communityId?: number): TestFlagForUser[] {
+    if (this.isSystemAdmin) {
+      if (communityId == undefined || this.allCommunityTestFlags == undefined) return []
+      return this.allCommunityTestFlags.find(c => c.communityId == communityId)?.flags ?? []
+    } else {
+      return this.community?.testFlags ?? []
+    }
+  }
+
+  /**
+   * Updates the cached test flags for a community after an admin creates/edits/deletes/reorders flags
+   * in the community details management tab - mirroring the refresh-what-we-cached-at-login pattern
+   * used elsewhere (e.g. `cacheCommunityTags`). A no-op if the given community isn't the one currently
+   * cached (own community, or - for the Test Bed administrator - not part of the all-communities cache).
+   */
+  updateCachedTestFlagsForCommunity(communityId: number, flags: TestFlagForUser[]) {
+    if (this.isSystemAdmin) {
+      if (this.allCommunityTestFlags != undefined) {
+        const existingIndex = this.allCommunityTestFlags.findIndex(c => c.communityId == communityId)
+        if (existingIndex >= 0) {
+          this.allCommunityTestFlags[existingIndex] = { communityId: communityId, flags: flags }
+        } else {
+          this.allCommunityTestFlags.push({ communityId: communityId, flags: flags })
+        }
+      }
+    } else if (this.community?.id == communityId) {
+      this.community.testFlags = flags
+    }
   }
 
   createLabels(customLabels?: TypedLabelConfig[]): {[key: number]: TypedLabelConfig} {
@@ -632,6 +706,16 @@ export class DataService {
     return false
   }
 
+  refineTextMimeType(content: string): string|undefined {
+    let prefix = content.trimStart()
+    if (prefix.length > 256) prefix = prefix.substring(0, 256)
+    const lowerPrefix = prefix.toLowerCase()
+    if (prefix.startsWith('{') || prefix.startsWith('[')) return 'application/json'
+    if (lowerPrefix.startsWith('<!doctype html') || lowerPrefix.startsWith('<html')) return 'text/html'
+    if (prefix.startsWith('<')) return 'application/xml'
+    return undefined
+  }
+
   extensionFromMimeType(mimeTypeToCheck: string|undefined) {
     let result = ""
     if (mimeTypeToCheck != undefined) {
@@ -711,16 +795,19 @@ export class DataService {
     }
   }
 
-  iconForTestResult(result?: string): string {
+  iconForTestResult(result?: string, noSizing?: boolean): string {
     let icon: string
     if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
-      icon = "fa-solid testsuite-progress-icon fa-check-circle test-case-success"
+      icon = "fa-solid fa-check-circle test-case-success"
     } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
-      icon = "fa-solid testsuite-progress-icon fa-times-circle test-case-error"
+      icon = "fa-solid fa-times-circle test-case-error"
     } else if (result == Constants.TEST_CASE_RESULT.WARNING) {
-      icon = "fa-solid testsuite-progress-icon fa-exclamation test-case-warning"
+      icon = "fa-solid fa-exclamation test-case-warning"
     } else {
-      icon = "fa-solid testsuite-progress-icon fa-ban test-case-undefined"
+      icon = "fa-solid fa-ban test-case-undefined"
+    }
+    if (noSizing !== true) {
+      icon += " testsuite-progress-icon"
     }
     return icon
   }
@@ -1141,7 +1228,7 @@ export class DataService {
   }
 
   isDataURL(str: string) {
-    return str.startsWith('data:') && str.slice(0, 50).includes(';base64,');
+    return str.startsWith('data:') && str.slice(0, 256).includes(';base64,');
   }
 
 	getFileInfo(blob: Blob, filename?: string): Observable<{type: string, extension: string, filename: string}> {
@@ -1982,6 +2069,17 @@ export class DataService {
     }
   }
 
+  setSessionColumnPreference(key: string, value: string) {
+    if (this.sessionColumnPrefs[key] !== value) {
+      this.sessionColumnPrefs[key] = value
+      this.sessionColumnsChangeSource.next({ key, value })
+    }
+  }
+
+  getSessionColumnPreference(key: string): string {
+    return this.sessionColumnPrefs[key] ?? ''
+  }
+
   setMenuVisibility(visible: boolean) {
     if (this.menuVisibility != visible) {
       this.menuVisibility = visible
@@ -1997,6 +2095,20 @@ export class DataService {
     if (this.conformanceStatementDetailVisibility != visible) {
       this.conformanceStatementDetailVisibility = visible
       this.conformanceStatementDetailVisibilityChangeSource.next(visible)
+    }
+  }
+
+  setStatementsListView(listView: boolean) {
+    if (this.statementsListView != listView) {
+      this.statementsListView = listView
+      this.statementsListViewChangeSource.next(listView)
+    }
+  }
+
+  setMessagesSplitView(splitView: boolean) {
+    if (this.messagesSplitView != splitView) {
+      this.messagesSplitView = splitView
+      this.messagesSplitViewChangeSource.next(splitView)
     }
   }
 

@@ -15,16 +15,12 @@
 
 package com.gitb.engine.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.gitb.core.AnyContent;
+import com.gitb.engine.TestServiceInformation;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.HandlerApiType;
 import com.gitb.tr.*;
 import com.gitb.types.*;
 import com.gitb.utils.TestSessionNamespaceContext;
@@ -37,11 +33,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
@@ -63,10 +63,10 @@ public class HandlerUtils {
 
     static {
         // Construct immutable (thread-safe) readers and writers for JSON and YAML.
-        var jsonMapper = new ObjectMapper();
+        var jsonMapper = JsonMapper.shared();
         JSON_READER = jsonMapper.reader();
         JSON_WRITER = jsonMapper.writerWithDefaultPrettyPrinter();
-        var yamlMapper = new YAMLMapper();
+        var yamlMapper = YAMLMapper.shared();
         YAML_READER = yamlMapper.reader();
         YAML_WRITER = yamlMapper.writerWithDefaultPrettyPrinter();
     }
@@ -105,7 +105,7 @@ public class HandlerUtils {
     public static JsonNode readAsJson(String jsonContent) {
         try {
             return JSON_READER.readTree(jsonContent);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while parsing JSON", e);
         }
     }
@@ -113,7 +113,7 @@ public class HandlerUtils {
     public static JsonNode readAsYaml(String yamlContent) {
         try {
             return YAML_READER.readTree(yamlContent);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while parsing YAML", e);
         }
     }
@@ -123,7 +123,7 @@ public class HandlerUtils {
         try {
             JSON_WRITER.writeValue(out, node);
             return out.toString();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while writing JSON", e);
         }
     }
@@ -133,7 +133,7 @@ public class HandlerUtils {
         try {
             YAML_WRITER.writeValue(out, node);
             return out.toString();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while writing YAML", e);
         }
     }
@@ -143,7 +143,7 @@ public class HandlerUtils {
         try {
             JSON_WRITER.writeValue(out, readAsYaml(yamlContent));
             return out.toString();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while converting YAML to JSON", e);
         }
     }
@@ -153,7 +153,7 @@ public class HandlerUtils {
         try {
             YAML_WRITER.writeValue(out, readAsJson(jsonContent));
             return out.toString();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Unexpected error while converting JSON to YAML", e);
         }
     }
@@ -323,6 +323,20 @@ public class HandlerUtils {
             throw new IllegalArgumentException("Report item data was found to be null");
         }
         return wrapper.apply(item);
+    }
+
+    public static HandlerApiType determineHandlerApiType(TestServiceInformation serviceInformation, HandlerApiType declaredApiTypeInStep) {
+        // Prioritise API type defined in test step.
+        HandlerApiType apiTypeToUse = declaredApiTypeInStep;
+        if (apiTypeToUse == null && serviceInformation != null) {
+            // If not defined in step, use API type defined for the service.
+            apiTypeToUse = serviceInformation.apiType();
+        }
+        if (apiTypeToUse == null) {
+            // Default to SOAP if no API type was declared at either level.
+            apiTypeToUse = HandlerApiType.SOAP;
+        }
+        return apiTypeToUse;
     }
 
 }

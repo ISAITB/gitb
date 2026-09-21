@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-domibus-receive-result-expiry" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>DomibusMessaging receive expiry with a result block defined (result must not run - nothing arrived)</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="false">
+        <!-- WireMock always returns empty listPendingMessages response. After maximumPollAttempts=2 the
+             DeferredTask expires -> error report with no message -> 'result' must be skipped entirely (there is
+             nothing received to run it against) -> session FAILURE, exactly as with no result block at all. -->
+        <receive id="msg" handler="DomibusMessaging" desc="Receive expires after max poll attempts, result defined but never run">
+            <input name="type">'message'</input>
+            <input name="messageIdentifier">'test-msg-999'</input>
+            <input name="backendAddress">$backendUrl</input>
+            <input name="initialPollDelay">50</input>
+            <input name="pollInterval">100</input>
+            <input name="maximumPollAttempts">2</input>
+            <result>
+                <output name="verdict">'should-never-be-set'</output>
+            </result>
+        </receive>
+    </steps>
+</testcase>

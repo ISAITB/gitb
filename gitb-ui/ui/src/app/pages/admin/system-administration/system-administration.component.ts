@@ -48,8 +48,10 @@ import {UserBasic} from '../../../types/user-basic.type';
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {SslProtocol} from '../../../types/ssl-protocol';
 import {MimeType} from '../../../types/mime-type';
+import {NavigationTarget} from '../../../types/navigation-target';
 import {BaseTabbedComponent} from '../../base-tabbed-component';
 import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
+import {TestServiceCallbackSettings} from '../../../types/test-service-callback-settings';
 import {ValidationState} from '../../../types/validation-state';
 import {UsageTipsConfiguration} from '../../../types/usage-tips-configuration';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
@@ -58,10 +60,16 @@ import {TableApi} from '../../../components/table/table-api';
 import {ResourceState} from '../../../components/resource-management-tab/resource-state';
 import {SessionTimeoutConfiguration} from '../../../types/session-timeout-configuration';
 import {RestApiRateLimits} from '../../../types/rest-api-rate-limits';
-import {RestApiEndpointDescription} from '../../../types/rest-api-endpoint-description';
 import {RestApiEndpointDescriptionWithId} from '../../../types/rest-api-endpoint-description-with-id';
 import {RestApiEndpointLimit} from '../../../types/rest-api-endpoint-limit';
 import {RestApiEndpointBasic} from '../../../types/rest-api-endpoint-basic';
+import {ReportSettings} from '../../../types/report-settings';
+import {REPORT_TYPE_INFOS} from '../../../types/report-type-info';
+import {TimeZoneInfo} from '../../../types/time-zone-info';
+import {WelcomeTexts} from '../../../types/welcome-texts';
+import {ConfigurationValue} from '../../../types/configuration-value';
+import {WELCOME_TEXT_INFOS} from '../../../types/welcome-text-info';
+import {ConfigurationEntryComponentApi} from './configuration-entry/configuration-entry-component-api';
 
 @Component({
     selector: 'app-system-administration',
@@ -76,6 +84,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
   @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
   @ViewChild("themesTable") themesTable?: TableApi
+  @ViewChild("reportSettingsEntry") reportSettingsEntry?: ConfigurationEntryComponentApi
+  @ViewChild("demoAccountEntry") demoAccountEntry?: ConfigurationEntryComponentApi
+  @ViewChild("emailSettingsEntry") emailSettingsEntry?: ConfigurationEntryComponentApi
+  @ViewChild("restApiEntry") restApiEntry?: ConfigurationEntryComponentApi
 
   adminStatus = {status: Constants.STATUS.NONE}
   landingPageStatus = {status: Constants.STATUS.NONE}
@@ -151,13 +163,24 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   softwareVersionCheckResetPending = false
   softwareVersionCheckValidation = new ValidationState()
 
+  // Test service callbacks
+  testServiceCallbacksStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  testServiceCallbacksSettings: TestServiceCallbackSettings = {
+    enabled: true,
+    soapEnabled: true,
+    restEnabled: true,
+    apiKeysEnabled: false
+  }
+
   // TTL
+  private readonly DEFAULT_SESSION_TIMEOUT = 3600
   sessionTimeoutStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   sessionTimeoutSettings: SessionTimeoutConfiguration = {
     enabled: false,
-    adminPendingTimeout: 3600,
-    userPendingTimeout: 3600,
-    otherTimeout: 3600
+    adminPendingTimeout: this.DEFAULT_SESSION_TIMEOUT,
+    userPendingTimeout: this.DEFAULT_SESSION_TIMEOUT,
+    otherTimeout: this.DEFAULT_SESSION_TIMEOUT,
+    deadTimeout: this.DEFAULT_SESSION_TIMEOUT
   }
 
   // Self-registration
@@ -176,16 +199,18 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   // REST API
-  restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
   restApiLimits?: RestApiRateLimits
   restApiDataLoaded = false
   restApiEnabled = false
   restApiEndpointLimitsEnabled = false
   restApiAdminKey!: string
   updateRestApiAdminKeyPending = false
+  restApiDevelopmentKey!: string
+  updateRestApiDevelopmentKeyPending = false
 
   // Demo account
-  demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
   demoAccountId?: number
   demoAccountEnabled = false
   demoAccountDataLoaded = false
@@ -204,12 +229,19 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   // Welcome page
   welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
-  welcomePageResetPending = false
   welcomePageMessage?: string
-  welcomePageTitle?: string
+  welcomePageTexts: WelcomeTexts = {}
+  welcomeTextInfos = WELCOME_TEXT_INFOS
+  // Whether the welcome page form sections are shown and, on Save, whether the current values are
+  // persisted (checked) or the persisted settings are deleted (unchecked). Initialised from whether
+  // content is currently customised, but toggling it alone does not persist anything until saved.
+  welcomePageOverride = false
+  // Whether the welcome message is included at all. When unchecked the message text is still kept
+  // (collapsed, unsaved changes aside) so that re-checking the box restores it.
+  includeWelcomeMessage = true
 
   // Email settings
-  emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true }
   emailSettingsDataLoaded = false
   emailTestActive = false
   emailResetPending = false
@@ -237,6 +269,15 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   emailAttachmentTypeSelectConfig!: MultiSelectConfig<MimeType>
   restApiEndpointSelectConfig!: MultiSelectConfig<RestApiEndpointDescriptionWithId>
 
+  // Report settings
+  reportSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: true}
+  reportSettings: ReportSettings = { enabled: false, fileNameExpressions: {}, dateFormats: { date: 'dd/MM/yyyy', dateTime: 'dd/MM/yyyy HH:mm:ss', dateFile: 'yyyy-MM-dd' } }
+  reportSettingsDataLoaded = false
+  reportTypeInfos = REPORT_TYPE_INFOS
+  timeZones?: TimeZoneInfo[]
+  selectedTimeZone?: TimeZoneInfo
+  timeZoneSelectConfig!: MultiSelectConfig<TimeZoneInfo>
+
   // Resources
   resourceActions!: ResourceActions
   prepareForShutdown = false
@@ -246,7 +287,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     router: Router,
     private readonly userService: UserService,
     public readonly dataService: DataService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly landingPageService: LandingPageService,
     private readonly legalNoticeService: LegalNoticeService,
     private readonly errorTemplateService: ErrorTemplateService,
@@ -289,8 +330,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.resourceActions = this.createResourceActions()
     // Load system configuration values.
     this.systemConfigurationService.getConfigurationValues().subscribe((data) => {
-      let welcomeMessageConfig: SystemConfiguration|undefined
-      let welcomeTitleConfig: SystemConfiguration|undefined
+      const welcomeConfigs: SystemConfiguration[] = []
       data.forEach(configItem => {
         switch (configItem.name) {
           case Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD:
@@ -307,6 +347,11 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             // TTL.
             if (configItem.parameter != undefined) {
               this.sessionTimeoutSettings = JSON.parse(configItem.parameter)
+              // Tolerate a value persisted before one or more of the timeout properties were introduced.
+              if (this.sessionTimeoutSettings.adminPendingTimeout == undefined) this.sessionTimeoutSettings.adminPendingTimeout = this.DEFAULT_SESSION_TIMEOUT
+              if (this.sessionTimeoutSettings.userPendingTimeout == undefined) this.sessionTimeoutSettings.userPendingTimeout = this.DEFAULT_SESSION_TIMEOUT
+              if (this.sessionTimeoutSettings.otherTimeout == undefined) this.sessionTimeoutSettings.otherTimeout = this.DEFAULT_SESSION_TIMEOUT
+              if (this.sessionTimeoutSettings.deadTimeout == undefined) this.sessionTimeoutSettings.deadTimeout = this.DEFAULT_SESSION_TIMEOUT
             }
             this.sessionTimeoutStatus.enabled = this.sessionTimeoutSettings.enabled
             this.sessionTimeoutStatus.fromEnv = configItem.environment
@@ -315,6 +360,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           case Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK:
             // Software version status check.
             this.initialiseSoftwareVersionCheckSettings(configItem)
+            break
+          case Constants.SYSTEM_CONFIG.TEST_SERVICE_CALLBACKS:
+            // Test service callbacks.
+            this.initialiseTestServiceCallbacksSettings(configItem)
             break
           case Constants.SYSTEM_CONFIG.REST_API_ENABLED:
             // REST API.
@@ -326,6 +375,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           case Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY:
             // REST API admin key.
             this.restApiAdminKey = configItem.parameter!
+            break
+          case Constants.SYSTEM_CONFIG.REST_API_DEVELOPMENT_KEY:
+            // REST API development key.
+            this.restApiDevelopmentKey = configItem.parameter!
             break
           case Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED:
             // Self registration.
@@ -351,24 +404,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
             this.usageTipsStatus.fromDefault = configItem.default
             break
           case Constants.SYSTEM_CONFIG.WELCOME_MESSAGE:
-            // Welcome page message.
-            if (configItem.parameter) {
-              this.welcomePageMessage = configItem.parameter
-              welcomeMessageConfig = configItem
-            }
-            this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
-            this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
-            this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
-            break
-          case Constants.SYSTEM_CONFIG.WELCOME_TITLE:
-            // Welcome page title
-            if (configItem.parameter) {
-              this.welcomePageTitle = configItem.parameter
-              welcomeTitleConfig = configItem
-            }
-            this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
-            this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
-            this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
+          case Constants.SYSTEM_CONFIG.WELCOME_HIDDEN:
+          case Constants.SYSTEM_CONFIG.WELCOME_TEXTS:
+            // Welcome page message, its hidden flag, and texts (status is computed once all have been collected).
+            welcomeConfigs.push(configItem)
             break
           case Constants.SYSTEM_CONFIG.EMAIL_SETTINGS:
             // Email settings.
@@ -391,14 +430,44 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
               this.restApiEndpointLimitsEnabled = this.restApiLimits != undefined && this.restApiLimits.endpointLimits.length > 0
             }
             break
+          case Constants.SYSTEM_CONFIG.REPORT_SETTINGS:
+            // Report settings.
+            this.initialiseReportSettings(configItem)
+            break
           default:
             console.warn(`Unknown system configuration [${configItem.name}]`)
         }
       })
+      this.applyWelcomePageConfigs(welcomeConfigs)
     }).add(() => {
       this.configValuesPending = false
     })
     this.routingService.systemConfigurationBreadcrumbs()
+  }
+
+  /**
+   * Applies the welcome message, its hidden flag, and welcome texts configuration items, and derives
+   * the aggregate status (fromDefault/fromEnv/enabled) for the "Custom welcome page content" section
+   * from all three together. Used both when configuration values are first loaded and after a reset
+   * to default.
+   */
+  private applyWelcomePageConfigs(configs: SystemConfiguration[]) {
+    configs.forEach((configItem) => {
+      if (configItem.parameter) {
+        if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE) {
+          this.welcomePageMessage = configItem.parameter
+        } else if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_HIDDEN) {
+          this.includeWelcomeMessage = configItem.parameter.toLowerCase() != 'true'
+        } else if (configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TEXTS) {
+          this.welcomePageTexts = JSON.parse(configItem.parameter)
+        }
+      }
+    })
+    const complete = configs.length == 3
+    this.welcomePageStatus.fromEnv = complete && configs.every((configItem) => configItem.environment)
+    this.welcomePageStatus.fromDefault = complete && configs.every((configItem) => configItem.default)
+    this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
+    this.welcomePageOverride = this.welcomePageStatus.enabled
   }
 
   private parseSslProtocols(values: string[]|undefined): SslProtocol[]|undefined {
@@ -439,6 +508,62 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }
       this.softwareVersionCheckStatus.fromDefault = settings.default
       this.softwareVersionCheckStatus.fromEnv = settings.environment
+    }
+  }
+
+  private initialiseTestServiceCallbacksSettings(settings: SystemConfiguration|undefined) {
+    if (settings != undefined) {
+      if (settings.parameter != undefined) {
+        this.testServiceCallbacksSettings = JSON.parse(settings.parameter)
+        this.testServiceCallbacksStatus.enabled = this.testServiceCallbacksSettings.enabled
+      } else {
+        this.testServiceCallbacksStatus.enabled = false
+      }
+      this.testServiceCallbacksStatus.fromDefault = settings.default
+      this.testServiceCallbacksStatus.fromEnv = settings.environment
+    }
+  }
+
+  expandingReportSettings() {
+    if (!this.reportSettingsDataLoaded) {
+      this.timeZones = this.buildTimeZoneInfos()
+      this.selectedTimeZone = this.timeZones.find((zone) => zone.zoneId == this.reportSettings.timeZone)
+      this.timeZoneSelectConfig = {
+        name: 'timeZone',
+        textField: 'label',
+        textDecorator: (item) => item.offset,
+        singleSelection: true,
+        singleSelectionPersistent: true,
+        showAsFormControl: true,
+        filterLabel: 'Select time zone...',
+        searchPlaceholder: 'Search time zones...',
+        noItemsMessage: 'No time zones available.',
+        loader: () => of(this.timeZones!),
+        // Separate the "UTC" entry (id 0), always listed first, from the rest of the zones.
+        placeholderItemIds: new Set([0])
+      }
+      this.reportSettingsDataLoaded = true
+    }
+    this.reportSettingsEntry?.expand()
+  }
+
+  private initialiseReportSettings(settings: SystemConfiguration|undefined) {
+    if (settings != undefined) {
+      if (settings.parameter != undefined) {
+        this.reportSettings = JSON.parse(settings.parameter)
+        this.reportSettingsStatus.enabled = this.reportSettings.enabled
+      } else {
+        this.reportSettingsStatus.enabled = false
+      }
+      this.reportSettingsStatus.fromDefault = settings.default
+      this.reportSettingsStatus.fromEnv = settings.environment
+      // Guard against older persisted settings that predate the date format properties.
+      if (this.reportSettings.dateFormats == undefined) {
+        this.reportSettings.dateFormats = {}
+      }
+      this.reportSettings.dateFormats.date ??= 'dd/MM/yyyy'
+      this.reportSettings.dateFormats.dateTime ??= 'dd/MM/yyyy HH:mm:ss'
+      this.reportSettings.dateFormats.dateFile ??= 'yyyy-MM-dd'
     }
   }
 
@@ -767,51 +892,41 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.themeStatus.status = Constants.STATUS.NONE
   }
 
-  createAdmin() {
-    this.routingService.toCreateTestBedAdmin()
-  }
-
-  adminSelect(admin: User) {
-    this.routingService.toTestBedAdmin(admin.id!)
+  adminRowTarget = (admin: User): NavigationTarget => {
+    return this.routingService.linkToTestBedAdmin(admin.id!)
   }
 
   showResources() {
     // No action needed.
   }
 
-  createLandingPage() {
-    this.routingService.toCreateLandingPage()
+  landingPageRowTarget = (landingPage: LandingPage): NavigationTarget => {
+    return this.routingService.linkToLandingPage(undefined, landingPage.id)
   }
 
-  landingPageSelect(landingPage: LandingPage) {
-    this.routingService.toLandingPage(undefined, landingPage.id)
+  legalNoticeRowTarget = (legalNotice: LegalNotice): NavigationTarget => {
+    return this.routingService.linkToLegalNotice(undefined, legalNotice.id)
   }
 
-  createLegalNotice() {
-    this.routingService.toCreateLegalNotice()
+  errorTemplateRowTarget = (errorTemplate: ErrorTemplate): NavigationTarget => {
+    return this.routingService.linkToErrorTemplate(undefined, errorTemplate.id)
   }
 
-  legalNoticeSelect(legalNotice: LegalNotice) {
-    this.routingService.toLegalNotice(undefined, legalNotice.id)
-  }
-
-  createErrorTemplate() {
-    this.routingService.toCreateErrorTemplate()
-  }
-
-  errorTemplateSelect(errorTemplate: ErrorTemplate) {
-    this.routingService.toErrorTemplate(undefined, errorTemplate.id)
-  }
-
-  createTheme() {
+  /**
+   * Bound directly as [navTarget], evaluated on every change detection cycle - returning undefined
+   * (rather than silently ignoring the click, as the previous click handler did) leaves the link
+   * without a destination, which is likewise inert on click, matching the previous behaviour.
+   */
+  createThemeTarget(): NavigationTarget|undefined {
     const activeTheme = this.themes.find((theme) => theme.active)
     if (activeTheme) {
-      this.routingService.toCreateTheme(activeTheme.id)
+      return this.routingService.linkToCreateTheme(activeTheme.id)
     }
+    return undefined
   }
 
-  themeSelect(theme: Theme) {
-    this.routingService.toTheme(theme.id)
+  themeRowTarget = (theme: Theme): NavigationTarget => {
+    return this.routingService.linkToTheme(theme.id)
   }
 
   accountRetentionPeriodCheckChanged() {
@@ -928,10 +1043,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
     this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.USAGE_TIPS, JSON.stringify(this.usageTipsValue)).subscribe(() => {
       this.usageTipsStatus.collapsed = true
-      this.usageTipsStatus.enabled = this.usageTipsValue?.enabled === true
+      this.usageTipsStatus.enabled = this.usageTipsValue?.enabled
       this.usageTipsStatus.fromDefault = false
       this.usageTipsStatus.fromEnv = false
-      this.dataService.configuration.usageTipsEnabled = this.usageTipsValue?.enabled === true
+      this.dataService.configuration.usageTipsEnabled = this.usageTipsValue?.enabled
       if (!this.dataService.configuration.usageTipsEnabled) {
         this.dataService.configuration.usageTipsDisabledForScreens = []
       }
@@ -991,6 +1106,22 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     })
   }
 
+  updateRestApiDevelopmentKey() {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for the development API key?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
+    .subscribe(() => {
+      this.updateRestApiDevelopmentKeyPending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_DEVELOPMENT_KEY)
+      .subscribe((data) => {
+        if (data?.parameter) {
+          this.restApiDevelopmentKey = data.parameter
+          this.popupService.success("API key updated.")
+        }
+      }).add(() => {
+        this.updateRestApiDevelopmentKeyPending = false
+      })
+    })
+  }
+
   saveDemoAccount() {
     this.demoAccountStatus.pending = true
     let disable = true
@@ -1031,55 +1162,71 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
   }
 
+  welcomePageTextsOk(): boolean {
+    return (!this.includeWelcomeMessage || this.textProvided(this.welcomePageMessage)) &&
+      this.welcomeTextInfos.every((info) => this.textProvided(this.welcomePageTexts[info.key]))
+  }
+
+  /**
+   * Saves the welcome page content. When "Override default content?" is checked this persists the
+   * current message and texts; when unchecked this deletes the persisted settings (equivalent to a
+   * reset to default), since there is otherwise no way to distinguish "not yet overridden" from
+   * "explicitly reverted" once custom values have been set. The welcome message text itself is always
+   * sent (and kept) even when "Include welcome message?" is unchecked, so re-checking it later
+   * restores the previous message rather than the default.
+   */
   saveWelcomePage() {
-    if (this.textProvided(this.welcomePageMessage) && this.textProvided(this.welcomePageTitle)) {
-      this.welcomePageStatus.pending = true
-      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, value: this.welcomePageMessage }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE, value: this.welcomePageTitle } ])
-      .subscribe(() => {
-        this.welcomePageStatus.collapsed = true
+    if (this.welcomePageOverride && !this.welcomePageTextsOk()) {
+      return
+    }
+    this.welcomePageStatus.pending = true
+    const values: ConfigurationValue[] = this.welcomePageOverride ? [
+      { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, value: this.welcomePageMessage },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_HIDDEN, value: this.includeWelcomeMessage ? undefined : 'true' },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_TEXTS, value: JSON.stringify(this.welcomePageTexts) }
+    ] : [
+      { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_HIDDEN },
+      { name: Constants.SYSTEM_CONFIG.WELCOME_TEXTS }
+    ]
+    this.systemConfigurationService.updateConfigurationValues(values)
+    .subscribe((appliedValues) => {
+      if (this.welcomePageOverride) {
         this.welcomePageStatus.enabled = true
         this.welcomePageStatus.fromDefault = false
         this.welcomePageStatus.fromEnv = false
         this.popupService.success('Welcome page content set.')
-      }).add(() => {
-        this.welcomePageStatus.pending = false
-      })
-    }
-  }
-
-  resetWelcomePage() {
-    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page content to its default?", "Reset", "Cancel", Constants.BUTTON_ICON.RESET)
-    .subscribe(() => {
-      this.welcomePageResetPending = true
-      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE } ])
-      .subscribe((appliedValues) => {
+      } else {
         if (appliedValues) {
-          const message = appliedValues.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
-          if (message != undefined) {
-            this.welcomePageMessage = message.parameter
-          }
-          const title = appliedValues.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
-          if (title != undefined) {
-            this.welcomePageTitle = title.parameter
-          }
-          this.welcomePageStatus.fromEnv = message != undefined && message.environment && title != undefined && title.environment
-          this.welcomePageStatus.fromDefault = message != undefined && message.default && title != undefined && title.default
-          this.welcomePageStatus.enabled = false
+          this.applyWelcomePageConfigs(appliedValues)
         }
-        this.welcomePageStatus.collapsed = true
         this.popupService.success('Welcome page content reset to default.')
-      }).add(() => {
-        this.welcomePageResetPending = false
-      })
+      }
+      this.welcomePageStatus.collapsed = true
+    }).add(() => {
+      this.welcomePageStatus.pending = false
     })
   }
 
   sessionTimeoutSettingsOk() {
-    return !this.sessionTimeoutSettings.enabled || (this.sessionTimeoutSettings.otherTimeout != undefined && this.sessionTimeoutSettings.adminPendingTimeout != undefined && this.sessionTimeoutSettings.userPendingTimeout != undefined && this.sessionTimeoutSettings.otherTimeout >= 0 && this.sessionTimeoutSettings.adminPendingTimeout >= 0 && this.sessionTimeoutSettings.userPendingTimeout >= 0)
+    return !this.sessionTimeoutSettings.enabled || (this.sessionTimeoutSettings.otherTimeout != undefined && this.sessionTimeoutSettings.adminPendingTimeout != undefined && this.sessionTimeoutSettings.userPendingTimeout != undefined && this.sessionTimeoutSettings.deadTimeout != undefined && this.sessionTimeoutSettings.otherTimeout >= 0 && this.sessionTimeoutSettings.adminPendingTimeout >= 0 && this.sessionTimeoutSettings.userPendingTimeout >= 0 && this.sessionTimeoutSettings.deadTimeout >= 0)
   }
 
   softwareVersionCheckSettingsOk() {
     return !this.softwareVersionCheckSettings.enabled || (this.textProvided(this.softwareVersionCheckSettings.jws) && this.textProvided(this.softwareVersionCheckSettings.jwks))
+  }
+
+  reportSettingsOk() {
+    return !this.reportSettings.enabled || (
+      this.reportTypeInfos.every((info) => this.textProvided(this.reportSettings.fileNameExpressions[info.type])) &&
+      this.textProvided(this.reportSettings.dateFormats?.date) &&
+      this.textProvided(this.reportSettings.dateFormats?.dateTime) &&
+      this.textProvided(this.reportSettings.dateFormats?.dateFile)
+    )
+  }
+
+  testServiceCallbacksSettingsOk() {
+    return !this.testServiceCallbacksSettings.enabled || this.testServiceCallbacksSettings.soapEnabled || this.testServiceCallbacksSettings.restEnabled
   }
 
   emailSettingsOk() {
@@ -1184,6 +1331,42 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     })
   }
 
+  saveReportSettings() {
+    if (this.reportSettingsOk()) {
+      this.reportSettingsStatus.pending = true
+      this.reportSettings.timeZone = this.selectedTimeZone?.zoneId
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REPORT_SETTINGS, JSON.stringify(this.reportSettings))
+        .subscribe((appliedValue) => {
+          this.initialiseReportSettings(appliedValue)
+          this.reportSettingsStatus.collapsed = true
+          this.popupService.success('Updated report and display settings.')
+          // Apply the date formats immediately for the Test Bed administrator making the change, rather than
+          // waiting for the next initial connection (see DataService.emptyAppConfiguration/setConfiguration).
+          if (this.reportSettings.dateFormats?.date != undefined && this.reportSettings.dateFormats?.dateTime != undefined) {
+            this.dataService.configuration.dateFormat = this.reportSettings.dateFormats.date
+            this.dataService.configuration.dateTimeFormat = this.reportSettings.dateFormats.dateTime
+          }
+        }).add(() => {
+          this.reportSettingsStatus.pending = false
+        })
+    }
+  }
+
+  saveTestServiceCallbacks() {
+    if (this.testServiceCallbacksSettingsOk()) {
+      this.testServiceCallbacksStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.TEST_SERVICE_CALLBACKS, JSON.stringify(this.testServiceCallbacksSettings))
+        .subscribe((appliedValue) => {
+          this.initialiseTestServiceCallbacksSettings(appliedValue)
+          this.testServiceCallbacksStatus.collapsed = true
+          this.dataService.configuration.testServiceCallbacksApiKeysEnabled = this.testServiceCallbacksSettings.apiKeysEnabled
+          this.popupService.success('Updated test engine callback settings.')
+        }).add(() => {
+        this.testServiceCallbacksStatus.pending = false
+      })
+    }
+  }
+
   saveEmailSettings() {
     this.emailSettingsStatus.pending = true
     const emailSettingsToPost = this.prepareEmailSettings()
@@ -1284,7 +1467,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   expandingDemoAccount() {
     if (this.demoAccountDataLoaded) {
-      this.demoAccountStatus.deferredExpand!.emit(true)
+      this.demoAccountEntry?.expand()
     } else {
       // Demo account.
       this.communitySelectConfig = {
@@ -1387,7 +1570,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         }),
         finalize(() => {
           this.demoAccountDataLoaded = true
-          this.demoAccountStatus.deferredExpand!.emit(true)
+          this.demoAccountEntry?.expand()
         })
       ).subscribe(() => {})
     }
@@ -1413,7 +1596,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }
       this.emailSettingsDataLoaded = true
     }
-    this.emailSettingsStatus.deferredExpand!.emit(true)
+    this.emailSettingsEntry?.expand()
   }
 
   restApiEndpointDescriptionsMap?: Map<string, string|undefined>
@@ -1421,7 +1604,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   expandingRestApi() {
     if (this.restApiDataLoaded) {
-      this.restApiStatus.deferredExpand!.emit(true)
+      this.restApiEntry?.expand()
     } else {
       this.restApiEndpointSelectConfig = {
         name: 'restApiEndpoints',
@@ -1448,7 +1631,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         }),
         finalize(() => {
           this.restApiDataLoaded = true
-          this.restApiStatus.deferredExpand!.emit(true)
+          this.restApiEntry?.expand()
         })
       ).subscribe(() => {})
     }
@@ -1501,6 +1684,32 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.restApiEndpointSelectConfig.eventsDisabled = true
     this.restApiEndpointSelectConfig.replaceSelectedItems!.emit([])
     this.restApiEndpointSelectConfig.eventsDisabled = false
+  }
+
+  /**
+   * Builds the full list of IANA time zone IDs supported by the browser, along with their current
+   * UTC offset (e.g. "Europe/Brussels" / "UTC+02:00"), sorted by zone ID. A "UTC" entry is always
+   * added first (id 0), followed by a separator, ahead of the regular sorted zone list.
+   */
+  buildTimeZoneInfos(): TimeZoneInfo[] {
+    // Exclude a bare "UTC" if the browser already reports it, to avoid a duplicate entry.
+    const zoneIds = Intl.supportedValuesOf('timeZone').filter((zoneId) => zoneId != 'UTC').sort()
+    const utcInfo: TimeZoneInfo = { id: 0, zoneId: 'UTC', label: 'Coordinated Universal Time - UTC', offset: 'UTC+00:00' }
+    const otherInfos = zoneIds.map((zoneId, index) => {
+      return { id: index + 1, zoneId: zoneId, label: zoneId, offset: this.offsetForZone(zoneId) }
+    })
+    return [utcInfo, ...otherInfos]
+  }
+
+  offsetForZone(zoneId: string): string {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: zoneId, timeZoneName: 'longOffset' }).formatToParts(new Date())
+    const namePart = parts.find((part) => part.type == 'timeZoneName')
+    const offset = namePart?.value ?? 'UTC'
+    // Normalise the bare "GMT"/"UTC" (returned for zero offset) to "UTC+00:00".
+    if (offset == 'GMT' || offset == 'UTC') {
+      return 'UTC+00:00'
+    }
+    return offset.replace('GMT', 'UTC')
   }
 
   protected readonly Constants = Constants;

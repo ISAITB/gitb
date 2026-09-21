@@ -23,6 +23,7 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
+import com.gitb.tdl.ExitScopeType;
 import com.gitb.tdl.ExitStep;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
@@ -75,11 +76,15 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 			status = new StatusEvent(StepStatus.ERROR, scope, self());
 			scope.getContext().setForcedFinalResult(TestResultType.FAILURE);
 		}
-		// Prepare the rest of the test case for the stop.
-		if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-			scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+		if (step.getScope() == ExitScopeType.TEST) {
+			// Prepare the rest of the test case for the stop.
+			if (isRunnable()) {
+				scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+			}
+			getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
+		} else {
+			setExitScopeToReport(step.getScope());
 		}
-		getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
 		// Send the step's report.
 		updateTestStepStatus(getContext(), status, report, true, false);
 	}

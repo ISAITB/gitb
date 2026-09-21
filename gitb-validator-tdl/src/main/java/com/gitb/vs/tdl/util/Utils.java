@@ -49,6 +49,7 @@ import java.util.zip.ZipInputStream;
 
 public class Utils {
 
+    public static final String ACTOR_MAP = "ACTOR";
     public static final String DOMAIN_MAP = "DOMAIN";
     public static final String ORGANISATION_MAP = "ORGANISATION";
     public static final String ORGANISATION_MAP_SHORT_NAME = "shortName";
@@ -101,8 +102,9 @@ public class Utils {
             entryName = entryName.replace('\\', '/');
             hasBadSeparators = true;
         }
-        Path destFile = destinationDir.resolve(entryName).normalize().toAbsolutePath();
-        if (!destFile.startsWith(destinationDir)) {
+        Path destDir = destinationDir.normalize().toAbsolutePath();
+        Path destFile = destDir.resolve(entryName).normalize().toAbsolutePath();
+        if (!destFile.startsWith(destDir.toAbsolutePath())) {
             throw new IllegalStateException("Entry is outside of the target dir: " + entryName);
         }
         return new PathFromZipEntry(destFile, hasBadSeparators);

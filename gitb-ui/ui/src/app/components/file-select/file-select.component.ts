@@ -117,7 +117,8 @@ export class FileSelectComponent implements OnInit, OnDestroy {
           name: file.name,
           size: file.size,
           type: file.type,
-          file: file
+          file: file,
+          uuid: crypto.randomUUID()
         })
       }
     }

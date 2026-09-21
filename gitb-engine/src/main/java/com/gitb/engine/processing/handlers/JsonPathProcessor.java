@@ -15,10 +15,6 @@
 
 package com.gitb.engine.processing.handlers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ValueNode;
 import com.gitb.core.ConfigurationParameters;
 import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
@@ -32,6 +28,10 @@ import com.gitb.types.*;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeType;
+import tools.jackson.databind.node.ValueNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -174,15 +174,16 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
     }
 
     private Optional<JsonNodeType> commonNodeType(ArrayNode nodes) {
-        var iterator = nodes.elements();
+        var elements = nodes.elements();
         JsonNodeType currentType = null;
-        while (iterator.hasNext()) {
-            var node = iterator.next();
-            if (currentType == null) {
-                currentType = node.getNodeType();
-            } else if (currentType != node.getNodeType()) {
-                currentType = null;
-                break;
+        if (elements != null) {
+            for (var node : elements) {
+                if (currentType == null) {
+                    currentType = node.getNodeType();
+                } else if (currentType != node.getNodeType()) {
+                    currentType = null;
+                    break;
+                }
             }
         }
         return Optional.ofNullable(currentType);

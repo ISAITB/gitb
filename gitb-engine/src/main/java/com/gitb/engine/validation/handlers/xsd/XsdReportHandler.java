@@ -20,13 +20,13 @@ import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.validation.handlers.common.AbstractReportHandler;
 import com.gitb.tr.*;
 import com.gitb.types.DataType;
-import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
 import org.springframework.http.MediaType;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
 import jakarta.xml.bind.JAXBElement;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by senan on 10/10/14.
@@ -36,7 +36,14 @@ public class XsdReportHandler extends AbstractReportHandler implements ErrorHand
 	public static final String XML_ITEM_NAME = "xml";
 	public static final String XSD_ITEM_NAME = "xsd";
 
-    protected XsdReportHandler(ObjectType xml, SchemaType xsd) {
+    /**
+     * Constructor.
+     *
+     * @param xmlContent The input XML content, already serialised (by the caller's shared
+     *   {@code XmlInputProvider}) rather than serialised again here.
+     * @param xsd The XSD schema to attach to the report, or {@code null} if it should not be shown.
+     */
+    protected XsdReportHandler(String xmlContent, SchemaType xsd) {
         super();
 
 	    AnyContent attachment = new AnyContent();
@@ -47,7 +54,7 @@ public class XsdReportHandler extends AbstractReportHandler implements ErrorHand
         xmlAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
 	    xmlAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
 	    xmlAttachment.setType(DataType.OBJECT_DATA_TYPE);
-	    xmlAttachment.setValue(new String(xml.serializeByDefaultEncoding()));
+	    xmlAttachment.setValue(xmlContent);
 	    attachment.getItem().add(xmlAttachment);
 
         if (xsd != null) {
@@ -56,7 +63,7 @@ public class XsdReportHandler extends AbstractReportHandler implements ErrorHand
             xsdAttachment.setType(DataType.SCHEMA_DATA_TYPE);
             xsdAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
             xsdAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-            xsdAttachment.setValue(new String(xsd.serializeByDefaultEncoding()));
+            xsdAttachment.setValue(new String(xsd.serializeByDefaultEncoding(), StandardCharsets.UTF_8));
             attachment.getItem().add(xsdAttachment);
         }
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-level-warning" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Failing verify with WARNING level produces SUCCESS session outcome</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="val" type="number">5</assign>
+        <!-- WARNING-level failure: execution continues and session ends as SUCCESS (not WARNING) -->
+        <verify handler="ExpressionValidator" desc="deliberate warning failure" level="WARNING">
+            <input name="expression">$val = 99</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="execution continues after warning">
+            <input name="expression">$val = 5</input>
+        </verify>
+    </steps>
+</testcase>

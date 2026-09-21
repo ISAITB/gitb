@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-group-hidden" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Hidden group child steps still execute</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="counter" type="number">0</assign>
+        <group desc="Hidden group" hidden="true">
+            <assign to="counter" type="number">$counter + 5</assign>
+            <assign to="counter" type="number">$counter + 5</assign>
+        </group>
+        <verify handler="ExpressionValidator" desc="hidden group steps executed">
+            <input name="expression">$counter = 10</input>
+        </verify>
+    </steps>
+</testcase>

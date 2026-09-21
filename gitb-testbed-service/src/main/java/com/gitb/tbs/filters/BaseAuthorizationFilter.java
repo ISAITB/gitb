@@ -1,0 +1,41 @@
+/*
+ * Copyright (C) 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+package com.gitb.tbs.filters;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * Base class for authorization filters.
+ */
+public abstract class BaseAuthorizationFilter extends OncePerRequestFilter {
+
+    /**
+     * Check whether the given HTTP request is a SOAP metadata retrieval request.
+     *
+     * @param request The request to check.
+     * @return The check result
+     */
+    protected boolean isSoapMetadataRequest(HttpServletRequest request) {
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        String query = request.getQueryString();
+        return query != null && (query.equalsIgnoreCase("wsdl") || query.toLowerCase().startsWith("wsdl&")
+                || query.toLowerCase().startsWith("xsd="));
+    }
+
+}

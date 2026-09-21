@@ -15,8 +15,10 @@
 
 package com.gitb.tbs.impl;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.Actor;
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.CallbackAuthorizer;
 import com.gitb.engine.TestCaseManager;
 import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -74,14 +76,17 @@ public class TestbedServiceImpl implements TestbedService {
     public GetActorDefinitionResponse getActorDefinition(GetActorDefinitionRequest parameters) {
         /*
          * The getActorDefinition operation is deprecated for use in test sessions. However, as it is never
-         * called for test sessions we are taking advantage of it to use for a healthcheck ping without needing
-         * to add a separate operation that would modify the published API.
-         *
-         * The healthcheck result is returned as a JSON string as the actor's description.
+         * called for test sessions we are taking advantage of it to use as a general-purpose maintenance
+         * channel without needing to add a separate operation that would modify the published API. The
+         * "actorId" parameter is repurposed as a call type, and the result is returned as the actor's
+         * description (as a plain string or a JSON string depending on the call type).
          */
         String result;
         if ("callbacks".equals(parameters.getActorId())) {
             result = TestEngineConfiguration.ROOT_CALLBACK_URL;
+        } else if ("dead-sessions".equals(parameters.getActorId())) {
+            // Given the "|"-delimited active session IDs known to gitb-ui (in tcId), return the ones unknown to this engine.
+            result = com.gitb.engine.TestbedService.deadSessions(parameters.getTcId());
         } else {
             result = com.gitb.engine.TestbedService.healthCheck((msg) -> {
                 TestbedServiceCallbackHandler.getInstance()
@@ -125,14 +130,27 @@ public class TestbedServiceImpl implements TestbedService {
         }
     }
 
+    private void handleSettingsUpdate(ConfigureRequest parameters) {
+        if (parameters.getConfigs().isEmpty()) {
+            logger.warn("Setting update received with no payload.");
+        } else {
+            CallbackAuthorizer.getInstance().updateSettings(parameters.getConfigs().getFirst());
+            logger.info("Updated settings.");
+        }
+    }
+
     @Override
     public Void configure(ConfigureRequest parameters) throws Error {
         String sessionId = null;
         try {
             sessionId = parameters.getTcInstanceId();
-            // Call the real TestbedService
-            logger.debug("Received configure request for session [{}]", sessionId);
-            com.gitb.engine.TestbedService.configure(sessionId, parameters.getConfigs(), parameters.getInputs());
+            if (PropertyConstants.ACTOR_CONFIG_SETTINGS.equals(sessionId)) {
+                handleSettingsUpdate(parameters);
+            } else {
+                // Call the real TestbedService
+                logger.debug("Received configure request for session [{}]", sessionId);
+                com.gitb.engine.TestbedService.configure(sessionId, parameters.getConfigs(), parameters.getInputs());
+            }
             return new Void();
         } catch (GITBEngineInternalError e) {
             logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);

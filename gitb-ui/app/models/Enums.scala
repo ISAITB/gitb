@@ -85,7 +85,7 @@ object Enums {
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
     Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme,
     DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration, SystemResource,
-    TestService = Value
+    TestService, TestFlag = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {
@@ -100,7 +100,7 @@ object Enums {
 
   object TriggerServiceType extends Enumeration(1) {
     type TriggerServiceType = Value
-    val GITB, JSON = Value
+    val GitbSoap, Json, GitbRest  = Value
   }
 
   object TriggerEventType extends Enumeration(1) {
@@ -158,7 +158,7 @@ object Enums {
 
   object ReportType extends Enumeration(1) {
     type ReportType = Value
-    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport, ConformanceStatementCertificate, ConformanceOverviewCertificate = Value
+    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport, ConformanceStatementCertificate, ConformanceOverviewCertificate, ConformanceStatementDocumentationReport, TestSuiteDocumentationReport, TestCaseDocumentationReport, TestDataArchive = Value
   }
 
   object TriggerFireExpressionType extends Enumeration(1) {
@@ -261,6 +261,18 @@ object Enums {
   object HomePageType extends Enumeration(1) {
     type HomePageType = Value
     val LANDING_PAGE, CONFORMANCE_DASHBOARD = Value
+  }
+
+  /** Recipient descriptors accepted by the message compose endpoint. */
+  object MessageTargetType extends Enumeration(1) {
+    type MessageTargetType = Value
+    val OwnOrganisation, CommunityAdmin, TestBedAdmin, AllCommunityMembers, Organisation, AllCommunityAdmins, AllOrganisations, AllUsers, AllCommunityUsers = Value
+  }
+
+  /** The three kinds of organisation a message sender or recipient resolves to at send time. */
+  object MessagePeerType extends Enumeration(1) {
+    type MessagePeerType = Value
+    val Organisation, CommunityAdmin, TestBedAdmin = Value
   }
 
 }

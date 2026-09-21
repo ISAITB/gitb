@@ -54,7 +54,7 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
-    if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
+    if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON || this.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB_REST) {
       this.request = this.dataService.prettifyJSON(this.request)
     }
     this.initialRequest = this.request
@@ -89,7 +89,7 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
           if (data?.texts?.length) {
             if (data.success) {
               this.responseSuccess = true
-              if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
+              if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON || this.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB_REST) {
                 let valueToShow = ''
                 if (data.texts && data.texts.length > 0) {
                   valueToShow = data.texts[0]

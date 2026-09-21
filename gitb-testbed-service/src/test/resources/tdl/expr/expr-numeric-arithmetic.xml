@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-numeric-arithmetic" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Numeric arithmetic</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="a" type="number">10</assign>
+        <assign to="b" type="number">3</assign>
+        <verify handler="ExpressionValidator" desc="addition">
+            <input name="expression">$a + $b = 13</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="subtraction">
+            <input name="expression">$a - $b = 7</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="multiplication">
+            <input name="expression">$a * $b = 30</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="division">
+            <input name="expression">$a div $b = 10 div 3</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="modulo">
+            <input name="expression">$a mod $b = 1</input>
+        </verify>
+    </steps>
+</testcase>

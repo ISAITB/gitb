@@ -15,4 +15,4 @@
 
 package models
 
-case class SessionTimeoutConfiguration(enabled: Boolean, userPendingTimeout: Long, adminPendingTimeout: Long, otherTimeout: Long)
+case class SessionTimeoutConfiguration(enabled: Boolean, userPendingTimeout: Long, adminPendingTimeout: Long, otherTimeout: Long, deadTimeout: Long)

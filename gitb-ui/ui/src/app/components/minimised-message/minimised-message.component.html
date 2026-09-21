@@ -1,0 +1,11 @@
+@if (visible) {
+    <div class="minimised-message" (click)="maximise()">
+        <span class="minimised-message-title">Draft message</span>
+        <button type="button" class="btn-minimised-message" (click)="maximise(); $event.stopPropagation()" tooltipClass="shortTooltip" container="body" ngbTooltip="Maximise" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+            <i [class]="Constants.BUTTON_ICON.MAXIMIZE"></i>
+        </button>
+        <button type="button" class="btn-minimised-message" (click)="discard($event)" tooltipClass="shortTooltip" container="body" ngbTooltip="Discard" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+            <i [class]="Constants.BUTTON_ICON.DELETE"></i>
+        </button>
+    </div>
+}

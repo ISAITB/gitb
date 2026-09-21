@@ -26,6 +26,7 @@ import {SystemService} from 'src/app/services/system.service';
 import {Constants} from 'src/app/common/constants';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {forkJoin} from 'rxjs';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 
 @Component({
     selector: 'app-system-details',
@@ -50,17 +51,19 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   readonly!: boolean
   showDelete!: boolean
   loaded = false
+  private viewReturnTarget?: string
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly confirmationDialogService: ConfirmationDialogService,
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly systemService: SystemService
   ) { super() }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.readonly = this.dataService.isVendorUser || (this.dataService.isVendorAdmin && !this.route.snapshot.data.canEditOwnSystem)
     this.showDelete = !this.readonly && (!this.dataService.isVendorAdmin || this.dataService.community!.allowSystemManagement)
     this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
@@ -129,19 +132,21 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     })
   }
 
-  manageSystemTests() {
+  manageSystemTestsTarget(): NavigationTarget {
     if (this.fromCommunityManagement) {
-      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
+      return this.routingService.linkToConformanceStatements(this.communityId, this.organisationId, this.systemId)
     } else {
-      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
+      return this.routingService.linkToOwnConformanceStatements(this.organisationId, this.systemId)
     }
   }
 
   cancel() {
-    if (this.fromCommunityManagement) {
-      this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
-    } else {
-      this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
-    }
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.fromCommunityManagement) {
+        this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
+      } else {
+        this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
+      }
+    })
   }
 }

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-varutils-exists" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>VariableUtils exists check</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="defined">'I am defined'</assign>
+        <process handler="VariableUtils" operation="exists" output="existsResult">
+            <input name="name">'defined'</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="defined variable exists">
+            <input name="expression">$existsResult</input>
+        </verify>
+        <process handler="VariableUtils" operation="exists" output="notExistsResult">
+            <input name="name">'undefinedVariable'</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="undefined variable does not exist">
+            <input name="expression">not($notExistsResult)</input>
+        </verify>
+    </steps>
+</testcase>

@@ -15,11 +15,12 @@
 
 package managers
 
+import com.gitb.PropertyConstants
 import com.gitb.core.AnyContent
 import com.gitb.tbs._
 import config.Configurations
 import jaxws.HeaderHandlerResolver
-import models.SessionConfigurationData
+import models.{SessionConfigurationData, TypedActorConfiguration}
 import org.apache.cxf.BusFactory
 import org.apache.cxf.wsdl11.WSDLManagerImpl
 import org.slf4j.{Logger, LoggerFactory}
@@ -87,6 +88,16 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
       }
       val response = service().initiate(requestData)
       response.getTcInstanceId
+    }
+  }
+
+  def updateSettings(settings: TypedActorConfiguration): Future[Unit] = {
+    Future {
+      val cRequest: ConfigureRequest = new ConfigureRequest
+      // Use a special marker as a session ID to tell the test engine to treat this differently.
+      cRequest.setTcInstanceId(PropertyConstants.ACTOR_CONFIG_SETTINGS)
+      cRequest.getConfigs.add(settings.toActorConfiguration())
+      service().configure(cRequest)
     }
   }
 
@@ -168,6 +179,24 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
     request.setActorId(healthCheckType)
     Future {
       createClientWithoutCaching().getActorDefinition(request).getActor.getDesc
+    }
+  }
+
+  /**
+   * Given the test session IDs still considered active by gitb-ui, ask the test engine which of them it
+   * has no knowledge of (e.g. following a test engine restart) and are therefore to be considered dead.
+   *
+   * @param sessionIds The candidate session IDs to check.
+   * @return The subset of session IDs unknown to the test engine.
+   */
+  def getDeadSessions(sessionIds: Iterable[String]): Future[Iterable[String]] = {
+    val request = new GetActorDefinitionRequest()
+    request.setActorId("dead-sessions")
+    request.setTcId(sessionIds.mkString("|"))
+    Future {
+      Option(service().getActorDefinition(request).getActor.getDesc)
+        .map(_.split('|').filter(_.nonEmpty).toSeq)
+        .getOrElse(Seq.empty)
     }
   }
 

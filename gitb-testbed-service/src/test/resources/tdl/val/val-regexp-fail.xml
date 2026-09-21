@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-regexp-fail" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RegExpValidator no match fails session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="input">'not-a-number'</assign>
+        <verify handler="RegExpValidator" desc="digits only pattern">
+            <input name="input">$input</input>
+            <input name="expression">[0-9]+</input>
+        </verify>
+    </steps>
+</testcase>

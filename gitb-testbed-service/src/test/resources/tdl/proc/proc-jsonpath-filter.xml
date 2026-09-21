@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-jsonpath-filter" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>JsonPathProcessor filter expression</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="json">'{"users":[{"name":"Alice","active":true},{"name":"Bob","active":false},{"name":"Carol","active":true}]}'</assign>
+        <!-- Count active users -->
+        <process handler="JsonPathProcessor" operation="count" output="activeCount">
+            <input name="content">$json</input>
+            <input name="expression">'$.users[?(@.active==true)]'</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="two active users">
+            <input name="expression">$activeCount = 2</input>
+        </verify>
+    </steps>
+</testcase>

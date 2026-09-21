@@ -77,6 +77,9 @@ import {DomainFormComponent} from './pages/admin/domain-management/domain/domain
 import {
   CreateEditDomainParameterModalComponent
 } from './modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
+import {
+  CreateEditTestFlagModalComponent
+} from './modals/create-edit-test-flag-modal/create-edit-test-flag-modal.component';
 import {TestSuiteUploadModalComponent} from './modals/test-suite-upload-modal/test-suite-upload-modal.component';
 import {
   CreateSpecificationComponent
@@ -156,7 +159,6 @@ import {SessionLogModalComponent} from './components/session-log-modal/session-l
 import {BaseCodeEditorModalComponent} from './components/base-code-editor-modal/base-code-editor-modal.component';
 import {MultiSelectFilterComponent} from './components/multi-select-filter/multi-select-filter.component';
 import {TestStatusIconsComponent} from './components/test-status-icons/test-status-icons.component';
-import {TableColumnContentComponent} from './components/table-row/table-column-content/table-column-content.component';
 import {TestTriggerModalComponent} from './pages/admin/user-management/trigger/test-trigger-modal/test-trigger-modal.component';
 import {
   CreateEditCommunityResourceModalComponent
@@ -187,9 +189,14 @@ import {
 } from './components/conformance-statement-items-display/conformance-statement-items-display.component';
 import {CollapsingIconComponent} from './components/collapsing-icon/collapsing-icon.component';
 import {PlaceholderSelectorComponent} from './components/placeholder-selector/placeholder-selector.component';
+import {ReportFileNameExpressionComponent} from './components/report-file-name-expression/report-file-name-expression.component';
 import {TestResultRatioComponent} from './components/test-result-ratio/test-result-ratio.component';
 import {PrescriptionLevelComponent} from './components/prescription-level/prescription-level.component';
 import {CheckboxOptionPanelComponent} from './components/checkbox-option-panel/checkbox-option-panel.component';
+import {SplitViewComponent} from './components/split-view/split-view.component';
+import {SessionFlagControlComponent} from './components/session-flag-control/session-flag-control.component';
+import {SessionInfoPanelComponent} from './components/session-info-panel/session-info-panel.component';
+import {SessionColumnPreferencesComponent} from './components/session-column-preferences/session-column-preferences.component';
 import {MenuItemComponent} from './pages/index/menu-item/menu-item.component';
 import {MenuGroupComponent} from './pages/index/menu-group/menu-group.component';
 import {CreateSystemComponent} from './pages/admin/user-management/system/create-system/create-system.component';
@@ -220,6 +227,7 @@ import {ColorPickerComponent} from './components/color-picker/color-picker.compo
 import {DragDropModule} from '@angular/cdk/drag-drop';
 import {FileDropTargetDirective} from './directives/file-drop-target.directive';
 import {FormSectionComponent} from './components/form-section/form-section.component';
+import {DocumentationFormComponent} from './components/documentation-form/documentation-form.component';
 import {SpecificationReferenceFormComponent} from './components/specification-reference-form/specification-reference-form.component';
 import {
   SpecificationReferenceDisplayComponent
@@ -248,6 +256,18 @@ import {
 import {
   ConformanceOverviewCertificateModalComponent
 } from './modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
+import {
+  ConformanceStatementDocumentationReportFormComponent
+} from './pages/admin/user-management/community-reports/conformance-statement-documentation-report-form/conformance-statement-documentation-report-form.component';
+import {
+  TestSuiteDocumentationReportFormComponent
+} from './pages/admin/user-management/community-reports/test-suite-documentation-report-form/test-suite-documentation-report-form.component';
+import {
+  TestCaseDocumentationReportFormComponent
+} from './pages/admin/user-management/community-reports/test-case-documentation-report-form/test-case-documentation-report-form.component';
+import {
+  TestDataArchiveReportFormComponent
+} from './pages/admin/user-management/community-reports/test-data-archive-report-form/test-data-archive-report-form.component';
 import {
   EndpointParameterTabContentComponent
 } from './pages/admin/domain-management/endpoint/endpoint-parameter-tab-content/endpoint-parameter-tab-content.component';
@@ -280,6 +300,7 @@ import {StartupWizardModalComponent} from './modals/startup-wizard-modal/startup
 import {RadioCardComponent} from './components/radio-card/radio-card.component';
 import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.component';
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
+import {NavTargetDirective} from './directives/nav-target.directive';
 import {
   NgbAlertModule,
   NgbCollapseModule,
@@ -294,6 +315,14 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
 import { StartRedirectComponent } from './components/start-redirect/start-redirect.component';
 import { DomainTagIndicatorComponent } from './components/domain-tag-indicator/domain-tag-indicator.component';
 import { CommunityTagIndicatorComponent } from './components/community-tag-indicator/community-tag-indicator.component';
+import { TestResultCommentsModalComponent } from './modals/test-result-comments-modal/test-result-comments-modal.component';
+import { MessagesComponent } from './pages/settings/messages/messages.component';
+import { MessageTableComponent } from './components/message-table/message-table.component';
+import { MessageDetailComponent } from './components/message-detail/message-detail.component';
+import { ComposeMessageModalComponent } from './modals/compose-message-modal/compose-message-modal.component';
+import { PillComponent } from './components/pill/pill.component';
+import { MessageChainComponent } from './components/message-chain/message-chain.component';
+import { MessageItemComponent } from './components/message-item/message-item.component';
 
 @NgModule({
   declarations: [
@@ -306,6 +335,13 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     HomeComponent,
     ProfileComponent,
     OrganisationComponent,
+    MessagesComponent,
+    MessageTableComponent,
+    MessageDetailComponent,
+    ComposeMessageModalComponent,
+    PillComponent,
+    MessageChainComponent,
+    MessageItemComponent,
     PasswordComponent,
     SelfRegistrationComponent,
     TableComponent,
@@ -348,6 +384,7 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     DomainDetailsComponent,
     DomainFormComponent,
     CreateEditDomainParameterModalComponent,
+    CreateEditTestFlagModalComponent,
     TestSuiteUploadModalComponent,
     CreateSpecificationComponent,
     SpecificationDetailsComponent,
@@ -410,7 +447,6 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     BaseCodeEditorModalComponent,
     MultiSelectFilterComponent,
     TestStatusIconsComponent,
-    TableColumnContentComponent,
     TestTriggerModalComponent,
     CreateEditCommunityResourceModalComponent,
     CommunityResourceBulkUploadModalComponent,
@@ -425,9 +461,14 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     ConformanceStatementItemsDisplayComponent,
     CollapsingIconComponent,
     PlaceholderSelectorComponent,
+    ReportFileNameExpressionComponent,
     TestResultRatioComponent,
     PrescriptionLevelComponent,
     CheckboxOptionPanelComponent,
+    SplitViewComponent,
+    SessionFlagControlComponent,
+    SessionInfoPanelComponent,
+    SessionColumnPreferencesComponent,
     MenuItemComponent,
     MenuGroupComponent,
     CreateSystemComponent,
@@ -458,6 +499,7 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     ColorPickerComponent,
     FileDropTargetDirective,
     FormSectionComponent,
+    DocumentationFormComponent,
     SpecificationReferenceFormComponent,
     SpecificationReferenceDisplayComponent,
     SortIndicatorComponent,
@@ -470,6 +512,10 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     CommunityKeystoreModalComponent,
     ConformanceOverviewCertificateFormComponent,
     ConformanceOverviewCertificateModalComponent,
+    ConformanceStatementDocumentationReportFormComponent,
+    TestSuiteDocumentationReportFormComponent,
+    TestCaseDocumentationReportFormComponent,
+    TestDataArchiveReportFormComponent,
     EndpointParameterTabContentComponent,
     CustomPropertyPanelComponent,
     PendingDivComponent,
@@ -497,7 +543,8 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
     DateRangeComponent,
     StartRedirectComponent,
     DomainTagIndicatorComponent,
-    CommunityTagIndicatorComponent
+    CommunityTagIndicatorComponent,
+    TestResultCommentsModalComponent
   ],
     imports: [
         NgxColorPickerComponent,
@@ -517,7 +564,8 @@ import { CommunityTagIndicatorComponent } from './components/community-tag-indic
         NgbNavModule,
         CodemirrorModule,
         MarkdownModule.forRoot(),
-        SubmitOnControlEnterDirective
+        SubmitOnControlEnterDirective,
+        NavTargetDirective
     ], providers: [
         CookieService,
         { provide: HUGERTE_SCRIPT_SRC, useValue: 'hugerte/hugerte.min.js' },

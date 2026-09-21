@@ -67,6 +67,7 @@ export class ExportComponent extends BaseComponent implements OnInit, AfterViewI
     landingPages: false,
     errorTemplates: false,
     triggers: false,
+    testFlags: false,
     resources: false,
     legalNotices: false,
     certificateSettings: false,
@@ -190,6 +191,7 @@ export class ExportComponent extends BaseComponent implements OnInit, AfterViewI
       landingPages: false,
       errorTemplates: false,
       triggers: false,
+      testFlags: false,
       resources: false,
       legalNotices: false,
       certificateSettings: false,
@@ -272,6 +274,7 @@ export class ExportComponent extends BaseComponent implements OnInit, AfterViewI
       this.settings.legalNotices = this.allCommunityData
       this.settings.errorTemplates = this.allCommunityData
       this.settings.triggers = this.allCommunityData
+      this.settings.testFlags = this.allCommunityData
       this.settings.resources = this.allCommunityData
       this.settings.certificateSettings = this.allCommunityData
       this.settings.customLabels = this.allCommunityData
@@ -475,6 +478,7 @@ export class ExportComponent extends BaseComponent implements OnInit, AfterViewI
       this.settings.errorTemplates ||
       this.settings.legalNotices ||
       this.settings.triggers ||
+      this.settings.testFlags ||
       this.settings.resources ||
       this.settings.certificateSettings ||
       this.settings.customLabels ||

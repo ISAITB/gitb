@@ -16,6 +16,7 @@
 package com.gitb.tbs.servers;
 
 import com.gitb.engine.CallbackManager;
+import com.gitb.engine.CallbackPayloadStore;
 import com.gitb.engine.messaging.handlers.layer.application.soap.AttachmentInfo;
 import com.gitb.engine.messaging.handlers.layer.application.soap.ReportVisibilitySettings;
 import com.gitb.engine.messaging.handlers.layer.application.soap.SoapVersion;
@@ -30,6 +31,7 @@ import com.gitb.types.ObjectType;
 import com.gitb.types.StringType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.xml.soap.SOAPMessage;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +42,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2.REPORT_ITEM_HEADERS;
 import static com.gitb.engine.messaging.handlers.layer.application.soap.SoapMessagingHandlerV2.*;
@@ -50,104 +54,162 @@ import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 @RestController
 public class SoapMessagingServer extends AbstractMessagingServer {
 
+    public SoapMessagingServer(@Qualifier("messagingCallbackExecutor") Executor messagingCallbackExecutor) {
+        super(messagingCallbackExecutor);
+    }
+
     @PostMapping(path = "/"+ API_PATH+"/{system}/{*extension}")
-    public ResponseEntity<byte[]> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
+    public CompletableFuture<ResponseEntity<byte[]>> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
         if (system == null || system.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
         } else {
-            return handleInternal(CallbackManager.getInstance().lookupHandlingData(CallbackType.SOAP, system, (data) -> matchIncomingRequest(
+            Optional<String> detectedQueryString = Optional.ofNullable(request.getQueryString());
+            var lookup = CallbackManager.getInstance().lookupHandlingData(CallbackType.SOAP, system, (data) -> matchIncomingRequest(
                     HttpMethod.POST,
                     extension,
-                    Optional.ofNullable(request.getQueryString()),
+                    detectedQueryString,
                     data,
                     () -> Optional.of(HttpMethod.POST),
                     URI_EXTENSION_ARGUMENT_NAME
-            )), request);
+            ));
+            if (lookup.isDone() && lookup.getNow(Optional.empty()).isEmpty()) {
+                // Rejected outright (no matching or held call possible) - avoid needlessly reading the request body.
+                return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+            }
+            // Only a call we are about to park is worth spilling to disk - one already matched is consumed immediately.
+            CapturedRequest captured = capture(request, !lookup.isDone());
+            return lookup.thenComposeAsync(data -> handleInternal(data, captured), messagingCallbackExecutor)
+                    .whenComplete((response, error) -> captured.release());
         }
     }
 
-    private ResponseEntity<byte[]> handleInternal(Optional<SessionCallbackData> data, HttpServletRequest request) {
+    private CompletableFuture<ResponseEntity<byte[]>> handleInternal(Optional<SessionCallbackData> data, CapturedRequest request) {
         if (data.isEmpty()) {
-            // No test session found to be waiting for this call.
-            return ResponseEntity.notFound().build();
-        } else {
+            // No test session found to be waiting for this call (or none appeared while it was held).
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+        } else if (data.get().dynamic()) {
+            /*
+             * The receive step defines a 'result' element - its response cannot be built from the step's own
+             * declared inputs alone. Hand the actual incoming request over to the step's actor and wait for it to
+             * resolve the response (running result/steps and result/output) before building it below - note that
+             * this resolution mutates (in place) the very same Message returned by data.get().data().inputs(),
+             * which is what buildResponse() reads from.
+             */
             try {
-                /*
-                 * Prepare response for SUT.
-                 */
-                HttpStatus responseStatus = getStatus(data.get().data().inputs().getFragments(), STATUS_ARGUMENT_NAME, () -> HttpStatus.OK);
-                Map<String, List<String>> responseHeaders = getMapOfValues(data.get().data().inputs().getFragments(), HEADERS_ARGUMENT_NAME);
-                SoapVersion responseVersion = getSoapVersion(data.get().data().inputs().getFragments(), VERSION_ARGUMENT_NAME, () -> MessagingHandlerUtils.soapVersionFromHeaders(responseHeaders));
-                byte[] responseEnvelope = getSoapEnvelope(data.get().data().inputs().getFragments(), ENVELOPE_ARGUMENT_NAME);
-                Optional<List<AttachmentInfo>> responseAttachments = getSoapAttachments(data.get().data().inputs().getFragments(), ATTACHMENTS_ARGUMENT_NAME);
-                SOAPMessage responseSoapMessage = createSoapMessage(responseVersion, responseEnvelope, responseAttachments);
-                if (!responseHeaders.containsKey(CONTENT_TYPE_HEADER)) {
-                    responseHeaders.put(CONTENT_TYPE_HEADER, List.of(createSoapContentTypeHeader(responseSoapMessage, responseVersion)));
-                }
-                // Build response.
-                var builder = ResponseEntity.status(responseStatus); // Status.
-                // Headers.
-                responseHeaders.forEach((key, value) -> value.forEach(headerValue -> builder.header(key, headerValue)));
-                // Body.
-                ResponseEntity<byte[]> responseResult = builder.body(soapMessageToBytes(responseSoapMessage));
-                /*
-                 * Prepare report for test step.
-                 */
-                Message report = new Message();
-                MapType requestMap = new MapType();
-                MapType responseMap = new MapType();
-                report.addInput(REPORT_ITEM_REQUEST, requestMap);
-                report.addInput(REPORT_ITEM_RESPONSE, responseMap);
-                // Request URI.
-                requestMap.addItem(REPORT_ITEM_URI, getFullRequestURI(request));
-                // Request headers.
-                Optional<MapType> requestHeaders = getRequestHeaders(request);
-                requestHeaders.ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
-                Optional<String> requestContentTypeHeader = requestHeaders.flatMap(this::getContentTypeHeader);
-                SoapVersion requestSoapVersion = requestContentTypeHeader
-                        .map(SoapVersion::forContentTypeHeader)
-                        .orElse(VERSION_1_1);
-                SOAPMessage requestSoapMessage = deserialiseSoapMessage(requestSoapVersion, request.getInputStream(), requestContentTypeHeader);
-                // Request envelope.
-                ObjectType requestEnvelopeItem = getSoapEnvelope(requestSoapMessage);
-                // Request body.
-                Optional<ObjectType> requestBodyItem = getSoapBody(requestSoapMessage);
-                // Request attachments.
-                Optional<MapType> requestAttachmentsItem = getAttachments(requestSoapMessage);
-                // Only if there wasn't any failure, add to report.
-                requestMap.addItem(REPORT_ITEM_ENVELOPE, requestEnvelopeItem);
-                requestBodyItem.ifPresent(body -> requestMap.getItems().put(REPORT_ITEM_BODY, body));
-                requestAttachmentsItem.ifPresent(item -> requestMap.addItem(REPORT_ITEM_ATTACHMENTS, item));
-                // Response status.
-                responseMap.addItem(REPORT_ITEM_STATUS, new StringType(String.valueOf(responseStatus.value())));
-                // Response headers.
-                getHeadersForReport(responseHeaders).ifPresent(responseHeadersItem -> responseMap.getItems().put(REPORT_ITEM_HEADERS, responseHeadersItem));
-                // Response envelope.
-                ObjectType responseEnvelopeItem = getSoapEnvelope(responseSoapMessage);
-                // Response body.
-                Optional<ObjectType> responseBodyItem = getSoapBody(responseSoapMessage);
-                // Only if there wasn't any failure, add to report.
-                responseMap.getItems().put(REPORT_ITEM_ENVELOPE, responseEnvelopeItem);
-                responseBodyItem.ifPresent(body -> responseMap.getItems().put(REPORT_ITEM_BODY, body));
-                responseAttachments.ifPresent(parts -> {
-                    var attachmentsItem = new MapType();
-                    parts.forEach(part -> attachmentsItem.addItem(part.name(), part.content()));
-                    responseMap.addItem(REPORT_ITEM_ATTACHMENTS, attachmentsItem);
-                });
-                // Make callback for step.
-                MessagingReport messagingReport = generateSuccessReport(report);
-                new ReportVisibilitySettings(data.get().data().inputs()).apply(messagingReport);
-                CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), messagingReport);
-                /*
-                 * Return response.
-                 */
-                return responseResult;
+                Message incomingRequest = buildRequestMessage(request);
+                return CallbackManager.getInstance().requestResult(data.get().sessionId(), data.get().callId(), incomingRequest)
+                        .thenApply(resolvedMessage -> buildResponse(data.get(), request))
+                        .exceptionally(error -> {
+                            CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), asException(error));
+                            return ResponseEntity.internalServerError().build();
+                        });
             } catch (Exception error) {
-                // Pass the caught exception as part of the notification. This will get logged by the relevant session actor.
                 CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), new GITBEngineInternalError("An unexpected error occurred while processing a SOAP request", error));
-                return ResponseEntity.internalServerError().build();
+                return CompletableFuture.completedFuture(ResponseEntity.internalServerError().build());
             }
+        } else {
+            return CompletableFuture.completedFuture(buildResponse(data.get(), request));
         }
+    }
+
+    /**
+     * Builds the {@link Message} representing the actual incoming request, using the same fragment names the
+     * handler itself uses (headers/envelope/body/attachments) so it can be both matched against by 'result/steps'
+     * (exposed as the 'request' scope variable) and used identically to how the report's own request map is built
+     * below.
+     */
+    private Message buildRequestMessage(CapturedRequest request) {
+        Message requestMessage = new Message();
+        requestMessage.addInput(REPORT_ITEM_URI, new StringType(request.fullUri()));
+        request.headers().ifPresent(headers -> requestMessage.addInput(REPORT_ITEM_HEADERS, headers));
+        SoapVersion requestSoapVersion = request.contentType().map(SoapVersion::forContentTypeHeader).orElse(VERSION_1_1);
+        SOAPMessage requestSoapMessage = deserialiseSoapMessage(requestSoapVersion, CallbackPayloadStore.getInstance().read(request.body()), request.contentType());
+        requestMessage.addInput(ENVELOPE_ARGUMENT_NAME, getSoapEnvelope(requestSoapMessage));
+        getSoapBody(requestSoapMessage).ifPresent(body -> requestMessage.addInput(REPORT_ITEM_BODY, body));
+        getAttachments(requestSoapMessage).ifPresent(attachments -> requestMessage.addInput(ATTACHMENTS_ARGUMENT_NAME, attachments));
+        return requestMessage;
+    }
+
+    private ResponseEntity<byte[]> buildResponse(SessionCallbackData data, CapturedRequest request) {
+        try {
+            /*
+             * Prepare response for SUT.
+             */
+            HttpStatus responseStatus = getStatus(data.data().inputs().getFragments(), STATUS_ARGUMENT_NAME, () -> HttpStatus.OK);
+            Map<String, List<String>> responseHeaders = getMapOfValues(data.data().inputs().getFragments(), HEADERS_ARGUMENT_NAME);
+            SoapVersion responseVersion = getSoapVersion(data.data().inputs().getFragments(), VERSION_ARGUMENT_NAME, () -> MessagingHandlerUtils.soapVersionFromHeaders(responseHeaders));
+            byte[] responseEnvelope = getSoapEnvelope(data.data().inputs().getFragments(), ENVELOPE_ARGUMENT_NAME);
+            Optional<List<AttachmentInfo>> responseAttachments = getSoapAttachments(data.data().inputs().getFragments(), ATTACHMENTS_ARGUMENT_NAME);
+            SOAPMessage responseSoapMessage = createSoapMessage(responseVersion, responseEnvelope, responseAttachments);
+            if (!responseHeaders.containsKey(CONTENT_TYPE_HEADER)) {
+                responseHeaders.put(CONTENT_TYPE_HEADER, List.of(createSoapContentTypeHeader(responseSoapMessage, responseVersion)));
+            }
+            // Build response.
+            var builder = ResponseEntity.status(responseStatus); // Status.
+            // Headers.
+            responseHeaders.forEach((key, value) -> value.forEach(headerValue -> builder.header(key, headerValue)));
+            // Body.
+            ResponseEntity<byte[]> responseResult = builder.body(soapMessageToBytes(responseSoapMessage));
+            /*
+             * Prepare report for test step.
+             */
+            Message report = new Message();
+            MapType requestMap = new MapType();
+            MapType responseMap = new MapType();
+            report.addInput(REPORT_ITEM_REQUEST, requestMap);
+            report.addInput(REPORT_ITEM_RESPONSE, responseMap);
+            // Request URI.
+            requestMap.addItem(REPORT_ITEM_URI, new StringType(request.fullUri()));
+            // Request headers.
+            request.headers().ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
+            SoapVersion requestSoapVersion = request.contentType()
+                    .map(SoapVersion::forContentTypeHeader)
+                    .orElse(VERSION_1_1);
+            SOAPMessage requestSoapMessage = deserialiseSoapMessage(requestSoapVersion, CallbackPayloadStore.getInstance().read(request.body()), request.contentType());
+            // Request envelope.
+            ObjectType requestEnvelopeItem = getSoapEnvelope(requestSoapMessage);
+            // Request body.
+            Optional<ObjectType> requestBodyItem = getSoapBody(requestSoapMessage);
+            // Request attachments.
+            Optional<MapType> requestAttachmentsItem = getAttachments(requestSoapMessage);
+            // Only if there wasn't any failure, add to report.
+            requestMap.addItem(REPORT_ITEM_ENVELOPE, requestEnvelopeItem);
+            requestBodyItem.ifPresent(body -> requestMap.getItems().put(REPORT_ITEM_BODY, body));
+            requestAttachmentsItem.ifPresent(item -> requestMap.addItem(REPORT_ITEM_ATTACHMENTS, item));
+            // Response status.
+            responseMap.addItem(REPORT_ITEM_STATUS, new StringType(String.valueOf(responseStatus.value())));
+            // Response headers.
+            getHeadersForReport(responseHeaders).ifPresent(responseHeadersItem -> responseMap.getItems().put(REPORT_ITEM_HEADERS, responseHeadersItem));
+            // Response envelope.
+            ObjectType responseEnvelopeItem = getSoapEnvelope(responseSoapMessage);
+            // Response body.
+            Optional<ObjectType> responseBodyItem = getSoapBody(responseSoapMessage);
+            // Only if there wasn't any failure, add to report.
+            responseMap.getItems().put(REPORT_ITEM_ENVELOPE, responseEnvelopeItem);
+            responseBodyItem.ifPresent(body -> responseMap.getItems().put(REPORT_ITEM_BODY, body));
+            responseAttachments.ifPresent(parts -> {
+                var attachmentsItem = new MapType();
+                parts.forEach(part -> attachmentsItem.addItem(part.name(), part.content()));
+                responseMap.addItem(REPORT_ITEM_ATTACHMENTS, attachmentsItem);
+            });
+            // Make callback for step.
+            MessagingReport messagingReport = generateSuccessReport(report);
+            new ReportVisibilitySettings(data.data().inputs()).apply(messagingReport);
+            CallbackManager.getInstance().callbackReceived(data.sessionId(), data.callId(), messagingReport);
+            /*
+             * Return response.
+             */
+            return responseResult;
+        } catch (Exception error) {
+            // Pass the caught exception as part of the notification. This will get logged by the relevant session actor.
+            CallbackManager.getInstance().callbackReceived(data.sessionId(), data.callId(), new GITBEngineInternalError("An unexpected error occurred while processing a SOAP request", error));
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private Exception asException(Throwable error) {
+        Throwable cause = (error instanceof java.util.concurrent.CompletionException && error.getCause() != null) ? error.getCause() : error;
+        return cause instanceof Exception exception ? exception : new GITBEngineInternalError("An unexpected error occurred while processing a SOAP request", cause);
     }
 
 }

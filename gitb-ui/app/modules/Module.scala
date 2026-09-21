@@ -15,7 +15,7 @@
 
 package modules
 
-import actors.{BulkTaskActor, SessionLaunchActor, SessionManagerActor, SessionUpdateActor, TriggerActor}
+import actors.{BulkTaskActor, SessionLaunchActor, SessionManagerActor, SessionUpdateActor, TestEngineSettingsUpdateActor, TriggerActor}
 import com.google.inject.AbstractModule
 import hooks.{OnStopHook, PostStartHook}
 import play.api.libs.concurrent.PekkoGuiceSupport
@@ -32,6 +32,7 @@ class Module extends AbstractModule with PekkoGuiceSupport {
     // Bind top level actors - START
     bindActor[BulkTaskActor](BulkTaskActor.actorName)
     bindActor[TriggerActor](TriggerActor.actorName)
+    bindActor[TestEngineSettingsUpdateActor](TestEngineSettingsUpdateActor.actorName)
     bindActor[SessionManagerActor](SessionManagerActor.actorName)
     bindActorFactory[SessionUpdateActor, SessionUpdateActor.Factory]
     bindActorFactory[SessionLaunchActor, SessionLaunchActor.Factory]

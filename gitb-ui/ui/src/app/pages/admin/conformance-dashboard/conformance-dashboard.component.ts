@@ -28,6 +28,7 @@ import {CommunityService} from 'src/app/services/community.service';
 import {OrganisationService} from 'src/app/services/organisation.service';
 import {SystemService} from 'src/app/services/system.service';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {Utils} from 'src/app/common/utils';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {ReportSupportService} from 'src/app/services/report-support.service';
 import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
@@ -41,6 +42,7 @@ import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-re
 import {ActivatedRoute} from '@angular/router';
 import {MultiSelectFilterComponentApi} from '../../../components/multi-select-filter/multi-select-filter-component-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {NavigationTarget} from '../../../types/navigation-target';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -99,6 +101,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
       this.selectedSystemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
     }
+    this.restoreListViewState()
     // Tree view selection configs - start
     if (this.dataService.isSystemAdmin) {
       this.communitySelectConfig = {
@@ -147,7 +150,16 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.viewTypeToggled(true)
+    if (this.listView) {
+      // List view is already active (from the user's persisted statementsListView preference, or from
+      // restoreListViewState()'s filters/sort/paging restore, called from ngOnInit): skip the usual
+      // "entering list view" reset (it clears the organisation/system selection and forces the latest
+      // snapshot) so any restored snapshot/selection and the table's own initial* inputs apply instead.
+      // Still set this field, needed to enable the snapshot dropdown.
+      this.selectedCommunityId = this.communityId
+    } else {
+      this.viewTypeToggled(true)
+    }
   }
 
   private countTestCases(item: ConformanceStatementItem): number {
@@ -237,6 +249,9 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   viewTypeToggled(fromPageInit?: boolean) {
+    if (!fromPageInit) {
+      this.recordListViewPreference()
+    }
     if (this.listView) {
       this.selectedCommunityId = this.communityId
       this.selectedOrganisationId = undefined
@@ -477,13 +492,25 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {
-    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.routingService.recordViewReturnTarget()
     this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
-  onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
-    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
-    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
+  listViewStatementRowTarget = (statement: ConformanceResultFullWithTestSuites): NavigationTarget => {
+    return this.routingService.linkToConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
+  }
+
+  /**
+   * Tree-view leaf items now navigate via their own [navTarget] link (see
+   * ConformanceStatementItemDisplayComponent.leafTarget()) rather than through onStatementSelect(),
+   * so this only runs the "return to source" side effect - guarded to a plain (unmodified,
+   * primary-button) click since a modified click opens the destination in a new tab/window rather
+   * than navigating away from this one.
+   */
+  onStatementNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
+    }
   }
 
   protected displayStateKey(): string {
@@ -491,7 +518,15 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   protected displayStateDataKey(): string {
-    return `${this.selectedSystemId}|${this.snapshotIdToUse()}`
+    return `${this.communityId}|${this.selectedOrganisationId}|${this.selectedSystemId}|${this.snapshotIdToUse()}`
+  }
+
+  protected listViewDisplayStateKey(): string {
+    return Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD_LIST
+  }
+
+  protected listViewDisplayStateDataKey(): string {
+    return `${this.communityId}`
   }
 
 }

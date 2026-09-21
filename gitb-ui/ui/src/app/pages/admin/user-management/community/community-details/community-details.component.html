@@ -20,15 +20,16 @@
                                     [domains]="domains"
                                     [validation]="validation"
                                     [animationsEnabled]="loaded"
+                                    (validityChange)="communityFormValid = $event"
                 ></app-community-form>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending" [labelIcon]="Constants.BUTTON_ICON.SAVE">Save changes</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.REPORT">Manage report settings</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES">Manage configuration properties</button>
-                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.LABELS">Manage labels</button>
-                    @if (dataService.isSystemAdmin) {
+                    <a class="btn btn-secondary" [navTarget]="routingService.linkToCommunityReportSettings(communityId)" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.REPORT">Manage report settings</a>
+                    <a class="btn btn-secondary" [navTarget]="routingService.linkToCommunityParameters(communityId)" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES">Manage configuration properties</a>
+                    <a class="btn btn-secondary" [navTarget]="routingService.linkToCommunityLabels(communityId)" [disable]="!loaded || savePending || deletePending" [labelIcon]="Constants.BUTTON_ICON.LABELS">Manage labels</a>
+                    @if (showBackButton) {
                         <button class="btn btn-secondary" type="button" (click)="cancelCommunityDetail()" [labelIcon]="Constants.BUTTON_ICON.BACK">Back</button>
                     }
                 </div>
@@ -62,7 +63,7 @@
                                         <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc)">{{sortByCreationOrderLabelDesc}}</button>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
+                                <a class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" [navTarget]="routingService.linkToCreateOrganisation(communityId)">Create {{dataService.labelOrganisationLower()}}</a>
                             </div>
                         </div>
                         <div class="card">
@@ -75,7 +76,7 @@
                                  [allowSelect]="true"
                                  (pageNavigation)="doOrganisationPaging($event)"
                                  (onSort)="sortOrganisations($event)"
-                                 (onSelect)="organisationSelect($event)"
+                                 [rowTarget]="organisationRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -89,7 +90,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create community administrator</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateCommunityAdmin(communityId)">Create community administrator</a>
                             </div>
                         </div>
                         <div class="card">
@@ -101,7 +102,7 @@
                                  [contentRefreshing]="adminsRefreshing"
                                  (pageNavigation)="doAdminPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="adminSelect($event)"
+                                 [rowTarget]="adminRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -116,9 +117,9 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLandingPage == undefined" type="button" class="btn btn-secondary" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLandingPage == undefined" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLandingPage(communityId, true)">Copy Test Bed landing page</a>
                                 }
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage(false)">Create landing page</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLandingPage(communityId, false)">Create landing page</a>
                             </div>
                         </div>
                         <div class="card">
@@ -130,7 +131,7 @@
                                  [contentRefreshing]="landingPagesRefreshing"
                                  (pageNavigation)="doLandingPagePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="landingPageSelect($event)"
+                                 [rowTarget]="landingPageRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -145,9 +146,9 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLegalNotice == undefined" type="button" class="btn btn-secondary" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLegalNotice == undefined" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLegalNotice(communityId, true)">Copy Test Bed legal notice</a>
                                 }
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice(false)">Create legal notice</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLegalNotice(communityId, false)">Create legal notice</a>
                             </div>
                         </div>
                         <div class="card">
@@ -159,7 +160,7 @@
                                  [contentRefreshing]="legalNoticesRefreshing"
                                  (pageNavigation)="doLegalNoticePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="legalNoticeSelect($event)"
+                                 [rowTarget]="legalNoticeRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -174,9 +175,9 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedErrorTemplate == undefined" type="button" class="btn btn-secondary" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
+                                    <a [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedErrorTemplate == undefined" class="btn btn-secondary" [navTarget]="routingService.linkToCreateErrorTemplate(communityId, true)">Copy Test Bed error template</a>
                                 }
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate(false)">Create error template</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateErrorTemplate(communityId, false)">Create error template</a>
                             </div>
                         </div>
                         <div class="card">
@@ -188,7 +189,7 @@
                                  [contentRefreshing]="errorTemplatesRefreshing"
                                  (pageNavigation)="doErrorTemplatePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="errorTemplateSelect($event)"
+                                 [rowTarget]="errorTemplateRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -202,7 +203,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTrigger()">Create webhook</button>
+                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateTrigger(communityId)">Create webhook</a>
                             </div>
                         </div>
                         <div class="card">
@@ -214,7 +215,7 @@
                                  [contentRefreshing]="triggersRefreshing"
                                  (pageNavigation)="doTriggerPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="triggerSelect($event)"
+                                 [rowTarget]="triggerRowTarget"
                                  [supportPaging]="true">
                             </div>
                         </div>
@@ -230,6 +231,100 @@
                         [actions]="resourceActions"
                         (pageSizeChanged)="resourceTabPageSizeChange()"
                     ></app-resource-management-tab>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.TEST_FLAGS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.FLAG" text="Test flags"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Test flags -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                @if (!managingTestFlagOrder) {
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTestFlag()">Create flag</button>
+                                }
+                                @if (testFlags.length > 1) {
+                                    <div class="btn-group" ngbDropdown>
+                                        @if (managingTestFlagOrder) {
+                                            <button [pending]="testFlagOrderSaving" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="button" class="btn btn-secondary" (click)="saveTestFlagOrder()">Save test flag order</button>
+                                        } @else {
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.SORT" class="btn btn-secondary" (click)="manageTestFlagOrder()">Manage flag order</button>
+                                        }
+                                        <button id="button-test-flag-order" type="button" ngbDropdownToggle [disabled]="testFlagOrderSaving" class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Reset flag order</span>
+                                        </button>
+                                        <div id="dropdown-test-flag-order" ngbDropdownMenu aria-labelledby="button-test-flag-order">
+                                            <button ngbDropdownItem type="button" (click)="resetTestFlagOrder()">Reset flag order</button>
+                                        </div>
+                                    </div>
+                                    @if (managingTestFlagOrder) {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelManageTestFlagOrder()">Cancel</button>
+                                    }
+                                }
+                                @if (!managingTestFlagOrder) {
+                                    <div class="btn input-switch">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="showPublicTestFlagInfo" [ngModel]="showPublicTestFlagInfo" (ngModelChange)="togglePublicTestFlagInfo()">
+                                            <label class="form-check-label" for="showPublicTestFlagInfo">Public display</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        @if (managingTestFlagOrder) {
+                            <div class="form-table table-container rounded mb-0">
+                                <table class="table table-directive">
+                                    <thead>
+                                        <tr>
+                                            <th><div class="cell-content">Flag</div></th>
+                                            <th><div class="cell-content">Description</div></th>
+                                            <th class="th-min centered"></th>
+                                            <th class="th-min"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropTestFlag($event)" [class.dragging]="dragOngoingTestFlags">
+                                        @for (flag of testFlags; track flag.id) {
+                                            <tr class="drag-table-row" cdkDrag (cdkDragStarted)="dragOngoingTestFlags = true" (cdkDragEnded)="dragOngoingTestFlags = false" cdkDragPreviewContainer="parent">
+                                                <td class="drag-preview"><div class="cell-content d-flex align-items-center gap-2"><i [class]="Constants.BUTTON_ICON.SNAPSHOT" [style.color]="flag.flagDisplay.colour"></i><span>{{flag.flagDisplay.name}}</span></div></td>
+                                                <td><div class="cell-content">{{flag.description}}</div></td>
+                                                <td class="th-min centered">
+                                                    <div class="cell-content">
+                                                        @if (flag.adminOnly) {
+                                                            <div class="ms-4 me-2">
+                                                                <i [class]="Constants.BUTTON_ICON.USER_ADMIN" ngbTooltip="Flag that can only be set by administrators." tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"></i>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="drag-handle">
+                                                    <div class="cell-content">
+                                                        <button cdkDragHandle class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.REORDER"></i></span></button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        } @else {
+                            <div class="card">
+                                <div #testFlagsTable table-directive
+                                     [columns]="testFlagColumns"
+                                     [data]="testFlags"
+                                     noDataMessage="No flags found"
+                                     [loadingStatus]="testFlagStatus"
+                                     [contentRefreshing]="testFlagsRefreshing"
+                                     (pageNavigation)="doTestFlagPaging($event)"
+                                     [allowSelect]="true"
+                                     [persistentSelection]="false"
+                                     (onSelect)="openTestFlagModal($event)"
+                                     [refreshRows]="testFlagsRefreshRows"
+                                     [supportPaging]="true">
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </ng-template>
             </li>
         </ul>

@@ -19,6 +19,8 @@ export interface TestCaseFilterState {
   showFailed: boolean,
   showIncomplete: boolean,
   showOptional: boolean,
-  showDisabled: boolean
+  showDisabled: boolean,
+  tagKeys?: string[],
+  untagged?: boolean
 
 }

@@ -108,7 +108,7 @@
                     </div>
                 </div>
             </div>
-            <div [ngbCollapse]="!organisation.template" [animation]="true" (shown)="templateChoiceChanged()">
+            <div [ngbCollapse]="!organisation.template" [animation]="initialLoadComplete" (shown)="templateChoiceChanged()">
                 <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
                     <div class="col-8 col-md-6"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>

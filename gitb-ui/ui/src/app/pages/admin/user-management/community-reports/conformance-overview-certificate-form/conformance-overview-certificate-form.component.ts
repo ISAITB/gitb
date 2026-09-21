@@ -279,6 +279,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     placeholders.push({ key: Constants.PLACEHOLDER__BADGES+'{layout|width}', value: 'The list of all conformance badges (with fixed width in pixels) using a \'horizontal\' (the default) or \'vertical\' layout.', select: () => Constants.PLACEHOLDER__BADGES+'{horizontal|100}'})
     placeholders.push({ key: Constants.PLACEHOLDER__REPORT_DATE+'{format}', value: 'The report generation date (with date format).', select: () => Constants.PLACEHOLDER__REPORT_DATE+'{dd/MM/yyyy}' })
     placeholders.push({ key: Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{format}', value: 'The conformance last update time (with date format).', select: () => Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{dd/MM/yyyy}' })
+    placeholders.push({ key: Constants.PLACEHOLDER__PAGE_BREAK, value: 'A page break that can be used to force a new page at the specific location.' })
     return placeholders
   }
 

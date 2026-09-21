@@ -1,0 +1,86 @@
+<div class="modal-header">
+    <div class="modal-title">{{title}}</div>
+</div>
+<form (ngSubmit)="save()">
+    <div class="modal-body">
+        <div class="row">
+            <label class="col-3 col-form-label text-end" for="name">* Flag:</label>
+            <div class="col-7 d-flex gap-2">
+                <input id="colour" name="colour" class="form-control colour-holder" readonly="readonly"
+                       [style.background]="testFlagToUse.colour"
+                       [colorPicker]="testFlagToUse.colour!"
+                       [cpOutputFormat]="'hex'"
+                       [cpOKButton]="true"
+                       [cpOKButtonText]="'Apply'"
+                       [cpOKButtonClass]="'btn btn-secondary'"
+                       [cpCancelButton]="true"
+                       [cpCancelButtonText]="'Cancel'"
+                       [cpCancelButtonClass]="'btn btn-secondary'"
+                       [cpSaveClickOutside]="false"
+                       [cpAlphaChannel]="'disabled'"
+                       (colorPickerChange)="testFlagToUse.colour = $event">
+                <input ngbAutofocus id="name" name="name" [(ngModel)]="testFlagToUse.name" class="form-control" type="text" [invalid]="validation.get('name')">
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The colour and name of the flag, displayed in the test execution page and test session listings."></div>
+        </div>
+        <div class="row pt-3">
+            <label class="col-3 col-form-label text-end" for="description">Description:</label>
+            <div class="col-7">
+                <textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="testFlagToUse.description" class="form-control"></textarea>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="A text clarifying the purpose of this flag to administrators. Not shown to organisation users."></div>
+        </div>
+        <div class="row pt-3">
+            <div class="col-8 offset-3 d-flex gap-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="adminOnly" name="adminOnly" [(ngModel)]="testFlagToUse.adminOnly">
+                    <label class="form-check-label" for="adminOnly">Restricted to administrators
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="If checked, this flag can only be set, changed or cleared by Test Bed and community administrators - it will not be offered to organisation users."></div>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="samePresentationForUsers" name="samePresentationForUsers" [ngModel]="samePresentationForUsers" (ngModelChange)="toggleSamePresentationForUsers()">
+                    <label class="form-check-label" for="samePresentationForUsers">Same public display
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Uncheck this to define a different name and/or colour to display to organisation users than the ones used internally by administrators."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div [ngbCollapse]="samePresentationForUsers" [animation]="true">
+            <div class="row pt-3">
+                <label class="col-3 col-form-label text-end" for="publicName">* Public flag:</label>
+                <div class="col-7 d-flex gap-2">
+                    <input id="publicColour" name="publicColour" class="form-control colour-holder" readonly="readonly"
+                           [style.background]="testFlagToUse.publicColour"
+                           [colorPicker]="testFlagToUse.publicColour!"
+                           [cpOutputFormat]="'hex'"
+                           [cpOKButton]="true"
+                           [cpOKButtonText]="'Apply'"
+                           [cpOKButtonClass]="'btn btn-secondary'"
+                           [cpCancelButton]="true"
+                           [cpCancelButtonText]="'Cancel'"
+                           [cpCancelButtonClass]="'btn btn-secondary'"
+                           [cpSaveClickOutside]="false"
+                           [cpAlphaChannel]="'disabled'"
+                           (colorPickerChange)="testFlagToUse.publicColour = $event">
+                    <input id="publicName" name="publicName" [(ngModel)]="testFlagToUse.publicName" class="form-control" type="text">
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'The colour and name of the flag displayed to '+dataService.labelOrganisationLower()+' users.'"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer button-container">
+        @if (testFlagToUse.id) {
+            <div class="btn-toolbar btn-toolbar-delete">
+                <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="delete()" [disable]="pending" [pending]="deletePending">Delete</button>
+            </div>
+        }
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()" [disable]="pending">Cancel</button>
+            @if (testFlagToUse.id) {
+                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.COPY" type="button" (click)="copy()" [disable]="saveDisabled()" ngbTooltip="Create a new test flag using this one's values." tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">Copy</button>
+            }
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+        </div>
+    </div>
+</form>

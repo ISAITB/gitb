@@ -49,7 +49,7 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardCopyOption}
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 import java.util
 import java.util.regex.Pattern
 import java.util.stream.Collectors
@@ -83,9 +83,6 @@ object ReportManager {
 
 }
 
-/**
-  * Created by senan on 03.12.2014.
-  */
 @Singleton
 class ReportManager @Inject() (communityManager: CommunityManager,
                                apiHelper: AutomationApiHelper,
@@ -95,6 +92,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
                                reportHelper: ReportHelper,
                                testCaseReportProducer: TestCaseReportProducer,
                                testSuiteManager: TestSuiteManager,
+                               testCaseManager: TestCaseManager,
                                specificationManager: SpecificationManager,
                                conformanceManager: ConformanceManager,
                                dbConfigProvider: DatabaseConfigProvider,
@@ -166,7 +164,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             sessionId, Some(systemId), Some(system._1), Some(system._2), Some(organisation._1),
             Some(organisation._2), Some(communityName), Some(testCaseId), Some(testCaseName), Some(testSuite.id), Some(testSuite.shortname),
             Some(actorId), Some(actorName), Some(specification.id), Some(specificationName), Some(specification.domain), Some(domainName),
-            initialStatus, startTime, None, None)
+            initialStatus, startTime, None, None, None)
         }
         // Insert TPL definition.
         _ <- PersistenceSchema.testResultDefinitions += TestResultDefinition(sessionId, presentation)
@@ -248,17 +246,23 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     pdfReport
   }
 
-  private def resolveCommunityId(sessionId: String, userId: Option[Long]): Future[Option[Long]] = {
+  /**
+   * Resolves the community owning a test session (used to determine which settings/overrides apply), together with
+   * the report naming-context values (organisation/system/test case) already present on the same denormalised
+   * test_results row - loaded together in one round trip so that report file naming never needs a second lookup
+   * of data this same query already returns.
+   */
+  private def resolveTestSessionReportInfo(sessionId: String, userId: Option[Long]): Future[(Option[Long], ReportNameResolver.ReportNameContext)] = {
     DB.run(
       for {
-        ids <- PersistenceSchema.testResults
+        row <- PersistenceSchema.testResults
           .filter(_.testSessionId === sessionId)
-          .map(x => (x.communityId, x.domainId))
+          .map(x => (x.communityId, x.domainId, x.organization, x.sut, x.testCase))
           .result
           .headOption
         communityIdFromSession <- {
-          val communityId = ids.flatMap(_._1)
-          val domainId = ids.flatMap(_._2)
+          val communityId = row.flatMap(_._1)
+          val domainId = row.flatMap(_._2)
           if (communityId.exists(_ != Constants.DefaultCommunityId)) {
             // Community defined that is not the default community ID
             DBIO.successful(communityId)
@@ -292,7 +296,14 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             DBIO.successful(None)
           }
         }
-      } yield communityIdToUse
+      } yield {
+        val ctx = ReportNameResolver.ReportNameContext(
+          organisation = row.flatMap(_._3),
+          system = row.flatMap(_._4),
+          testCaseName = row.flatMap(_._5)
+        )
+        (communityIdToUse, ctx)
+      }
     )
   }
 
@@ -302,8 +313,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
 
   private def createDemoTestCaseOverview(communityId: Long, source: TestCaseOverviewReportType, reportSpecs: ReportSpecs): Future[com.gitb.reports.dto.TestCaseOverview] = {
     getReportLabels(communityId).map { labels =>
-      val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-      val sdfLog = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
       val overview = new com.gitb.reports.dto.TestCaseOverview
       overview.setTitle("Test Case Report")
       // Labels
@@ -317,7 +326,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       overview.setOutputMessages(source.getMessage)
       overview.setSessionId(UUID.randomUUID().toString)
       // Start time
-      overview.setStartTime(sdf.format(source.getStartTime.toGregorianCalendar.getTime))
+      overview.setStartTime(TimeUtil.formatDateTime(source.getStartTime.toGregorianCalendar.getTime))
       // End time
       overview.setEndTime(overview.getStartTime)
       overview.setId("1")
@@ -330,9 +339,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       overview.setTestDescription("Sample test case description")
       overview.setDocumentation("<p>Sample test case documentation</p>")
       overview.setLogMessages(util.List.of(
-        "[%s] INFO Sample log info message".formatted(sdfLog.format(source.getStartTime.toGregorianCalendar.getTime)),
-        "[%s] WARN Sample log warning message".formatted(sdfLog.format(source.getStartTime.toGregorianCalendar.getTime)),
-        "[%s] ERROR Sample log error message".formatted(sdfLog.format(source.getStartTime.toGregorianCalendar.getTime))
+        "[%s] INFO Sample log info message".formatted(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "yyyy-MM-dd HH:mm:ss")),
+        "[%s] WARN Sample log warning message".formatted(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "yyyy-MM-dd HH:mm:ss")),
+        "[%s] ERROR Sample log error message".formatted(TimeUtil.formatDate(source.getStartTime.toGregorianCalendar.getTime, "yyyy-MM-dd HH:mm:ss"))
       ))
       overview.setSpecReference("SPEC1")
       overview.setSpecDescription("Description for SPEC1")
@@ -417,7 +426,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           }
         } else {
           // Create demo data.
-          val reportSpecs = ReportSpecs.build()
+          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE).withDateTimeFormat(Configurations.DATE_FORMAT_DATETIME)
           val reportData = createDemoTAR(None, None)
           // Write PDF report.
           Using.resource(Files.newOutputStream(reportPath)) { output =>
@@ -448,9 +457,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield report
   }
 
-  def generateTestStepReport(reportPath: Path, sessionId: String, stepXmlFilePath: String, contentType: String, userId: Option[Long]): Future[Option[Path]] = {
+  def generateTestStepReport(reportPath: Path, sessionId: String, stepXmlFilePath: String, contentType: String, userId: Option[Long]): Future[Option[ReportFileInfo]] = {
+    val extension = if (contentType == Constants.MimeTypePDF) "pdf" else "xml"
     for {
-      communityId <- resolveCommunityId(sessionId, userId)
+      sessionInfo <- resolveTestSessionReportInfo(sessionId, userId)
+      communityId = sessionInfo._1
       reportSettings <- {
         if (communityId.isDefined) {
           getReportSettings(communityId.get, ReportType.TestStepReport).map(Some(_))
@@ -500,7 +511,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       }
       // Call custom PDF generation service (for PDFs), apply XSLT (for XML reports), sign (for PDF reports) and clean up.
       report <- finaliseTestSessionReport(reportPath, reportInfo, contentType, reportSettings, communityId, ReportType.TestStepReport)
-    } yield report
+    } yield {
+      report.map { path =>
+        ReportFileInfo(path, resolveReportFileName(ReportType.TestStepReport, reportSettings.flatMap(_.fileNameExpression), sessionInfo._2, extension))
+      }
+    }
   }
 
   private def createSimpleDemoSuccessStep(id: Option[String], date: Option[XMLGregorianCalendar]): TestCaseStepReportType = {
@@ -532,7 +547,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           }
         } else {
           // Create demo data.
-          val reportSpecs = ReportSpecs.build()
+          val reportSpecs = ReportSpecs.build().withZone(Configurations.TIME_ZONE).withDateTimeFormat(Configurations.DATE_FORMAT_DATETIME)
           createDemoTestCaseOverview(reportSettings.community, createDemoTestCaseOverviewReport(), reportSpecs).map { reportData =>
             // Write PDF report.
             Using.resource(Files.newOutputStream(reportPath)) { output =>
@@ -601,22 +616,81 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
-  def generateTestSessionDataArchive(archivePath: Path, sessionId: String): Future[Option[Path]] = {
+  def generateTestSessionDataArchive(archivePath: Path, sessionId: String, requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
     for {
-      reportInfo <- testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(Constants.MimeTypeZIP), None, None)
-      report <- finaliseTestSessionReport(archivePath, reportInfo, Constants.MimeTypeZIP, None, None, ReportType.TestCaseReport)
-    } yield report
-  }
-
-  def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[Path]] = {
-    for {
-      communityId <- {
-        if (requestedCommunityId.isDefined) {
-          Future.successful(requestedCommunityId)
+      sessionInfo <- resolveTestSessionReportInfo(sessionId, requestedUserId)
+      communityId = sessionInfo._1
+      reportSettings <- {
+        if (communityId.isDefined) {
+          getReportSettings(communityId.get, ReportType.TestDataArchive).map(Some(_))
         } else {
-          resolveCommunityId(sessionId, requestedUserId)
+          Future.successful(None)
         }
       }
+      // The PDF report included in the archive is a plain vanilla report (no custom PDF service, no
+      // signing, no custom stylesheet) - only community terminology/labels are applied when known.
+      export <- testCaseReportProducer.generateTestSessionDataExport(sessionId,
+        () => if (communityId.isDefined) getReportLabels(communityId.get) else Future.successful(Map.empty[Short, CommunityLabels]),
+        () => reportHelper.createReportSpecs(communityId))
+      report <- finaliseTestSessionDataArchive(archivePath, export)
+    } yield {
+      report.map { path =>
+        ReportFileInfo(path, resolveReportFileName(ReportType.TestDataArchive, reportSettings.flatMap(_.fileNameExpression), sessionInfo._2, "zip"))
+      }
+    }
+  }
+
+  /**
+   * Assembles the test session data export archive from the XML/PDF reports and the (already renamed, per
+   * [[TestSessionDataFileNamer]]) data folder produced by [[TestCaseReportProducer.generateTestSessionDataExport]].
+   */
+  private def finaliseTestSessionDataArchive(archivePath: Path, exportSpecs: TestCaseReportProducer.TestSessionDataExport): Future[Option[Path]] = {
+    val task = if (exportSpecs.xmlReport.isDefined && exportSpecs.pdfReport.isDefined) {
+      val tempFolder = archivePath.getParent.resolve("temp")
+      Files.createDirectories(tempFolder)
+      Files.copy(exportSpecs.xmlReport.get, tempFolder.resolve("test_case.xml"))
+      Files.copy(exportSpecs.pdfReport.get, tempFolder.resolve("test_case.pdf"))
+      // The data folder is flat (one file per decoupled value) - copy each file under its resolved name,
+      // falling back to the original name for any file that turned out not to be referenced from the report.
+      val sourceData = repositoryUtils.getPathForTestSessionData(exportSpecs.sessionFolderInfo, tempData = false)
+      if (Files.exists(sourceData) || exportSpecs.inlineFileContents.nonEmpty) {
+        val destinationData = tempFolder.resolve("data")
+        Files.createDirectories(destinationData)
+        if (Files.exists(sourceData)) {
+          Using.resource(Files.list(sourceData)) { stream =>
+            stream.forEach { sourcePath =>
+              val destinationFileName = exportSpecs.fileNames.getOrElse(sourcePath.getFileName.toString, sourcePath.getFileName.toString)
+              Files.copy(sourcePath, destinationData.resolve(destinationFileName))
+            }
+          }
+        }
+        // Values that were embedded inline (too small to have been decoupled to their own file) have
+        // nothing to copy from - write their content out as new files instead.
+        exportSpecs.inlineFileContents.foreach { case (uuid, content) =>
+          val destinationFileName = exportSpecs.fileNames.getOrElse(uuid, uuid)
+          Files.write(destinationData.resolve(destinationFileName), content)
+        }
+      }
+      new ZipArchiver(tempFolder, archivePath).zip()
+      Future.successful(Some(archivePath))
+    } else {
+      Future.successful(None)
+    }
+    task.andThen { _ =>
+      // Clean up the intermediate report files that were generated directly in the (live) session folder.
+      exportSpecs.xmlReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
+      exportSpecs.pdfReport.foreach(path => FileUtils.deleteQuietly(path.toFile))
+      if (exportSpecs.sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(exportSpecs.sessionFolderInfo.path.toFile)
+      }
+    }
+  }
+
+  def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
+    val extension = if (contentType == Constants.MimeTypePDF) "pdf" else "xml"
+    for {
+      sessionInfo <- resolveTestSessionReportInfo(sessionId, requestedUserId)
+      communityId = requestedCommunityId.orElse(sessionInfo._1)
       reportSettings <- {
         if (communityId.isDefined) {
           getReportSettings(communityId.get, ReportType.TestCaseReport).map(Some(_))
@@ -648,7 +722,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       }
       // Call custom PDF generation service (for PDFs), apply XSLT (for XML reports), sign (for PDF reports) and clean up.
       report <- finaliseTestSessionReport(reportPath, reportInfo, contentType, reportSettings, communityId, ReportType.TestCaseReport)
-    } yield report
+    } yield {
+      report.map { path =>
+        ReportFileInfo(path, resolveReportFileName(ReportType.TestCaseReport, reportSettings.flatMap(_.fileNameExpression), sessionInfo._2, extension))
+      }
+    }
   }
 
   private def finaliseTestSessionReport(reportPath: Path, reportInfo: SessionReportPath, contentType: String, reportSettings: Option[CommunityReportSettings], communityId: Option[Long], reportType: ReportType): Future[Option[Path]] = {
@@ -682,22 +760,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             }
           }
         } yield pdfReport
-      } else if (contentType == Constants.MimeTypeZIP) {
-        // ZIP archive with all test data.
-        // Copy the XML report.
-        val tempFolder = reportPath.getParent.resolve("temp")
-        Files.createDirectories(tempFolder)
-        Files.copy(reportInfo.report.get, tempFolder.resolve("test_case.xml"))
-        val sourceData = repositoryUtils.getPathForTestSessionData(reportInfo.sessionFolderInfo.path, tempData = false)
-        val destinationData = tempFolder.resolve("data")
-        Using (Files.walk(sourceData)) { stream =>
-          stream.forEach { sourcePath =>
-            val destinationPath = destinationData.resolve(sourceData.relativize(sourcePath))
-            Files.copy(sourcePath, destinationPath)
-          }
-        }
-        new ZipArchiver(tempFolder, reportPath).zip()
-        Future.successful(Some(reportPath))
       } else {
         // XML reports are cached (i.e. keep the original).
         Files.copy(reportInfo.report.get, reportPath)
@@ -747,7 +809,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         val conformanceInfo = createDemoDataForConformanceStatementReport(labels)
         generateConformanceCertificate(reportPath, reportSettings, transformer, certificateSettings, conformanceInfo, communityId, Some(labels), None, isDemo = true)
       }
-    } yield report
+    } yield report.file
   }
 
   def generateDemoConformanceOverviewCertificate(reportPath: Path, reportSettings: CommunityReportSettings, transformer: Option[Path], certificateSettings: Option[ConformanceCertificateInfo], communityId: Long, level: OverviewLevelType): Future[Path] = {
@@ -755,10 +817,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       labels <- getReportLabels(communityId)
       conformanceData <- createDemoDataForConformanceOverviewReport(communityId, level, labels)
       report <- generateConformanceOverviewReport(conformanceData, ReportType.ConformanceOverviewCertificate, reportSettings, transformer, certificateSettings, reportPath, Some(labels), communityId, isDemo = true, None)
-    } yield report
+    } yield report.file
   }
 
-  def generateConformanceCertificate(reportPath: Path, certificateSettings: Option[ConformanceCertificateInfo], actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Future[Path] = {
+  def generateConformanceCertificate(reportPath: Path, certificateSettings: Option[ConformanceCertificateInfo], actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     getReportSettings(communityId, ReportType.ConformanceStatementCertificate).zip(
       conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).map(_.getDetails(None))
     ).flatMap { data =>
@@ -766,9 +828,19 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
-  private def generateConformanceCertificate(reportPath: Path, reportSettings: CommunityReportSettings, transformer: Option[Path], loadedCertificateSettings: Option[ConformanceCertificateInfo], conformanceInfo: List[ConformanceStatementFull], communityId: Long, labels: Option[Map[Short, CommunityLabels]], snapshotId: Option[Long], isDemo: Boolean): Future[Path] = {
+  private def generateConformanceCertificate(reportPath: Path, reportSettings: CommunityReportSettings, transformer: Option[Path], loadedCertificateSettings: Option[ConformanceCertificateInfo], conformanceInfo: List[ConformanceStatementFull], communityId: Long, labels: Option[Map[Short, CommunityLabels]], snapshotId: Option[Long], isDemo: Boolean): Future[ReportFileInfo] = {
     val isDelegated = reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)
+    val conformanceData = conformanceInfo.head
     for {
+      // Not needed for content when delegated (the delegate branch never renders the report body locally) -
+      // in that case only resolve it if the naming expression actually needs the conformance target.
+      displayActor <- {
+        if (!isDelegated || needsConformanceTarget(ReportType.ConformanceStatementCertificate, reportSettings.fileNameExpression)) {
+          resolveDisplayActor(conformanceData, snapshotId, isDemo)
+        } else {
+          Future.successful(false)
+        }
+      }
       certificateSettings <- {
         if (!isDelegated) {
           if (loadedCertificateSettings.isDefined) {
@@ -817,7 +889,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           labels.map(Future.successful).getOrElse(getReportLabels(communityId)).flatMap { labelsToUse =>
             generateCoreConformanceReport(reportPath, addTestCases = false, title, addDetails = certificateSettings.get.includeDetails, addTestCaseResults = certificateSettings.get.includeItems, addTestStatus = certificateSettings.get.includeItemStatus,
               addMessage = certificateSettings.get.includeMessage, addPageNumbers = certificateSettings.get.includePageNumbers, certificateSettings.get.message,
-              conformanceInfo, labelsToUse, communityId, snapshotId, isDemo
+              conformanceInfo, labelsToUse, communityId, snapshotId, isDemo, displayActor
             ).map { _ =>
               reportPath
             }
@@ -832,7 +904,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
         Future.successful(reportPath)
       }
-    } yield report
+    } yield ReportFileInfo(report, resolveReportFileName(ReportType.ConformanceStatementCertificate, reportSettings.fileNameExpression, statementReportNameContext(conformanceData, displayActor), "pdf"))
   }
 
   private def signReportIfNeeded(reportSettings: CommunityReportSettings, reportPath: Path): Future[Path] = {
@@ -877,11 +949,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     finalPdfPath
   }
 
-  def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+  private def generateHtmlDocumentationReport(reportPath: Path, communityId: Long, documentation: String, title: String): Path = {
     Files.createDirectories(reportPath.getParent)
     val fos = Files.newOutputStream(reportPath)
     try {
-      ReportGenerator.getInstance().writeTestCaseDocumentationPreviewReport(documentation, fos, reportHelper.createReportSpecs(Some(communityId)))
+      ReportGenerator.getInstance().writeHtmlReport(documentation, title, fos, reportHelper.createReportSpecs(Some(communityId)))
       fos.flush()
     } catch {
       case e: Exception =>
@@ -890,6 +962,56 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       if (fos != null) fos.close()
     }
     reportPath
+  }
+
+  def generateTestCaseDocumentationReport(reportPath: Path, communityId: Long, documentation: String, testCaseId: Long): Future[ReportFileInfo] = {
+    for {
+      reportSettings <- getReportSettings(communityId, ReportType.TestCaseDocumentationReport)
+      testCase <- testCaseManager.getTestCase(testCaseId.toString)
+      signedPath <- {
+        generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Case Documentation")
+        signReportIfNeeded(reportSettings, reportPath)
+      }
+    } yield {
+      val ctx = ReportNameResolver.ReportNameContext(testCaseName = testCase.map(_.fullname))
+      ReportFileInfo(signedPath, resolveReportFileName(ReportType.TestCaseDocumentationReport, reportSettings.fileNameExpression, ctx, "pdf"))
+    }
+  }
+
+  def generateTestSuiteDocumentationReport(reportPath: Path, communityId: Long, documentation: String, testSuiteId: Long): Future[ReportFileInfo] = {
+    for {
+      reportSettings <- getReportSettings(communityId, ReportType.TestSuiteDocumentationReport)
+      testSuite <- testSuiteManager.getById(testSuiteId)
+      signedPath <- {
+        generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Suite Documentation")
+        signReportIfNeeded(reportSettings, reportPath)
+      }
+    } yield {
+      val ctx = ReportNameResolver.ReportNameContext(testSuiteName = testSuite.map(_.fullname))
+      ReportFileInfo(signedPath, resolveReportFileName(ReportType.TestSuiteDocumentationReport, reportSettings.fileNameExpression, ctx, "pdf"))
+    }
+  }
+
+  def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Case Documentation")
+  }
+
+  def generateTestSuiteDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    generateHtmlDocumentationReport(reportPath, communityId, documentation, "Test Suite Documentation")
+  }
+
+  def generateDemoTestCaseDocumentationReport(reportPath: Path, communityId: Long, reportSettings: CommunityReportSettings): Future[Unit] = {
+    for {
+      _ <- Future { generateHtmlDocumentationReport(reportPath, communityId, "<p>Sample documentation for a test case, illustrating how the produced PDF report will be structured.</p>", "Test Case Documentation") }
+      _ <- signReportIfNeeded(reportSettings, reportPath)
+    } yield ()
+  }
+
+  def generateDemoTestSuiteDocumentationReport(reportPath: Path, communityId: Long, reportSettings: CommunityReportSettings): Future[Unit] = {
+    for {
+      _ <- Future { generateHtmlDocumentationReport(reportPath, communityId, "<p>Sample documentation for a test suite, illustrating how the produced PDF report will be structured.</p>", "Test Suite Documentation") }
+      _ <- signReportIfNeeded(reportSettings, reportPath)
+    } yield ()
   }
 
   private def getConformanceDataForOverviewReport(conformanceInfoBuilder: ConformanceStatusBuilder[ConformanceStatementFull], reportLevel: OverviewLevelType, communityId: Long, actorIdsToDisplay: Option[Set[Long]], snapshotId: Option[Long]): Future[ConformanceData] = {
@@ -1113,7 +1235,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     counters.resultStatus()
   }
 
-  def generateConformanceOverviewCertificate(reportPath: Path, certificateSettingsWithMessages: Option[ConformanceOverviewCertificateWithMessages], systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Future[Path] = {
+  def generateConformanceOverviewCertificate(reportPath: Path, certificateSettingsWithMessages: Option[ConformanceOverviewCertificateWithMessages], systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     for {
       reportSettings <- getReportSettings(communityId, ReportType.ConformanceOverviewCertificate)
       conformanceData <- getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId, communityId)
@@ -1161,7 +1283,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield report
   }
 
-  def generateConformanceOverviewReport(reportPath: Path, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Future[Path] = {
+  def generateConformanceOverviewReport(reportPath: Path, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     for {
       reportSettings <- getReportSettings(communityId, ReportType.ConformanceOverviewReport)
       conformanceData <- getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId, communityId)
@@ -1304,7 +1426,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       labels <- getReportLabels(communityId)
       conformanceData <- createDemoDataForConformanceOverviewReport(communityId, level, labels)
       report <- generateConformanceOverviewReport(conformanceData, ReportType.ConformanceOverviewReport, reportSettings, transformer, None, reportPath, Some(labels), communityId, isDemo = true, None)
-    } yield report
+    } yield report.file
   }
 
   def generateDemoConformanceOverviewReportInXML(reportPath: Path, transformer: Option[Path], communityId: Long, level: OverviewLevelType): Future[Path] = {
@@ -1315,14 +1437,15 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield report
   }
 
-  def generateConformanceOverviewReportInXML(reportPath: Path, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Future[Path] = {
+  def generateConformanceOverviewReportInXML(reportPath: Path, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     for {
       conformanceData <- getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId, communityId)
+      fileNameOverride <- getReportSettings(communityId, ReportType.ConformanceOverviewReport).map(_.fileNameExpression)
       report <- {
         val transformer = repositoryUtils.getCommunityReportStylesheet(communityId, ReportType.ConformanceOverviewReport)
         generateConformanceOverviewReportInXML(reportPath, transformer, communityId, conformanceData, isDemo = false)
       }
-    } yield report
+    } yield ReportFileInfo(report, resolveReportFileName(ReportType.ConformanceOverviewReport, fileNameOverride, overviewReportNameContext(conformanceData), "xml"))
   }
 
   private def generateConformanceOverviewReportInXML(reportPath: Path, transformer: Option[Path], communityId: Long, conformanceData: ConformanceData, isDemo: Boolean): Future[Path] = {
@@ -1506,7 +1629,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield report
   }
 
-  private def generateConformanceOverviewReport(conformanceData: ConformanceData, reportType: ReportType, reportSettings: CommunityReportSettings, transformer: Option[Path], certificateSettings: Option[ConformanceCertificateInfo], reportPath: Path, loadedLabels: Option[Map[Short, CommunityLabels]], communityId: Long, isDemo: Boolean, snapshotId: Option[Long]): Future[Path] = {
+  private def generateConformanceOverviewReport(conformanceData: ConformanceData, reportType: ReportType, reportSettings: CommunityReportSettings, transformer: Option[Path], certificateSettings: Option[ConformanceCertificateInfo], reportPath: Path, loadedLabels: Option[Map[Short, CommunityLabels]], communityId: Long, isDemo: Boolean, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     val isDelegated = reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)
     val includeCustomMessage = !isDelegated && certificateSettings.exists(x => x.includeMessage && x.message.isDefined)
     for {
@@ -1580,7 +1703,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           } else {
             overview.setTitle("Conformance Overview Report")
           }
-          overview.setReportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(conformanceData.reportDate))
+          overview.setReportDate(TimeUtil.formatDateTime(conformanceData.reportDate))
           overview.setOrganisation(conformanceData.organisationName.getOrElse("-"))
           overview.setSystem(conformanceData.systemName.getOrElse("-"))
           if (certificateSettings.isDefined) {
@@ -1613,7 +1736,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
         Future.successful(reportPath)
       }
-    } yield report
+    } yield ReportFileInfo(report, resolveReportFileName(reportType, reportSettings.fileNameExpression, overviewReportNameContext(conformanceData), "pdf"))
   }
 
   def resolveConformanceOverviewCertificateMessage(rawMessage: String, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], snapshotId: Option[Long], communityId: Long): Future[String] = {
@@ -1926,9 +2049,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     messageToUse
   }
 
-  private def getDateFormatter(format: String): Option[SimpleDateFormat] = {
+  private def getDateFormatter(format: String): Option[DateTimeFormatter] = {
       try {
-        Some(new SimpleDateFormat(format))
+        Some(DateTimeFormatter.ofPattern(format).withZone(Configurations.TIME_ZONE))
       } catch {
         case e: Exception =>
           LOGGER.warn("Invalid date format {}", format, e)
@@ -1942,7 +2065,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     if (matches.size() > 0) {
       if (dateValue.isDefined) {
         matches.forEach { result =>
-          val textToSet = getDateFormatter(result.group(2)).map(_.format(dateValue.get)).getOrElse("")
+          val textToSet = getDateFormatter(result.group(2)).map(_.format(dateValue.get.toInstant)).getOrElse("")
           messageToUse = message.replace(result.group(1), textToSet)
         }
       } else {
@@ -2165,7 +2288,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield report
   }
 
-  def generateConformanceStatementReportViaApi(reportPath: Path, organisationKey: String, systemKey: String, actorKey: String, snapshotKey: Option[String], contentType: String): Future[Path] = {
+  /**
+   * Generates the report and returns, alongside the report path, the resolved system/actor/community identifiers
+   * (so that callers can determine the file name to use without a further lookup of the API keys).
+   */
+  def generateConformanceStatementReportViaApi(reportPath: Path, organisationKey: String, systemKey: String, actorKey: String, snapshotKey: Option[String], contentType: String): Future[ReportFileInfo] = {
     DB.run(
       for {
         // Load statement IDs.
@@ -2213,14 +2340,23 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
-  def generateConformanceStatementReportInXML(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Future[Path] = {
+  def generateConformanceStatementReportInXML(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     for {
       conformanceInfo <- conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).map(_.getDetails(None))
+      conformanceData = conformanceInfo.head
+      fileNameOverride <- getReportSettings(communityId, ReportType.ConformanceStatementReport).map(_.fileNameExpression)
+      displayActor <- {
+        if (needsConformanceTarget(ReportType.ConformanceStatementReport, fileNameOverride)) {
+          resolveDisplayActor(conformanceData, snapshotId, isDemo = false)
+        } else {
+          Future.successful(false)
+        }
+      }
       report <- {
         val transformer = repositoryUtils.getCommunityReportStylesheet(communityId, ReportType.ConformanceStatementReport)
         generateConformanceStatementReportInXML(reportPath, transformer, addTestCases, conformanceInfo, isDemo = false)
       }
-    } yield report
+    } yield ReportFileInfo(report, resolveReportFileName(ReportType.ConformanceStatementReport, fileNameOverride, statementReportNameContext(conformanceData, displayActor), "xml"))
   }
 
   private def getPartyDefinitionForXmlReport(organisationId: Long, organisationName: String, systemId: Long, systemName: String, systemVersion: Option[String], systemDescription: Option[String], communityId: Long, isDemo: Boolean): Future[PartyDefinition] = {
@@ -2642,45 +2778,57 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   }
 
   def generateDemoConformanceStatementReport(reportPath: Path, reportSettings: CommunityReportSettings, transformer: Option[Path], addTestCases: Boolean, communityId: Long): Future[Path] = {
-    for {
-      _ <- {
-        if (reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)) {
-          // Delegate to external service. First create XML report.
-          val tempXmlReport = reportPath.resolveSibling(UUID.randomUUID().toString + ".xml")
-          // Generate the XML report and apply stylesheet if defined and needed.
-          generateDemoConformanceStatementReportInXML(tempXmlReport, transformer.filter(_ => reportSettings.customPdfsWithCustomXml), addTestCases, communityId).flatMap { _ =>
-            // Call service.
-            callCustomPdfGenerationService(reportSettings.customPdfService.get, tempXmlReport, reportPath).map { _ =>
-              reportPath
+    getReportLabels(communityId).flatMap { labels =>
+      val conformanceInfo = createDemoDataForConformanceStatementReport(labels)
+      val conformanceData = conformanceInfo.head
+      resolveDisplayActor(conformanceData, None, isDemo = true).flatMap { displayActor =>
+        for {
+          _ <- {
+            if (reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)) {
+              // Delegate to external service. First create XML report.
+              val tempXmlReport = reportPath.resolveSibling(UUID.randomUUID().toString + ".xml")
+              // Generate the XML report and apply stylesheet if defined and needed.
+              generateConformanceStatementReportInXML(tempXmlReport, transformer.filter(_ => reportSettings.customPdfsWithCustomXml), addTestCases, conformanceInfo, isDemo = true).flatMap { _ =>
+                // Call service.
+                callCustomPdfGenerationService(reportSettings.customPdfService.get, tempXmlReport, reportPath).map { _ =>
+                  reportPath
+                }
+              }.andThen { _ =>
+                FileUtils.deleteQuietly(tempXmlReport.toFile)
+              }
+            } else {
+              generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, None, conformanceInfo, labels, communityId, None, isDemo = true, displayActor)
             }
-          }.andThen { _ =>
-            FileUtils.deleteQuietly(tempXmlReport.toFile)
           }
-        } else {
-          getReportLabels(communityId).flatMap { labels =>
-            val conformanceInfo = createDemoDataForConformanceStatementReport(labels)
-            generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, None, conformanceInfo, labels, communityId, None, isDemo = true).map { _ =>
-              reportPath
-            }
-          }
-        }
+          // Sign report if needed.
+          report <- signReportIfNeeded(reportSettings, reportPath)
+        } yield report
       }
-      // Sign report if needed.
-      report <- signReportIfNeeded(reportSettings, reportPath)
-    } yield report
+    }
   }
 
-  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Future[Path] = {
+  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId, snapshotId)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Future[Path] = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Future[ReportFileInfo] = {
     for {
       // Load report data.
       conformanceInfo <- conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).map(_.getDetails(None))
       reportSettings <- getReportSettings(communityId, ReportType.ConformanceStatementReport)
+      conformanceData = conformanceInfo.head
+      isDelegated = reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)
+      displayActor <- {
+        // Not needed for content when delegated (the delegate branch never renders the report body locally) -
+        // in that case only resolve it if the naming expression actually needs the conformance target.
+        if (!isDelegated || needsConformanceTarget(ReportType.ConformanceStatementReport, reportSettings.fileNameExpression)) {
+          resolveDisplayActor(conformanceData, snapshotId, isDemo = false)
+        } else {
+          Future.successful(false)
+        }
+      }
       _ <- {
-        if (reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)) {
+        if (isDelegated) {
           // We have a PDF report and need to delegate its generation to an external service. First generate (or retrieve) the XML report.
           var transformer: Option[Path] = None
           if (reportSettings.customPdfsWithCustomXml) {
@@ -2695,26 +2843,19 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             FileUtils.deleteQuietly(xmlReportPath.toFile)
           }
         } else {
-          generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, message, conformanceInfo, labels, communityId, snapshotId, isDemo = false)
+          generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, message, conformanceInfo, labels, communityId, snapshotId, isDemo = false, displayActor)
         }
       }
       // Sign report if needed.
       report <- signReportIfNeeded(reportSettings, reportPath)
-    } yield report
+    } yield ReportFileInfo(report, resolveReportFileName(ReportType.ConformanceStatementReport, reportSettings.fileNameExpression, statementReportNameContext(conformanceData, displayActor), "pdf"))
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, addPageNumbers: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long], isDemo: Boolean): Future[Path] = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, addPageNumbers: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long], isDemo: Boolean, displayActor: Boolean): Future[Path] = {
     val conformanceData = conformanceInfo.head
     val reportDate = Calendar.getInstance().getTime
     val specs = reportHelper.createReportSpecs(Some(communityId))
     for {
-      displayActor <- {
-        if (isDemo) {
-          Future.successful(true)
-        } else {
-          conformanceManager.getActorIdsToDisplayInStatementsWrapper(List(conformanceData), snapshotId).map(_.contains(conformanceData.actorId))
-        }
-      }
       testResultMap <- {
         if (addTestCases) {
           testResultManager.getTestResultsForSessions(conformanceInfo.filter(_.sessionId.isDefined).map(_.sessionId.get)).map(Some(_))
@@ -2723,7 +2864,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
       }
       overview <- {
-        val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
         val overview = new com.gitb.reports.dto.ConformanceStatementOverview()
         // Labels
         overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
@@ -2798,9 +2938,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
               if (info.sessionId.exists(session => testResultMap.exists(_.contains(session)))) {
                 val testResult = testResultMap.get(info.sessionId.get)
                 testCaseOverview.setSessionId(info.sessionId.get)
-                testCaseOverview.setStartTime(sdf.format(new Date(testResult._1.startTime.getTime)))
+                testCaseOverview.setStartTime(TimeUtil.formatDateTime(testResult._1.startTime))
                 if (testResult._1.endTime.isDefined) {
-                  testCaseOverview.setEndTime(sdf.format(new Date(testResult._1.endTime.get.getTime)))
+                  testCaseOverview.setEndTime(TimeUtil.formatDateTime(testResult._1.endTime.get))
                 }
                 val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult._2)))
                 val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult._1.startTime), isExpected = true)
@@ -2938,7 +3078,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         overview.setFailedTestsIgnored(failedTestsIgnored)
         overview.setUndefinedTestsIgnored(undefinedTestsIgnored)
         overview.setIncludeTestStatus(addTestStatus)
-        overview.setReportDate(sdf.format(reportDate))
+        overview.setReportDate(TimeUtil.formatDateTime(reportDate))
         Future.successful(overview)
       }
       // Add also custom message (doing here as we need the overall result to be calculated)
@@ -3016,6 +3156,311 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield message
   }
 
+  private def buildConformanceStatementDocumentationSuites(conformanceInfo: List[ConformanceStatementFull], suiteDocs: Map[Long, String], caseDocs: Map[Long, String]): util.List[com.gitb.reports.dto.TestSuiteDocumentation] = {
+    val testSuiteList = new util.ArrayList[com.gitb.reports.dto.TestSuiteDocumentation]()
+    val testSuiteIndex = new mutable.LinkedHashMap[Long, com.gitb.reports.dto.TestSuiteDocumentation]()
+    conformanceInfo.foreach { info =>
+      val suite = testSuiteIndex.getOrElseUpdate(info.testSuiteId.get, {
+        val s = new com.gitb.reports.dto.TestSuiteDocumentation()
+        s.setName(info.testSuiteName.get)
+        s.setDocumentation(suiteDocs.get(info.testSuiteId.get).orNull)
+        s.setTestCases(new util.ArrayList[com.gitb.reports.dto.TestCaseDocumentation]())
+        testSuiteList.add(s)
+        s
+      })
+      val testCase = new com.gitb.reports.dto.TestCaseDocumentation()
+      testCase.setName(info.testCaseName.get)
+      testCase.setDocumentation(caseDocs.get(info.testCaseId.get).orNull)
+      suite.getTestCases.add(testCase)
+    }
+    testSuiteList
+  }
+
+  private def buildXmlTestSuiteDocumentationList(conformanceInfo: List[ConformanceStatementFull], suiteDocs: Map[Long, String], caseDocs: Map[Long, String]): com.gitb.tr.TestSuiteDocumentationList = {
+    val list = new com.gitb.tr.TestSuiteDocumentationList
+    val testSuiteIndex = new mutable.LinkedHashMap[Long, com.gitb.tr.TestSuiteDocumentation]()
+    conformanceInfo.foreach { info =>
+      val suite = testSuiteIndex.getOrElseUpdate(info.testSuiteId.get, {
+        val s = new com.gitb.tr.TestSuiteDocumentation
+        s.setName(info.testSuiteName.get)
+        s.setDocumentation(suiteDocs.get(info.testSuiteId.get).orNull)
+        s.setTestCases(new com.gitb.tr.TestCaseDocumentationList)
+        list.getTestSuite.add(s)
+        s
+      })
+      val testCase = new com.gitb.tr.TestCaseDocumentation
+      testCase.setName(info.testCaseName.get)
+      testCase.setDocumentation(caseDocs.get(info.testCaseId.get).orNull)
+      suite.getTestCases.getTestCase.add(testCase)
+    }
+    list
+  }
+
+  private def generateCoreConformanceStatementDocumentationReport(reportPath: Path, actorId: Long, conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], settings: ConformanceStatementDocumentationReportSettings, communityId: Long, isDemo: Boolean, displayActor: Boolean): Future[Path] = {
+    val conformanceData = conformanceInfo.head
+    for {
+      statementDocumentation <- {
+        if (settings.includeStatementDocumentation) {
+          if (isDemo) {
+            Future.successful(Some("<p>This is sample documentation for the conformance statement.</p>"))
+          } else {
+            conformanceManager.getConformanceStatementDocumentation(actorId, None)
+          }
+        } else {
+          Future.successful(None)
+        }
+      }
+      suiteDocs <- {
+        if (settings.includeTestSuiteDocumentation) {
+          if (isDemo) {
+            Future.successful(Map(1L -> "<p>This is sample documentation for a test suite.</p>"))
+          } else {
+            testSuiteManager.getTestSuiteDocumentationByIds(conformanceInfo.flatMap(_.testSuiteId).distinct)
+          }
+        } else {
+          Future.successful(Map.empty[Long, String])
+        }
+      }
+      caseDocs <- {
+        if (settings.includeTestCaseDocumentation) {
+          if (isDemo) {
+            Future.successful(Map(1L -> "<p>This is sample documentation for test case 1.</p>", 3L -> "<p>This is sample documentation for test case 3.</p>"))
+          } else {
+            testCaseManager.getTestCaseDocumentationByIds(conformanceInfo.flatMap(_.testCaseId).distinct)
+          }
+        } else {
+          Future.successful(Map.empty[Long, String])
+        }
+      }
+      report <- {
+        val data = new com.gitb.reports.dto.ConformanceStatementDocumentation()
+        data.setTitle("Conformance Statement Documentation")
+        data.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
+        data.setLabelSpecificationGroup(communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup))
+        data.setLabelSpecificationInGroup(communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup))
+        data.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
+        data.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
+        data.setTestDomain(conformanceData.domainNameFull)
+        data.setTestSpecificationGroup(conformanceData.specificationGroupNameFull.orNull)
+        data.setTestSpecification(conformanceData.specificationNameFull)
+        if (displayActor) {
+          data.setTestActor(conformanceData.actorFull)
+        }
+        data.setIncludeOverview(settings.includeOverview)
+        data.setIncludeStatementDocumentation(settings.includeStatementDocumentation)
+        data.setIncludeTestCaseListing(settings.includeTestCaseListing)
+        data.setIncludeTestSuiteDocumentation(settings.includeTestSuiteDocumentation)
+        data.setIncludeTestCaseDocumentation(settings.includeTestCaseDocumentation)
+        statementDocumentation.foreach(data.setStatementDocumentation)
+        data.setTestSuites(buildConformanceStatementDocumentationSuites(conformanceInfo, suiteDocs, caseDocs))
+        Files.createDirectories(reportPath.getParent)
+        Using.resource(Files.newOutputStream(reportPath)) { fos =>
+          ReportGenerator.getInstance().writeConformanceStatementDocumentationReport(data, fos, reportHelper.createReportSpecs(Some(communityId)))
+          fos.flush()
+        }
+        Future.successful(reportPath)
+      }
+    } yield report
+  }
+
+  private def generateConformanceStatementDocumentationReportInXML(reportPath: Path, transformer: Option[Path], actorId: Long, conformanceInfo: List[ConformanceStatementFull], settings: ConformanceStatementDocumentationReportSettings, isDemo: Boolean): Future[Path] = {
+    val conformanceData = conformanceInfo.head
+    for {
+      statementDocumentation <- {
+        if (settings.includeStatementDocumentation) {
+          if (isDemo) {
+            Future.successful(Some("<p>This is sample documentation for the conformance statement.</p>"))
+          } else {
+            conformanceManager.getConformanceStatementDocumentation(actorId, None)
+          }
+        } else {
+          Future.successful(None)
+        }
+      }
+      suiteDocs <- {
+        if (settings.includeTestSuiteDocumentation) {
+          if (isDemo) {
+            Future.successful(Map(1L -> "<p>This is sample documentation for a test suite.</p>"))
+          } else {
+            testSuiteManager.getTestSuiteDocumentationByIds(conformanceInfo.flatMap(_.testSuiteId).distinct)
+          }
+        } else {
+          Future.successful(Map.empty[Long, String])
+        }
+      }
+      caseDocs <- {
+        if (settings.includeTestCaseDocumentation) {
+          if (isDemo) {
+            Future.successful(Map(1L -> "<p>This is sample documentation for test case 1.</p>", 3L -> "<p>This is sample documentation for test case 3.</p>"))
+          } else {
+            testCaseManager.getTestCaseDocumentationByIds(conformanceInfo.flatMap(_.testCaseId).distinct)
+          }
+        } else {
+          Future.successful(Map.empty[Long, String])
+        }
+      }
+      report <- {
+        val report = new ConformanceStatementDocumentationReportType
+        report.setMetadata(new com.gitb.tr.ReportMetadata)
+        report.getMetadata.setReportTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
+        report.setStatement(new ConformanceStatementObject)
+        report.getStatement.setDomain(new ConformanceItemInformation)
+        report.getStatement.getDomain.setName(conformanceData.domainNameFull)
+        report.getStatement.getDomain.setDescription(conformanceData.domainDescription.orNull)
+        report.getStatement.getDomain.setMetadata(conformanceData.domainReportMetadata.orNull)
+        if (conformanceData.specificationGroupNameFull.isDefined) {
+          report.getStatement.setSpecificationGroup(new ConformanceItemInformation)
+          report.getStatement.getSpecificationGroup.setName(conformanceData.specificationGroupNameFull.orNull)
+          report.getStatement.getSpecificationGroup.setDescription(conformanceData.specificationGroupDescription.orNull)
+          report.getStatement.getSpecificationGroup.setMetadata(conformanceData.specificationGroupReportMetadata.orNull)
+        }
+        report.getStatement.setSpecification(new ConformanceItemInformation)
+        report.getStatement.getSpecification.setName(conformanceData.specificationNameFull)
+        report.getStatement.getSpecification.setDescription(conformanceData.specificationDescription.orNull)
+        report.getStatement.getSpecification.setMetadata(conformanceData.specificationReportMetadata.orNull)
+        report.getStatement.setActor(new ConformanceItemInformation)
+        report.getStatement.getActor.setName(conformanceData.actorFull)
+        report.getStatement.getActor.setDescription(conformanceData.actorDescription.orNull)
+        report.getStatement.getActor.setMetadata(conformanceData.actorReportMetadata.orNull)
+        statementDocumentation.foreach(report.setDocumentation)
+        if (conformanceInfo.exists(_.testSuiteId.isDefined)) {
+          report.setTestSuites(buildXmlTestSuiteDocumentationList(conformanceInfo, suiteDocs, caseDocs))
+        }
+        Files.createDirectories(reportPath.getParent)
+        Using.resource(Files.newOutputStream(reportPath)) { fos =>
+          ReportGenerator.getInstance().writeConformanceStatementDocumentationXmlReport(report, fos)
+          fos.flush()
+        }
+        applyXsltToReportAndPrettyPrint(reportPath, transformer)
+        Future.successful(reportPath)
+      }
+    } yield report
+  }
+
+  def generateDemoConformanceStatementDocumentationReportInXML(reportPath: Path, transformer: Option[Path], settings: ConformanceStatementDocumentationReportSettings, communityId: Long): Future[Path] = {
+    for {
+      labels <- getReportLabels(communityId)
+      report <- {
+        val conformanceInfo = createDemoDataForConformanceStatementReport(labels)
+        generateConformanceStatementDocumentationReportInXML(reportPath, transformer, 0L, conformanceInfo, settings, isDemo = true)
+      }
+    } yield report
+  }
+
+  def getConformanceStatementDocumentationReportSettings(communityId: Long): Future[ConformanceStatementDocumentationReportSettings] = {
+    communityManager.getConformanceStatementDocumentationReportSettingsWrapper(communityId, defaultIfMissing = true).map(_.get)
+  }
+
+  def updateConformanceStatementDocumentationReportSettings(settings: ConformanceStatementDocumentationReportSettings, reportSettings: CommunityReportSettings, stylesheetPath: Option[Option[Path]]): Future[Unit] = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      _ <- updateReportSettingsInternal(reportSettings, stylesheetPath, onSuccessCalls)
+      _ <- updateConformanceStatementDocumentationReportSettingsInternal(settings)
+    } yield ()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def updateConformanceStatementDocumentationReportSettingsInternal(data: ConformanceStatementDocumentationReportSettings): DBIO[_] = {
+    for {
+      existingId <- PersistenceSchema.conformanceStatementDocumentationReportSettings.filter(_.community === data.community).map(_.id).result.headOption
+      _ <- {
+        if (existingId.isEmpty) {
+          PersistenceSchema.insertConformanceStatementDocumentationReportSettings += data
+        } else {
+          PersistenceSchema.conformanceStatementDocumentationReportSettings.filter(_.id === existingId)
+            .map(x => (x.enabled, x.includeOverview, x.includeStatementDocumentation, x.includeTestCaseListing, x.includeTestSuiteDocumentation, x.includeTestCaseDocumentation, x.includeSignature))
+            .update((data.enabled, data.includeOverview, data.includeStatementDocumentation, data.includeTestCaseListing, data.includeTestSuiteDocumentation, data.includeTestCaseDocumentation, data.includeSignature))
+        }
+      }
+    } yield ()
+  }
+
+  def generateConformanceStatementDocumentationReport(reportPath: Path, actorId: Long, systemId: Long, communityId: Long): Future[ReportFileInfo] = {
+    for {
+      reportSettings <- getReportSettings(communityId, ReportType.ConformanceStatementDocumentationReport)
+      settings <- getConformanceStatementDocumentationReportSettings(communityId)
+      conformanceInfo <- conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, prefixSpecificationNameWithGroup = false).map(_.getDetails(None))
+      conformanceData = conformanceInfo.head
+      labels <- getReportLabels(communityId)
+      isDelegated = reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)
+      // Not needed for content when delegated (the delegate branch never renders the report body locally) -
+      // in that case only resolve it if the naming expression actually needs the conformance target.
+      displayActor <- {
+        if (!isDelegated || needsConformanceTarget(ReportType.ConformanceStatementDocumentationReport, reportSettings.fileNameExpression)) {
+          resolveDisplayActor(conformanceData, None, isDemo = false)
+        } else {
+          Future.successful(false)
+        }
+      }
+      _ <- {
+        if (isDelegated) {
+          var transformer: Option[Path] = None
+          if (reportSettings.customPdfsWithCustomXml) {
+            transformer = repositoryUtils.getCommunityReportStylesheet(communityId, ReportType.ConformanceStatementDocumentationReport)
+          }
+          val xmlReportPath = reportPath.resolveSibling(UUID.randomUUID().toString + ".xml")
+          generateConformanceStatementDocumentationReportInXML(xmlReportPath, transformer, actorId, conformanceInfo, settings, isDemo = false).flatMap { _ =>
+            callCustomPdfGenerationService(reportSettings.customPdfService.get, xmlReportPath, reportPath).map { _ =>
+              reportPath
+            }
+          }.andThen { _ =>
+            FileUtils.deleteQuietly(xmlReportPath.toFile)
+          }
+        } else {
+          generateCoreConformanceStatementDocumentationReport(reportPath, actorId, conformanceInfo, labels, settings, communityId, isDemo = false, displayActor)
+        }
+      }
+      keystoreToSignWith <- {
+        if ((isDelegated && reportSettings.signPdfs) || (!isDelegated && settings.includeSignature)) {
+          communityManager.getCommunityKeystore(communityId, decryptKeys = true)
+        } else {
+          Future.successful(None)
+        }
+      }
+      report <- {
+        if (keystoreToSignWith.isDefined) {
+          signReport(keystoreToSignWith.get, reportPath)
+        }
+        Future.successful(reportPath)
+      }
+    } yield ReportFileInfo(report, resolveReportFileName(ReportType.ConformanceStatementDocumentationReport, reportSettings.fileNameExpression, statementReportNameContext(conformanceData, displayActor), "pdf"))
+  }
+
+  def generateDemoConformanceStatementDocumentationReport(reportPath: Path, reportSettings: CommunityReportSettings, transformer: Option[Path], settings: ConformanceStatementDocumentationReportSettings, communityId: Long): Future[Path] = {
+    val isDelegated = reportSettings.customPdfs && reportSettings.customPdfService.exists(StringUtils.isNotBlank)
+    for {
+      labels <- getReportLabels(communityId)
+      conformanceInfo = createDemoDataForConformanceStatementReport(labels)
+      _ <- {
+        if (isDelegated) {
+          val xmlReportPath = reportPath.resolveSibling(UUID.randomUUID().toString + ".xml")
+          generateConformanceStatementDocumentationReportInXML(xmlReportPath, transformer.filter(_ => reportSettings.customPdfsWithCustomXml), 0L, conformanceInfo, settings, isDemo = true).flatMap { _ =>
+            callCustomPdfGenerationService(reportSettings.customPdfService.get, xmlReportPath, reportPath).map { _ =>
+              reportPath
+            }
+          }.andThen { _ =>
+            FileUtils.deleteQuietly(xmlReportPath.toFile)
+          }
+        } else {
+          generateCoreConformanceStatementDocumentationReport(reportPath, 0L, conformanceInfo, labels, settings, communityId, isDemo = true, displayActor = true)
+        }
+      }
+      keystoreToSignWith <- {
+        if ((isDelegated && reportSettings.signPdfs) || (!isDelegated && settings.includeSignature)) {
+          communityManager.getCommunityKeystore(communityId, decryptKeys = true)
+        } else {
+          Future.successful(None)
+        }
+      }
+      report <- {
+        if (keystoreToSignWith.isDefined) {
+          signReport(keystoreToSignWith.get, reportPath)
+        }
+        Future.successful(reportPath)
+      }
+    } yield report
+  }
+
   def getAllReportSettings(communityId: Long): Future[List[CommunityReportSettings]] = {
     DB.run(
       PersistenceSchema.communityReportSettings
@@ -3033,9 +3478,89 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         .headOption
     ).map { persistedSettings =>
       persistedSettings.getOrElse(CommunityReportSettings(
-        reportType.id.toShort, signPdfs = false, customPdfs = false, customPdfsWithCustomXml = false, None, communityId)
+        reportType.id.toShort, signPdfs = false, customPdfs = false, customPdfsWithCustomXml = false, None, None, communityId)
       )
     }
+  }
+
+  /**
+   * Resolves the file name to use for a generated report, given its type, an optional community-specific naming
+   * expression override, and the context to use to replace supported placeholders.
+   */
+  def resolveReportFileName(reportType: ReportType, fileNameOverride: Option[String], ctx: ReportNameResolver.ReportNameContext, extension: String): String = {
+    ReportNameResolver.resolve(reportType.id.toShort, fileNameOverride, ctx, extension)
+  }
+
+  /**
+   * Whether the naming expression that would apply for the given report type references the CONFORMANCE_TARGET
+   * placeholder - used to decide whether it's worth resolving the "should the actor be displayed" data (a DB
+   * lookup) purely for naming purposes when it isn't otherwise needed for the report's content.
+   */
+  private def needsConformanceTarget(reportType: ReportType, fileNameOverride: Option[String]): Boolean = {
+    ReportNameResolver.usesConformanceTarget(reportType.id.toShort, fileNameOverride)
+  }
+
+  /**
+   * Whether the actor of a conformance statement should be displayed (in the report body and its file name) - i.e.
+   * whether its specification has more than one SUT actor to distinguish between. Always true for demo/preview
+   * reports (sample data always has multiple sample actors to illustrate the report format).
+   */
+  private def resolveDisplayActor(conformanceData: ConformanceStatementFull, snapshotId: Option[Long], isDemo: Boolean): Future[Boolean] = {
+    if (isDemo) {
+      Future.successful(true)
+    } else {
+      conformanceManager.getActorIdsToDisplayInStatementsWrapper(List(conformanceData), snapshotId).map(_.contains(conformanceData.actorId))
+    }
+  }
+
+  private def statementReportNameContext(conformanceData: ConformanceStatementFull, displayActor: Boolean): ReportNameResolver.ReportNameContext = {
+    val targetParts = new ListBuffer[String]()
+    conformanceData.specificationGroupNameFull.foreach(targetParts += _)
+    targetParts += conformanceData.specificationNameFull
+    if (displayActor) {
+      targetParts += conformanceData.actorFull
+    }
+    ReportNameResolver.ReportNameContext(
+      organisation = Some(conformanceData.organizationName),
+      system = Some(conformanceData.systemName),
+      conformanceTarget = Some(targetParts.mkString(" - "))
+    )
+  }
+
+  /**
+   * Builds the naming context for a conformance overview-level report (overview report/certificate), from the
+   * `ConformanceData` already loaded as part of generating the report itself - no additional lookup, synchronous.
+   */
+  private def overviewReportNameContext(conformanceData: models.statement.ConformanceData): ReportNameResolver.ReportNameContext = {
+    val conformanceTarget = conformanceData.reportLevel match {
+      case OverviewLevelType.DomainLevel => conformanceData.domainName
+      case OverviewLevelType.SpecificationGroupLevel => conformanceData.groupName
+      case OverviewLevelType.SpecificationLevel =>
+        val parts = new ListBuffer[String]()
+        conformanceData.groupName.foreach(parts += _)
+        conformanceData.specificationName.foreach(parts += _)
+        if (parts.isEmpty) None else Some(parts.mkString(" - "))
+      case _ => None // OrganisationLevel - overall aggregate, no target.
+    }
+    ReportNameResolver.ReportNameContext(
+      organisation = conformanceData.organisationName,
+      system = conformanceData.systemName,
+      conformanceTarget = conformanceTarget
+    )
+  }
+
+  /**
+   * Builds a naming context using sample values, for use when generating report previews (where there is no
+   * real organisation, system or test case to draw values from).
+   */
+  def getDemoReportNameContext(labels: Map[Short, CommunityLabels]): ReportNameResolver.ReportNameContext = {
+    ReportNameResolver.ReportNameContext(
+      organisation = Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation, single = true, lowercase = true)),
+      system = Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System, single = true, lowercase = true)),
+      conformanceTarget = Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification, single = true, lowercase = true)),
+      testCaseName = Some("Sample test case"),
+      testSuiteName = Some("Sample test suite")
+    )
   }
 
   def updateReportSettingsInternal(reportSettings: CommunityReportSettings, stylesheetFile: Option[Option[Path]], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -3053,8 +3578,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           PersistenceSchema.communityReportSettings
             .filter(_.community === reportSettings.community)
             .filter(_.reportType === reportSettings.reportType)
-            .map(x => (x.signPdfs, x.customPdfs, x.customPdfsWithCustomXml, x.customPdfService))
-            .update((reportSettings.signPdfs, reportSettings.customPdfs, reportSettings.customPdfsWithCustomXml, reportSettings.customPdfService))
+            .map(x => (x.signPdfs, x.customPdfs, x.customPdfsWithCustomXml, x.customPdfService, x.fileNameExpression))
+            .update((reportSettings.signPdfs, reportSettings.customPdfs, reportSettings.customPdfsWithCustomXml, reportSettings.customPdfService, reportSettings.fileNameExpression))
         } else {
           // Create
           PersistenceSchema.communityReportSettings += reportSettings
@@ -3161,7 +3686,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield ()
   }
 
-  def processAutomationReportRequest(reportPath: Path, organisationKey: String, sessionId: String, contentType: String): Future[Option[Path]] = {
+  def processAutomationReportRequest(reportPath: Path, organisationKey: String, sessionId: String, contentType: String): Future[Option[ReportFileInfo]] = {
     DB.run(
       for {
         organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
@@ -3211,7 +3736,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             }
             reportContent <- {
               if (withReports) {
-                generateTestCaseReport(repositoryUtils.getReportTempFile(".xml"), session._1, Constants.MimeTypeXML, Some(communityId), None).map { report =>
+                generateTestCaseReport(repositoryUtils.getReportTempFile(".xml"), session._1, Constants.MimeTypeXML, Some(communityId), None).map(_.map(_.file)).map { report =>
                   try {
                     report.filter(Files.exists(_)).map(Files.readString)
                   } finally {

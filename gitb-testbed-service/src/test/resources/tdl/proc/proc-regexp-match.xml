@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-regexp-match" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RegExpProcessor check match</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="email">'user@example.com'</assign>
+        <process handler="RegExpProcessor" operation="check" output="matched">
+            <input name="input">$email</input>
+            <input name="expression">"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="email matches">
+            <input name="expression">$matched</input>
+        </verify>
+    </steps>
+</testcase>

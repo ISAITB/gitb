@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, Input, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnChanges, Output} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {CustomPropertyPresetValue} from 'src/app/types/custom-property-preset-value.type';
 import {CustomProperty} from './custom-property';
@@ -24,7 +24,7 @@ import {CustomProperty} from './custom-property';
     styleUrls: ['./custom-property-filter.component.less'],
     standalone: false
 })
-export class CustomPropertyFilterComponent {
+export class CustomPropertyFilterComponent implements OnChanges {
 
   @Input() propertyFilter!: CustomProperty
   @Input() properties: CustomProperty[] = []
@@ -47,6 +47,26 @@ export class CustomPropertyFilterComponent {
   } = {}
 
   constructor() { }
+
+  ngOnChanges(): void {
+    // Supports restoring a previously-applied filter (id + value already set on propertyFilter,
+    // e.g. when returning to a page whose filters were saved): resolve the display labels once the
+    // matching property definition is available, showing the entry as already "applied".
+    if (!this.applied && this.propertyFilter?.id != undefined && this.propertyFilter?.value != undefined) {
+      const property = this.properties.find(p => p.id === this.propertyFilter.id)
+      if (property != undefined) {
+        this.appliedName = property.name
+        if (property.presetValues) {
+          const match = property.presetValues.find(v => v.value === this.propertyFilter.value)
+          this.appliedValueLabel = match?.label ?? this.propertyFilter.value
+        } else {
+          this.appliedValueLabel = this.propertyFilter.value
+        }
+        this.appliedValue = this.propertyFilter.value
+        this.applied = true
+      }
+    }
+  }
 
   @HostListener('document:keydown', ['$event'])
   keyDownRegistered(event: KeyboardEvent) {

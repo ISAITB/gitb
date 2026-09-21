@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-string-fail" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>StringValidator mismatch fails session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="actual">'actual value'</assign>
+        <verify handler="StringValidator" desc="string mismatch">
+            <input name="actual">$actual</input>
+            <input name="expected">'expected value'</input>
+        </verify>
+    </steps>
+</testcase>

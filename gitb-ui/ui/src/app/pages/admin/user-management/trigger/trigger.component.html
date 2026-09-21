@@ -124,15 +124,21 @@
                             <legend class="col-3 col-form-label text-end pt-0">* Service type:</legend>
                             <div class="col-8 col-md-6">
                                 <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_0" [value]="Constants.TRIGGER_SERVICE_TYPE.GITB_REST">
+                                    <label class="form-check-label" for="service_type_0">GITB processing service (REST)
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A REST service endpoint that realises the GITB processing service API."></div>
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_1" [value]="Constants.TRIGGER_SERVICE_TYPE.GITB">
-                                    <label class="form-check-label" for="service_type_1">GITB processing service
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A SOAP service endpoint that realises the GITB processing service API."></div>
+                                    <label class="form-check-label" for="service_type_1">GITB processing service (SOAP)
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A SOAP service endpoint that realises the GITB processing service API."></div>
                                     </label>
                                 </div>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_2" [value]="Constants.TRIGGER_SERVICE_TYPE.JSON">
-                                    <label class="form-check-label" for="service_type_2">JSON HTTP Service
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A HTTP service listening for POST operations. The payloads sent to and (optionally) received from the service will be JSON."></div>
+                                    <label class="form-check-label" for="service_type_2">JSON HTTP service
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A HTTP service listening for POST operations. The payloads sent to and (optionally) received from the service will be JSON."></div>
                                     </label>
                                 </div>
                             </div>
@@ -148,6 +154,8 @@
                         </div>
                         @if (trigger.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB) {
                             <div app-tooltip class="col-auto" tbTooltip="The URL of the web service that will be called when the webhook fires. This URL must be provided as the full address needed to resolve the processing service's WSDL. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></div>
+                        } @else if (trigger.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB_REST) {
+                            <div app-tooltip class="col-auto" tbTooltip="The URL of the web service that will be called when the webhook fires. This URL must be provided as the full address for the service's API root. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></div>
                         } @else {
                             <div app-tooltip class="col-auto" tbTooltip="The URL of the web service that will be called when the webhook fires. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></div>
                         }
@@ -155,10 +163,10 @@
                     <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="operation">Operation:</label>
                         <div class="col-8 col-md-6"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
-                        @if (trigger.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB) {
-                            <div app-tooltip class="col-auto" tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this webhook."></div>
-                        } @else {
+                        @if (trigger.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
                             <div app-tooltip class="col-auto" tbTooltip="An optional operation identifier to pass to the service. This could be used to identify the webhook's type in case the service is used in multiple scenarios."></div>
+                        } @else {
+                            <div app-tooltip class="col-auto" tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this webhook."></div>
                         }
                     </div>
                     <div class="row mt-3 pt-1">
@@ -207,7 +215,7 @@
                                 </div>
                             }
                         </div>
-                        <div app-tooltip class="col-auto" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the webhook's event type."></div>
+                        <div app-tooltip class="col-auto" tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the webhook's event type."></div>
                     </div>
                     <div class="parameter-check-rows">
                         @if (triggerData.domainParameter.visible) {

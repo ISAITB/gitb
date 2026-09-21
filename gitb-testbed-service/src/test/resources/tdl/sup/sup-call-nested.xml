@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-call-nested" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Scriptlet calling another scriptlet</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <scriptlets>
+        <scriptlet id="double">
+            <params>
+                <var name="n" type="number"/>
+            </params>
+            <steps>
+                <assign to="doubled" type="number">$n * 2</assign>
+            </steps>
+            <output name="doubled"/>
+        </scriptlet>
+        <scriptlet id="quadruple">
+            <params>
+                <var name="n" type="number"/>
+            </params>
+            <steps>
+                <call path="double" output="d1">
+                    <input name="n">$n</input>
+                </call>
+                <call path="double" output="d2">
+                    <input name="n">$d1</input>
+                </call>
+            </steps>
+            <output name="d2"/>
+        </scriptlet>
+    </scriptlets>
+    <steps stopOnError="true">
+        <call path="quadruple" output="result">
+            <input name="n">3</input>
+        </call>
+        <verify handler="ExpressionValidator" desc="3 quadrupled is 12">
+            <input name="expression">$result = 12</input>
+        </verify>
+    </steps>
+</testcase>

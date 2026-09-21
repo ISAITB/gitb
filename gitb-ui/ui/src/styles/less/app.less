@@ -89,12 +89,14 @@ input, textarea {
 section.page-top {
     background-color: var(--itb-header-background-color);
     border-bottom-color: var(--itb-header-border-color);
-    height: @page-header-height * 1px;
+    min-height: @page-header-height * 1px;
     position: relative;
     align-items: center;
     display: flex;
 	border-bottom-width: 5px;
 	border-bottom-style: solid;
+    padding-top: 20px;
+    padding-bottom: 20px;
 }
 
 .page-title {
@@ -148,6 +150,61 @@ a.scroll-to-top.visible {
 	position: relative;
 }
 
+.page.index {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+	min-height: 100dvh;
+	& > .child {
+		flex: 1 0 auto;
+	}
+}
+
+.error-page-child {
+	display: flex;
+	flex-direction: column;
+}
+.error-page-content {
+	flex: 1 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: @gray-light-1;
+	padding: 60px 20px;
+}
+.error-page-panel {
+	background-color: @white;
+	border-radius: @border-radius;
+	box-shadow: @box-shadow-card-hover;
+	max-width: 800px;
+	padding: 50px 60px;
+	text-align: center;
+	.error-page-icon {
+		font-size: 15rem;
+		line-height: 1;
+		margin-bottom: 20px;
+	}
+	.error-page-message {
+		margin: 0 0 12px;
+		&:last-of-type {
+			margin-bottom: 30px;
+		}
+	}
+	.error-page-code {
+		font-family: monospace;
+		font-weight: 700;
+		background-color: @gray-light-1;
+		border-radius: @border-radius;
+		padding: 2px 8px;
+	}
+	.error-page-actions {
+		display: flex;
+		gap: 16px;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+}
+
 .page-root {
 	.page-with-margins {
 		margin: @page-content-margin-under-root
@@ -171,31 +228,6 @@ a.scroll-to-top.visible {
 	margin-bottom:15px;
 	padding-top:15px;
 	border-top:1px solid @gray-light;
-}
-
-.session-table-title {
-	padding: 0 15px;
-	display: flex;
-	.session-table-title-part {
-		display: inline-flex;
-		border-left: 1px solid @gray-dark-1;
-        padding: 10px;
-        &:first-child {
-			border-left: 0;
-			padding-left: 0;
-		}
-		.session-table-title-label {
-			display: inline-flex;
-			font-weight: bold;
-			padding-right: 10px;
-			align-items: center;
-			white-space: nowrap
-		}
-		.session-table-title-value {
-			display: inline-flex;
-			align-items: center;
-		}
-	}
 }
 
 .no-wrap {
@@ -247,6 +279,12 @@ a.scroll-to-top.visible {
         white-space: nowrap;
         &.padding-right-large {
             padding-right: 40px;
+        }
+        &.td-padded-icon {
+            .cell-content {
+                margin-left: 1.5rem;
+                margin-right: 0.5rem;
+            }
         }
     }
     .td-no-data {
@@ -368,8 +406,8 @@ a.scroll-to-top.visible {
     display: inline-block;
 	margin-left: 10px;
 	cursor: default;
-	div.checkLabel {
-		margin-left: -10px;
+	div.checkLabel, div.checkLabelText {
+		margin-left: -5px;
 	}
 	div.check {
 		span {
@@ -529,11 +567,19 @@ div.non-padded-alert div.alert {
     background-color: var(--itb-footer-background-color);
     border-top-color: var(--itb-footer-border-color);
     font-size: 0.9em;
-    min-height: 60px;
 	display: flex;
+	flex: 0 0 auto;
 	border-top-width: 4px;
 	border-top-style: solid;
-    .container, .version-div .footer-links {
+    min-height: 84px;
+    .container {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    .version-div .footer-links {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
@@ -776,7 +822,7 @@ span.mini-tab, div.mini-tab {
 	&.badgeLogWarnings {
 		background-color: @orange-warning;
 	}
-	&.badgeLogMessages {
+	&.badgeLogMessages, &.badgeComments {
 		background-color: @gray-button;
 	}
 	&.hidden {
@@ -864,6 +910,14 @@ span.mini-tab, div.mini-tab {
                 box-shadow: 0 0 0 0.25rem rgba(51, 122, 183, 0.25) !important;
                 transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
             }
+        }
+        // The editor's own outer container (.tox-hugerte, see hugerte skin.css) gets a .tox-edit-focus
+        // class added while the editable area has focus - unlike the dialog fields above, nothing styled
+        // this to match the Bootstrap focus glow every other form control shows (see app-editor).
+        &.tox-hugerte.tox-edit-focus {
+            border-color: @bs-input-focus-highlight !important;
+            box-shadow: 0 0 0 0.25rem rgba(51, 122, 183, 0.25) !important;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
         }
         .tox-button {
             font-size: @bs-btn-font-size !important;

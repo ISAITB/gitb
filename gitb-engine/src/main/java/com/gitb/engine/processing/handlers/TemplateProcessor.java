@@ -26,10 +26,7 @@ import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
-import com.gitb.types.DataType;
-import com.gitb.types.ListType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import freemarker.cache.TemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -130,18 +127,31 @@ public class TemplateProcessor extends AbstractProcessingHandler {
     }
 
     private Object dataTypeToObject(DataType type) {
-        if (type instanceof ListType) {
-            var list = new ArrayList<>();
-            for (int i=0; i < ((ListType)type).getSize(); i++) {
-                list.add(dataTypeToObject(((ListType)type).getItem(i)));
+        switch (type) {
+            case null -> {
+                return "";
             }
-            return list;
-        } else if (type instanceof MapType) {
-            var map = new HashMap<String, Object>();
-            ((MapType)type).getItems().forEach((key, value) -> map.put(key, dataTypeToObject(value)));
-            return map;
-        } else {
-            return type.getValue();
+            case ListType listType -> {
+                var list = new ArrayList<>();
+                for (int i = 0; i < listType.getSize(); i++) {
+                    list.add(dataTypeToObject(listType.getItem(i)));
+                }
+                return list;
+            }
+            case MapType mapType -> {
+                var map = new HashMap<String, Object>();
+                mapType.getItems().forEach((key, value) -> map.put(key, dataTypeToObject(value)));
+                return map;
+            }
+            case NumberType numberType -> {
+                return numberType.getValue();
+            }
+            case BooleanType booleanType -> {
+                return booleanType.getValue();
+            }
+            default -> {
+                return type.convertTo(DataType.STRING_DATA_TYPE).getValue();
+            }
         }
     }
 

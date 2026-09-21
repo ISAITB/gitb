@@ -21,5 +21,6 @@ export interface AnyContent {
     embeddingMethod?: 'BASE64'|'STRING'|'URI'
     item?: AnyContent[]
     mimeType?: string
+    metadata?: string
 
 }

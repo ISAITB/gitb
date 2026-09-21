@@ -68,6 +68,9 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
     if (this.fromCommunityManagement) {
       this.orgId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.routingService.organisationChildBreadcrumbs(this.communityId, this.orgId)
+    } else {
+      this.routingService.ownOrganisationBreadcrumbs()
     }
     this.roleCreateChoices = Constants.VENDOR_USER_ROLES
   }

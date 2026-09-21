@@ -1,0 +1,84 @@
+@import "../../../styles/less/_common.less";
+
+.message-item {
+    .message-item-header {
+        background-color: @gray-light-1;
+        padding: 8px 16px;
+        &:hover {
+            cursor: pointer;
+            background-color: @gray-highlight;
+        }
+        .btn-toolbar {
+            flex-wrap: nowrap;
+        }
+    }
+
+    .message-item-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 35px;
+        gap: 15px;
+    }
+
+    .peer-row {
+        cursor: pointer;
+    }
+
+    .message-item-row-separator {
+        border-top: 1px solid @gray-dark-1;
+        margin: 8px 0;
+    }
+
+    .message-item-subject {
+        font-size: 1.1rem;
+        font-weight: bold;
+        flex-grow: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .important-icon {
+        font-size: 1.1rem;
+        color: @error-color;
+    }
+
+    .message-item-peer {
+        flex-grow: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+
+        .peer-label {
+            font-weight: bold;
+            white-space: nowrap;
+            margin-right: 0.5rem;
+        }
+
+        .pill-pending-icon {
+            margin-left: 10px;
+        }
+    }
+
+    .message-item-date {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .message-item-recipients {
+        padding-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .message-item-content {
+        border-top: 1px solid @gray-dark-1;
+        padding: 16px;
+        background-color: @white;
+    }
+}

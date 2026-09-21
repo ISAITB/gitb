@@ -26,6 +26,7 @@ import {FileData} from 'src/app/types/file-data.type';
 import {saveAs} from 'file-saver';
 import {ErrorService} from 'src/app/services/error.service';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     template: '',
@@ -47,6 +48,8 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
   resetStylesheet = new EventEmitter<void>()
   acceptedStylesheetTypes: string[] = ['application/xml', 'text/xml', 'text/xsl', 'application/xslt+xml' ]
   stylesheetNameToShow?: string
+  // Whether the report's file name naming expression is customised for this community (vs using the applicable default).
+  customiseFileName = false
 
   constructor(
     protected readonly conformanceService: ConformanceService,
@@ -76,6 +79,37 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
 
   handleExpanded() {
     // Do nothing by default
+  }
+
+  /**
+   * Called once report settings are loaded to determine the initial state of the "Customise?" check.
+   */
+  protected initialiseFileNameCustomisation() {
+    this.customiseFileName = this.reportSettings?.fileNameExpression != undefined
+  }
+
+  /**
+   * Called when the "Customise?" check is toggled, so that checking it initialises the now-editable
+   * field with the previously applicable default naming expression (rather than starting empty).
+   */
+  onCustomiseFileNameChange() {
+    if (this.customiseFileName && this.reportSettings != undefined && !this.textProvided(this.reportSettings.fileNameExpression)) {
+      this.reportSettings.fileNameExpression = this.reportSettings.defaultFileNameExpression
+    }
+  }
+
+  /**
+   * Called just before submitting an update, so that unchecking "Customise?" clears any previously
+   * configured override (both for the UI state and what gets sent to be persisted).
+   */
+  protected prepareFileNameExpressionForSave() {
+    if (this.reportSettings != undefined && !this.customiseFileName) {
+      this.reportSettings.fileNameExpression = undefined
+    }
+  }
+
+  fileNameExpressionOk(): boolean {
+    return !this.customiseFileName || this.textProvided(this.reportSettings?.fileNameExpression)
   }
 
   manageKeystore() {
@@ -126,10 +160,10 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
     }
   }
 
-  handlePdfPreviewResult(response: HttpResponse<ArrayBuffer>, fileName: string) {
+  handlePdfPreviewResult(response: HttpResponse<ArrayBuffer>, fallbackFileName: string) {
     if (response.headers.get("Content-Type") == "application/pdf") {
       const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
-      saveAs(blobData, fileName);
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
     } else {
       const result = JSON.parse(new TextDecoder("utf-8").decode(response.body as ArrayBuffer))
       this.errorService.popupErrorsArray(result.texts, "Service call error(s)", result.contentType)

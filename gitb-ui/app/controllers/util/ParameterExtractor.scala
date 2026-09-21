@@ -22,7 +22,7 @@ import controllers.util.ParameterNames
 import models.automation.TestServiceSearchCriteria
 import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestFlags, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
@@ -69,6 +69,10 @@ object ParameterExtractor {
       statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
       pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
       homePageType = extractHomePageType(request),
+      ownSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OWN_SESSIONS).getOrElse(""),
+      allSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALL_SESSIONS).getOrElse(""),
+      statementsListView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_LIST_VIEW).getOrElse(false),
+      messagesSplitView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MESSAGES_SPLIT_VIEW).getOrElse(false),
       0L
     )
   }
@@ -80,6 +84,10 @@ object ParameterExtractor {
       statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
       pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
       homePageType = extractHomePageType(request),
+      ownSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OWN_SESSIONS).getOrElse(""),
+      allSessions = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALL_SESSIONS).getOrElse(""),
+      statementsListView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_LIST_VIEW).getOrElse(false),
+      messagesSplitView = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MESSAGES_SPLIT_VIEW).getOrElse(false),
       0L
     )
   }
@@ -392,7 +400,8 @@ object ParameterExtractor {
     val useCustomPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_CUSTOM_PDF_REPORTS).toBoolean
     val useCustomPdfReportsWithCustomXml = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_CUSTOM_PDFS_WITH_CUSTOM_XML).toBoolean
     val customPdfService = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.CUSTOM_PDF_SERVICE)
-    CommunityReportSettings(reportType.id.toShort, signPdfReports, useCustomPdfReports, useCustomPdfReportsWithCustomXml, customPdfService.filter(StringUtils.isNotBlank), communityId)
+    val fileNameExpression = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.FILE_NAME_EXPRESSION)
+    CommunityReportSettings(reportType.id.toShort, signPdfReports, useCustomPdfReports, useCustomPdfReportsWithCustomXml, customPdfService.filter(StringUtils.isNotBlank), fileNameExpression.filter(StringUtils.isNotBlank), communityId)
   }
 
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
@@ -413,6 +422,9 @@ object ParameterExtractor {
     val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
     val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
     val allowXmlReports = requiredBodyParameter(request, ParameterNames.ALLOW_XML_REPORTS).toBoolean
+    val allowObsoleteSessionDeletion = requiredBodyParameter(request, ParameterNames.ALLOW_OBSOLETE_SESSION_DELETION).toBoolean
+    val allowAdminSenderNames = requiredBodyParameter(request, ParameterNames.ALLOW_ADMIN_SENDER_NAMES).toBoolean
+    val allowOrganisationSenderNames = requiredBodyParameter(request, ParameterNames.ALLOW_ORGANISATION_SENDER_NAMES).toBoolean
     val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -470,7 +482,8 @@ object ParameterExtractor {
       selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement,
       selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion,
+      allowAdminSenderNames, allowOrganisationSenderNames,
       CryptoUtil.generateApiKey(), None, tags, domainId
     )
   }
@@ -769,6 +782,18 @@ object ParameterExtractor {
     CommunityResources(0L, name, description, communityId)
   }
 
+  def extractTestFlagInfo(request:Request[AnyContent], testFlagId: Option[Long]): TestFlags = {
+    val name = requiredBodyParameter(request, ParameterNames.NAME)
+    val description = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+    val colour = requiredBodyParameter(request, ParameterNames.COLOUR)
+    val publicName = optionalBodyParameter(request, ParameterNames.PUBLIC_NAME)
+    val publicColour = optionalBodyParameter(request, ParameterNames.PUBLIC_COLOUR)
+    val adminOnly = requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
+    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    // displayOrder is ignored on create (auto-assigned as the next value) and untouched on update.
+    TestFlags(testFlagId.getOrElse(0L), name, description, colour, publicName, publicColour, adminOnly, 0.toShort, communityId)
+  }
+
   def extractTriggerInfo(request:Request[AnyContent], triggerId: Option[Long]): Trigger = {
     // Trigger.
     val name = requiredBodyParameter(request, ParameterNames.NAME)
@@ -892,6 +917,15 @@ object ParameterExtractor {
     "#%02x%02x%02x".formatted(color.getRed, color.getGreen, color.getBlue)
   }
 
+  private def blendColors(base: String, towards: String, ratio: Double): String = {
+    val baseColor = Color.decode(base)
+    val towardsColor = Color.decode(towards)
+    val red = Math.round(baseColor.getRed + (towardsColor.getRed - baseColor.getRed) * ratio).toInt
+    val green = Math.round(baseColor.getGreen + (towardsColor.getGreen - baseColor.getGreen) * ratio).toInt
+    val blue = Math.round(baseColor.getBlue + (towardsColor.getBlue - baseColor.getBlue) * ratio).toInt
+    "#%02x%02x%02x".formatted(red, green, blue)
+  }
+
   def extractTheme(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], themeIdToUse: Option[Long] = None): (Option[Theme], Option[ThemeFiles], Option[Result]) = {
     val files = ParameterExtractor.extractFiles(request)
     var resultToReturn: Option[Result] = None
@@ -933,6 +967,9 @@ object ParameterExtractor {
       val secondaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_COLOR)
       var secondaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_HOVER_COLOR)
       var secondaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_ACTIVE_COLOR)
+      val alertInfoBackgroundColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ALERT_INFO_BACKGROUND_COLOR)
+      val alertInfoTextColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ALERT_INFO_TEXT_COLOR)
+      var alertInfoBorderColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ALERT_INFO_BORDER_COLOR)
       if (primaryButtonColor == primaryButtonHoverColor || primaryButtonColor == primaryButtonActiveColor) {
         primaryButtonHoverColor = darkenColor(primaryButtonColor)
         primaryButtonActiveColor = primaryButtonHoverColor
@@ -940,6 +977,9 @@ object ParameterExtractor {
       if (secondaryButtonColor == secondaryButtonHoverColor || secondaryButtonColor == secondaryButtonActiveColor) {
         secondaryButtonHoverColor = darkenColor(secondaryButtonColor)
         secondaryButtonActiveColor = secondaryButtonHoverColor
+      }
+      if (alertInfoBackgroundColor == alertInfoBorderColor) {
+        alertInfoBorderColor = blendColors(alertInfoBackgroundColor, alertInfoTextColor, 0.15)
       }
       theme = Some(Theme(
         themeIdToUse.getOrElse(0L),
@@ -975,6 +1015,12 @@ object ParameterExtractor {
         ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_LABEL_COLOR),
         secondaryButtonHoverColor,
         secondaryButtonActiveColor,
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_LOGIN_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_LOGIN_LABEL_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.WELCOME_OPTION_LABEL_COLOR),
+        alertInfoBackgroundColor,
+        alertInfoTextColor,
+        alertInfoBorderColor,
       ))
       if (!theme.get.footerLogoDisplay.equals("inherit") && !theme.get.footerLogoDisplay.equals("none")) {
         resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Unexpected value for footer logo display."))
@@ -1065,6 +1111,8 @@ object ParameterExtractor {
     var authTokenPassword = optionalBodyParameter(request, ParameterNames.AUTH_TOKEN_PASSWORD)
     var authTokenUsername = optionalBodyParameter(request, ParameterNames.AUTH_TOKEN_USERNAME)
     var authTokenPasswordType = optionalShortBodyParameter(request, ParameterNames.AUTH_TOKEN_PASSWORD_TYPE).map(TestServiceAuthTokenPasswordType.apply(_).id.toShort)
+    var authHttpHeaderName = optionalBodyParameter(request, ParameterNames.AUTH_HTTP_HEADER_NAME)
+    var authHttpHeaderValue = optionalBodyParameter(request, ParameterNames.AUTH_HTTP_HEADER_VALUE)
     if (serviceId.isEmpty) {
       // This is a new test service - Ensure consistency of auth fields
       if ((authBasicUsername.nonEmpty || authBasicPassword.nonEmpty) && (authBasicUsername.isEmpty || authBasicPassword.isEmpty)) {
@@ -1075,6 +1123,10 @@ object ParameterExtractor {
         authTokenPassword = None
         authTokenUsername = None
         authTokenPasswordType = None
+      }
+      if ((authHttpHeaderName.nonEmpty || authHttpHeaderValue.nonEmpty) && (authHttpHeaderName.isEmpty || authHttpHeaderValue.isEmpty)) {
+        authHttpHeaderName = None
+        authHttpHeaderValue = None
       }
     }
     val service = TestService(
@@ -1088,8 +1140,12 @@ object ParameterExtractor {
       authTokenUsername = authTokenUsername,
       authTokenPassword = authTokenPassword,
       authTokenPasswordType = authTokenPasswordType,
+      authHttpHeaderName = authHttpHeaderName,
+      authHttpHeaderValue = authHttpHeaderValue,
       monitorHealth = optionalBooleanBodyParameter(request, ParameterNames.MONITOR).getOrElse(true),
-      parameter = parameter.id
+      parameter = parameter.id,
+      // The API key is never set from client-provided data - it is managed separately (creation generates it, updates leave it untouched).
+      apiKey = ""
     )
     TestServiceWithParameter(service, parameter)
   }
@@ -1124,6 +1180,9 @@ object ParameterExtractor {
   }
 
   def extractConformanceStatementTestSearchCriteria(request: Request[AnyContent]): ConformanceStatementTestSearchCriteria = {
+    // Not blank-filtered like the other text parameters: an empty (but present) value means "every tag
+    // unchecked", which must stay distinguishable from the parameter being absent ("no tag filtering").
+    val tagKeys = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TAGS).map(_.split(",").toSet.filter(_.nonEmpty))
     ConformanceStatementTestSearchCriteria(
       succeeded = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SUCCEEDED).getOrElse(true),
       failed = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.FAILED).getOrElse(true),
@@ -1132,7 +1191,9 @@ object ParameterExtractor {
       disabled = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.DISABLED).getOrElse(true),
       testSuiteId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.TEST_SUITE),
       testSuiteFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_SUITE).filter(x => !x.isBlank),
-      testCaseFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_CASE).filter(x => !x.isBlank)
+      testCaseFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_CASE).filter(x => !x.isBlank),
+      tagKeys = tagKeys,
+      untagged = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.UNTAGGED).getOrElse(true)
     )
   }
 

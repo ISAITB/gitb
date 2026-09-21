@@ -1,0 +1,32 @@
+@import "../../../styles/less/_common.less";
+
+.message-chain {
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    position: relative;
+
+    .message-chain-line {
+        border-left: 2px solid @gray-light;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin-top: 2px;
+        margin-left: 24px;
+        margin-bottom: 2px;
+
+        &.continues {
+            flex-grow: 1;
+            min-height: 16px;
+        }
+    }
+
+    .message-chain-item {
+        border: 1px solid @gray-light;
+        border-radius: @border-radius;
+        overflow: hidden;
+
+        app-message-item {
+            display: block;
+        }
+    }
+}

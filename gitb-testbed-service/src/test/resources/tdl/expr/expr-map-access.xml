@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-map-access" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Map key access</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <process handler="TokenGenerator" operation="uuid" output="uuid"/>
+        <!-- output attribute binds result directly to $uuid -->
+        <verify handler="ExpressionValidator" desc="uuid is non-empty">
+            <input name="expression">string-length($uuid) &gt; 0</input>
+        </verify>
+        <!-- Also test map key access via assign and string concat -->
+        <assign to="name">'Alice'</assign>
+        <assign to="greeting">'Hello ' || $name</assign>
+        <verify handler="StringValidator" desc="map-built string">
+            <input name="actual">$greeting</input>
+            <input name="expected">'Hello Alice'</input>
+        </verify>
+    </steps>
+</testcase>

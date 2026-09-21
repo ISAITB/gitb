@@ -13,18 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface TestResult {
+import {TestResultMinimal} from './test-result-minimal';
 
-    sessionId: string,
+export interface TestResult extends TestResultMinimal{
+
     systemId?: number,
     actorId?: number,
     testId?: number,
     specificationId?: number,
-    result: "SUCCESS"|"FAILURE"|"UNDEFINED",
     startTime: string,
     endTime?: string,
     tpl?: string,
-    outputMessage?: string,
-    obsolete: boolean
+    obsolete: boolean,
+    flagId?: number
 
 }

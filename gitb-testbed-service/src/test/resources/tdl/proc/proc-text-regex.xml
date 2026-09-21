@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-text-regex" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TextProcessor regex-literal quoting</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="original">'a.b*c'</assign>
+        <process handler="TextProcessor" operation="regexEscape" output="escaped">
+            <input name="input">$original</input>
+        </process>
+        <!-- The escaped pattern matches the original text literally. -->
+        <process handler="RegExpProcessor" operation="check" output="matchesOriginal">
+            <input name="input">$original</input>
+            <input name="expression">$escaped</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="literal text matches">
+            <input name="expression">$matchesOriginal = true()</input>
+        </verify>
+        <!--
+            "aXbbbc" would match the *unescaped* regular expression "a.b*c" (any char, then zero or more 'b', then 'c')
+            but must not match the escaped, literal version.
+        -->
+        <process handler="RegExpProcessor" operation="check" output="matchesWildcardExpansion">
+            <input name="input">'aXbbbc'</input>
+            <input name="expression">$escaped</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="wildcard-expanded text does not match the literal pattern">
+            <input name="expression">$matchesWildcardExpansion = false()</input>
+        </verify>
+    </steps>
+</testcase>

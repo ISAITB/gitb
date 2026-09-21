@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component} from '@angular/core';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -28,7 +28,7 @@ import {Constants} from '../../../../../common/constants';
     styles: [],
     standalone: false
 })
-export class CreateDomainComponent extends BaseComponent implements AfterViewInit {
+export class CreateDomainComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   domain: Partial<Domain> = {
     tags: []
@@ -41,6 +41,10 @@ export class CreateDomainComponent extends BaseComponent implements AfterViewIni
     private readonly popupService: PopupService,
     private readonly routingService: RoutingService
   ) { super() }
+
+  ngOnInit(): void {
+    this.routingService.domainsBreadcrumbs()
+  }
 
   ngAfterViewInit(): void {
     this.dataService.focus('shortName')

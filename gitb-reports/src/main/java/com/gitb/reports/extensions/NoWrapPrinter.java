@@ -15,6 +15,7 @@
 
 package com.gitb.reports.extensions;
 
+import freemarker.template.SimpleNumber;
 import freemarker.template.TemplateMethodModelEx;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -35,6 +36,10 @@ public class NoWrapPrinter implements TemplateMethodModelEx {
                 int maxToProcess = 140;
                 if (max instanceof Number maxNumber) {
                     maxToProcess = maxNumber.intValue();
+                } else if (max instanceof String maxString) {
+                    maxToProcess = Integer.parseInt(maxString);
+                } else if (max instanceof SimpleNumber maxSimple) {
+                    maxToProcess = maxSimple.getAsNumber().intValue();
                 }
                 maxToProcess -= 3;
                 if (textToProcess.length() > maxToProcess) {

@@ -42,6 +42,7 @@
                     <xsd:element name="selfRegistrationSettings" type="SelfRegistrationSettings" minOccurs="0"/>
                     <xsd:element name="conformanceCertificateSettings" type="ConformanceCertificateSettings" minOccurs="0"/>
                     <xsd:element name="conformanceOverviewCertificateSettings" type="ConformanceOverviewCertificateSettings" minOccurs="0"/>
+                    <xsd:element name="conformanceStatementDocumentationReportSettings" type="ConformanceStatementDocumentationReportSettings" minOccurs="0"/>
                     <xsd:element name="signatureSettings" type="SignatureSettings" minOccurs="0"/>
                     <xsd:element name="organisationProperties" type="OrganisationProperties" minOccurs="0"/>
                     <xsd:element name="systemProperties" type="SystemProperties" minOccurs="0"/>
@@ -50,6 +51,7 @@
                     <xsd:element name="legalNotices" type="LegalNotices" minOccurs="0"/>
                     <xsd:element name="errorTemplates" type="ErrorTemplates" minOccurs="0"/>
                     <xsd:element name="triggers" type="Triggers" minOccurs="0"/>
+                    <xsd:element name="testFlags" type="TestFlags" minOccurs="0"/>
                     <xsd:element name="resources" type="CommunityResources" minOccurs="0"/>
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
@@ -70,6 +72,9 @@
                 <xsd:attribute name="allowUserManagement" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="interactionNotification" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="allowXmlReports" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="allowObsoleteSessionDeletion" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="allowAdminSenderNames" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="allowOrganisationSenderNames" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -87,6 +92,7 @@
     <xsd:complexType name="CommunityReportSetting">
         <xsd:sequence>
             <xsd:element name="customPdfService" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="fileNameExpression" type="xsd:string" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="reportType" type="ReportType" use="required"/>
         <xsd:attribute name="signPdfs" type="xsd:boolean" default="false"/>
@@ -101,6 +107,10 @@
             <xsd:enumeration value="TEST_STEP"/>
             <xsd:enumeration value="CONFORMANCE_OVERVIEW_CERTIFICATE"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_CERTIFICATE"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_DOCUMENTATION"/>
+            <xsd:enumeration value="TEST_SUITE_DOCUMENTATION"/>
+            <xsd:enumeration value="TEST_CASE_DOCUMENTATION"/>
+            <xsd:enumeration value="TEST_DATA_ARCHIVE"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="ConformanceCertificateSettings">
@@ -134,6 +144,15 @@
         <xsd:attribute name="enableDomainLevel" type="xsd:boolean" default="false"/>
         <xsd:attribute name="enableSpecificationGroupLevel" type="xsd:boolean" default="false"/>
         <xsd:attribute name="enableSpecificationLevel" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceStatementDocumentationReportSettings">
+        <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addOverview" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addStatementDocumentation" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addTestCaseListing" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addTestSuiteDocumentation" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addTestCaseDocumentation" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
     </xsd:complexType>
     <xsd:complexType name="ConformanceOverviewCertificateMessages">
         <xsd:sequence>
@@ -306,6 +325,26 @@
         <xsd:sequence>
             <xsd:element name="trigger" type="Trigger" maxOccurs="unbounded"/>
         </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TestFlags">
+        <xsd:sequence>
+            <xsd:element name="testFlag" type="TestFlag" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TestFlag">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="colour" type="xsd:string"/>
+                    <xsd:element name="publicName" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="publicColour" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="adminOnly" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="displayOrder" type="xsd:int"/>
+            </xsd:extension>
+        </xsd:complexContent>
     </xsd:complexType>
     <xsd:complexType name="CommunityResources">
         <xsd:sequence>
@@ -561,6 +600,9 @@
                     <xsd:element name="authTokenUsername" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="authTokenPassword" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="authTokenPasswordType" type="TestServiceAuthTokenPasswordType" minOccurs="0"/>
+                    <xsd:element name="authHeaderName" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="authHeaderValue" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="serviceType" type="TestServiceType" use="required"/>
                 <xsd:attribute name="apiType" type="TestServiceApiType" use="required"/>
@@ -600,6 +642,7 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="documentation" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="actors" type="Actors" minOccurs="0"/>
@@ -645,6 +688,7 @@
                     <xsd:element name="actorId" type="xsd:string"/>
                     <xsd:element name="name" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="documentation" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="endpoints" type="Endpoints" minOccurs="0"/>
@@ -763,10 +807,14 @@
     </xsd:complexType>
     <xsd:complexType name="UserPreferences">
         <xsd:sequence>
-            <xsd:element name="menuCollapsed" type="xsd:boolean" default="true"/>
-            <xsd:element name="statementsCollapsed" type="xsd:boolean" default="false"/>
-            <xsd:element name="pageSize" type="xsd:integer" default="10"/>
-            <xsd:element name="homePageType" type="HomePageType" default="LANDING_PAGE"/>
+            <xsd:element name="menuCollapsed" type="xsd:boolean" default="true" minOccurs="0"/>
+            <xsd:element name="statementsCollapsed" type="xsd:boolean" default="false" minOccurs="0"/>
+            <xsd:element name="pageSize" type="xsd:integer" default="10" minOccurs="0"/>
+            <xsd:element name="homePageType" type="HomePageType" default="LANDING_PAGE" minOccurs="0"/>
+            <xsd:element name="ownSessions" type="xsd:string" default="" minOccurs="0"/>
+            <xsd:element name="allSessions" type="xsd:string" default="" minOccurs="0"/>
+            <xsd:element name="statementsListView" type="xsd:boolean" default="false" minOccurs="0"/>
+            <xsd:element name="messagesSplitView" type="xsd:boolean" default="false" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
     <xsd:simpleType name="HomePageType">
@@ -799,6 +847,7 @@
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="GITB"/>
             <xsd:enumeration value="JSON"/>
+            <xsd:enumeration value="GITB_REST"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:simpleType name="TriggerFireExpressionType">
@@ -972,6 +1021,12 @@
                     <xsd:element name="secondaryButtonLabelColor" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="secondaryButtonHoverColor" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="secondaryButtonActiveColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="welcomeLoginColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="welcomeLoginLabelColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="welcomeOptionLabelColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="alertInfoBackgroundColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="alertInfoTextColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="alertInfoBorderColor" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="active" type="xsd:boolean" default="false"/>
             </xsd:extension>

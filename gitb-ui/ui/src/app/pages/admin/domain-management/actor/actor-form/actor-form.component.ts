@@ -26,6 +26,7 @@ import {Actor} from 'src/app/types/actor';
 export class ActorFormComponent {
 
   @Input() actor!: Partial<Actor>
+  @Input() communityId?: number
 
   constructor(
     public readonly dataService: DataService

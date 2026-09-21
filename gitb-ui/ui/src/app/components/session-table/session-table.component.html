@@ -1,4 +1,4 @@
-<div #tableContainer class="table-container rounded">
+﻿<div #tableContainer class="table-container rounded">
     <table [attr.id]="sessionTableId" class="table table-directive expandable-table">
         @if (tableCaptionVisible) {
             <caption>{{tableCaption}}</caption>
@@ -58,11 +58,11 @@
                     </td>
                 </tr>
             }
-            @for (row of data; let i = $index; track row.session) {
+            @for (row of data; let i = $index; track row.trackKey) {
                 <tr table-row-directive #tableRowComponent
                     class="table-row-directive expandable-table-row-collapsed"
                     [class.disable-events]="contentRefreshing"
-                    [ngClass]="rowClass(row)"
+                    [ngClass]="row.rowClass"
                     (click)="onExpand(row)"
                     [data]="row"
                     [columns]="columns"
@@ -97,10 +97,12 @@
 
                     [checkboxEnabled]="checkboxEnabled"
                     (onCheck)="handleCheck($event)"
-                    [expandableRowProperty]="'expanded'"></tr>
+                    [expandableRowProperty]="'expanded'"
+                    [expandPendingProperty]="'expansionPending'"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                        <div [ngbCollapse]="!row.expanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
+                        <div [ngbCollapse]="!row.expanded" [animation]="rowsAnimated" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
+                          @if (row.expanded || row.diagramLoaded || row.expansionPending) {
                             <div class="p-2">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
@@ -137,7 +139,24 @@
                                                 </div>
                                             }
                                         }
-                                    @if (showNavigationControls) {
+                                        <!-- View comments -->
+                                        @if (!supportRefresh) {
+                                            <div class="position-relative">
+                                                <button type="button" class="btn btn-secondary position-relative" [disabled]="row.commentsPending" (click)="viewComments(row)">
+                                                    <span class="mini-tab label-icon"><i [class]="row.commentsPending?Constants.BUTTON_ICON.PENDING_SMALL:Constants.BUTTON_ICON.COMMENT"></i></span>View comments
+                                                    <span [class.badgeComments]="row.hasComments" [class.hidden]="!row.hasComments"
+                                                        class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                                                </span>
+                                                </button>
+                                            </div>
+                                            <app-session-flag-control #sessionFlagControl
+                                                [communityId]="row.communityId"
+                                                [currentFlagId]="row.flagId"
+                                                [pending]="flagPending[row.session]"
+                                                (flagChanged)="onFlagChanged(row, $event)">
+                                            </app-session-flag-control>
+                                        }
+                                        @if (showNavigationControls) {
                                             <!-- Copy link -->
                                             @if (copyForOtherRoleOption) {
                                                 <div class="btn-group" ngbDropdown>
@@ -158,52 +177,64 @@
                                             }
                                             <!-- View -->
                                             <app-navigation-controls [config]="toNavigationConfig(row)"></app-navigation-controls>
-                                    }
+                                        }
                                     </div>
                                 </div>
                                 <div #sessionContainer class="test-case-session">
                                     <div class="session-execution-info">
                                         <div class="session-table-title">
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Test suite</div>
-                                                <div class="session-table-title-value">{{row.testSuite}}</div>
+                                            <div class="session-table-title-parts-clip">
+                                                <div class="session-table-title-parts">
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Test suite</div>
+                                                        <div class="session-table-title-value">{{row.testSuite}}</div>
+                                                    </div>
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Test case</div>
+                                                        <div class="session-table-title-value">{{row.testCase}}</div>
+                                                    </div>
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Session</div>
+                                                        <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Test case</div>
-                                                <div class="session-table-title-value">{{row.testCase}}</div>
-                                            </div>
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Session</div>
-                                                <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
+                                            <div class="session-table-extra-info">
+                                                @if (row.flagId != undefined) {
+                                                    @let flag = dataService.getTestFlag(row.communityId, row.flagId);
+                                                    @if (flag) {
+                                                        <app-tag [icon]="true" [label]="Constants.BUTTON_ICON.SNAPSHOT" [iconColour]="flag.colour" [value]="flag.name"></app-tag>
+                                                    }
+                                                }
+                                                <app-session-info-panel #sessionInfoPanel [row]="row"></app-session-info-panel>
                                             </div>
                                         </div>
                                     </div>
-                                    <div [ngbCollapse]="diagramCollapsed[row.session]" [animation]="true" (hidden)="toggleDiagramCollapsedFinished(row.session, true)" (shown)="toggleDiagramCollapsedFinished(row.session, false)">
-                                        <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
-                                            @if (!row.hideLoadingIcon) {
-                                                <div class="p-3">
-                                                    <app-pending-block></app-pending-block>
-                                                </div>
-                                            }
-                                            <div [ngbCollapse]="!row.diagramExpanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
-                                                @if (row.expanded || row.diagramLoaded) {
-                                                    <div>
-                                                        <app-test-session-presentation
-                                                            [session]="row"
-                                                            (ready)="diagramReady($event)">
-                                                        </app-test-session-presentation>
-                                                    </div>
-                                                }
-                                            </div>
-                                        </div>
+                                    <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
+                                        <app-test-session-presentation #testSessionPresentationComponent
+                                            [session]="row"
+                                            (ready)="diagramReady($event)">
+                                        </app-test-session-presentation>
                                     </div>
                                 </div>
                             </div>
+                          }
                         </div>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
-    <app-paging-controls #pagingControls (navigation)="doPageNavigation($event)" [refreshing]="contentRefreshing"></app-paging-controls>
+    <app-paging-controls #pagingControls (navigation)="doPageNavigation($event)" [refreshing]="contentRefreshing">
+        @if (columnChooserOptions && columnChooserOptions.length > 0) {
+            <app-checkbox-option-panel #columnChooserPanel pagingExtra
+                label="Columns"
+                [labelIcon]="Constants.BUTTON_ICON.COLUMNS"
+                [smallButton]="true"
+                [options]="columnChooserOptions"
+                (updated)="columnChooserUpdated.emit($event)"
+                (closed)="columnChooserClosed.emit()">
+            </app-checkbox-option-panel>
+        }
+    </app-paging-controls>
 </div>

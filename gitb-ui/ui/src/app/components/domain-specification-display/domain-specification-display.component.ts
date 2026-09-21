@@ -22,6 +22,7 @@ import {DomainSpecification} from 'src/app/types/domain-specification';
 import {SpecificationGroup} from 'src/app/types/specification-group';
 import {DomainSpecificationDisplayComponentApi} from './domain-specification-display-component-api';
 import {NgbDropdown} from '@ng-bootstrap/ng-bootstrap';
+import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
     selector: 'app-domain-specification-display',
@@ -37,7 +38,6 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
   @Input() last = false
   @Input() dragOngoing = false
   @Input() dragEnabled = false
-  @Output() selectSpec = new EventEmitter<DomainSpecification>()
   @Output() removeSpec = new EventEmitter<[number, number]>()
   @Output() moveSpec = new EventEmitter<[number, number|undefined, number]>()
   @Output() copySpec = new EventEmitter<[number, number|undefined, number]>()
@@ -96,22 +96,31 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
     }
   }
 
-  createOption() {
-    this.routingService.toCreateSpecification(this.spec.domain, this.spec.id)
+  createOptionTarget(): NavigationTarget {
+    return this.routingService.linkToCreateSpecification(this.spec.domain, this.spec.id)
   }
 
-  editGroup() {
-    this.routingService.toSpecificationGroup(this.spec.domain, this.spec.id)
+  editGroupTarget(): NavigationTarget {
+    return this.routingService.linkToSpecificationGroup(this.spec.domain, this.spec.id)
+  }
+
+  /**
+   * A plain specification, or an option within an expanded group (i.e. not the group header
+   * itself, which instead expands/collapses on click), navigates to its own details page - unless
+   * order management (drag-and-drop reordering, see dragEnabled) is active, in which case nothing
+   * in this component is a link.
+   */
+  specTarget(): NavigationTarget|undefined {
+    if (this.dragEnabled || this.spec.group) {
+      return undefined
+    }
+    return this.routingService.linkToSpecification(this.spec.domain, this.spec.id)
   }
 
   isPending():boolean {
     return (this.spec.movePending != undefined && this.spec.movePending)
       || (this.spec.removePending != undefined && this.spec.removePending)
       || (this.spec.copyPending != undefined && this.spec.copyPending)
-  }
-
-  doSelect() {
-    this.propagateSelect(this.spec)
   }
 
   propagateRemove(event: [number, number]) {
@@ -124,12 +133,6 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
 
   propagateCopy(event: [number, number|undefined, number]) {
     this.copySpec.emit(event)
-  }
-
-  propagateSelect(event: DomainSpecification) {
-    if (!this.dragEnabled) {
-      this.selectSpec.emit(event)
-    }
   }
 
   dropSpecification(event: CdkDragDrop<any>) {

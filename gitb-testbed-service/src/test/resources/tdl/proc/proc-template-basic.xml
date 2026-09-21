@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-template-basic" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TemplateProcessor basic substitution</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="greeting">'World'</assign>
+        <!-- GITB syntax: ${varName} references the test session scope variable -->
+        <process handler="TemplateProcessor" output="result">
+            <input name="template">'Hello ${greeting}!'</input>
+        </process>
+        <verify handler="StringValidator" desc="template output">
+            <input name="actual">$result</input>
+            <input name="expected">'Hello World!'</input>
+        </verify>
+    </steps>
+</testcase>

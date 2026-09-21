@@ -46,18 +46,26 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
     allowCommunityView: false,
     allowUserManagement: true,
     allowXmlReports: true,
+    allowObsoleteSessionDeletion: true,
+    allowAdminSenderNames: false,
+    allowOrganisationSenderNames: false,
     interactionNotification: false,
     preferences: {
       menuCollapsed: true,
       statementsCollapsed: false,
       pageSize: Constants.TABLE_PAGE_SIZE,
-      homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE
+      homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE,
+      ownSessions: '',
+      allSessions: '',
+      statementsListView: false,
+      messagesSplitView: false,
     },
     tags: []
   }
   domains: Domain[] = []
   savePending = false
   loaded = false
+  communityFormValid = true
   validation = new ValidationState()
 
   constructor(
@@ -69,6 +77,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
+    this.routingService.communitiesBreadcrumbs()
     this.conformanceService.getDomains()
     .subscribe((data) => {
       this.domains = data
@@ -78,7 +87,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   }
 
   saveDisabled() {
-    return this.savePending || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+    return this.savePending || !this.communityFormValid || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled ||
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
@@ -122,7 +131,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
           this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput,
           this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
           this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
-          this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!, this.community.allowUserManagement!, this.community.allowXmlReports!,
+          this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!, this.community.allowUserManagement!, this.community.allowXmlReports!, this.community.allowObsoleteSessionDeletion!,
+          this.community.allowAdminSenderNames!, this.community.allowOrganisationSenderNames!,
           this.community.domain?.id, this.community.preferences!, this.dataService.serializeTags(this.community.tags))
           .subscribe(() => {
             this.cancelCreateCommunity()

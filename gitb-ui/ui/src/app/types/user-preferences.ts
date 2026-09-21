@@ -19,5 +19,9 @@ export interface UserPreferences {
   statementsCollapsed: boolean;
   pageSize: number;
   homePageType: number;
+  ownSessions: string;
+  allSessions: string;
+  statementsListView: boolean;
+  messagesSplitView: boolean;
 
 }

@@ -15,10 +15,6 @@
 
 package com.gitb.engine;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gitb.PropertyConstants;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
@@ -37,6 +33,11 @@ import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -89,7 +90,8 @@ public class TestbedService {
                         configData.getOrganisationConfiguration(),
                         configData.getSystemConfiguration(),
                         configData.getTestServiceConfigurations(),
-                        inputs
+                        inputs,
+						configData.getSettings()
                 ), ActorRef.noSender());
 	}
 
@@ -262,7 +264,7 @@ public class TestbedService {
 			repoResult = HealthCheckResult.failure("repo", serialiseThrowable(e));
         }
 		// Create result.
-		ObjectMapper mapper = new ObjectMapper();
+		ObjectMapper mapper = JsonMapper.shared();
 		ObjectNode root = mapper.createObjectNode();
 		ArrayNode resultArray = mapper.createArrayNode();
 		resultArray.add(mapper.valueToTree(tbsResult));
@@ -272,10 +274,27 @@ public class TestbedService {
 		root.put("hmacHash", HmacUtils.getHashedKey());
         try {
             return mapper.writeValueAsString(root);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Unexpected error while serialising health check status", e);
         }
     }
+
+	/**
+	 * Given a "|"-delimited list of test session IDs known to gitb-ui as active, determine which of them
+	 * are unknown to this test engine (i.e. dead, typically following a test engine restart).
+	 *
+	 * @param sessionIds The "|"-delimited session IDs to check.
+	 * @return The "|"-delimited subset of session IDs not found in the engine's in-memory session map.
+	 */
+	public static String deadSessions(String sessionIds) {
+		if (sessionIds == null || sessionIds.isEmpty()) {
+			return "";
+		}
+		SessionManager sessionManager = SessionManager.getInstance();
+		return Arrays.stream(sessionIds.split("\\|"))
+				.filter(sessionManager::notExists)
+				.collect(Collectors.joining("|"));
+	}
 
 	private static String serialiseThrowable(Throwable error) {
 		var messages = new ArrayList<String>();

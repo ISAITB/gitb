@@ -68,6 +68,8 @@
                         [class.selected]="row._selected"
                         (click)="select(i)"
                         [data]="row"
+                        [target]="rowTarget && rowTarget(row)"
+                        (navigating)="propagateNavigating($event)"
                         [columns]="columns"
                         [classes]="classes"
                         [actionVisible]="actionVisible"

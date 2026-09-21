@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-pdf-profiles-case" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>PdfValidator profile validation - case-insensitive profile identifier</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <verify handler="PdfValidator" desc="lowercase profile identifier still matches PDFA_1B">
+            <input name="content">$content</input>
+            <input name="profiles">'pdfa_1b'</input>
+        </verify>
+    </steps>
+</testcase>

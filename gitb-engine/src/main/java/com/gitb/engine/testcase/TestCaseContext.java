@@ -15,6 +15,7 @@
 
 package com.gitb.engine.testcase;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.*;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.*;
@@ -32,6 +33,7 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.remote.ClientConfiguration;
 import com.gitb.remote.messaging.RemoteMessagingModuleClient;
+import com.gitb.remote.messaging.RemoteMessagingModuleRestClient;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
 import com.gitb.tr.TestResultType;
@@ -51,7 +53,6 @@ import org.slf4j.MarkerFactory;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -182,6 +183,12 @@ public class TestCaseContext {
 	private TestResultType forcedFinalResult = null;
 	private Path dataFolder;
     private boolean requiresPersistentReports = false;
+	private final Set<String> registeredCallbackApiKeys = new HashSet<>();
+	/**
+	 * The API key of the SUT system under test, as set on the SYSTEM map configuration. Used to correlate
+	 * incoming asynchronous calls (e.g. HTTP/SOAP callbacks) to this test session.
+	 */
+	private String systemApiKey;
 
     public TestCaseContext(TestCase testCase, String testCaseIdentifier, String sessionId) {
         this.currentState = TestCaseStateEnum.IDLE;
@@ -295,7 +302,7 @@ public class TestCaseContext {
      * @param configurations SUT configurations
      * @return Simulated actor configurations for each (actorId, endpointName) tuple
      */
-    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration, List<ActorConfiguration> testServiceConfigurations){
+    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration, List<ActorConfiguration> testServiceConfigurations) {
 		addSpecialConfiguration(DOMAIN_MAP, domainConfiguration);
 		addSpecialConfiguration(ORGANISATION_MAP, organisationConfiguration);
 		addSpecialConfiguration(SYSTEM_MAP, systemConfiguration);
@@ -306,7 +313,7 @@ public class TestCaseContext {
 		    sutConfigurations.put(actorIdEndpointTupleKey, actorConfiguration);
 		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<>());
 	    }
-        // Traverse test case stes to determine information for the test execution,
+        // Traverse test case stes to determine information for the test execution
         var transactionInfoVisitor = new TransactionInfoVisitor();
         var persistentReportVisitor = new PersistentReportVisitor();
 		var expressionHandlerStack = new LinkedList<StaticExpressionHandler>();
@@ -314,7 +321,8 @@ public class TestCaseContext {
         traverseSteps(testCase.getSteps(), new StepTraversalState(null, this, new LinkedList<>(), expressionHandlerStack, testCase), List.of(transactionInfoVisitor, persistentReportVisitor));
         requiresPersistentReports = persistentReportVisitor.isPersistentReportsNeeded();
         List<SUTConfiguration> sutConfigurations = configureDynamicActorProperties(testCase, configurations, transactionInfoVisitor.getTransactions());
-		bindActorConfigurationsToScope();
+		var actorConfigurationMap = bindActorConfigurationsToScope();
+		addSpecialConfiguration(ACTOR_MAP, actorConfigurationMap);
         return sutConfigurations;
     }
 
@@ -353,7 +361,7 @@ public class TestCaseContext {
 				if (input != null) {
 					if (input.getName() == null) {
 						logger.warn("Session [{}] received input with no name", getSessionId());
-					} else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP)) {
+					} else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP) || input.getName().equals(ACTOR_MAP)) {
 						logger.warn("Session [{}] received input with reserved name [{}]", getSessionId(), input.getName());
 					} else {
 						// Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables
@@ -376,19 +384,45 @@ public class TestCaseContext {
                 String testKey = serviceConfiguration.getActor();
                 if (testKey != null && !serviceConfiguration.getConfig().isEmpty()) {
                     Properties authenticationProperties = new Properties();
-                    serviceConfiguration.getConfig().stream().filter(c -> c.getName() != null && c.getValue() != null).forEach(config -> authenticationProperties.setProperty(config.getName(), config.getValue()));
-                    registeredTestServices.put(testKey, new TestServiceInformation(authenticationProperties));
+                    serviceConfiguration.getConfig().stream().filter(c -> c.getName() != null && c.getValue() != null && !PropertyConstants.TEST_SERVICE_API_TYPE.equals(c.getName())).forEach(config -> authenticationProperties.setProperty(config.getName(), config.getValue()));
+					HandlerApiType apiType = serviceConfiguration.getConfig().stream()
+							.filter(c -> PropertyConstants.TEST_SERVICE_API_TYPE.equals(c.getName()))
+							.findAny()
+							.map(c -> {
+								if (TEST_SERVICE_API_TYPE_REST.equals(c.getValue())) {
+									return HandlerApiType.REST;
+								} else if (TEST_SERVICE_API_TYPE_SOAP.equals(c.getValue())) {
+									return HandlerApiType.SOAP;
+								} else {
+									throw new IllegalStateException("Unexpected test service API type [%s]".formatted(c.getValue()));
+								}
+							})
+							.orElse(HandlerApiType.SOAP);
+					// Record callback handling settings if needed
+					if (CallbackAuthorizer.getInstance().areCallbackApiKeysEnabled()) {
+						serviceConfiguration.getConfig().stream()
+								.filter(c -> PropertyConstants.TEST_SERVICE_API_KEY.equals(c.getName()) && c.getValue() != null)
+								.findAny()
+								.ifPresent(c -> registeredCallbackApiKeys.add(c.getValue()));
+					}
+                    registeredTestServices.put(testKey, new TestServiceInformation(authenticationProperties, apiType));
                 }
             }
         }
     }
 
-	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration domainConfiguration) {
-		if (domainConfiguration != null) {
-			DataTypeFactory factory = DataTypeFactory.getInstance();
+	private void addSpecialConfiguration(String mapVariableName, MapType configurationMap) {
+		if (configurationMap != null) {
 			TestCaseScope.ScopedVariable variable = scope.createVariable(mapVariableName);
+			variable.setValue(configurationMap);
+		}
+	}
+
+	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration configurationData) {
+		if (configurationData != null) {
+			DataTypeFactory factory = DataTypeFactory.getInstance();
 			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
-			for (Configuration configuration : domainConfiguration.getConfig()) {
+			for (Configuration configuration : configurationData.getConfig()) {
 				DataType configurationValue;
 				if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
 					// Data URL
@@ -401,9 +435,19 @@ public class TestCaseContext {
 					configurationValue.setValue(configuration.getValue());
 				}
 				map.addItem(configuration.getName(), configurationValue);
+				if (SYSTEM_MAP.equals(mapVariableName) && SYSTEM_MAP_API_KEY.equals(configuration.getName())) {
+					systemApiKey = configuration.getValue();
+				}
 			}
-			variable.setValue(map);
+			addSpecialConfiguration(mapVariableName, map);
 		}
+	}
+
+	/**
+	 * @return The API key of the SUT system under test for this session, or {@code null} if not (yet) configured.
+	 */
+	public String getSystemApiKey() {
+		return systemApiKey;
 	}
 
 	private void setSUTConfigurationParameter(List<SUTConfiguration> sutConfigurations, String id, String endpoint, Parameter parameter) {
@@ -435,16 +479,13 @@ public class TestCaseContext {
 		}
 	}
 
-	private void bindActorConfigurationsToScope() {
-
+	private MapType bindActorConfigurationsToScope() {
 		DataTypeFactory factory = DataTypeFactory.getInstance();
-
-		for(ActorConfiguration actorConfiguration : sutConfigurations.values()) {
+		MapType map = null;
+		for (ActorConfiguration actorConfiguration : sutConfigurations.values()) {
 			TestCaseScope.ScopedVariable variable = scope.createVariable(actorConfiguration.getActor());
-
-			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
-
-			for(Configuration configuration : actorConfiguration.getConfig()) {
+			map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
+			for (Configuration configuration : actorConfiguration.getConfig()) {
 				DataType configurationValue;
 				if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
 					// Data URL
@@ -458,14 +499,11 @@ public class TestCaseContext {
 				}
 				map.addItem(configuration.getName(), configurationValue);
 			}
-
 			List<ActorConfiguration> actorSUTConfigurations = sutHandlerConfigurations.get(new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()}));
-
 			if (actorSUTConfigurations != null) {
-				for(ActorConfiguration sutConfiguration : actorSUTConfigurations) {
+				for (ActorConfiguration sutConfiguration : actorSUTConfigurations) {
 					if (sutConfiguration != null) {
 						MapType sutConfigurationMap = (MapType) factory.create(DataType.MAP_DATA_TYPE);
-
 						for(Configuration configuration : sutConfiguration.getConfig()) {
 							DataType configurationValue;
 							if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
@@ -480,14 +518,13 @@ public class TestCaseContext {
 							}
 							sutConfigurationMap.addItem(configuration.getName(), configurationValue);
 						}
-
 						map.addItem(sutConfiguration.getActor(), sutConfigurationMap);
 					}
 				}
 			}
-
 			variable.setValue(map);
 		}
+		return map;
 	}
 
 	private TestRoleEnumeration actorRole(TestRole role) {
@@ -741,20 +778,31 @@ public class TestCaseContext {
 		}
 	}
 
-    public Properties prepareRemoteServiceCallProperties(String serviceTestKey, Properties stepProperties) {
-        Properties propertiesToUse = new Properties();
-        if (stepProperties != null) {
-            propertiesToUse.putAll(stepProperties);
-        }
-        if (serviceTestKey != null) {
-            TestServiceInformation serviceInfo = registeredTestServices.get(serviceTestKey);
-            if (serviceInfo != null) {
-                // Use putIfAbsent, as the configuration coming from the test case supersedes the registered services.
-                serviceInfo.authenticationProperties().forEach(propertiesToUse::putIfAbsent);
-            }
-        }
-        return propertiesToUse;
-    }
+	public TestServiceInformation getRegisteredTestServiceInformation(String serviceTestKey) {
+		if (serviceTestKey == null) {
+			return null;
+		}
+		return registeredTestServices.get(serviceTestKey);
+	}
+
+	public Properties prepareRemoteServiceCallProperties(Properties stepProperties, TestServiceInformation testService) {
+		Properties propertiesToUse = new Properties();
+		if (stepProperties != null) {
+			propertiesToUse.putAll(stepProperties);
+		}
+		if (testService != null) {
+			// Use putIfAbsent, as the configuration coming from the test case supersedes the registered services.
+			testService.authenticationProperties().forEach(propertiesToUse::putIfAbsent);
+		}
+		return propertiesToUse;
+	}
+
+	public boolean isApiKeyExpectedForTestSession(String apiKey) {
+		if (apiKey != null) {
+			return registeredCallbackApiKeys.contains(apiKey);
+		}
+		return false;
+	}
 
 	private static class MessagingContextBuilder {
 		private final TransactionInfo transactionInfo;
@@ -792,23 +840,42 @@ public class TestCaseContext {
 
 		private IMessagingHandler getRemoteMessagingHandler(TransactionInfo transactionInfo, String sessionId) {
             TestCaseContext context = SessionManager.getInstance().getContext(sessionId);
+			TestServiceInformation serviceInformation = context.getRegisteredTestServiceInformation(transactionInfo.handlerDomainIdentifier());
+			HandlerApiType apiType = HandlerUtils.determineHandlerApiType(serviceInformation, transactionInfo.handlerApiType());
 			try {
-                return new RemoteMessagingModuleClient(
-                        new URI(transactionInfo.handler()).toURL(),
-                        context.prepareRemoteServiceCallProperties(transactionInfo.handlerDomainIdentifier(), transactionInfo.properties()),
-                        sessionId,
-                        context.getTestCaseIdentifier(),
-                        () -> {
-                            var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
-                            Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
-                            return new ClientConfiguration(handlerTimeout);
-                        },
-                        (completedTestSession) -> CallbackManager.getInstance().sessionEnded(sessionId)
-                );
+				switch (apiType) {
+					case REST -> {
+						return new RemoteMessagingModuleRestClient(
+								URI.create(transactionInfo.handler()),
+								context.prepareRemoteServiceCallProperties(transactionInfo.properties(), serviceInformation),
+								sessionId,
+								context.getTestCaseIdentifier(),
+								() -> {
+									var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
+									Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
+									return new ClientConfiguration(handlerTimeout);
+								},
+								(completedTestSession) -> CallbackManager.getInstance().sessionEnded(sessionId)
+						);
+					}
+					case SOAP -> {
+						return new RemoteMessagingModuleClient(
+								URI.create(transactionInfo.handler()).toURL(),
+								context.prepareRemoteServiceCallProperties(transactionInfo.properties(), serviceInformation),
+								sessionId,
+								context.getTestCaseIdentifier(),
+								() -> {
+									var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
+									Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
+									return new ClientConfiguration(handlerTimeout);
+								},
+								(completedTestSession) -> CallbackManager.getInstance().sessionEnded(sessionId)
+						);
+					}
+					default -> throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Unsupported handler API type [%s]".formatted(apiType)));
+				}
 			} catch (MalformedURLException e) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+transactionInfo.handler()+"]"), e);
-			} catch (URISyntaxException e) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+transactionInfo.handler()+"]"), e);
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote messaging module found with an malformed URL [%s]".formatted(transactionInfo.handler())), e);
 			}
 		}
 

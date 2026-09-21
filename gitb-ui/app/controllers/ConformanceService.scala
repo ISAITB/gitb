@@ -21,7 +21,7 @@ import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.ConformanceService.{KeystoreInfo, TestSuiteUploadInfo}
 import controllers.util._
-import exceptions.{ErrorCodes, NotFoundException}
+import exceptions.{ErrorCodes, NotFoundException, UnacceptableUriException}
 import managers._
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
 import models.Enums.{Result => _, _}
@@ -87,7 +87,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
                                     authorizationManager: AuthorizationManager,
                                     communityLabelManager: CommunityLabelManager,
                                     actorSystem: ActorSystem,
-                                    repositoryUtils: RepositoryUtils)
+                                    repositoryUtils: RepositoryUtils,
+                                    remoteArchiveFetcher: RemoteArchiveFetcher)
                                    (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
@@ -241,7 +242,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getSpecification(specificationId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecification(request, specificationId).flatMap { _ =>
-      specificationManager.getSpecificationById(specificationId).map { result =>
+      for {
+        result <- specificationManager.getSpecificationById(specificationId)
+        documentation <- specificationManager.getSpecificationDocumentation(specificationId)
+      } yield {
         val successBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = false)
         val otherBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true, forReport = false)
         val failureBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.FAILURE.toString, exactMatch = true, forReport = false)
@@ -258,7 +262,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
           failureBadgeForReport.map(nameForBadge(_, "failure.report")),
           otherBadgeForReport.map(nameForBadge(_, "other.report"))
         )
-        val json = JsonUtil.jsSpecification(result, withApiKeys = true, Some((badgeStatus, badgeStatusForReport))).toString()
+        val json = JsonUtil.jsSpecification(result, withApiKeys = true, Some((badgeStatus, badgeStatusForReport)), documentation).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -281,7 +285,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getActor(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageActor(request, actorId).flatMap { _ =>
       val specificationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SPEC).toLong
-      actorManager.getActorsWithSpecificationId(Some(List(actorId)), Some(List(specificationId))).map { results =>
+      for {
+        results <- actorManager.getActorsWithSpecificationId(Some(List(actorId)), Some(List(specificationId)))
+        documentation <- actorManager.getActorDocumentation(actorId)
+      } yield {
         val result = results.headOption
         if (result.isDefined) {
           val successBadge = repositoryUtils.getConformanceBadge(specificationId, Some(result.get.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = false)
@@ -300,7 +307,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
             failureBadgeForReport.map(nameForBadge(_, "failure.report")),
             otherBadgeForReport.map(nameForBadge(_, "other.report"))
           )
-          val json = JsonUtil.jsActor(result.get, Some((badgeStatus, badgeStatusForReport))).toString()
+          val json = JsonUtil.jsActor(result.get, Some((badgeStatus, badgeStatusForReport)), documentation).toString()
           ResponseConstructor.constructJsonResponse(json)
         } else {
           ResponseConstructor.constructEmptyResponse
@@ -499,7 +506,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
               Future.successful(badgeInfoForReport._2.get)
             } else {
               val domainId = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.DOMAIN_ID).toLong
-              actorManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
+              val actorDocumentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeEditorContent)
+              actorManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId, actorDocumentation, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
                 ResponseConstructor.constructEmptyResponse
               }
             }
@@ -564,7 +572,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         if (badgeInfoForReport._2.nonEmpty) {
           Future.successful(badgeInfoForReport._2.get)
         } else {
-          specificationManager.createSpecifications(specification, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
+          val specDocumentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeEditorContent)
+          specificationManager.createSpecifications(specification, specDocumentation, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
         }
@@ -717,40 +726,52 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
           authorizationManager.canManageDomain(request, domainId)
         }
       }
-      response <- {
-        var response:Result = null
-        val testSuiteFileName = "ts_"+RandomStringUtils.secure().next(10, false, true)+".zip"
+      archiveOrError <- {
+        val testSuiteUri = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.TEST_SUITE_URI)
         ParameterExtractor.extractFiles(request).get(ParameterNames.FILE) match {
           case Some(testSuite) =>
-            if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-              val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-              val scanResult = virusScanner.scan(testSuite.file)
-              if (!ClamAVClient.isCleanReply(scanResult)) {
-                response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
-              }
-            }
-            if (response == null) {
-              val file = Paths.get(
-                repositoryUtils.getTempFolder().getAbsolutePath,
-                RandomStringUtils.secure().next(10, false, true),
-                testSuiteFileName
-              ).toFile
-              file.getParentFile.mkdirs()
-              Files.move(testSuite.file.toPath, file.toPath, StandardCopyOption.REPLACE_EXISTING)
-              val contentType = testSuite.contentType
-              logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
-              testSuiteManager.deployTestSuiteFromZipFile(domainId, specIds, sharedTestSuite, file).map { result =>
-                val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
-                ResponseConstructor.constructJsonResponse(json)
-              }
-            } else {
-              Future.successful(response)
-            }
+            val testSuiteFileName = "ts_"+RandomStringUtils.secure().next(10, false, true)+".zip"
+            val file = Paths.get(
+              repositoryUtils.getTempFolder().getAbsolutePath,
+              RandomStringUtils.secure().next(10, false, true),
+              testSuiteFileName
+            ).toFile
+            file.getParentFile.mkdirs()
+            Files.move(testSuite.file.toPath, file.toPath, StandardCopyOption.REPLACE_EXISTING)
+            logger.debug("Test suite file uploaded - filename: [{}] content type: [{}]", testSuiteFileName, testSuite.contentType)
+            Future.successful(Right(file): Either[Result, File])
           case None =>
-            Future.successful {
-              ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")
+            testSuiteUri match {
+              case Some(uri) =>
+                remoteArchiveFetcher.fetchToTempFile(uri)
+                  .map(Right(_): Either[Result, File])
+                  .recover {
+                    case e: UnacceptableUriException =>
+                      Left(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, e.getMessage, Some(ParameterNames.TEST_SUITE_URI)))
+                  }
+              case None =>
+                Future.successful(Left(ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")))
             }
         }
+      }
+      response <- archiveOrError match {
+        case Left(errorResponse) => Future.successful(errorResponse)
+        case Right(file) =>
+          var virusCheckResponse: Result = null
+          if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+            val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+            val scanResult = virusScanner.scan(file)
+            if (!ClamAVClient.isCleanReply(scanResult)) {
+              virusCheckResponse = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
+            }
+          }
+          if (virusCheckResponse == null) {
+            testSuiteManager.deployTestSuiteFromZipFile(domainId, specIds, sharedTestSuite, file).map { result =>
+              ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteUploadResult(result).toString())
+            }
+          } else {
+            Future.successful(virusCheckResponse)
+          }
       }
     } yield response
     action.andThen { _ =>
@@ -1132,6 +1153,27 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
       val reportLevel = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, ParameterNames.LEVEL))
       communityManager.conformanceOverviewCertificateEnabled(communityId, reportLevel).map { checkResult =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsExists(checkResult).toString())
+      }
+    }
+  }
+
+  def getConformanceStatementDocumentationReportSettings(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      communityManager.getConformanceStatementDocumentationReportSettingsWrapper(communityId, defaultIfMissing = true).map { settings =>
+        if (settings.isDefined) {
+          val json = JsonUtil.jsConformanceStatementDocumentationReportSettings(settings.get)
+          ResponseConstructor.constructJsonResponse(json.toString)
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
+  }
+
+  def conformanceStatementDocumentationReportEnabled(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
+      communityManager.conformanceStatementDocumentationReportEnabled(communityId).map { checkResult =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsExists(checkResult).toString())
       }
     }
@@ -1599,9 +1641,11 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
               } else {
                 throw new IllegalStateException("The conformance statement's system could not be found.")
               }
-              systemInfoTask.map { systemInfo =>
-                val json = JsonUtil.jsConformanceStatement(conformanceStatement.get, results.get, systemInfo).toString()
-                ResponseConstructor.constructJsonResponse(json)
+              systemInfoTask.flatMap { systemInfo =>
+                conformanceManager.getConformanceStatementDocumentation(actorId, snapshotId).map { documentation =>
+                  val json = JsonUtil.jsConformanceStatement(conformanceStatement.get, results.get, systemInfo, documentation).toString()
+                  ResponseConstructor.constructJsonResponse(json)
+                }
               }
             } else {
               Future.successful {
@@ -1636,6 +1680,16 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
       conformanceManager.getConformanceStatementTestSuitesForFiltering(systemId, actorId, snapshotId).map { results =>
         val json = JsonUtil.jsTestSuiteMinimalInformations(results).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getConformanceStatementTagsForFiltering(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
+      conformanceManager.getConformanceStatementTagsForFiltering(systemId, actorId, snapshotId).map { case (tags, untagged) =>
+        val json = JsonUtil.jsTestCaseTagsForFiltering(tags, untagged).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }

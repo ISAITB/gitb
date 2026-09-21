@@ -38,9 +38,10 @@ import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
+import scala.concurrent.ExecutionContext;
+import scala.concurrent.Future;
 import scala.concurrent.Promise;
+import scala.runtime.BoxedUnit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -184,29 +185,23 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         return step.getTo();
     }
 
-    protected OnSuccess<TestStepReportType> handleSuccess(Promise<TestStepReportType> promise) {
-        return new OnSuccess<>() {
-            @Override
-            public void onSuccess(TestStepReportType result) {
-                if (result != null) {
+    protected void attachFutureCallbacks(Future<TestStepReportType> future, Promise<TestStepReportType> promise, ExecutionContext ec) {
+        future.onComplete(result -> {
+            if (result.isSuccess()) {
+                TestStepReportType r = result.get();
+                if (r != null) {
                     /*
                      * If the report is null this means that we should not mark the step's promise as successfully completed.
                      * The report in this case is expected to be produced asynchronously. It is important to keep the step's
                      * promise as not completed as like this we can react to stop notifications.
                      */
-                    promise.trySuccess(result);
+                    promise.trySuccess(r);
                 }
+            } else {
+                promise.tryFailure(result.failed().get());
             }
-        };
-    }
-
-    protected OnFailure handleFailure(Promise<TestStepReportType> promise) {
-        return new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                promise.tryFailure(failure);
-            }
-        };
+            return BoxedUnit.UNIT;
+        }, ec);
     }
 
     protected void handleFutureFailure(Throwable failure) {

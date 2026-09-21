@@ -32,6 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class UserManager @Inject() (accountManager: AccountManager,
                              userPreferenceManager: UserPreferenceManager,
+                             messageManager: MessageManager,
                              dbConfigProvider: DatabaseConfigProvider)
                             (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -324,6 +325,7 @@ class UserManager @Inject() (accountManager: AccountManager,
       {
         for {
           _ <- userPreferenceManager.deletePreferencesForUser(userId)
+          _ <- messageManager.clearUserReferences(Seq(userId))
           _ <- PersistenceSchema.users.filter(_.id === userId).delete
         } yield ()
       }.transactionally
@@ -348,6 +350,8 @@ class UserManager @Inject() (accountManager: AccountManager,
       userIds <- DBIO.successful(activeUserIds.toSet ++ inactiveUserIds.toSet)
       // Delete preferences.
       _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+      // Clear message references (sender name/id snapshot and unread status) - must run before the users are deleted.
+      _ <- messageManager.clearUserReferences(userIds.toSeq)
       // Delete user entries.
       _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
     } yield ()
@@ -368,6 +372,8 @@ class UserManager @Inject() (accountManager: AccountManager,
             .result
           // Delete preferences.
           _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+          // Clear message references (sender name/id snapshot and unread status) - must run before the users are deleted.
+          _ <- messageManager.clearUserReferences(userIds)
           // Delete user entries.
           _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
         } yield ()

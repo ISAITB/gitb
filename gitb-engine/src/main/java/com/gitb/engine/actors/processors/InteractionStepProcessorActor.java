@@ -15,7 +15,6 @@
 
 package com.gitb.engine.actors.processors;
 
-import com.gitb.PropertyConstants;
 import com.gitb.core.*;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.TestbedService;
@@ -50,10 +49,7 @@ import com.gitb.tdl.UserRequest;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.types.DataType;
-import com.gitb.types.DataTypeFactory;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
@@ -61,22 +57,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 import org.springframework.util.MimeType;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
+import scala.runtime.BoxedUnit;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Created by tuncay on 9/24/14.
@@ -129,18 +124,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
         promise = Futures.promise();
 
-        promise.future().foreach(new OnSuccess<>() {
-            @Override
-            public void onSuccess(TestStepReportType result) {
-                completed(result);
+        promise.future().onComplete(result -> {
+            if (result.isSuccess()) {
+                completed(result.get());
+            } else {
+                handleFutureFailure(result.failed().get());
             }
-        }, getContext().dispatcher());
-
-        promise.future().failed().foreach(new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                handleFutureFailure(failure);
-            }
+            return BoxedUnit.UNIT;
         }, getContext().dispatcher());
     }
 
@@ -168,6 +158,17 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         return value;
     }
 
+    private void scheduleTimeout(ActorContext context, long timeoutMs) {
+        context.system().scheduler().scheduleOnce(
+                scala.concurrent.duration.Duration.apply(timeoutMs, TimeUnit.MILLISECONDS), () -> {
+                    if (!self().isTerminated()) {
+                        self().tell(new TimeoutExpired(), self());
+                    }
+                },
+                context.dispatcher()
+        );
+    }
+
     @Override
     protected void start() {
         processing();
@@ -192,14 +193,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     timeout = Double.valueOf(step.getTimeout()).longValue();
                 }
                 if (timeout > 0) {
-                    context.system().scheduler().scheduleOnce(
-                            scala.concurrent.duration.Duration.apply(timeout, TimeUnit.MILLISECONDS), () -> {
-                                if (!self().isTerminated()) {
-                                    self().tell(new TimeoutExpired(), self());
-                                }
-                            },
-                            context.dispatcher()
-                    );
+                    scheduleTimeout(context, timeout);
                 }
             }
             // Process the instructions and request the interaction from TestbedClient
@@ -216,11 +210,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
         }, context.dispatcher());
 
-        future.failed().foreach(new OnFailure() {
-            @Override
-            public void onFailure(Throwable failure) {
-                promise.tryFailure(failure);
+        future.onComplete(result -> {
+            if (result.isFailure()) {
+                promise.tryFailure(result.failed().get());
             }
+            return BoxedUnit.UNIT;
         }, context.dispatcher());
         waiting();
     }
@@ -256,7 +250,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     CallbackManager.getInstance().registerCallbackData(new SessionCallbackData(
                             messagingContext.getSessionId(),
                             callId,
-                            ((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP_API_KEY).toString(),
+                            scope.getContext().getSystemApiKey(),
                             deferredReport.getCallbackData())
                     );
                 }
@@ -345,12 +339,99 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
     }
 
+    /**
+     * An interaction element that is included in the interaction (see {@link #isIncluded}), paired with the ID
+     * assigned to it on the wire (matching the existing, pre-dependencies, sequential numbering that skips
+     * excluded elements). This ID is also what {@code dependsOn} references resolve to, and what {@link InputEvent}
+     * answers are correlated against (see {@link #handleInputEvent}).
+     */
+    private record IncludedInteractionItem(InstructionOrRequest item, String id) {}
+
+    /**
+     * Determines the included elements of the interaction and assigns them their wire ID, preserving the existing
+     * numbering scheme (sequential, 1-based, skipping excluded elements) so that this continues to line up with how
+     * {@link InputEvent} answers are matched back to their originating element.
+     */
+    private List<IncludedInteractionItem> collectIncludedItems(List<InstructionOrRequest> instructionAndRequests, ExpressionHandler expressionHandler, Map<String, IncludedInteractionItem> includedItemsByName) {
+        List<IncludedInteractionItem> includedItems = new ArrayList<>();
+        int childStepId = 1;
+        for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
+            if (isIncluded(instructionOrRequest, expressionHandler)) {
+                var includedItem = new IncludedInteractionItem(instructionOrRequest, String.valueOf(childStepId));
+                includedItems.add(includedItem);
+                if (instructionOrRequest instanceof UserRequest request && request.getName() != null) {
+                    includedItemsByName.put(request.getName(), includedItem);
+                }
+                childStepId++;
+            }
+        }
+        return includedItems;
+    }
+
+    private void normaliseTypeInformation(InstructionOrRequest instructionOrRequest, ExpressionHandler expressionHandler) {
+        // Set the type in case this is missing.
+        if (StringUtils.isBlank(instructionOrRequest.getType())) {
+            if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64 || (instructionOrRequest instanceof UserRequest && ((UserRequest)instructionOrRequest).getInputType() == InputRequestInputType.UPLOAD)) {
+                // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
+                instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
+            } else {
+                if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
+                    // If a target variable is referenced we can use this to determine the type.
+                    DataType targetVariable = expressionHandler.getVariableResolver().resolveVariable(instructionOrRequest.getValue());
+                    if (targetVariable == null) {
+                        throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
+                    }
+                    instructionOrRequest.setType(targetVariable.getType());
+                } else {
+                    // Set "string" if no other type can be determined.
+                    instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
+                }
+            }
+        }
+        // Ensure consistency and complete information for contentType and inputType.
+        if (DataType.isFileType(instructionOrRequest.getType())) {
+            instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
+            if (instructionOrRequest instanceof UserRequest) {
+                ((UserRequest) instructionOrRequest).setInputType(InputRequestInputType.UPLOAD);
+            }
+        } else {
+            instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+            if (instructionOrRequest instanceof UserRequest request) {
+                if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
+                    if (request.getOptions() != null) {
+                        request.setInputType(InputRequestInputType.SELECT_SINGLE);
+                    } else {
+                        request.setInputType(InputRequestInputType.TEXT);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Resolves a {@code dependsOn}/{@code dependsOnValue} pair against the included sibling requests of the same
+     * interaction, and applies the result (the sibling's wire ID and the resolved dependency value) via the given
+     * setters. Dependencies on file uploads, or that reference a request that isn't included, are ignored (the
+     * element is treated as unconditional) rather than failing the step.
+     */
+    private void applyDependency(Consumer<String> idSetter, Consumer<String> valueSetter, InstructionOrRequest source,
+                                  Map<String, IncludedInteractionItem> includedItemsByName, ExpressionHandler expressionHandler) {
+        if (source.getDependsOn() != null) {
+            var target = includedItemsByName.get(source.getDependsOn());
+            if (target == null) {
+                logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring dependency on interaction step element as the referenced request [{}] could not be resolved", source.getDependsOn());
+            } else if (!(target.item() instanceof UserRequest targetRequest) || targetRequest.getInputType() != InputRequestInputType.UPLOAD) {
+                idSetter.accept(target.id());
+                valueSetter.accept(fixedValueOrVariable(source.getDependsOnValue(), expressionHandler.getVariableResolver(), null));
+            }
+        }
+    }
+
     private void processAsUserInterfaceInteraction(long timeout, ExpressionHandler expressionHandler) {
         boolean hasInstructions = false;
         boolean hasRequests = false;
         List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
         var withValue = fixedValueOrVariable(step.getWith(), expressionHandler.getVariableResolver(), getSUTActor().getId());
-        int childStepId = 1;
         // Prepare the message to send to the frontend.
         UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
         userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), expressionHandler.getVariableResolver(), "User interaction"));
@@ -358,44 +439,15 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         userInteractionRequest.setAdmin(step.isAdmin());
         userInteractionRequest.setDesc(step.getDesc());
         userInteractionRequest.setHasTimeout(timeout > 0);
-        for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
-            // Set the type in case this is missing.
-            if (StringUtils.isBlank(instructionOrRequest.getType())) {
-                if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64 || (instructionOrRequest instanceof UserRequest && ((UserRequest)instructionOrRequest).getInputType() == InputRequestInputType.UPLOAD)) {
-                    // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
-                    instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
-                } else {
-                    if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
-                        // If a target variable is referenced we can use this to determine the type.
-                        DataType targetVariable = expressionHandler.getVariableResolver().resolveVariable(instructionOrRequest.getValue());
-                        if (targetVariable == null) {
-                            throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
-                        }
-                        instructionOrRequest.setType(targetVariable.getType());
-                    } else {
-                        // Set "string" if no other type can be determined.
-                        instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
-                    }
-                }
-            }
-            // Ensure consistency and complete information for contentType and inputType.
-            if (DataType.isFileType(instructionOrRequest.getType())) {
-                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
-                if (instructionOrRequest instanceof UserRequest) {
-                    ((UserRequest) instructionOrRequest).setInputType(InputRequestInputType.UPLOAD);
-                }
-            } else {
-                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
-                if (instructionOrRequest instanceof UserRequest request) {
-                    if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
-                        if (request.getOptions() != null) {
-                            request.setInputType(InputRequestInputType.SELECT_SINGLE);
-                        } else {
-                            request.setInputType(InputRequestInputType.TEXT);
-                        }
-                    }
-                }
-            }
+        // First pass: determine the included elements and their wire IDs, and normalise their type information.
+        // This needs to happen in full before dependency resolution below, since a dependency may reference a
+        // sibling that appears later in the TDL declaration order.
+        Map<String, IncludedInteractionItem> includedItemsByName = new HashMap<>();
+        List<IncludedInteractionItem> includedItems = collectIncludedItems(instructionAndRequests, expressionHandler, includedItemsByName);
+        includedItems.forEach(includedItem -> normaliseTypeInformation(includedItem.item(), expressionHandler));
+        // Second pass: build the wire objects, resolving any input dependencies against the now fully-typed items.
+        for (IncludedInteractionItem includedItem : includedItems) {
+            InstructionOrRequest instructionOrRequest = includedItem.item();
             //If it is an instruction
             if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
                 hasInstructions = true;
@@ -403,14 +455,17 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 if (StringUtils.isBlank(instruction.getValue())) {
                     instructionOrRequest.setValue("''");
                 }
-                userInteractionRequest.getInstructionOrRequest().add(processInstruction(instruction, "" + childStepId, withValue, expressionHandler));
+                Instruction wireInstruction = processInstruction(instruction, includedItem.id(), withValue, expressionHandler);
+                applyDependency(wireInstruction::setDependsOn, wireInstruction::setDependsOnValue, instructionOrRequest, includedItemsByName, expressionHandler);
+                userInteractionRequest.getInstructionOrRequest().add(wireInstruction);
             } else if (instructionOrRequest instanceof UserRequest request) { // If it is a request
                 hasRequests = true;
-                userInteractionRequest.getInstructionOrRequest().add(processRequest(request, "" + childStepId, withValue, expressionHandler.getVariableResolver()));
+                InputRequest wireRequest = processRequest(request, includedItem.id(), withValue, expressionHandler.getVariableResolver());
+                applyDependency(wireRequest::setDependsOn, wireRequest::setDependsOnValue, instructionOrRequest, includedItemsByName, expressionHandler);
+                userInteractionRequest.getInstructionOrRequest().add(wireRequest);
             } else {
                 throw new IllegalStateException("Unsupported interaction type ["+instructionOrRequest+"]");
             }
-            childStepId++;
         }
         logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
         TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
@@ -419,6 +474,17 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             // The step is a non-blocking interaction containing only instructions. Notify immediately for its completion.
             self().tell(new InputEvent(scope.getContext().getSessionId(), stepId, Collections.emptyList(), step.isAdmin()), self());
         }
+    }
+
+    private boolean isIncluded(InstructionOrRequest instructionOrRequest, ExpressionHandler expressionHandler) {
+        if (instructionOrRequest != null && instructionOrRequest.getIncluded() != null) {
+            if (VariableResolver.isVariableReference(instructionOrRequest.getIncluded())) {
+                return expressionHandler.getVariableResolver().resolveVariableAsBoolean(instructionOrRequest.getIncluded()).getValue();
+            } else {
+                return Boolean.parseBoolean(instructionOrRequest.getIncluded());
+            }
+        }
+        return true;
     }
 
     private boolean isNonBlocking(VariableResolver resolver) {
@@ -452,6 +518,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), expressionHandler.getVariableResolver(), null));
         instruction.setForceDisplay(instructionCommand.isForceDisplay());
         instruction.setShowControls(instructionCommand.isShowControls());
+        instruction.setLevel(getInstructionLevel(instructionCommand, expressionHandler));
+        setInstructionValue(instruction, instructionCommand, expressionHandler);
+        return instruction;
+    }
+
+    private InstructionLevel getInstructionLevel(com.gitb.tdl.Instruction instructionCommand, ExpressionHandler expressionHandler) {
+        InstructionLevel result = null;
         if (instructionCommand.getLevel() != null) {
             String level;
             if (VariableResolver.isVariableReference(instructionCommand.getLevel())) {
@@ -466,16 +539,23 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'level' on interaction step instruction as it was invalid");
             }
             if (levelToSet != null && levelToSet != InstructionLevel.NONE) {
-                instruction.setLevel(levelToSet);
+                result = levelToSet;
             }
         }
+        return result;
+    }
 
-        ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
-        DataType computedValue = exprHandler.processExpression(instructionCommand, instructionCommand.getType());
-
-	    DataTypeUtils.setContentValueWithDataType(instruction, computedValue);
-
-        return instruction;
+    private void setInstructionValue(AnyContent target, com.gitb.tdl.Instruction instructionCommand, ExpressionHandler expressionHandler) {
+        DataType computedValue = expressionHandler.processExpression(instructionCommand, instructionCommand.getType());
+        if (instructionCommand.isForceDisplay()) {
+            computedValue = computedValue.convertTo(DataType.STRING_DATA_TYPE);
+        }
+        DataTypeUtils.setContentValueWithDataType(target, computedValue);
+        if (instructionCommand.getMimeType() != null && instructionCommand.getMimeType().startsWith("text/html")) {
+            target.setMimeType("text/html");
+            addMetadataToken(target, "sanitized", "true");
+            target.setValue(TestCaseUtils.sanitizeInstructionStepValue(target.getValue()));
+        }
     }
 
     private boolean validMimeType(String value) {
@@ -522,6 +602,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 }
                 if (acceptValues != null && !acceptValues.isEmpty()) {
                     inputRequest.setAccept(acceptValues);
+                }
+            }
+            if (request.getMultiple() != null) {
+                if (VariableResolver.isVariableReference(request.getMultiple())) {
+                    inputRequest.setMultiple(variableResolver.resolveVariableAsBoolean(request.getMultiple()).getValue());
+                } else {
+                    inputRequest.setMultiple(Boolean.parseBoolean(request.getMultiple()));
                 }
             }
         } else {
@@ -664,28 +751,42 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 report.getContext().setType("list");
                 ExpressionHandler expressionHandler = new ExpressionHandler(scope);
                 VariableResolver variableResolver = expressionHandler.getVariableResolver();
-                // Determine the required request elements for which we expect inputs.
-                Set<Integer> requiredInputIndexes = IntStream.range(0, step.getInstructOrRequest().size())
-                        .filter(i -> step.getInstructOrRequest().get(i) instanceof UserRequest userRequest && isRequired(userRequest, variableResolver))
-                        .boxed()
+                // Determine the included elements (same numbering scheme used when the interaction request was
+                // built - see collectIncludedItems), and a name-based lookup to resolve dependencies against.
+                Map<String, IncludedInteractionItem> includedItemsByName = new HashMap<>();
+                List<IncludedInteractionItem> includedItems = collectIncludedItems(step.getInstructOrRequest(), expressionHandler, includedItemsByName);
+                // For each included element, determine whether its dependency (if any) is satisfied by the submitted inputs.
+                Map<String, Boolean> dependencySatisfiedById = new HashMap<>();
+                for (var includedItem : includedItems) {
+                    dependencySatisfiedById.put(includedItem.id(), isDependencySatisfied(includedItem.item(), includedItemsByName, event, variableResolver));
+                }
+                // Determine the required request elements for which we expect inputs. A required element whose
+                // dependency is not satisfied is ignored (never required).
+                Set<Integer> requiredInputIndexes = includedItems.stream()
+                        .filter(includedItem -> includedItem.item() instanceof UserRequest userRequest && isRequired(userRequest, variableResolver) && dependencySatisfiedById.get(includedItem.id()))
+                        .map(includedItem -> Integer.parseInt(includedItem.id()) - 1)
                         .collect(Collectors.toSet());
-                int index = 0;
-                for (InstructionOrRequest instructionOrRequest : step.getInstructOrRequest()) {
+                for (var includedItem : includedItems) {
+                    InstructionOrRequest instructionOrRequest = includedItem.item();
+                    boolean dependencySatisfied = dependencySatisfiedById.get(includedItem.id());
+                    int index = Integer.parseInt(includedItem.id()) - 1;
                     if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
                         // Process instruction.
-                        if (instruction.isReport()) {
+                        if (instruction.isReport() && dependencySatisfied) {
                             var instructionContent = new AnyContent();
                             instructionContent.setName(fixedValueOrVariable(instruction.getDesc(), variableResolver, null));
-                            instructionContent.setMimeType(instruction.getMimeType());
-                            DataType computedValue = expressionHandler.processExpression(instruction, instruction.getType());
-                            DataTypeUtils.setContentValueWithDataType(instructionContent, computedValue);
+                            instructionContent.setMimeType(fixedValueOrVariable(instruction.getMimeType(), expressionHandler.getVariableResolver(), null));
+                            setInstructionValue(instructionContent, instruction, expressionHandler);
+                            InstructionLevel level = getInstructionLevel(instruction, expressionHandler);
+                            if (level != null) addMetadataToken(instructionContent, "level", level.value());
+                            if (!instruction.isShowControls()) addMetadataToken(instructionContent, "showControls", "false");
+                            if (instruction.isForceDisplay()) addMetadataToken(instructionContent, "forceDisplay", "true");
                             report.getContext().getItem().add(instructionContent);
                         }
                     } else if (instructionOrRequest instanceof UserRequest request) {
                         // Process request.
-                        processUserInput(request, index, event, variableResolver, dataTypeFactory, requiredInputIndexes, report, interactionResult);
+                        processUserInput(request, index, event, variableResolver, dataTypeFactory, requiredInputIndexes, report, interactionResult, dependencySatisfied);
                     }
-                    index += 1;
                 }
                 if (!requiredInputIndexes.isEmpty()) {
                     // Not all required inputs were provided with inputs - fail.
@@ -703,61 +804,161 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
     }
 
-    private void processUserInput(UserRequest targetRequest, int requestIndex, InputEvent inputEvent, VariableResolver variableResolver, DataTypeFactory dataTypeFactory, Set<Integer> requiredInputIndexes, TAR report, MapType interactionResult) {
+    /**
+     * Determines whether an interaction element's dependency (if any) is satisfied by the inputs submitted in the
+     * given event. An element with no dependency, or with a dependency that can't be resolved to an included
+     * request or that targets a file upload (not applicable), is always considered satisfied. Otherwise this is
+     * satisfied when at least one of the submitted values for the referenced request matches the resolved
+     * dependency value - this single check covers both the "exact value" rule (single-valued input types, where at
+     * most one submitted value is ever present) and the "any selected value matches" rule (SELECT_MULTIPLE).
+     */
+    private boolean isDependencySatisfied(InstructionOrRequest item, Map<String, IncludedInteractionItem> includedItemsByName, InputEvent event, VariableResolver variableResolver) {
+        if (item.getDependsOn() == null) {
+            return true;
+        }
+        var target = includedItemsByName.get(item.getDependsOn());
+        if (target == null || !(target.item() instanceof UserRequest targetRequest) || targetRequest.getInputType() == InputRequestInputType.UPLOAD) {
+            return true;
+        }
+        String expectedValue = fixedValueOrVariable(item.getDependsOnValue(), variableResolver, null);
+        if (expectedValue == null || event.getUserInputs() == null) {
+            return true;
+        }
+        return event.getUserInputs().stream()
+                .filter(userInput -> target.id().equals(userInput.getId()))
+                .anyMatch(userInput -> expectedValue.equals(userInput.getValue()));
+    }
+
+    private void addMetadataToken(AnyContent content, String tokenKey, String tokenValue) {
+        String metadataToAdd = tokenKey + "=" + tokenValue;
+        if (content.getMetadata() != null) {
+            content.setMetadata(content.getMetadata() + ";" + metadataToAdd);
+        } else {
+            content.setMetadata(metadataToAdd);
+        }
+    }
+
+    private void processUserInput(UserRequest targetRequest, int requestIndex, InputEvent inputEvent, VariableResolver variableResolver, DataTypeFactory dataTypeFactory, Set<Integer> requiredInputIndexes, TAR report, MapType interactionResult, boolean dependencySatisfied) {
         if (inputEvent.getUserInputs() != null) {
-            inputEvent.getUserInputs().stream()
+            List<UserInput> matchingInputs = inputEvent.getUserInputs().stream()
                     .filter(userInput -> {
                         int stepIndex = Integer.parseInt(userInput.getId());
                         return requestIndex == stepIndex - 1;
                     })
-                    .findFirst()
-                    .ifPresent((userInput) -> {
-                        if (userInput.getValue() != null && !userInput.getValue().isEmpty()) {
-                            requiredInputIndexes.remove(requestIndex);
-                            if (targetRequest.isReport()) {
-                                // Construct the value to return for the step's report.
-                                report.getContext().getItem().add(getAnyContent(userInput, targetRequest));
+                    .toList();
+            if (!matchingInputs.isEmpty()) {
+                boolean multipleExpected = false;
+                if (targetRequest.getMultiple() != null) {
+                    if (VariableResolver.isVariableReference(targetRequest.getMultiple())) {
+                        multipleExpected = variableResolver.resolveVariableAsBoolean(targetRequest.getMultiple()).getValue();
+                    } else {
+                        multipleExpected = Boolean.parseBoolean(targetRequest.getMultiple());
+                    }
+                }
+                boolean recordFileNames = StringUtils.isNotBlank(targetRequest.getFileName());
+                AnyContent contentForContext;
+                String dataTypeForContext;
+                DataType fileNameValue = null;
+                if (!multipleExpected) {
+                    UserInput userInput = matchingInputs.getFirst();
+                    if (userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                        requiredInputIndexes.remove(requestIndex);
+                        if (targetRequest.isReport() && dependencySatisfied) {
+                            // Construct the value to return for the step's report.
+                            report.getContext().getItem().add(getAnyContent(userInput, targetRequest));
+                        }
+                    }
+                    // Value for session context.
+                    contentForContext = userInput;
+                    dataTypeForContext = targetRequest.getType();
+                    // File name
+                    if (recordFileNames && StringUtils.isNotBlank(userInput.getFileName())) {
+                        fileNameValue = new StringType(userInput.getFileName());
+                    }
+                } else {
+                    List<UserInput> inputsWithValues = matchingInputs.stream()
+                            .filter(userInput -> userInput.getValue() != null && !userInput.getValue().isEmpty())
+                            .toList();
+                    if (!inputsWithValues.isEmpty()) {
+                        requiredInputIndexes.remove(requestIndex);
+                        if (targetRequest.isReport() && dependencySatisfied) {
+                            // Construct the value to return for the step's report.
+                            if (inputsWithValues.size() == 1) {
+                                // Single item - add it without a list.
+                                report.getContext().getItem().add(getAnyContent(inputsWithValues.getFirst(), targetRequest));
+                            } else {
+                                // Add items as a list.
+                                AnyContent userInputs = new AnyContent();
+                                userInputs.setType("list");
+                                List<AnyContent> userInputItems = inputsWithValues.stream().map(userInput -> getAnyContent(userInput, targetRequest)).toList();
+                                userInputs.setName(userInputItems.getFirst().getName());
+                                userInputItems.forEach(userInputItem -> {
+                                    userInputItem.setName(null);
+                                    userInputs.getItem().add(userInputItem);
+                                });
+                                report.getContext().getItem().add(userInputs);
                             }
                         }
-                        if (StringUtils.isNotBlank(targetRequest.getValue())) {
-                            //Find the variable that the given input content is assigned(bound) to
-                            String assignedVariableExpression = targetRequest.getValue();
-                            DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
-                            if (targetRequest.isAsTemplate()) {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
-                                    DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                                    dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                                });
-                            } else {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
-                            }
+                    }
+                    if (targetRequest.getType() == null) {
+                        dataTypeForContext = "list";
+                    } else {
+                        dataTypeForContext = "list["+targetRequest.getType()+"]";
+                    }
+                    // Value for session context.
+                    contentForContext = new AnyContent();
+                    contentForContext.setType("list");
+                    contentForContext.setName(matchingInputs.getFirst().getName());
+                    contentForContext.getItem().addAll(matchingInputs);
+                    // File names
+                    if (recordFileNames) {
+                        List<StringType> fileNames = matchingInputs.stream().filter(userInput -> StringUtils.isNotBlank(userInput.getFileName()))
+                                .map(userInput -> new StringType(userInput.getFileName()))
+                                .toList();
+                        ListType fileNameTypes = new ListType(DataType.STRING_DATA_TYPE);
+                        fileNameTypes.getElements().addAll(fileNames);
+                        fileNameValue = fileNameTypes;
+                    }
+                }
+                if (StringUtils.isNotBlank(targetRequest.getValue())) {
+                    // Find the variable that the given input content is assigned(bound) to
+                    String assignedVariableExpression = targetRequest.getValue();
+                    DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
+                    if (targetRequest.isAsTemplate()) {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, contentForContext, (dataType) -> {
+                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                        });
+                    } else {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, contentForContext);
+                    }
+                } else {
+                    // Create an empty value
+                    DataType assignedValue = dataTypeFactory.create(dataTypeForContext);
+                    if (targetRequest.isAsTemplate()) {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, contentForContext, (dataType) -> {
+                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                        });
+                    } else {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, contentForContext);
+                    }
+                    // Put it to the Interaction Result map
+                    if (targetRequest.getName() != null) {
+                        interactionResult.addItem(targetRequest.getName(), assignedValue);
+                    }
+                    if (fileNameValue != null) {
+                        // Record the file name under the provided variable
+                        String variableName;
+                        if (VariableResolver.isVariableReference(targetRequest.getFileName())) {
+                            variableName = variableResolver.resolveVariableAsString(targetRequest.getFileName()).toString();
                         } else {
-                            //Create an empty value
-                            DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
-                            if (targetRequest.isAsTemplate()) {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
-                                    DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                                    dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                                });
-                            } else {
-                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
-                            }
-                            // Put it to the Interaction Result map
-                            if (targetRequest.getName() != null) {
-                                interactionResult.addItem(targetRequest.getName(), assignedValue);
-                            }
-                            if (StringUtils.isNotBlank(targetRequest.getFileName()) && StringUtils.isNotBlank(userInput.getFileName())) {
-                                // Record the file name under the provided variable
-                                String variableName;
-                                if (VariableResolver.isVariableReference(targetRequest.getFileName())) {
-                                    variableName = variableResolver.resolveVariableAsString(targetRequest.getFileName()).toString();
-                                } else {
-                                    variableName = targetRequest.getFileName().trim();
-                                }
-                                interactionResult.addItem(variableName, new StringType(userInput.getFileName()));
-                            }
+                            variableName = targetRequest.getFileName().trim();
                         }
-                    });
+                        interactionResult.addItem(variableName, fileNameValue);
+                    }
+                }
+            }
         }
     }
 
@@ -779,6 +980,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     @Override
     protected void stop() {
+        super.stop();
         if (promise != null && !promise.isCompleted()) {
             promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
         }

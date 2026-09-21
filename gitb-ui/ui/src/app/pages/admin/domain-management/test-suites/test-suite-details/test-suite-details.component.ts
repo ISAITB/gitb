@@ -13,14 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
-import {HtmlService} from 'src/app/services/html.service';
 import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {TestSuiteService} from 'src/app/services/test-suite.service';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
@@ -32,6 +32,7 @@ import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test
 import {finalize, forkJoin, Observable, tap} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
+import {NavigationTarget} from '../../../../../types/navigation-target';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
@@ -42,6 +43,13 @@ import {share} from 'rxjs/operators';
 import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TableApi} from '../../../../../components/table/table-api';
+import {DisplayState} from '../../../../../types/display-state';
+
+/** Persisted search/paging state for the Test cases tab - restored when returning here (e.g. via
+ * Back from a test case's detail page). */
+interface TestSuiteListState {
+  filter?: string
+}
 
 @Component({
     selector: 'app-test-suite-details',
@@ -49,7 +57,7 @@ import {TableApi} from '../../../../../components/table/table-api';
     styleUrls: ['./test-suite-details.component.less'],
     standalone: false
 })
-export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit {
+export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
   @ViewChild("linkedSpecificationsTable") linkedSpecificationsTable?: TableApi
@@ -69,6 +77,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   savePending = false
   deletePending = false
   downloadPending = false
+  previewPending = false
   selectingForUnlink = false
   unlinkPending = false
   linkPending = false
@@ -92,13 +101,15 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 
   testCaseFilter?: string
   protected readonly PagingPlacement = PagingPlacement;
+  private viewReturnTarget?: string
+  private testCasesInitialLoadDone = false
 
   constructor(
     public readonly dataService: DataService,
     private readonly routingService: RoutingService,
     private readonly testSuiteService: TestSuiteService,
     private readonly popupService: PopupService,
-    private readonly htmlService: HtmlService,
+    private readonly reportService: ReportService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: NgbModal,
@@ -107,6 +118,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   ) { super(router, route) }
 
   ngOnInit(): void {
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     const specIdParameter = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID)
     if (specIdParameter) {
@@ -139,6 +151,17 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.testCasesInitialLoadDone) {
+      const state: DisplayState<TestSuiteListState> = {
+        key: String(this.testSuiteId),
+        state: { filter: this.testCaseFilter },
+        paging: this.pagingControls?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.TEST_SUITE_TEST_CASES, state)
+    }
+  }
+
   doTestCasePaging(event: PagingEvent) {
     this.loadTestCasesInternal(event)
     if (event.pageSizeChanged) {
@@ -164,7 +187,20 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
   private loadTestCases(): Observable<any> {
-    return this.loadTestCasesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+    if (!this.testCasesInitialLoadDone) {
+      this.testCasesInitialLoadDone = true
+      const existingState = this.getDisplayState<TestSuiteListState>(Constants.DISPLAY_STATE_KEY.TEST_SUITE_TEST_CASES, true)
+      if (existingState && existingState.key == String(this.testSuiteId)) {
+        if (existingState.state) {
+          this.testCaseFilter = existingState.state.filter
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+    }
+    return this.loadTestCasesInternal(targetPaging)
   }
 
   private loadTestCasesInternal(pagingInfo: PagingEvent): Observable<any> {
@@ -236,19 +272,6 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
-	previewDocumentation() {
-		this.conformanceService.getDocumentationForPreview(this.testSuite.documentation!)
-    .subscribe((html) => {
-      this.htmlService.showHtml('Test suite documentation', html)
-    })
-  }
-
-  copyDocumentation() {
-    this.dataService.copyToClipboard(this.testSuite.documentation!).subscribe(() => {
-      this.popupService.success('HTML source copied to clipboard.')
-    })
-  }
-
 	download() {
     this.clearAlerts()
     this.downloadPending = true
@@ -258,6 +281,17 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 			saveAs(blobData, "test_suite.zip")
     }).add(() => {
       this.downloadPending = false
+    })
+  }
+
+	previewDocumentationPdf() {
+    this.previewPending = true
+		this.reportService.exportTestSuiteDocumentationPreviewReport(this.testSuite.documentation!)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/pdf'});
+      saveAs(blobData, "report_preview.pdf");
+    }).add(() => {
+      this.previewPending = false
     })
   }
 
@@ -297,27 +331,34 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
 	back() {
-    if (this.specificationId) {
-      this.routingService.toSpecification(this.domainId, this.specificationId!, Constants.TAB.SPECIFICATION.TEST_SUITES)
-    } else {
-      this.routingService.toDomain(this.domainId, Constants.TAB.DOMAIN.TEST_SUITES)
-    }
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      if (this.specificationId) {
+        this.routingService.toSpecification(this.domainId, this.specificationId!, Constants.TAB.SPECIFICATION.TEST_SUITES)
+      } else {
+        this.routingService.toDomain(this.domainId, Constants.TAB.DOMAIN.TEST_SUITES)
+      }
+    })
   }
 
 	saveDisabled() {
     return !this.loaded || this.savePending || !this.textProvided(this.testSuite?.sname)
   }
 
-	onTestCaseSelect(testCaseId: number) {
+  testCaseEditTarget = (testCase: ConformanceTestCase): NavigationTarget => {
     if (this.specificationId) {
-      this.routingService.toTestCase(this.domainId, this.specificationId!, this.testSuiteId, testCaseId)
+      return this.routingService.linkToTestCase(this.domainId, this.specificationId!, this.testSuiteId, testCase.id)
     } else {
-      this.routingService.toSharedTestCase(this.domainId, this.testSuiteId, testCaseId)
+      return this.routingService.linkToSharedTestCase(this.domainId, this.testSuiteId, testCase.id)
     }
   }
 
-  onSpecificationSelect(specification: Specification) {
-    this.routingService.toSpecification(this.domainId, specification.id)
+  /** Returns undefined while selecting specifications to unlink - row clicks then toggle the row's
+   * checkbox instead of navigating (see [allowSelect]="!selectingForUnlink" / [checkboxEnabled]). */
+  specificationRowTarget = (specification: Specification): NavigationTarget|undefined => {
+    if (this.selectingForUnlink) {
+      return undefined
+    }
+    return this.routingService.linkToSpecification(this.domainId, specification.id)
   }
 
   linkSpecifications() {
@@ -455,6 +496,12 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 
   applySearchFilter() {
     this.loadTestCases()
+  }
+
+  toggleTestCaseExpand(expand: boolean) {
+    this.testCaseDisplayComponents?.forEach((component) => {
+      component.expandAll(expand)
+    })
   }
 
   @HostListener('document:click', ['$event'])

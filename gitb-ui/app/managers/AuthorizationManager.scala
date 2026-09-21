@@ -20,7 +20,7 @@ import com.gitb.utils.HmacUtils
 import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
-import models.Enums.{SelfRegistrationType, UserRole}
+import models.Enums.{MessageTargetType, SelfRegistrationType, UserRole}
 import models._
 import org.pac4j.core.context.WebContext
 import org.slf4j.{Logger, LoggerFactory}
@@ -48,12 +48,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      landingPageManager: LandingPageManager,
                                      legalNoticeManager: LegalNoticeManager,
                                      triggerManager: TriggerManager,
+                                     testFlagManager: TestFlagManager,
                                      communityResourceManager: CommunityResourceManager,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
                                      actorManager: ActorManager,
                                      systemConfigurationManager: SystemConfigurationManager,
                                      domainManager: DomainManager,
+                                     messageManager: MessageManager,
                                      repositoryUtils: RepositoryUtils,
                                      profileResolver: ProfileResolver)
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
@@ -216,6 +218,22 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
+  private def restApiEnabledAndValidDevelopmentKeyDefined(request: RequestWithAttributes[_]): Future[Boolean] = {
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
+      if (apiKey.isDefined) {
+        // Check to see that the API key is the development API key.
+        systemConfigurationManager.getSystemConfigurationAsync(Constants.RestApiDevelopmentKey).map { developmentApiKey =>
+          developmentApiKey.flatMap(_.parameter).isDefined && developmentApiKey.get.parameter.get == apiKey.get
+        }
+      } else {
+        Future.successful(false)
+      }
+    } else {
+      Future.successful(false)
+    }
+  }
+
   def canManageActorThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = restApiEnabledAndValidCommunityKeyDefined(request)
     check.map(setAuthResult(request, _, "You are not allowed to manage actors through the automation API"))
@@ -365,6 +383,24 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = restApiEnabledAndValidCommunityKeyDefined(request)
     check.map(setAuthResult(request, _, "You are not allowed to manage test suites through the automation API"))
+  }
+
+  def canValidateTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    // Accept the development, community or master API key - validation is read-only and has no side-effects.
+    val check = restApiEnabledAndValidDevelopmentKeyDefined(request).flatMap { validDevelopmentKey =>
+      if (validDevelopmentKey) {
+        Future.successful(true)
+      } else {
+        restApiEnabledAndValidCommunityKeyDefined(request).flatMap { validCommunityKey =>
+          if (validCommunityKey) {
+            Future.successful(true)
+          } else {
+            restApiEnabledAndValidMasterKeyDefined(request)
+          }
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "You are not allowed to validate test suites through the automation API"))
   }
 
   def canSelfRegister(request: RequestWithAttributes[_], communityId: Long, selfRegToken: Option[String], templateId: Option[Long]): Future[Boolean] = {
@@ -1579,6 +1615,58 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, communityId)
   }
 
+  def canManageTestFlag(request: RequestWithAttributes[_], testFlagId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      val load = () => { testFlagManager.getCommunityId(testFlagId) }
+      canManageCommunityArtifact(request, userInfo, load)
+    }
+  }
+
+  def canManageTestFlags(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canManageCommunity(request, communityId)
+  }
+
+  /** Only the Test Bed administrator receives the all-communities test flag login cache - other roles
+   * get their own community's flags as part of the regular community-for-login payload. */
+  def canViewAllCommunityTestFlags(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  /** Whether the requester may set (or clear, if newFlagId is empty) a test session's flag. An admin-only
+   * flag can only be touched by administrators - this applies both to the flag currently set on the
+   * session (it cannot be replaced/cleared by an organisation user, even to set a non-admin-only flag)
+   * and to the flag being newly assigned (an organisation user cannot set an admin-only flag). The new
+   * flag (if any) must also belong to the same community as the session. */
+  def canSetTestSessionFlag(request: RequestWithAttributes[_], sessionId: String, newFlagId: Option[Long]): Future[Boolean] = {
+    testResultManager.getFlagInfoForTestSession(sessionId).flatMap {
+      case Some((_, currentFlagId, Some(communityId))) =>
+        val currentFlagAdminOnlyFut = currentFlagId match {
+          case Some(id) => testFlagManager.getTestFlagById(id).map(_.adminOnly)
+          case None => Future.successful(false)
+        }
+        val newFlagFut = newFlagId match {
+          case Some(id) => testFlagManager.getTestFlagById(id).map(Some(_))
+          case None => Future.successful(None)
+        }
+        for {
+          currentAdminOnly <- currentFlagAdminOnlyFut
+          newFlag <- newFlagFut
+          allowed <- {
+            if (newFlagId.isDefined && (newFlag.isEmpty || newFlag.get.community != communityId)) {
+              // The referenced flag doesn't exist or belongs to a different community.
+              Future.successful(false)
+            } else {
+              val requiresAdmin = currentAdminOnly || newFlag.exists(_.adminOnly)
+              canManageTestSession(request, sessionId, requireAdmin = requiresAdmin, requireOwnTestSessionIfNotAdmin = true)
+            }
+          }
+        } yield allowed
+      case _ =>
+        // No recorded session, or a session without a community (community has since been deleted).
+        Future.successful(false)
+    }
+  }
+
   def canManageCommunityResource(request: RequestWithAttributes[_], resourceId: Long): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
       val load = () => {
@@ -1875,6 +1963,145 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkIsAuthenticated(request)
   }
 
+  private def canViewMessage(userInfo: User, messageId: Long, requireTestBedAdmin: Boolean, requireCommunityAdmin: Boolean, sentMessage: Option[Boolean]): Future[(Boolean, Long, Long)] = {
+    if (userInfo.organization.isEmpty || (requireCommunityAdmin && !isCommunityAdmin(userInfo)) || (requireTestBedAdmin && !isTestBedAdmin(userInfo))) {
+      // Community or Test Bed access requested but the user's role does not match this.
+      Future.successful((false, -1L, -1L))
+    } else {
+      sentMessage match {
+        case Some(true) =>
+          messageManager.canAccessSentMessage(messageId, userInfo.organization.get.id).map(x => (x, userInfo.organization.get.id, userInfo.id))
+        case Some(false) =>
+          messageManager.canAccessReceivedMessage(messageId, userInfo.organization.get.id).map(x => (x, userInfo.organization.get.id, userInfo.id))
+        case None =>
+          messageManager.canAccessSentMessage(messageId, userInfo.organization.get.id).map(x => (x, userInfo.organization.get.id, userInfo.id)).flatMap { result =>
+            if (result._1) {
+              Future.successful(result)
+            } else {
+              messageManager.canAccessReceivedMessage(messageId, userInfo.organization.get.id).map(x => (x, userInfo.organization.get.id, userInfo.id))
+            }
+          }
+      }
+    }
+  }
+
+  def canViewMessage(request: RequestWithAttributes[_], messageId: Long, requireTestBedAdmin: Boolean, requireCommunityAdmin: Boolean, sentMessage: Option[Boolean]): Future[(Boolean, Long, Long)] = {
+    val userId = getRequestUserId(request)
+    val check = if (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT) {
+      getUser(userId).flatMap { userInfo =>
+        canViewMessage(userInfo, messageId, requireTestBedAdmin, requireCommunityAdmin, sentMessage)
+      }
+    } else {
+      // User is the demo account.
+      Future.successful((false, -1L, -1L))
+    }
+    check.map { case (check, orgId, userId) =>
+      setAuthResult(request, check, "User cannot access the selected message")
+      (check, orgId, userId)
+    }
+  }
+
+  /** Every message read is scoped to the requester's own organisation inside MessageManager, so no
+   * per-message ownership check is needed here - only that the caller is authenticated, and (as for any
+   * other messaging endpoint) is not the configured demo account. */
+  def canViewOwnMessages(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = checkIsAuthenticated(request).map { authenticated =>
+      authenticated && (!Configurations.DEMOS_ENABLED || getRequestUserId(request) != Configurations.DEMOS_ACCOUNT)
+    }
+    check.map(setAuthResult(request, _, "User cannot view messages"))
+  }
+
+  /** Read/unread and delete mutations are scoped to the requester's own organisation in the manager's
+   * WHERE clauses, so a forged message id can never affect another organisation's data - only
+   * authentication (and not being the configured demo account) is checked here. */
+  def canManageOwnMessages(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = checkIsAuthenticated(request).map { authenticated =>
+      authenticated && (!Configurations.DEMOS_ENABLED || getRequestUserId(request) != Configurations.DEMOS_ACCOUNT)
+    }
+    check.map(setAuthResult(request, _, "User cannot manage messages"))
+  }
+
+  /** The actual security boundary for who a message may be sent to. Each recipient descriptor is checked
+   * against the caller's role: an organisation user/admin may only address their own organisation or a
+   * community's administrators (their own community, unless unspecified); a community administrator may
+   * additionally address all members or a specific organisation of their own community, and the Test Bed
+   * administrators; the Test Bed administrator may address anything. MessageManager.resolveTargets later
+   * expands these (already-authorised) descriptors into concrete organisation ids. */
+  def canSendMessage(request: RequestWithAttributes[_], targets: List[MessageTarget], parentMessageId: Option[Long]): Future[Boolean] = {
+    val userId = getRequestUserId(request)
+    val check = if (targets.isEmpty || (Configurations.DEMOS_ENABLED && userId == Configurations.DEMOS_ACCOUNT)) {
+      Future.successful(false)
+    } else {
+      for {
+        userInfo <- getUser(userId)
+        recipientsOk <- {
+          if (isTestBedAdmin(userInfo)) {
+            Future.successful(true)
+          } else if (userInfo.organization.isEmpty) {
+            Future.successful(false)
+          } else {
+            val ownCommunityId = userInfo.organization.get.community
+            if (isCommunityAdmin(userInfo)) {
+              areTargetsAllowedForCommunityAdmin(targets, ownCommunityId)
+            } else if (isOrganisationAdmin(userInfo) || userInfo.role == UserRole.VendorUser.id.toShort) {
+              Future.successful(targets.forall(isTargetAllowedForOrganisationUser(_, ownCommunityId)))
+            } else {
+              Future.successful(false)
+            }
+          }
+        }
+        andParentMessageOk <- {
+          if (recipientsOk) {
+            if (parentMessageId.isEmpty) {
+              Future.successful(true)
+            } else {
+              canViewMessage(userInfo, messageId = parentMessageId.get, requireTestBedAdmin = false, requireCommunityAdmin = false, sentMessage = None).map(_._1)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } yield andParentMessageOk
+    }
+    check.map(setAuthResult(request, _, "User cannot send this message"))
+  }
+
+  private def isTargetAllowedForOrganisationUser(target: MessageTarget, ownCommunityId: Long): Boolean = {
+    MessageTargetType.apply(target.targetType) match {
+      case MessageTargetType.OwnOrganisation => true
+      case MessageTargetType.CommunityAdmin => target.communityId.forall(_ == ownCommunityId)
+      case _ => false
+    }
+  }
+
+  /** Authorises the whole recipient list in a single DB round trip regardless of how many targets it
+   * contains, replacing a per-target lookup: the group/admin target types (AllCommunityMembers,
+   * CommunityAdmin, TestBedAdmin) are pure predicates that need no query, so only the Organisation
+   * targets' ids are collected and checked together via organizationManager.areAllInCommunity. An
+   * Organisation target without an organisationId still fails immediately, as it did before. */
+  private def areTargetsAllowedForCommunityAdmin(targets: List[MessageTarget], ownCommunityId: Long): Future[Boolean] = {
+    val organisationIds = scala.collection.mutable.Set[Long]()
+    val allowedWithoutQuery = targets.forall { target =>
+      MessageTargetType.apply(target.targetType) match {
+        case MessageTargetType.AllCommunityMembers | MessageTargetType.CommunityAdmin =>
+          target.communityId.forall(_ == ownCommunityId)
+        case MessageTargetType.TestBedAdmin =>
+          true
+        case MessageTargetType.Organisation =>
+          target.organisationId match {
+            case Some(orgId) => organisationIds += orgId; true
+            case None => false
+          }
+        case _ => false
+      }
+    }
+    if (!allowedWithoutQuery) {
+      Future.successful(false)
+    } else {
+      organizationManager.areAllInCommunity(organisationIds.toSet, ownCommunityId)
+    }
+  }
+
   def canUpdateConformanceCertificateSettings(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
@@ -1963,7 +2190,24 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteObsoleteTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
-    canManageOrganisationBasic(request, organisationId)
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        if (userInfo.organization.isDefined && userInfo.organization.get.id == organisationId) {
+          Future.successful(true)
+        } else {
+          organizationManager.getById(organisationId).map { org =>
+            org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
+          }
+        }
+      } else {
+        communityManager.getById(userInfo.organization.get.community).map { community =>
+          isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowObsoleteSessionDeletion && userInfo.organization.isDefined && userInfo.organization.get.id == organisationId
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested organisation"))
   }
 
   def canDeleteTestResults(request: RequestWithAttributes[_], communityId: Option[Long]): Future[Boolean] = {

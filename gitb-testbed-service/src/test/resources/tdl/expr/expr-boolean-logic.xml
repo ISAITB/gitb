@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-boolean-logic" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Boolean logic</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="t" type="boolean">true()</assign>
+        <assign to="f" type="boolean">false()</assign>
+        <verify handler="ExpressionValidator" desc="and-true">
+            <input name="expression">$t and $t</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="and-false">
+            <input name="expression">not($t and $f)</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="or-true">
+            <input name="expression">$f or $t</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="not">
+            <input name="expression">not($f)</input>
+        </verify>
+    </steps>
+</testcase>

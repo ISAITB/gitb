@@ -21,6 +21,7 @@ import {saveAs} from 'file-saver';
 import {Constants} from '../../../common/constants';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 import {DataService} from '../../../services/data.service';
+import {Utils} from '../../../common/utils';
 
 @Component({
     selector: 'app-test-step-report-modal',
@@ -53,15 +54,15 @@ export class TestStepReportModalComponent {
     this.export("application/xml", "report.xml")
   }
 
-  private export(contentType: string, fileName: string) {
+  private export(contentType: string, fallbackFileName: string) {
     let pathForReport = this.step.report!.path
     if (pathForReport == undefined) {
       pathForReport = this.step.id + '.xml'
     }
     this.reportService.exportTestStepReport(this.sessionId, escape(pathForReport), contentType)
-    .subscribe((data) => {
-      const blobData = new Blob([data], {type: contentType});
-      saveAs(blobData, fileName);
+    .subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
     }).add(() => {
       this.exportPdfPending = false
       this.exportXmlPending = false

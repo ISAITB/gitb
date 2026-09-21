@@ -18,6 +18,8 @@ import {LabelConfig} from '../types/label-config.type';
 
 export class Constants {
 
+  public static readonly MAX_PROVIDE_INPUT_FILES = 10;
+
 	public static readonly THEME_CSS_LINK_ID = "themeCssLink"
 	public static readonly THEME_FAVICON_LINK_ID = "themeFaviconLink"
 
@@ -38,7 +40,7 @@ export class Constants {
 
 	public static readonly LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
   public static readonly SESSION_DATA = {
-    FROM_DASHBOARD: 'dashboard',
+    VIEW_RETURN: 'viewReturn',
     CACHED_TAGS_DOMAIN_ID: 'cachedTagsDomainId',
     CACHED_TAGS_DOMAIN_VALUE: 'cachedTagsDomainValue',
     CACHED_TAGS_COMMUNITY_ID: 'cachedTagsCommunityId',
@@ -55,6 +57,9 @@ export class Constants {
     CANCEL: 'fa-solid fa-xmark',
     CLIPBOARD: 'fa-solid fa-clipboard',
     COLLAPSE: 'fa-solid fa-angles-up',
+    COLLAPSE_CIRCLE: 'fa-solid fa-chevron-circle-down',
+    COLUMNS: 'fa-solid fa-table-columns',
+    COMMENT: 'fa-solid fa-comment',
     COMMUNITY: 'fa-solid fa-people-group',
     COMMUNITY_MANAGEMENT: 'fa-solid fa-people-group',
     CONFIGURATION_PROPERTIES: 'fa-solid fa-sliders',
@@ -78,11 +83,15 @@ export class Constants {
     EXECUTE: 'fa-solid fa-play',
     EXECUTION_OPTIONS: 'fa-solid fa-cog',
     EXPAND: 'fa-solid fa-angles-down',
+    EXPAND_CIRCLE: 'fa-solid fa-chevron-circle-right',
     FILTER: 'fa-solid fa-filter',
     FILTER_CLEAR: 'fa-solid fa-filter-circle-xmark',
-    GO: 'fa-solid fa-arrow-up-right-from-square',
+    FLAG: 'fa-solid fa-flag',
+    GO: 'fa-solid fa-arrow-right',
+    GO_IN_NEW_TAB: 'fa-solid fa-arrow-up-right-from-square',
     HEALTH_DASHBOARD: 'fa-solid fa-heart-pulse',
     HELP: 'fa-solid fa-question-circle',
+    HIDE: 'fa-solid fa-eye-slash',
     LABELS: 'fa-solid fa-tag',
     LANDING_PAGE: 'fa-solid fa-house',
     LEGAL_NOTICE: 'fa-solid fa-scale-balanced',
@@ -91,6 +100,11 @@ export class Constants {
     LOGOUT: 'fa-solid fa-power-off',
     MANAGE_TESTS: 'fa-solid fa-award',
     MAXIMIZE: 'fa-solid fa-up-right-and-down-left-from-center',
+    MESSAGE: 'fa-solid fa-envelope',
+    MESSAGE_IMPORTANT: 'fa-solid fa-exclamation',
+    MESSAGE_NEW: 'fa-solid fa-pen-to-square',
+    MESSAGE_READ: 'fa-solid fa-envelope-open',
+    MESSAGE_UNREAD: 'fa-solid fa-envelope',
     MESSAGING_SERVICE: 'fa-solid fa-paper-plane',
     MINIMIZE: 'fa-solid fa-down-left-and-up-right-to-center',
     MY_SESSION_DASHBOARD: 'fa-regular fa-rectangle-list',
@@ -111,6 +125,7 @@ export class Constants {
     PROFILE: 'fa-solid fa-user-pen',
     REMOVE: 'fa-solid fa-minus',
     REORDER: 'fa-solid fa-arrows-up-down',
+    REPLY: 'fa-solid fa-reply',
     REQUIRED: 'fa-regular fa-circle-dot',
     RESET: 'fa-solid fa-arrows-rotate',
     RESOURCE: 'fa-solid fa-image',
@@ -127,6 +142,7 @@ export class Constants {
     SELECT: 'fa-regular fa-square-check',
     SEND: 'fa-solid fa-paper-plane',
     SESSION_DASHBOARD: 'fa-solid fa-rectangle-list',
+    SHOW: 'fa-solid fa-eye',
     SIGNATURE: 'fa-solid fa-file-signature',
     SKIP: 'fa-solid fa-ban',
     SNAPSHOT: 'fa-solid fa-flag',
@@ -146,8 +162,10 @@ export class Constants {
     TIME: 'fa-solid fa-clock',
     TODAY: 'fa-solid fa-calendar-day',
     TRIGGER: 'fa-solid fa-bolt',
+    UNFLAGGED: 'fa-solid fa-ban',
     UNGROUP: 'fa-solid fa-arrow-up-from-bracket',
     USER: 'fa-solid fa-user',
+    USER_ADMIN: 'fa-solid fa-user-shield',
     VALIDATION_SERVICE: 'fa-solid fa-award',
     VIEW: 'fa-solid fa-magnifying-glass',
     VIEW_INTERACTIONS: 'fa-solid fa-user',
@@ -176,9 +194,11 @@ export class Constants {
 		START_TIME: 'start_time',
 		END_TIME: 'end_time',
 		SESSION: 'session',
+		COMMENTS: 'comments',
 		ORGANISATION_PROPERTY: 'org_property',
 		SYSTEM_PROPERTY: 'sys_property',
 		SPECIFICATION_GROUP: 'specification_group',
+		FLAG: 'flag',
 	}
 
 	public static readonly ORDER = {
@@ -200,6 +220,19 @@ export class Constants {
 		3 : "Domain user",
 		4 : "Test Bed administrator",
 		5 : "Community administrator"
+	}
+
+	// Mirrors models.Enums.MessageTargetType (gitb-ui backend) - values must stay in the same order.
+	public static readonly MESSAGE_TARGET_TYPE = {
+		OWN_ORGANISATION: 1,
+		COMMUNITY_ADMIN: 2,
+		TESTBED_ADMIN: 3,
+		ALL_COMMUNITY_MEMBERS: 4,
+		ORGANISATION: 5,
+		ALL_COMMUNITY_ADMINS: 6,
+		ALL_ORGANISATIONS: 7,
+		ALL_USERS: 8,
+    ALL_COMMUNITY_USERS: 9
 	}
 
 	public static readonly VENDOR_USER_ROLES: IdLabel[] = [
@@ -274,7 +307,18 @@ export class Constants {
   public static readonly DISPLAY_STATE_KEY = {
     CONFORMANCE_STATEMENT: "ConformanceStatement",
     CONFORMANCE_STATEMENTS: "ConformanceStatements",
-    CONFORMANCE_DASHBOARD: "ConformanceDashboard"
+    CONFORMANCE_STATEMENTS_LIST: "ConformanceStatementsList",
+    CONFORMANCE_DASHBOARD: "ConformanceDashboard",
+    CONFORMANCE_DASHBOARD_LIST: "ConformanceDashboardList",
+    SESSION_DASHBOARD: "SessionDashboard",
+    ORGANISATION_TESTS: "OrganisationTests",
+    COMMUNITY_ORGANISATIONS: "CommunityOrganisations",
+    DOMAIN_SPECIFICATIONS: "DomainSpecifications",
+    DOMAIN_SHARED_TEST_SUITES: "DomainSharedTestSuites",
+    SPECIFICATION_TEST_SUITES: "SpecificationTestSuites",
+    TEST_SUITE_TEST_CASES: "TestSuiteTestCases",
+    DOMAINS: "Domains",
+    COMMUNITIES: "Communities"
   }
 
 	public static readonly PLACEHOLDER__ERROR_DESCRIPTION = "$ERROR_DESCRIPTION"
@@ -291,6 +335,7 @@ export class Constants {
   public static readonly PLACEHOLDER__LAST_UPDATE_DATE = "$LAST_UPDATE_DATE"
   public static readonly PLACEHOLDER__REPORT_DATE = "$REPORT_DATE"
   public static readonly PLACEHOLDER__SNAPSHOT = "$SNAPSHOT"
+  public static readonly PLACEHOLDER__PAGE_BREAK = "$PAGE_BREAK"
 
 	public static readonly TEST_STATUS = {
 		UNKNOWN: null,
@@ -349,7 +394,8 @@ export class Constants {
 
 	public static readonly TRIGGER_SERVICE_TYPE = {
 		GITB: 1,
-		JSON: 2
+		JSON: 2,
+    GITB_REST: 3
 	}
 
 	public static readonly TRIGGER_EVENT_TYPE = {
@@ -413,7 +459,8 @@ export class Constants {
 		SYSTEM_ADMINISTRATOR: 31,
 		SYSTEM_CONFIGURATION: 32,
     SYSTEM_RESOURCE: 33,
-    TEST_SERVICE: 34
+    TEST_SERVICE: 34,
+    TEST_FLAG: 35
 	}
 
 	public static readonly IMPORT_ITEM_MATCH = {
@@ -469,7 +516,8 @@ export class Constants {
       LEGAL_NOTICES: 3,
       ERROR_TEMPLATES: 4,
       TRIGGERS: 5,
-      RESOURCES: 6
+      RESOURCES: 6,
+      TEST_FLAGS: 7
     },
     ORGANISATION: {
       SYSTEMS: 0,
@@ -494,6 +542,11 @@ export class Constants {
 		IN_ARCHIVE_ONLY: 1,
 		IN_DB_ONLY: 2,
 		IN_ARCHIVE_AND_DB : 3
+	}
+
+	public static readonly TEST_SUITE_SOURCE = {
+		DISK: 1,
+		URI: 2
 	}
 
 	public static readonly CONFORMANCE_STATEMENT_ITEM_TYPE = {
@@ -548,16 +601,20 @@ export class Constants {
 		SESSION_ALIVE_TIME: 'session_alive_time',
 		REST_API_ENABLED: 'rest_api_enabled',
 		REST_API_ADMIN_KEY: 'rest_api_admin_key',
+    REST_API_DEVELOPMENT_KEY: 'rest_api_development_key',
     REST_API_RATE_LIMITS: 'rest_api_rate_limits',
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
 		WELCOME_MESSAGE: 'welcome',
+    WELCOME_HIDDEN: 'welcome_hidden',
 		ACCOUNT_RETENTION_PERIOD: 'account_retention_period',
 		EMAIL_SETTINGS: 'email_settings',
     SOFTWARE_VERSION_CHECK: 'software_version_check',
-    WELCOME_TITLE: 'welcome_title',
+    WELCOME_TEXTS: 'welcome_texts',
     STARTUP_WIZARD: 'startup_wizard',
-    USAGE_TIPS: 'usage_tips'
+    USAGE_TIPS: 'usage_tips',
+    TEST_SERVICE_CALLBACKS: 'test_service_callbacks',
+    REPORT_SETTINGS: 'report_settings'
 	}
 
   public static readonly USAGE_TIP = {
@@ -582,7 +639,11 @@ export class Constants {
 		TEST_CASE_REPORT: 3,
 		TEST_STEP_REPORT: 4,
 		CONFORMANCE_STATEMENT_CERTIFICATE: 5,
-		CONFORMANCE_OVERVIEW_CERTIFICATE: 6
+		CONFORMANCE_OVERVIEW_CERTIFICATE: 6,
+		CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT: 7,
+		TEST_SUITE_DOCUMENTATION_REPORT: 8,
+		TEST_CASE_DOCUMENTATION_REPORT: 9,
+		TEST_DATA_ARCHIVE: 10
 	}
 
   public static readonly TRIGGER_FIRE_EXPRESSION_TYPE = {
@@ -607,8 +668,11 @@ export class Constants {
     FAILED: '1',
     INCOMPLETE: '2',
     OPTIONAL: '3',
-    DISABLED: '4'
+    DISABLED: '4',
+    UNTAGGED: '5'
   }
+
+  public static readonly TEST_FILTER_TAG_KEY_PREFIX = 'tag:'
 
   public static readonly TEST_SERVICE_TYPE = {
     VALIDATION: 1,

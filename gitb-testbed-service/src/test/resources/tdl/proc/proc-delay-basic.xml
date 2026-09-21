@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-delay-basic" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>DelayProcessor 100ms delay</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="before">'started'</assign>
+        <process handler="DelayProcessor" operation="delay">
+            <input name="duration">100</input>
+        </process>
+        <assign to="after">'finished'</assign>
+        <verify handler="StringValidator" desc="session completed after delay">
+            <input name="actual">$after</input>
+            <input name="expected">'finished'</input>
+        </verify>
+    </steps>
+</testcase>

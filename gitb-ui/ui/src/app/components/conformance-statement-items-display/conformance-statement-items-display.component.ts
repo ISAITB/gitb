@@ -54,6 +54,7 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() selected = new EventEmitter<number>()
   @Output() testStatusOpened = new EventEmitter<TestStatusBaseApi>()
+  @Output() navigating = new EventEmitter<MouseEvent>()
 
   @ViewChildren('itemComponent') itemComponents?: QueryList<ConformanceStatementItemDisplayComponentApi>
 
@@ -109,5 +110,9 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
 
   propagateTestStatusOpened(source: TestStatusBaseApi) {
     this.testStatusOpened.emit(source)
+  }
+
+  propagateNavigating(event: MouseEvent) {
+    this.navigating.emit(event)
   }
 }

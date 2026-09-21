@@ -29,5 +29,7 @@ case class DomainExportData(domain: Option[Domain],
                             testSuiteTestCaseMap: Option[Map[Long, List[TestCases]]],
                             specificationTestSuiteMap: Option[Map[Long, List[TestSuites]]],
                             domainParameters: Option[List[DomainParameter]],
-                            testServices: Option[List[TestService]]
+                            testServices: Option[List[TestService]],
+                            specificationDocumentation: Option[Map[Long, String]],
+                            actorDocumentation: Option[Map[Long, String]]
                            )

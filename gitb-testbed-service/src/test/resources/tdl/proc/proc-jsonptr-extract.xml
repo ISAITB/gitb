@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-jsonptr-extract" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>JsonPointerProcessor field extraction</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="json">'{"address":{"street":"Main St","zip":"12345"}}'</assign>
+        <process handler="JsonPointerProcessor" output="zip">
+            <input name="content">$json</input>
+            <input name="pointer">'/address/zip'</input>
+        </process>
+        <verify handler="StringValidator" desc="extracted zip">
+            <input name="actual">$zip</input>
+            <input name="expected">'12345'</input>
+        </verify>
+    </steps>
+</testcase>

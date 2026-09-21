@@ -22,6 +22,7 @@ class ExportSettings {
   var legalNotices: Boolean = false
   var errorTemplates: Boolean = false
   var triggers: Boolean = false
+  var testFlags: Boolean = false
   var resources: Boolean = false
   var certificateSettings: Boolean = false
   var customLabels: Boolean = false
@@ -63,6 +64,7 @@ class ExportSettings {
       copy.legalNotices = this.legalNotices
       copy.errorTemplates = this.errorTemplates
       copy.triggers = this.triggers
+      copy.testFlags = this.testFlags
       copy.resources = this.resources
       copy.certificateSettings = this.certificateSettings
       copy.customLabels = this.customLabels

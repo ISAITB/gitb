@@ -21,7 +21,6 @@ import {PlaceholderInfo} from 'src/app/components/placeholder-selector/placehold
 import {forkJoin, mergeMap, Observable, of} from 'rxjs';
 import {PopupService} from 'src/app/services/popup.service';
 import {ReportService} from 'src/app/services/report.service';
-import {Constants} from 'src/app/common/constants';
 import {HttpResponse} from '@angular/common/http';
 import {ErrorService} from 'src/app/services/error.service';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
@@ -49,7 +48,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
   ) { super(conformanceService, modalService, reportService, errorService) }
 
   previewEnabled() {
-    return this.reportSettings?.customPdfs == false || (this.textProvided(this.reportSettings?.customPdfService) && (!this.reportSettings?.customPdfsWithCustomXml || this.reportSettings?.stylesheetExists))
+    return (this.reportSettings?.customPdfs == false || (this.textProvided(this.reportSettings?.customPdfService) && (!this.reportSettings?.customPdfsWithCustomXml || this.reportSettings?.stylesheetExists))) && this.fileNameExpressionOk()
   }
 
   handleExpanded(): void {
@@ -79,7 +78,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
     this.reportType = this.getReportType()
     if (this.settings == undefined) {
       const loadCertificateSettings = this.getSettings()
-      const loadReportSettings = this.reportService.loadReportSettings(this.communityId, Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_CERTIFICATE)
+      const loadReportSettings = this.reportService.loadReportSettings(this.communityId, this.reportType)
       return forkJoin([loadCertificateSettings, loadReportSettings]).pipe(
         mergeMap((data) => {
           if (data[0]) {
@@ -92,6 +91,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
             if (this.reportSettings.stylesheetExists) {
               this.stylesheetNameToShow = 'stylesheet.xslt'
             }
+            this.initialiseFileNameCustomisation()
           }
           return this.loadAdditionalData()
         })
@@ -112,6 +112,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
   }
 
   update() {
+    this.prepareFileNameExpressionForSave()
     this.updatePending = true
     this.updateSettings()
     .subscribe(() => {

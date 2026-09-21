@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {Observable, of, Subscription, throwError, timer} from 'rxjs';
@@ -53,6 +53,8 @@ import {Utils} from '../../common/utils';
 import {NgbModal, NgbModalRef} from '@ng-bootstrap/ng-bootstrap';
 import {UserInteractionInput} from '../../types/user-interaction-input';
 import {CheckBoxOptionPanelComponentApi} from '../../components/checkbox-option-panel/check-box-option-panel-component-api';
+import {TestResultCommentsModalComponent} from '../../modals/test-result-comments-modal/test-result-comments-modal.component';
+import {OutputMessageDisplayApi} from '../../components/output-message-display/output-message-display-api';
 
 @Component({
   selector: 'app-test-execution',
@@ -91,6 +93,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   progressIcons: {[key: number]: string} = {}
   testCaseStatus: {[key: number]: number} = {}
+  testCaseWithComments: {[key: number]: boolean} = {}
   testCaseOutput: {[key: number]: string} = {}
   testCaseExpanded: {[key: number]: boolean} = {}
   testCaseVisible: {[key: number]: boolean} = {}
@@ -106,6 +109,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   unreadLogWarnings: {[key: number]: boolean} = {}
   testCaseWithOpenLogView?: number
   testCaseOperationPending: {[key: number]: boolean} = {}
+  testCaseCommentsPending: {[key: number]: boolean} = {}
+  testCaseFlagId: {[key: number]: number|undefined} = {}
+  testCaseFlagPending: {[key: number]: boolean} = {}
 
   actor?: string
   session?: string
@@ -138,6 +144,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     ]
   ]
   @ViewChild("testOptionsControl") testOptionsControl?: CheckBoxOptionPanelComponentApi
+  @ViewChildren("outputMessageDisplayComponent") outputMessageDisplayComponents?: QueryList<OutputMessageDisplayApi>
+  @ViewChildren("sessionFlagControl") sessionFlagControls?: QueryList<CheckBoxOptionPanelComponentApi>
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -236,6 +244,10 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     this.stepsOfTests = {}
     this.interactionStepsOfTests = {}
     this.actorInfoOfTests = {}
+    // Flag state is per test session, not per test case - a session's flag must not survive into the
+    // newly prepared session that "Reset" creates for the same test case id.
+    this.testCaseFlagId = {}
+    this.testCaseFlagPending = {}
     this.actor = undefined
     this.session = undefined
     this.simulatedConfigs = undefined
@@ -1279,9 +1291,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   exportTestData(testCase: ConformanceTestCase) {
     this.testCaseOperationPending[testCase.id] = true
-    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/zip'});
-      saveAs(blobData, 'test_case_data.zip');
+    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/zip'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, 'test_data.zip'));
     }).add(() => {
       this.testCaseOperationPending[testCase.id] = false
     })
@@ -1297,24 +1309,102 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }
   }
 
-	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fileName: string) {
+	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fallbackFileName: string) {
     this.testCaseOperationPending[testCase.id] = true
-    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType).subscribe((data) => {
-      const blobData = new Blob([data], {type: contentType});
-      saveAs(blobData, fileName);
+    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
     }).add(() => {
       this.testCaseOperationPending[testCase.id] = false
     })
   }
 
+  private statusToTestCaseResult(status: number): string {
+    switch (status) {
+      case Constants.TEST_CASE_STATUS.COMPLETED: return Constants.TEST_CASE_RESULT.SUCCESS;
+      case Constants.TEST_CASE_STATUS.ERROR: return Constants.TEST_CASE_RESULT.FAILURE;
+      default: return Constants.TEST_CASE_RESULT.UNDEFINED;
+    }
+  }
+
+  private testCaseResultToStatus(result: string): number {
+    switch (result) {
+      case Constants.TEST_CASE_RESULT.SUCCESS: return Constants.TEST_CASE_STATUS.COMPLETED;
+      case Constants.TEST_CASE_RESULT.FAILURE: return Constants.TEST_CASE_STATUS.ERROR;
+      default: return Constants.TEST_CASE_STATUS.STOPPED;
+    }
+  }
+
+  private organisationName() {
+    if (this.organisationId === this.dataService.vendor?.id) {
+      // Organisation matches connected user.
+      return this.dataService.vendor.fname;
+    } else {
+      /*
+       * Administrator executing a test session for another user. The administrator cannot add/edit another organisation's comment, and given
+       * that this is the test execution screen it is very unlikely that existing organisation comments will be defined. In any case as a
+       * fallback solution we just show the general label for organisations instead of the organisation name (to avoid making an unnecessary lookup).
+       */
+      return this.dataService.labelOrganisation();
+    }
+  }
+
+  /** The community whose flags apply to the running tests: the route's communityId when the Test Bed
+   * administrator is executing tests for a community's organisation, otherwise the current user's own
+   * community. A Test Bed administrator running tests for their own organisation has neither (no route
+   * communityId, no own community), so this correctly resolves to undefined - never taking flags. */
+  sessionCommunityId(): number|undefined {
+    return this.communityId ?? this.dataService.community?.id
+  }
+
+  onFlagChanged(testCase: ConformanceTestCase, flagId: number|undefined) {
+    if (testCase.sessionId) {
+      this.testCaseFlagPending[testCase.id] = true
+      this.testService.setTestSessionFlag(testCase.sessionId, flagId).subscribe(() => {
+        this.testCaseFlagId[testCase.id] = flagId
+      }).add(() => {
+        this.testCaseFlagPending[testCase.id] = false
+      })
+    }
+  }
+
+  viewComments(testCase: ConformanceTestCase) {
+    if (testCase.sessionId) {
+      this.testCaseCommentsPending[testCase.id] = true
+      this.testService.getTestSessionComments(testCase.sessionId).subscribe((comments) => {
+        const modal = this.modalService.open(TestResultCommentsModalComponent, { size: 'lg' });
+        const modalInstance = modal.componentInstance as TestResultCommentsModalComponent;
+        modalInstance.sessionId = testCase.sessionId!;
+        modalInstance.sessionResult = this.statusToTestCaseResult(this.testCaseStatus[testCase.id]);
+        modalInstance.sessionOutputMessage = this.testCaseOutput[testCase.id];
+        modalInstance.sessionOwner = this.organisationId;
+        modalInstance.sessionOwnerName = this.organisationName();
+        modalInstance.comments = comments;
+        modalInstance.commentsEditable = true;
+        modalInstance.updateResult.subscribe((result) => {
+          this.updateTestCaseStatus(testCase.id, this.testCaseResultToStatus(result.result));
+          this.testCaseOutput[testCase.id] = result.outputMessage??'';
+          this.outputMessageDisplayComponents?.find(display => display.testCaseIdReference() === testCase.id)?.update(this.testCaseOutput[testCase.id]);
+        });
+        modalInstance.commentUpdate.subscribe((hasComments) => {
+          this.testCaseWithComments[testCase.id] = hasComments;
+        });
+      }).add(() => {
+        this.testCaseCommentsPending[testCase.id] = false;
+      })
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   clickRegistered(event: Event) {
     this.testOptionsControl?.documentClick(event)
+    this.sessionFlagControls?.forEach(control => control.documentClick(event))
   }
 
   @HostListener('document:keyup.escape')
   escapeRegistered() {
     this.testOptionsControl?.documentEscape()
+    this.sessionFlagControls?.forEach(control => control.documentEscape())
   }
 
 }

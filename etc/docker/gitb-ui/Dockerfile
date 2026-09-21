@@ -1,10 +1,10 @@
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 ENV PATH=/usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL=http://gitb-srv:8080/itbsrv/TestbedService
 ENV TESTBED_CLIENT_URL_INTERNAL=http://0.0.0.0:9090/TestbedClient
 ENV TESTBED_CLIENT_URL=http://gitb-ui:9090/TestbedClient
-ENV DB_DEFAULT_URL=jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true
+ENV DB_DEFAULT_URL=jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
 ENV DB_DEFAULT_ROOTURL=jdbc:mysql://gitb-mysql/
 ENV REDIS_HOST=gitb-redis
 
@@ -15,5 +15,8 @@ RUN chmod +x /usr/local/gitb-ui/bin/gitb-entrypoint.sh
 EXPOSE 9000
 EXPOSE 9090
 WORKDIR /usr/local/gitb-ui
+
+# JDK_JAVA_OPTIONS is the JVM standard environment variable for passing arguments to the JVM
+# This can be set when creating a container to override the defaults.
 
 ENTRYPOINT ["/usr/local/gitb-ui/bin/gitb-entrypoint.sh"]

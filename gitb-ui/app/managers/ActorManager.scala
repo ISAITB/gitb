@@ -101,6 +101,8 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1)
       _ <- PersistenceSchema.conformanceSnapshotActors.filter(_.id === actorId).map(_.id).update(actorId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotActorDocumentation.filter(_.id === actorId).map(_.id).update(actorId * -1)
+      _ <- PersistenceSchema.actorDocumentation.filter(_.id === actorId).delete
       _ <- PersistenceSchema.actors.filter(_.id === actorId).delete
       _ <- {
         onSuccessCalls += (() => repositoryUtils.deleteActorBadges(specificationId, actorId))
@@ -109,9 +111,9 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, badges: BadgeInfo): Future[Unit] = {
+  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, documentation: Option[String], badges: BadgeInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateActor(id, actorId, name, description, reportMetadata, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
+    val dbAction = updateActor(id, actorId, name, description, reportMetadata, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false, Some(documentation), Some(badges), onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
@@ -158,6 +160,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         actorInfo._2,
         None,
         checkApiKeyUniqueness = false,
+        None, // documentation not supported via automation API
         None,
         onSuccessCalls
       )
@@ -165,7 +168,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, documentation: Option[Option[String]], badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     var defaultToSet: Option[Boolean] = null
     if (default.isEmpty) {
       defaultToSet = Some(false)
@@ -206,8 +209,26 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         }
         DBIO.successful(())
       }
+      _ <- {
+        documentation match {
+          case Some(doc) => upsertOrDeleteActorDocumentation(id, doc)
+          case None => DBIO.successful(())
+        }
+      }
       _ <- testResultManager.updateForUpdatedActor(id, name)
     } yield()
+  }
+
+  private def upsertOrDeleteActorDocumentation(actorId: Long, documentation: Option[String]): DBIO[_] = {
+    if (documentation.isDefined && documentation.get.nonEmpty) {
+      PersistenceSchema.actorDocumentation.insertOrUpdate(models.ActorDocumentation(actorId, documentation.get))
+    } else {
+      PersistenceSchema.actorDocumentation.filter(_.id === actorId).delete
+    }
+  }
+
+  def getActorDocumentation(actorId: Long): Future[Option[String]] = {
+    DB.run(PersistenceSchema.actorDocumentation.filter(_.id === actorId).map(_.documentation).result.headOption)
   }
 
   def getById(id: Long): Future[Option[Actors]] = {
@@ -252,9 +273,9 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     actions
   }
 
-  def createActorWrapper(actor: Actors, specificationId: Long, badges: BadgeInfo): Future[Long] = {
+  def createActorWrapper(actor: Actors, specificationId: Long, documentation: Option[String], badges: BadgeInfo): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = createActor(actor, specificationId, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
+    val dbAction = createActor(actor, specificationId, checkApiKeyUniqueness = false, documentation, Some(badges), onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
@@ -368,6 +389,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
           Actors(0L, input.identifier, input.name, input.description, input.reportMetadata, Some(input.default.getOrElse(false)), input.hidden.getOrElse(false), input.displayOrder, apiKeyToUse, specificationIds._2),
           specificationIds._1,
           checkApiKeyUniqueness = false,
+          None, // documentation not supported via automation API
           None,
           onSuccessCalls
         )
@@ -376,7 +398,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
+  def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean, documentation: Option[String], badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {
         PersistenceSchema.actors.filter(_.apiKey === actor.apiKey).exists.result
@@ -396,6 +418,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         }
         DBIO.seq(actions.toList.map(a => a): _*)
       }
+      _ <- upsertOrDeleteActorDocumentation(savedActorId, documentation)
       _ <- {
         if (badges.isDefined) {
           onSuccessCalls += (() => updateActorBadges(specificationId, savedActorId, badges.get.forWeb, badges.get.forReport))

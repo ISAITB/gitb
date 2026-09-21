@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-soap-send-basic" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>SoapMessagingV2 send SOAP 1.1 message</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="envelope" type="object"><![CDATA['<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><hello>world</hello></soapenv:Body></soapenv:Envelope>']]></assign>
+        <send handler="SoapMessagingV2" desc="Send SOAP 1.1 envelope">
+            <input name="uri">concat($backendUrl, '/soap-target')</input>
+            <input name="version">'1.1'</input>
+            <input name="envelope">$envelope</input>
+        </send>
+    </steps>
+</testcase>

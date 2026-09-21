@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-log-message" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Log step session still passes</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="val">'test value'</assign>
+        <log>'Starting test with value: ' || $val</log>
+        <log>'Test is running'</log>
+        <verify handler="StringValidator" desc="session still active after log">
+            <input name="actual">$val</input>
+            <input name="expected">'test value'</input>
+        </verify>
+        <log>'Test completed'</log>
+    </steps>
+</testcase>

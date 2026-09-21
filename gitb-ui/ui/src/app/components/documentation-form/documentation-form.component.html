@@ -1,0 +1,36 @@
+<app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
+    <div class="row py-3">
+        <div class="offset-1 col-10">
+            <div class="mb-3">
+                <app-placeholder-selector [resources]="communityId != undefined" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
+            </div>
+            <div class="editorContainer">
+                <app-editor id="documentation" name="documentation" [ngModel]="documentation" (ngModelChange)="onDocumentationChange($event)"></app-editor>
+                <div app-tooltip class="col-auto ms-3" [tbTooltip]="tooltipText"></div>
+            </div>
+        </div>
+    </div>
+    @if (showPreviewAndCopy) {
+        <div class="row form-group">
+            <div class="offset-1 col-10">
+                <div class="btn-toolbar">
+                    @if (showPdfPreview) {
+                        <div class="btn-group" ngbDropdown>
+                            <button (click)="previewDocumentation()" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" class="btn btn-secondary" [disable]="pending || documentation == undefined || documentation.length == 0" [pending]="pending" id="button-preview">Preview documentation</button>
+                            <button id="button-preview-pdf" type="button" [disabled]="pending || documentation == undefined || documentation.length == 0" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                <span class="caret"></span>
+                                <span class="sr-only visually-hidden">Preview documentation in PDF report</span>
+                            </button>
+                            <div id="dropdown-preview-pdf" ngbDropdownMenu aria-labelledby="button-preview-pdf">
+                                <button ngbDropdownItem type="button" (click)="previewPdf.emit()">Preview documentation in PDF report</button>
+                            </div>
+                        </div>
+                    } @else {
+                        <button (click)="previewDocumentation()" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" class="btn btn-secondary" [disable]="pending || documentation == undefined || documentation.length == 0" [pending]="pending">Preview documentation</button>
+                    }
+                    <button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" type="button" class="btn btn-secondary" [disable]="documentation == undefined || documentation.length == 0">Copy to clipboard</button>
+                </div>
+            </div>
+        </div>
+    }
+</app-form-section>

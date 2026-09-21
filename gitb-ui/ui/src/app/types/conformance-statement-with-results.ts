@@ -25,5 +25,6 @@ export interface ConformanceStatementWithResults {
     results: SearchResult<ConformanceStatus>
     system: System
     organisation: Organisation
+    documentation?: string
 
 }

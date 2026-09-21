@@ -53,7 +53,7 @@
                                 <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>
                             </div>
                         }
-                        @if (testCase.sessionId != undefined || (testCase.hasDocumentation && showViewDocumentation) || showExportTestCase(testCase) || showExecute || showEdit) {
+                        @if (testCase.sessionId != undefined || (testCase.hasDocumentation && showViewDocumentation) || showExportTestCase(testCase) || showExecute || editTarget) {
                             <div class="btn-toolbar" (click)="$event.stopPropagation()">
                                 @if (testCase.sessionId != undefined || showExportTestCase(testCase)) {
                                     <app-checkbox-option-panel #optionButton
@@ -65,13 +65,14 @@
                                                                [singleSelection]="true"
                                                                [pending]="operationPending[testCase.id]"
                                                                (updated)="handleOption($event, testCase)"
+                                                               (navigate)="optionNavigating($event)"
                                                                (opening)="optionsOpening(testCase)"></app-checkbox-option-panel>
                                 }
                                 @if (testCase.hasDocumentation && showViewDocumentation) {
                                     <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" tooltipClass="shortTooltip" container="body"  ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOCUMENTATION"></i></button>
                                 }
-                                @if (showEdit) {
-                                    <button type="button" class="btn btn-secondary" (click)="editTestcase(testCase)" tooltipClass="shortTooltip" container="body"  ngbTooltip="Edit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.EDIT"></i></button>
+                                @if (editTarget) {
+                                    <a class="btn btn-secondary" [navTarget]="editTarget(testCase)" tooltipClass="shortTooltip" container="body"  ngbTooltip="Edit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.EDIT"></i></a>
                                 }
                                 @if (showExecute) {
                                     <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run" [disabled]="testCase.disabled" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.EXECUTE"></i></button>

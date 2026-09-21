@@ -14,7 +14,7 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {of} from 'rxjs';
+import {of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
 import {ReportService} from 'src/app/services/report.service';
@@ -31,6 +31,8 @@ import {TestResultStatusDisplayComponentApi} from '../test-result-status-display
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {Utils} from 'src/app/common/utils';
+import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
     selector: 'app-test-case-display',
@@ -49,14 +51,17 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
   @Input() showExport? = false
   @Input() showViewDocumentation? = true
   @Input() showResults? = true
-  @Input() showEdit? = false
+  /** When set, the edit control is rendered as a real link to the given test case's own details page. */
+  @Input() editTarget?: (testCase: ConformanceTestCase) => NavigationTarget
+  /** When set, the "View test sessions" option is rendered as a real link to the given test case's sessions. */
+  @Input() viewSessionsTarget?: (testCase: ConformanceTestCase) => NavigationTarget
   @Input() shaded = true
   @Input() communityId?: number
 
-  @Output() viewTestSessions = new EventEmitter<ConformanceTestCase>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()
-  @Output() edit = new EventEmitter<ConformanceTestCase>()
   @Output() optionsOpened = new EventEmitter<ConformanceTestCase>()
+  /** Emitted when a link-based option (e.g. "View test sessions") is clicked, so a root consumer can still run a pre-navigation side effect (e.g. recording a "return to source" location). */
+  @Output() navigating = new EventEmitter<MouseEvent>()
 
   @ViewChildren("testResultStatusDisplayComponent") testResultStatusDisplayComponents?: QueryList<TestResultStatusDisplayComponentApi>
   @ViewChildren("optionButton") optionButtons?: QueryList<CheckBoxOptionPanelComponentApi>
@@ -115,7 +120,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
       const options: CheckboxOption[][] = []
       if (testCase.sessionId != undefined) {
         options.push([
-          { key: TestCaseDisplayComponent.VIEW_SESSIONS, label: "View test sessions", default: true, iconClass: Constants.BUTTON_ICON.VIEW},
+          { key: TestCaseDisplayComponent.VIEW_SESSIONS, label: "View test sessions", default: true, iconClass: Constants.BUTTON_ICON.VIEW, target: this.viewSessionsTarget?.(testCase)},
         ])
       }
       if (this.showExportTestCase(testCase)) {
@@ -139,11 +144,13 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
       this.onExportTestCasePdf(testCase)
     } else if (event[TestCaseDisplayComponent.EXPORT_XML]) {
       this.onExportTestCaseXml(testCase)
-    } else if (event[TestCaseDisplayComponent.VIEW_SESSIONS]) {
-      this.doViewTestSessions(testCase)
     } else if (event[TestCaseDisplayComponent.EXPORT_DATA]) {
       this.onExportTestData(testCase)
     }
+  }
+
+  optionNavigating(event: MouseEvent) {
+    this.navigating.emit(event)
   }
 
   optionsOpening(testCase: ConformanceTestCase) {
@@ -167,16 +174,19 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     })
   }
 
-  doViewTestSessions(testCase: ConformanceTestCase) {
-    this.viewTestSessions.emit(testCase)
-  }
-
   showTestCaseDocumentation(testCase: ConformanceTestCase) {
     this.viewDocumentationPending[testCase.id] = true
     this.dataService.setImplicitCommunity(this.communityId)
     this.conformanceService.getTestCaseDocumentation(testCase.id)
     .subscribe((data) => {
-      this.htmlService.showHtml("Test case documentation", data)
+      this.htmlService.showHtml("Test case documentation", data, undefined, () => {
+        return this.reportService.exportTestCaseDocumentationReport(testCase.id).pipe(
+          tap((response) => {
+            const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/pdf'});
+            saveAs(blobData, Utils.fileNameFromContentDisposition(response, "test_case_documentation.pdf"));
+          })
+        )
+      })
     }).add(() => {
       this.viewDocumentationPending[testCase.id] = false
     })
@@ -198,9 +208,9 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
 
   onExportTestData(testCase: ConformanceTestCase) {
     this.operationPending[testCase.id] = true
-    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/zip'});
-      saveAs(blobData, 'test_case_data.zip');
+    return this.reportService.exportTestSessionData(testCase.sessionId!).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: 'application/zip'});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, 'test_data.zip'));
     }).add(() => {
       this.operationPending[testCase.id] = false
     })
@@ -210,11 +220,11 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
   }
 
-	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fileName: string) {
+	private onExportTestCase(testCase: ConformanceTestCase, contentType: string, fallbackFileName: string) {
     this.operationPending[testCase.id] = true
-    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id, contentType).subscribe((data) => {
-      const blobData = new Blob([data], {type: contentType});
-      saveAs(blobData, fileName);
+    this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id, contentType).subscribe((response) => {
+      const blobData = new Blob([response.body as ArrayBuffer], {type: contentType});
+      saveAs(blobData, Utils.fileNameFromContentDisposition(response, fallbackFileName));
     }).add(() => {
       this.operationPending[testCase.id] = false
     })
@@ -236,16 +246,25 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     return tooltip;
   }
 
-  editTestcase(testCase: ConformanceTestCase) {
-    if (this.showEdit) {
-      this.edit.emit(testCase)
-    }
-  }
-
   testCaseClicked(testCaseId: number) {
     this.descriptionVisible[testCaseId] = !this.descriptionVisible[testCaseId]
     // Make sure that any status display messages are closed
     this.statusCloseEmitter.emit({})
+  }
+
+  expandAll(expand: boolean) {
+    this.animated = false
+    setTimeout(() => {
+      for (let testCase of this.testCases) {
+        if (this.hasDescription[testCase.id]) {
+          this.descriptionVisible[testCase.id] = expand
+        }
+      }
+      this.statusCloseEmitter.emit({})
+      setTimeout(() => {
+        this.animated = true
+      })
+    })
   }
 
   statusPopupOpened(openedTestCaseId: number) {

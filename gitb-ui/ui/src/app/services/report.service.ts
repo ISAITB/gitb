@@ -33,6 +33,7 @@ import { Constants } from '../common/constants';
 import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
 import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 import { CommunityReportSettings } from '../types/community-report-settings';
+import { ConformanceStatementDocumentationReportSettings } from '../types/conformance-statement-documentation-report-settings';
 
 @Injectable({
   providedIn: 'root'
@@ -172,6 +173,18 @@ export class ReportService {
       }
       if (criteria.completedSortOrder !== undefined) {
         params.sort_order = criteria.completedSortOrder
+      }
+      if (criteria.hasComments !== undefined) {
+        params.has_comments = criteria.hasComments
+      }
+      if (criteria.commentText !== undefined) {
+        params.comment_text = criteria.commentText
+      }
+      if (criteria.flagIds !== undefined && criteria.flagIds.length > 0) {
+        params.flag_ids = criteria.flagIds.join(',')
+      }
+      if (criteria.includeUnflagged !== undefined) {
+        params.include_unflagged = criteria.includeUnflagged
       }
     }
     return params
@@ -347,6 +360,9 @@ export class ReportService {
     if (settings.customPdfService != undefined) {
       data.customPdfService = settings.customPdfService
     }
+    if (settings.fileNameExpression != undefined) {
+      data.fileNameExpression = settings.fileNameExpression
+    }
     return data
   }
 
@@ -396,7 +412,7 @@ export class ReportService {
     })
   }
 
-  exportDemoReportXml(communityId: number, reportType: number, enabled: boolean, file?: FileData, data?: {[key: string]: any}) {
+  exportDemoReportXml(communityId: number, reportType: number, enabled: boolean, file?: FileData, data?: {[key: string]: any}, fileNameExpression?: string) {
     let path: string
     if (reportType == Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_REPORT) {
       path = ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewReportInXML(communityId).url
@@ -417,11 +433,15 @@ export class ReportService {
     }
     dataToUse.enable = enabled
     dataToUse.type = reportType
-    return this.restService.post<string>({
+    if (fileNameExpression != undefined) {
+      dataToUse.fileNameExpression = fileNameExpression
+    }
+    return this.restService.post<HttpResponse<string>>({
       path: path,
       authenticate: true,
       files: files,
       text: true,
+      httpResponse: true,
       data: dataToUse
     })
   }
@@ -492,6 +512,74 @@ export class ReportService {
     })
   }
 
+  updateConformanceStatementDocumentationReportSettings(communityId: number, reportSettings: CommunityReportSettings, settings: ConformanceStatementDocumentationReportSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(settings)
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.updateConformanceStatementDocumentationReportSettings(communityId).url,
+      authenticate: true,
+      data: dataToUse,
+      files: files
+    })
+  }
+
+  exportDemoConformanceStatementDocumentationReport(communityId: number, reportSettings: CommunityReportSettings, settings: ConformanceStatementDocumentationReportSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_DOCUMENTATION_REPORT, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(settings)
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceStatementDocumentationReport(communityId).url,
+      data: dataToUse,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true,
+      files: files
+    })
+  }
+
+  exportDemoConformanceStatementDocumentationReportInXML(communityId: number, reportSettings: CommunityReportSettings, settings: ConformanceStatementDocumentationReportSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse: any = {
+      enable: reportSettings.customPdfsWithCustomXml,
+      settings: JSON.stringify(settings)
+    }
+    if (reportSettings.fileNameExpression != undefined) {
+      dataToUse.fileNameExpression = reportSettings.fileNameExpression
+    }
+    return this.restService.post<HttpResponse<string>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceStatementDocumentationReportInXML(communityId).url,
+      authenticate: true,
+      files: files,
+      text: true,
+      httpResponse: true,
+      data: dataToUse
+    })
+  }
+
+  exportConformanceStatementDocumentationReport(actorId: number, systemId: number) {
+    const data: any = {
+      actor_id: actorId,
+      system_id: systemId
+    }
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceStatementDocumentationReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
   exportOwnConformanceOverviewCertificateReport(systemId: number, domainId: number|undefined, groupId: number|undefined, specificationId: number|undefined, snapshotId: number|undefined) {
     let data: any = {
       system_id: systemId
@@ -500,11 +588,12 @@ export class ReportService {
     if (groupId != undefined) data.group_id = groupId
     if (specificationId != undefined) data.spec_id = specificationId
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportOwnConformanceOverviewCertificateReport().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -514,11 +603,12 @@ export class ReportService {
       system_id: systemId
     }
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportOwnConformanceCertificateReport().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -548,11 +638,12 @@ export class ReportService {
     if (groupId != undefined) data.group_id = groupId
     if (specId != undefined) data.spec_id = specId
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportConformanceOverviewCertificateReport().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -564,11 +655,12 @@ export class ReportService {
     if (groupId != undefined) data.group_id = groupId
     if (specId != undefined) data.spec_id = specId
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportConformanceOverviewReport().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -597,19 +689,21 @@ export class ReportService {
     if (snapshotId != undefined) {
       data.snapshot = snapshotId
     }
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportConformanceCertificateReport().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
   exportTestStepReport(sessionId: string, reportPath: string, reportContentType: string) {
-    return this.restService.get<ArrayBuffer>({
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url,
       authenticate: true,
       arrayBuffer: true,
+      httpResponse: true,
       accept: reportContentType
     })
   }
@@ -625,6 +719,55 @@ export class ReportService {
     }))
   }
 
+  exportTestSuiteDocumentationPreviewReport(documentation: string) {
+    return this.restService.post<ArrayBuffer>(({
+      path: ROUTES.controllers.TestSuiteService.previewTestSuiteDocumentationInReports().url,
+      data: {
+        documentation: documentation
+      },
+      authenticate: true,
+      arrayBuffer: true
+    }))
+  }
+
+  exportTestCaseDocumentationReport(testCaseId: number) {
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportTestCaseDocumentationReport(testCaseId).url,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
+  exportTestSuiteDocumentationReport(testSuiteId: number) {
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportTestSuiteDocumentationReport(testSuiteId).url,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
+  exportDemoTestCaseDocumentationReport(communityId: number, reportSettings: CommunityReportSettings) {
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoTestCaseDocumentationReport(communityId).url,
+      data: this.reportSettingsToData(Constants.REPORT_TYPE.TEST_CASE_DOCUMENTATION_REPORT, false, reportSettings),
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
+  exportDemoTestSuiteDocumentationReport(communityId: number, reportSettings: CommunityReportSettings) {
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoTestSuiteDocumentationReport(communityId).url,
+      data: this.reportSettingsToData(Constants.REPORT_TYPE.TEST_SUITE_DOCUMENTATION_REPORT, false, reportSettings),
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
   exportConformanceOverviewReportInXML(communityId: number, systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, snapshotId: number|undefined) {
     let data:any = {
       community_id: communityId,
@@ -634,11 +777,12 @@ export class ReportService {
     if (groupId != undefined) data.group_id = groupId
     if (specId != undefined) data.spec_id = specId
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportConformanceOverviewReportInXML().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -650,11 +794,12 @@ export class ReportService {
     if (groupId != undefined) data.group_id = groupId
     if (specId != undefined) data.spec_id = specId
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportOwnConformanceOverviewReportInXML().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -666,11 +811,12 @@ export class ReportService {
       tests: includeTests
     }
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportConformanceStatementReportInXML().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -681,11 +827,12 @@ export class ReportService {
       tests: includeTests
     }
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportOwnConformanceStatementReportInXML().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -696,16 +843,17 @@ export class ReportService {
       tests: includeTests
     }
     if (snapshotId != undefined) data.snapshot = snapshotId
-    return this.restService.post<ArrayBuffer>({
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.exportConformanceStatementReport().url,
       data: data,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
   exportTestCaseReport(session: string, testCaseId: number, contentType: string) {
-    return this.restService.get<ArrayBuffer>(({
+    return this.restService.get<HttpResponse<ArrayBuffer>>(({
       path: ROUTES.controllers.RepositoryService.exportTestCaseReport().url,
       params: {
         session_id: session,
@@ -713,18 +861,20 @@ export class ReportService {
       },
       authenticate: true,
       arrayBuffer: true,
+      httpResponse: true,
       accept: contentType
     }))
   }
 
   exportTestSessionData(session: string) {
-    return this.restService.get<ArrayBuffer>(({
+    return this.restService.get<HttpResponse<ArrayBuffer>>(({
       path: ROUTES.controllers.RepositoryService.exportTestSessionData().url,
       params: {
         session_id: session
       },
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      httpResponse: true
     }))
   }
 

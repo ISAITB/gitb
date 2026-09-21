@@ -3,33 +3,17 @@
     "active": true,
     "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
   },
-  "1114017": {
-    "active": true,
-    "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
-  },
-  "1115529": {
-    "active": true,
-    "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
-  },
   "1115668": {
     "active": true,
     "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
   },
-  "1115921": {
-    "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
   "1115922": {
     "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
+    "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
   },
   "1116663": {
     "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
-  "1112453": {
-    "active": true,
-    "notes": "Lodash is only used in development tooling and as a transitive dependency of mermaid which is not vulnerable in this context."
+    "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
   },
   "1115805": {
     "active": true,
@@ -38,6 +22,10 @@
   "1115809": {
     "active": true,
     "notes": "Lodash is only used in development tooling and as a transitive dependency of mermaid which is not vulnerable in this context."
+  },
+  "1115921": {
+    "active": true,
+    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
   },
   "1117138": {
     "active": true,
@@ -48,30 +36,6 @@
     "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
   },
   "1117140": {
-    "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
-  "1117795": {
-    "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
-  "1117991": {
-    "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
-  "1117995": {
-    "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
-  "1118513": {
-    "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
-  "1118515": {
-    "active": true,
-    "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
-  },
-  "1117637": {
     "active": true,
     "notes": "Related to a transitive dependency related to markdown processing. Not exploitable."
   },
@@ -87,10 +51,6 @@
     "active": true,
     "notes": "Non-exploitable vulnerability from transitive dependency."
   },
-  "1120324": {
-    "active": true,
-    "notes": "Non-exploitable vulnerability from transitive dependency."
-  },
   "1120326": {
     "active": true,
     "notes": "Non-exploitable vulnerability from transitive dependency."
@@ -99,148 +59,96 @@
     "active": true,
     "notes": "Non-exploitable vulnerability from transitive dependency."
   },
-  "1120793": {
-    "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
-  },
-  "1120800": {
-    "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
-  },
-  "1120801": {
-    "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
-  },
   "1120802": {
     "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1120803": {
     "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
-  },
-  "1120805": {
-    "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
-  },
-  "1120812": {
-    "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1120813": {
     "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
-  },
-  "1121192": {
-    "active": true,
-    "notes": "Related to transitive dependency and is not exploitable."
-  },
-  "1122162": {
-    "active": true,
-    "notes": "Related to transitive dependency that is not exploitable."
-  },
-  "1123528": {
-    "active": true,
-    "notes": "Related to dev tooling."
-  },
-  "1130679": {
-    "active": true,
-    "notes": "Angular SSR not used."
-  },
-  "1130699": {
-    "active": true,
-    "notes": "Angular i18n not used."
-  },
-  "1130695": {
-    "active": true,
-    "notes": "Angular i18n not used."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124022": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124233": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124234": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124235": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124236": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124237": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124238": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124239": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124240": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1124241": {
     "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1138538": {
     "active": true,
-    "notes": "Transitive dependencies that are not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
+  },
+  "1122162": {
+    "active": true,
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1138097": {
     "active": true,
-    "notes": "Transitive dependencies that are not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1138099": {
     "active": true,
-    "notes": "Transitive dependencies that are not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1138100": {
     "active": true,
-    "notes": "Transitive dependencies that are not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1138101": {
     "active": true,
-    "notes": "Transitive dependencies that are not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1138113": {
     "active": true,
-    "notes": "Transitive dependencies that are not exploitable."
+    "notes": "Relates to transitive dependency that is non-exploitable."
+  },
+  "1153171": {
+    "active": true,
+    "notes": "Relates to transitive dependency that is non-exploitable."
+  },
+  "1153172": {
+    "active": true,
+    "notes": "Relates to transitive dependency that is non-exploitable."
   },
   "1193686": {
     "active": true,
     "notes": "Not applicable."
-  },
-  "1204772": {
-    "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
-  },
-  "1204778": {
-    "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
-  },
-  "1204779": {
-    "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
-  },
-  "1153171": {
-    "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
-  },
-  "1153172": {
-    "active": true,
-    "notes": "Suppressed vulnerability as non-applicable."
   }
 }

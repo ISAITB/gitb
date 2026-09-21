@@ -1,0 +1,40 @@
+<div class="message-detail-wrapper" [class.disable-events]="loading && detail != undefined" [class.content-shown]="detail != undefined">
+    <div class="message-detail-panel">
+    @if (detail == undefined) {
+        <div class="empty-message">
+            @if (loading) {
+                <app-pending-block [pending]="true"></app-pending-block>
+                <span>Loading message...</span>
+            } @else {
+                <span>Select a message to view its content.</span>
+            }
+        </div>
+    } @else {
+        <app-message-item
+            [itemId]="detail.id"
+            [subject]="detail.subject"
+            [body]="detail.body"
+            [important]="detail.important"
+            [date]="detail.date"
+            [peerLabel]="mode == 'received' ? 'From' : 'To'"
+            [peerName]="detail.peerName"
+            [peerSubText]="detail.senderUserName"
+            [peerCount]="detail.peerCount"
+            [recipientNames]="recipientNames"
+            [loadingRecipientNames]="loadingNames"
+            [collapsedByDefault]="false"
+            [read]="detail.read"
+            [replyPending]="replyPending"
+            [markReadOrUnreadPending]="markReadOrUnreadPending"
+            [deletePending]="deletePending"
+            (replyRequested)="replyRequested.emit()"
+            (markReadRequested)="markReadRequested.emit()"
+            (deleteRequested)="deleteRequested.emit()"
+            (recipientsToggleRequested)="toggleRecipients()"></app-message-item>
+    }
+    </div>
+    @if (detail && detail.chain.length > 0) {
+        <app-message-chain [chain]="detail.chain" [continuesToContent]="true" connectorPosition="before"
+            (replyRequested)="chainReplyRequested.emit($event)"></app-message-chain>
+    }
+</div>

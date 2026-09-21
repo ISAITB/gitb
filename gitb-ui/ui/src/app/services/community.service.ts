@@ -36,6 +36,7 @@ import {SearchResult} from '../types/search-result';
 import {CommunityLimited} from '../types/community-limited';
 import {UserPreferences} from '../types/user-preferences';
 import {TagData} from '../types/tag-data';
+import {CommunityTestFlags} from '../types/community-test-flags';
 
 @Injectable({
   providedIn: 'root'
@@ -88,6 +89,14 @@ export class CommunityService {
   getUserCommunity() {
     return this.restService.get<Community>({
       path: ROUTES.controllers.CommunityService.getUserCommunity().url,
+      authenticate: true
+    })
+  }
+
+  /** All communities' test flags, for the Test Bed administrator's login cache. */
+  getAllCommunityTestFlags() {
+    return this.restService.get<CommunityTestFlags[]>({
+      path: ROUTES.controllers.CommunityService.getAllCommunityTestFlags().url,
       authenticate: true
     })
   }
@@ -169,7 +178,8 @@ export class CommunityService {
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
     selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean, allowObsoleteSessionDeletion: boolean,
+    allowAdminSenderNames: boolean, allowOrganisationSenderNames: boolean,
     domainId: number|undefined, userPreferences: UserPreferences, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -185,11 +195,18 @@ export class CommunityService {
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
       allow_xml_reports: allowXmlReports,
+      allow_obsolete_session_deletion: allowObsoleteSessionDeletion,
+      allow_admin_sender_names: allowAdminSenderNames,
+      allow_organisation_sender_names: allowOrganisationSenderNames,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
       page_size: userPreferences.pageSize,
       home_page_type: userPreferences.homePageType,
+      own_sessions: userPreferences.ownSessions,
+      all_sessions: userPreferences.allSessions,
+      statements_list_view: userPreferences.statementsListView,
+      messages_split_view: userPreferences.messagesSplitView,
       tags: tags
     }
     if (this.dataService.configuration.registrationEnabled) {
@@ -234,7 +251,8 @@ export class CommunityService {
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
     selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean, allowObsoleteSessionDeletion: boolean,
+    allowAdminSenderNames: boolean, allowOrganisationSenderNames: boolean,
     domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -250,11 +268,18 @@ export class CommunityService {
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
       allow_xml_reports: allowXmlReports,
+      allow_obsolete_session_deletion: allowObsoleteSessionDeletion,
+      allow_admin_sender_names: allowAdminSenderNames,
+      allow_organisation_sender_names: allowOrganisationSenderNames,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
       page_size: userPreferences.pageSize,
       home_page_type: userPreferences.homePageType,
+      own_sessions: userPreferences.ownSessions,
+      all_sessions: userPreferences.allSessions,
+      statements_list_view: userPreferences.statementsListView,
+      messages_split_view: userPreferences.messagesSplitView,
       force_preferences: forceUserPreferenceUpdate,
       tags: tags
     }

@@ -15,20 +15,26 @@
 
 package com.gitb.tbs.config;
 
+import com.gitb.tbs.filters.CallbackAuthorizationFilter;
+import com.gitb.tbs.filters.TestBedServiceAuthorizationFilter;
 import com.gitb.tbs.impl.MessagingClientImpl;
 import com.gitb.tbs.impl.ProcessingClientImpl;
 import com.gitb.tbs.impl.TestbedServiceImpl;
 import com.gitb.tbs.impl.ValidationClientImpl;
+import com.gitb.tdl.HandlerApiType;
 import jakarta.servlet.MultipartConfigElement;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxws.EndpointImpl;
 import org.apache.cxf.transport.servlet.CXFServlet;
-import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletRegistrationBean;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
+import org.springframework.boot.webmvc.autoconfigure.DispatcherServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.xml.namespace.QName;
@@ -38,6 +44,49 @@ import static com.gitb.engine.TestEngineConfiguration.HANDLER_API_SEGMENT;
 
 @Configuration
 public class BeanConfig {
+
+    @Bean
+    public FilterRegistrationBean<CallbackAuthorizationFilter> restCallbackFilter() {
+        var registration = new FilterRegistrationBean<>(new CallbackAuthorizationFilter(HandlerApiType.REST));
+        registration.addUrlPatterns("/"+ HANDLER_API_SEGMENT +"/gitb/notifyForMessage/*", "/"+ HANDLER_API_SEGMENT +"/gitb/log/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<CallbackAuthorizationFilter> soapCallbackFilter() {
+        var registration = new FilterRegistrationBean<>(new CallbackAuthorizationFilter(HandlerApiType.SOAP));
+        registration.addUrlPatterns("/MessagingClient/*", "/ValidationClient/*", "/ProcessingClient/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<TestBedServiceAuthorizationFilter> testBedServiceFilter() {
+        var registration = new FilterRegistrationBean<>(new TestBedServiceAuthorizationFilter());
+        registration.addUrlPatterns("/TestbedService/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    /**
+     * Executor used by {@code HttpMessagingServer}/{@code SoapMessagingServer} to build and send the response
+     * to an incoming call once matched to a receive step - possibly after being held for a while awaiting a
+     * matching step (see {@code CallbackManager.lookupHandlingData}). Core threads are pre-started deliberately:
+     * {@link #dispatcherServlet()} makes the request context ThreadLocal inheritable, so a pool thread lazily
+     * created while handling a request would otherwise inherit (and retain a reference to) that request.
+     */
+    @Bean
+    public ThreadPoolTaskExecutor messagingCallbackExecutor() {
+        var executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(16);
+        executor.setQueueCapacity(1000);
+        executor.setThreadNamePrefix("messaging-callback-");
+        executor.initialize();
+        executor.getThreadPoolExecutor().prestartAllCoreThreads();
+        return executor;
+    }
 
     @Bean
     public ServletRegistrationBean<CXFServlet> servletRegistrationBean() {
@@ -54,11 +103,11 @@ public class BeanConfig {
     }
 
     @Bean
-    public DispatcherServletRegistrationBean dispatcherServletRegistration(DispatcherServlet dispatcherServlet, MultipartConfigElement multipartConfig) {
+    public DispatcherServletRegistrationBean dispatcherServletRegistration(DispatcherServlet dispatcherServlet, ObjectProvider<MultipartConfigElement> multipartConfig) {
         var registration = new DispatcherServletRegistrationBean(dispatcherServlet, "/"+ HANDLER_API_SEGMENT +"/*");
         registration.setLoadOnStartup(0);
         registration.setName(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME);
-        registration.setMultipartConfig(multipartConfig);
+        multipartConfig.ifAvailable(registration::setMultipartConfig);
         return registration;
     }
 
@@ -99,24 +148,6 @@ public class BeanConfig {
         endpoint.setPublishedEndpointUrl(PROCESSING_CALLBACK_URL);
         endpoint.publish("/ProcessingClient");
         return endpoint;
-    }
-
-    @Bean
-    public TomcatServletWebServerFactory tomcatFactory() {
-        return new TomcatServletWebServerFactory() {
-            @Override
-            protected void customizeConnector(org.apache.catalina.connector.Connector connector) {
-                super.customizeConnector(connector);
-                /*
-                 * Requests received by the validator web app are multipart requests (if performed
-                 * through the UI). In this case we need to make sure that Tomcat's limit to the
-                 * maximum number of multipart request parts does not block us (a default limit of
-                 * 10 was added in Tomcat release 10.1.42).
-                 */
-                connector.setMaxParameterCount(10000);
-                connector.setMaxPartCount(100);
-            }
-        };
     }
 
 }

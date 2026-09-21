@@ -78,6 +78,7 @@ public class Context {
     private final Set<String> customOrganisationPropertiesUsed = new TreeSet<>();
     private final Set<String> customSystemPropertiesUsed = new TreeSet<>();
     private final Set<String> customDomainParametersUsed = new TreeSet<>();
+    private final Set<String> customActorParametersUsed = new TreeSet<>();
     private final Set<String> validTestCaseIds = new HashSet<>();
     private final Set<String> validScriptletIds = new HashSet<>();
 
@@ -466,7 +467,15 @@ public class Context {
         customDomainParametersUsed.add(name);
     }
 
+    public void recordCustomActorParameter(String name) {
+        customActorParametersUsed.add(name);
+    }
+
     public Set<String> getCustomDomainParametersUsed() {
         return customDomainParametersUsed;
+    }
+
+    public Set<String> getCustomActorParametersUsed() {
+        return customActorParametersUsed;
     }
 }

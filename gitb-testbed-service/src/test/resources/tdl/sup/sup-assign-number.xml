@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-assign-number" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Assign numeric value</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="n" type="number">123</assign>
+        <verify handler="ExpressionValidator" desc="number value">
+            <input name="expression">$n = 123</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="arithmetic works">
+            <input name="expression">$n * 2 = 246</input>
+        </verify>
+    </steps>
+</testcase>

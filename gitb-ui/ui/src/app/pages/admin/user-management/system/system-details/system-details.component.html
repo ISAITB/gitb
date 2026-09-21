@@ -20,7 +20,7 @@
                     @if (!readonly) {
                         <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="!saveEnabled()" [pending]="savePending">Update</button>
                     }
-                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS"  type="button" (click)="manageSystemTests()">Manage tests</button>
+                    <a class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS" [navTarget]="manageSystemTestsTarget()">Manage tests</a>
                     <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancel()">Back</button>
                 </div>
                 @if (showDelete) {

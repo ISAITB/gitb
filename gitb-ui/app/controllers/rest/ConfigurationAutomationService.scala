@@ -15,6 +15,7 @@
 
 package controllers.rest
 
+import config.Configurations
 import controllers.rest.BaseAutomationService._
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import managers.ratelimit.RateLimitManager
@@ -87,8 +88,12 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
     processAsJson(request, PutEndpoint("/configure/service"), () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsTestServiceConfiguration(body, isNew = true)
-      domainParameterManager.createTestServiceThroughAutomationApi(communityKey, input).map { _ =>
-        ResponseConstructor.constructEmptyResponse
+      domainParameterManager.createTestServiceThroughAutomationApi(communityKey, input).map { newApiKey =>
+        if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(newApiKey).toString())
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
       }
     })
   }

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {TableColumnData} from 'src/app/types/table-column-data.type';
 import {Constants} from 'src/app/common/constants';
@@ -22,6 +22,7 @@ import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {TableRowApi} from './table-row-api';
+import {NavigationTarget} from '../../types/navigation-target';
 
 @Component({
     selector: '[table-row-directive]',
@@ -29,7 +30,7 @@ import {TableRowApi} from './table-row-api';
     styles: ['div.btn-toolbar {display: flex; flex-wrap: nowrap; justify-content: right;}'],
     standalone: false
 })
-export class TableRowComponent implements OnInit, TableRowApi {
+export class TableRowComponent implements OnInit, OnChanges, TableRowApi {
 
   @Input() data?: any
   @Input() columns: TableColumnDefinition[] = []
@@ -51,18 +52,21 @@ export class TableRowComponent implements OnInit, TableRowApi {
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
   @Input() expandableRowProperty?: string
+  @Input() expandPendingProperty?: string
   @Input() refresh?: EventEmitter<void>
 
   @Input() optionsVisible: boolean = false
   @Input() optionsVisibleForRow?: (row: any) => boolean
   @Input() optionProvider?: (row: any) => Observable<CheckboxOption[][]>
   @Input() optionPendingProperty = 'optionPending'
+  @Input() target?: NavigationTarget
 
   @Output() onOption: EventEmitter<{data: any, option: string}> = new EventEmitter()
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
+  @Output() navigating: EventEmitter<MouseEvent> = new EventEmitter()
 
   @ViewChild("optionButton") optionButton?: CheckBoxOptionPanelComponentApi
 
@@ -71,6 +75,11 @@ export class TableRowComponent implements OnInit, TableRowApi {
   columnDataItemsAtLeft: TableColumnData[] = []
   columnDataItemsAtRight: TableColumnData[] = []
   showOptions = false
+  showActionButton = false
+  showDeleteButton = false
+  showExportButton = false
+  // Stable reference so the options panel's input doesn't churn on every change-detection pass.
+  optionsFactory: () => Observable<CheckboxOption[][]> = () => this.loadAvailableOptions()
 
   protected static EXPORT_OPTION = '0'
   protected static ACTION_OPTION = '1'
@@ -87,7 +96,16 @@ export class TableRowComponent implements OnInit, TableRowApi {
     }
   }
 
-  private refreshData() {
+  ngOnChanges(changes: SimpleChanges): void {
+    // Rebuild the column data items when the columns themselves change (e.g. as a result of the
+    // user toggling visible columns via the column chooser). Skip the first change as ngOnInit
+    // already handles the initial build.
+    if (changes['columns'] && !changes['columns'].firstChange) {
+      this.refreshData()
+    }
+  }
+
+  public refreshData() {
     this.columnDataItemsAtLeft = []
     this.columnDataItemsAtRight = []
     for (let column of this.columns) {
@@ -120,6 +138,11 @@ export class TableRowComponent implements OnInit, TableRowApi {
         || (this.actionVisible && (this.exportVisible || this.operationsVisible))
         || (this.exportVisible && (this.actionVisible || this.operationsVisible))
         || (this.operationsVisible && (this.actionVisible || this.exportVisible))
+    // Precompute the single-button visibility predicates so they are not re-evaluated for every
+    // row on every change-detection pass.
+    this.showActionButton = this.actionVisible && (!this.actionVisibleForRow || this.actionVisibleForRow(this.data))
+    this.showDeleteButton = this.operationsVisible && (!this.deleteVisibleForRow || this.deleteVisibleForRow(this.data))
+    this.showExportButton = this.exportVisible && (!this.exportVisibleForRow || this.exportVisibleForRow(this.data))
   }
 
   delete() {
@@ -136,6 +159,10 @@ export class TableRowComponent implements OnInit, TableRowApi {
     this.onCheck.emit(this.data)
   }
 
+  cellClicked(event: MouseEvent) {
+    this.navigating.emit(event)
+  }
+
   action() {
     this.onAction.emit(this.data)
     this.onOption.emit({data: this.data, option: TableRowComponent.ACTION_OPTION})
@@ -147,10 +174,6 @@ export class TableRowComponent implements OnInit, TableRowApi {
     } else {
       return ''
     }
-  }
-
-  loadAvailableOptionsFactory() {
-    return () => this.loadAvailableOptions()
   }
 
   private loadAvailableOptions(): Observable<CheckboxOption[][]> {

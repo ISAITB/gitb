@@ -36,7 +36,8 @@
                         [showViewDocumentation]="showViewDocumentation"
                         [shaded]="!shaded"
                         [communityId]="communityId"
-                        (viewTestSessions)="propagateViewTestSessions($event)"
+                        [viewSessionsTarget]="viewSessionsTarget"
+                        (navigating)="propagateNavigating($event)"
                         (execute)="propagateExecuteTestSession($event)"
                         (optionsOpened)="propagateOptionsOpened($event)"
                     ></app-test-case-display>

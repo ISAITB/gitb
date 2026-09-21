@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -25,6 +25,15 @@ import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {Observable, of} from 'rxjs';
 import {SearchResult} from '../../../types/search-result';
 import {UsageTipService} from '../../../services/usage-tip.service';
+import {BaseComponent} from '../../base-component.component';
+import {DisplayState} from '../../../types/display-state';
+import {NavigationTarget} from '../../../types/navigation-target';
+
+/** Persisted search/paging state for the Domains list - restored when returning here (e.g. via Back
+ * from a domain's detail page). */
+interface DomainManagementListState {
+  filter?: string
+}
 
 @Component({
     selector: 'app-domain-management',
@@ -32,7 +41,7 @@ import {UsageTipService} from '../../../services/usage-tip.service';
     styles: [],
     standalone: false
 })
-export class DomainManagementComponent implements OnInit, AfterViewInit {
+export class DomainManagementComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild("domainTable") domainTable?: TableApi
 
@@ -50,13 +59,32 @@ export class DomainManagementComponent implements OnInit, AfterViewInit {
   constructor(
     public readonly dataService: DataService,
     private readonly conformanceService: ConformanceService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly usageTipService: UsageTipService
-  ) { }
+  ) { super() }
 
   ngOnInit(): void {
-		this.refreshDomains()
+    let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+    const existingState = this.getDisplayState<DomainManagementListState>(Constants.DISPLAY_STATE_KEY.DOMAINS, true)
+    if (existingState) {
+      if (existingState.state) {
+        this.domainFilter = existingState.state.filter
+      }
+      if (existingState.paging) {
+        targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+      }
+    }
+    this.loadDomains(targetPaging)
     this.routingService.domainsBreadcrumbs()
+  }
+
+  ngOnDestroy(): void {
+    const state: DisplayState<DomainManagementListState> = {
+      key: Constants.DISPLAY_STATE_KEY.DOMAINS,
+      state: { filter: this.domainFilter },
+      paging: this.domainTable?.getPagingControls()?.getCurrentStatus()
+    }
+    this.saveDisplayState(Constants.DISPLAY_STATE_KEY.DOMAINS, state)
   }
 
   ngAfterViewInit(): void {
@@ -65,12 +93,8 @@ export class DomainManagementComponent implements OnInit, AfterViewInit {
     }
   }
 
-	onDomainSelect(domain: Domain) {
-    this.routingService.toDomain(domain.id)
-  }
-
-  create() {
-    this.routingService.toCreateDomain()
+	domainRowTarget = (domain: Domain): NavigationTarget => {
+    return this.routingService.linkToDomain(domain.id)
   }
 
   applyFilter() {

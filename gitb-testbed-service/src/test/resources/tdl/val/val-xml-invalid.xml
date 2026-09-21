@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-xml-invalid" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator with XSD violation fails session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- XML whose root is 'wrong' but XSD expects 'root' -->
+        <assign to="xmlDoc" type="object"><![CDATA['<wrong>value</wrong>']]></assign>
+        <assign to="xsdContent" type="schema"><![CDATA['<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="root" type="xs:string"/></xs:schema>']]></assign>
+        <verify handler="XmlValidator" desc="XSD violation">
+            <input name="xml">$xmlDoc</input>
+            <input name="xsd">$xsdContent</input>
+        </verify>
+    </steps>
+</testcase>

@@ -13,12 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {Observable} from 'rxjs';
 import {TestCaseFilterState} from './test-case-filter-state';
+import {TestCaseTagsForFiltering} from '../../types/test-case-tag-filter-info';
 
 export interface TestCaseFilterOptions {
 
   showOptional?: boolean,
   showDisabled?: boolean,
-  initialState?: TestCaseFilterState
+  initialState?: TestCaseFilterState,
+  /** When set, tags are loaded lazily (once, on first opening of the control) and shown as a filter group. */
+  tagsLoader?: () => Observable<TestCaseTagsForFiltering>
 
 }

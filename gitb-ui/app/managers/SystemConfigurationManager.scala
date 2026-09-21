@@ -15,6 +15,8 @@
 
 package managers
 
+import actors.TestEngineSettingsUpdateActor
+import actors.TestEngineSettingsUpdateActor.PushSettings
 import config.Configurations
 import managers.SystemConfigurationManager.ThemeStatus
 import managers.ratelimit.RateLimitManager
@@ -24,6 +26,7 @@ import models.health.SoftwareVersionCheckSettings
 import models.theme.{Theme, ThemeFiles}
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.lang3.{StringUtils, Strings}
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -34,6 +37,8 @@ import utils._
 import java.io.File
 import java.nio.file.Files
 import java.sql.Timestamp
+import java.time.temporal.ChronoUnit
+import java.time.Duration
 import java.util.{Calendar, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -52,6 +57,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
                                             testExecutionManager: TestExecutionManager,
                                             repositoryUtils: RepositoryUtils,
                                             rateLimitManager: RateLimitManager,
+                                            actorSystem: ActorSystem,
+                                            testbedClient: TestbedBackendClient,
                                             dbConfigProvider: DatabaseConfigProvider)
                                            (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -59,16 +66,43 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
   private final val editableSystemConfigurationTypes = Set(
-    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
-    Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips
+    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiDevelopmentKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
+    Constants.DemoAccount, Constants.WelcomeMessage, Constants.WelcomeMessageHidden, Constants.AccountRetentionPeriod,
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTexts, Constants.StartupWizard, Constants.UsageTips,
+    Constants.TestServiceCallbacks, Constants.ReportSettings
   )
+  // Configuration types whose value changes need to be pushed eagerly to the test engine (gitb-srv).
+  private final val testEngineNotifiedConfigurationTypes = Set(Constants.TestServiceCallbacks)
 
   private var activeThemeId: Option[Long] = None
   private var activeThemeCss: Option[String] = None
   private var activeThemeFavicon: Option[String] = None
   private var defaultEmailSettings: Option[EmailSettings] = None
   private var defaultSoftwareVersionCheckSettings: Option[SoftwareVersionCheckSettings] = None
+  private var defaultTestEngineCallbackSettings: Option[TestEngineCallbackSettings] = None
+  private var testEngineSettingsUpdateActor: Option[ActorRef] = None
+
+  private def getTestEngineSettingsUpdateActor(): ActorRef = {
+    if (testEngineSettingsUpdateActor.isEmpty) {
+      testEngineSettingsUpdateActor = Some(
+        actorSystem
+          .actorSelection("/user/"+TestEngineSettingsUpdateActor.actorName)
+          .resolveOne(Duration.of(5, ChronoUnit.SECONDS))
+          .toCompletableFuture
+          .get()
+      )
+    }
+    testEngineSettingsUpdateActor.get
+  }
+
+  /**
+   * Push the latest global settings that the test engine (gitb-srv) needs to be aware of, so that they are applied
+   * as soon as possible rather than waiting for the next test session to be initiated (through which they are also
+   * always propagated as a fallback).
+   */
+  def notifyTestEngineOfUpdatedSettings(): Unit = {
+    getTestEngineSettingsUpdateActor() ! PushSettings(TypedActorConfiguration.fromSettings())
+  }
 
   private def constructLogoPath(themeId: Long, partialLogoPath: String): String = {
     // We go up two levels as URLs are relative to the CSS defining them which here is under "/api/theme/
@@ -163,6 +197,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       "  --itb-btn-secondary-label-color: " + themeToUse.secondaryButtonLabelColor + ";\n" +
       "  --itb-btn-secondary-hover-color: " + themeToUse.secondaryButtonHoverColor + ";\n" +
       "  --itb-btn-secondary-active-color: " + themeToUse.secondaryButtonActiveColor + ";\n" +
+      "  --itb-welcome-login-color: " + themeToUse.welcomeLoginColor + ";\n" +
+      "  --itb-welcome-login-label-color: " + themeToUse.welcomeLoginLabelColor + ";\n" +
+      "  --itb-welcome-option-label-color: " + themeToUse.welcomeOptionLabelColor + ";\n" +
+      "  --itb-alert-info-background-color: " + themeToUse.alertInfoBackgroundColor + ";\n" +
+      "  --itb-alert-info-text-color: " + themeToUse.alertInfoTextColor + ";\n" +
+      "  --itb-alert-info-border-color: " + themeToUse.alertInfoBorderColor + ";\n" +
       "}"
     activeThemeCss = Some(cssContent)
     activeThemeFavicon = Some(themeToUse.faviconPath)
@@ -236,10 +276,13 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val startupWizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard)
         val usageTipsConfig = persistedConfigs.find(config => config.config.name == Constants.UsageTips)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
-        val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
+        val welcomeHiddenConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessageHidden)
+        val welcomeTextsConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTexts)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
+        val testEngineCallbacksConfig = persistedConfigs.find(config => config.config.name == Constants.TestServiceCallbacks)
         val rateLimitConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits)
+        val reportSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.ReportSettings)
         if (restApiEnabledConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
         }
@@ -264,10 +307,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
         }
         if (welcomeMessageConfig.isEmpty) {
-          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE_DEFAULT), None), defaultSetting = true, environmentSetting = false)
         }
-        if (welcomeTitleConfig.isEmpty) {
-          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
+        if (welcomeHiddenConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessageHidden, Some("false"), None), defaultSetting = true, environmentSetting = false)
+        }
+        if (welcomeTextsConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTexts, Some(JsonUtil.jsWelcomeTexts(WelcomeTexts.defaultConfiguration()).toString()), None), defaultSetting = true, environmentSetting = false)
+        } else if (welcomeTextsConfig.get.config.parameter.isDefined) {
+          // Always re-serialize through jsWelcomeTexts (rather than passing the persisted JSON through
+          // as-is) so that every text is always reported, even for a partial value (e.g. one written by
+          // the V154 migration, or predating a text added after it was last saved).
+          val backfilledTexts = JsonUtil.parseJsWelcomeTexts(welcomeTextsConfig.get.config.parameter.get)
+          persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.WelcomeTexts) :+
+            SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTexts, Some(JsonUtil.jsWelcomeTexts(backfilledTexts).toString()), None), defaultSetting = false, environmentSetting = false)
         }
         if (emailSettingsConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
@@ -275,8 +328,35 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         if (softwareVersionCheckConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(SoftwareVersionCheckSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED"))
         }
+        if (testEngineCallbacksConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.TestServiceCallbacks, Some(JsonUtil.jsTestEngineCallbackSettings(TestEngineCallbackSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("TEST_SERVICE_CALLBACKS_ENABLED"))
+        }
         if (rateLimitConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiRateLimits, Some(JsonUtil.jsRestApiLimits(RestApiLimits.defaultSettings(), withDescriptions = false).toString()), None), defaultSetting = true, environmentSetting = false)
+        }
+        if (reportSettingsConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.ReportSettings, Some(JsonUtil.jsReportSettings(ReportSettings(
+            enabled = false,
+            fileNameExpressions = Configurations.REPORT_NAMING_EXPRESSIONS,
+            timeZone = Some(Configurations.TIME_ZONE.getId),
+            dateFormat = Some(Configurations.DATE_FORMAT_DATE),
+            dateTimeFormat = Some(Configurations.DATE_FORMAT_DATETIME),
+            dateFileFormat = Some(Configurations.DATE_FORMAT_DATE_FILE)
+          )).toString()), None), defaultSetting = true, environmentSetting = false)
+        } else if (reportSettingsConfig.get.config.parameter.isDefined) {
+          // Always re-serialize through jsReportSettings (rather than passing the persisted JSON through
+          // as-is) so that a time zone, date formats, and a naming expression for every report type are
+          // always reported. Backfilling older persisted settings that predate these properties, or that
+          // predate a report type added after the settings were last saved.
+          val parsedSettings = JsonUtil.parseJsReportSettings(reportSettingsConfig.get.config.parameter.get)
+          val backfilledSettings = parsedSettings.copy(
+            timeZone = Some(parsedSettings.timeZone.getOrElse(Configurations.TIME_ZONE.getId)),
+            dateFormat = Some(parsedSettings.dateFormat.getOrElse(Configurations.DATE_FORMAT_DATE)),
+            dateTimeFormat = Some(parsedSettings.dateTimeFormat.getOrElse(Configurations.DATE_FORMAT_DATETIME)),
+            dateFileFormat = Some(parsedSettings.dateFileFormat.getOrElse(Configurations.DATE_FORMAT_DATE_FILE))
+          )
+          persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.ReportSettings) :+
+            SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.ReportSettings, Some(JsonUtil.jsReportSettings(backfilledSettings).toString()), None), defaultSetting = false, environmentSetting = false)
         }
       }
       persistedConfigs
@@ -296,6 +376,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       }
     } yield updates
     DB.run(action.transactionally).map { results =>
+      if (configs.exists(config => testEngineNotifiedConfigurationTypes.contains(config.name))) {
+        notifyTestEngineOfUpdatedSettings()
+      }
       results.filter(result => result.isDefined).map(_.get)
     }
   }
@@ -304,7 +387,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
    * Set system parameter
    */
   def updateSystemParameter(name: String, value: Option[String] = None): Future[Option[SystemConfigurationsWithEnvironment]] = {
-    DB.run(updateSystemParameterInternal(name, value, applySetting = true).transactionally)
+    DB.run(updateSystemParameterInternal(name, value, applySetting = true).transactionally).map { result =>
+      if (testEngineNotifiedConfigurationTypes.contains(name)) {
+        notifyTestEngineOfUpdatedSettings()
+      }
+      result
+    }
   }
 
   private def processReceivedEmailSettings(jsonString: String): EmailSettings = {
@@ -333,12 +421,26 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       Some(JsonUtil.jsRestApiLimits(rateApiLimits.get, withDescriptions = false).toString())
     } else if (name == Constants.RestApiAdminKey && providedValue.isEmpty) {
       Some(CryptoUtil.generateApiKey())
+    } else if (name == Constants.RestApiDevelopmentKey && providedValue.isEmpty) {
+      Some(CryptoUtil.generateApiKey())
     } else if (name == Constants.UsageTips && providedValue.isDefined) {
       var config = JsonUtil.parseJsUsageTipsConfiguration(providedValue.get)
       if (!config.enabled) {
         config = config.copy(disabledForScreens = Set())
       }
       Some(JsonUtil.serializeUsageTipsConfiguration(config).toString())
+    } else if (name == Constants.ReportSettings && providedValue.isDefined) {
+      val settings = JsonUtil.parseJsReportSettings(providedValue.get)
+      if (settings.enabled) {
+        // Only keep the setting persisted while it is enabled with custom naming expressions.
+        Some(JsonUtil.jsReportSettings(settings).toString())
+      } else {
+        None
+      }
+    } else if (name == Constants.WelcomeTexts && providedValue.isDefined) {
+      // Parse and re-serialize so that what is stored is always a complete set of texts (any missing
+      // or blank property is backfilled with its built-in default).
+      Some(JsonUtil.jsWelcomeTexts(JsonUtil.parseJsWelcomeTexts(providedValue.get)).toString())
     } else {
       providedValue
     }
@@ -347,11 +449,18 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.TestServiceCallbacks || name == Constants.WelcomeMessage || name == Constants.WelcomeMessageHidden || name == Constants.WelcomeTexts || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime || name == Constants.ReportSettings) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
           }
+        } else if ((name == Constants.WelcomeMessage || name == Constants.WelcomeMessageHidden || name == Constants.WelcomeTexts) && value.isEmpty) {
+          // Reverting a welcome page setting that was never customised (e.g. because only another one
+          // of the message/hidden flag/texts trio was): nothing to record. Inserting a row with a NULL
+          // parameter here would make getEditableSystemConfigurationValues treat the setting as
+          // persisted but unset, so the built-in defaults would stop being reported to the admin UI -
+          // reachable since the "Custom welcome page content" section resets all three settings together.
+          DBIO.successful(0)
         } else {
           PersistenceSchema.systemConfigurations += SystemConfigurations(name, value, None)
         }
@@ -368,6 +477,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             Configurations.AUTOMATION_API_MASTER_KEY = value
             DBIO.successful(value.map(_ => {
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiAdminKey, value, None), defaultSetting = false, environmentSetting = false)
+            }))
+          case Constants.RestApiDevelopmentKey =>
+            Configurations.AUTOMATION_API_DEVELOPMENT_KEY = value
+            repositoryUtils.updateDevelopmentApiKeyFile(value)
+            DBIO.successful(value.map(_ => {
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiDevelopmentKey, value, None), defaultSetting = false, environmentSetting = false)
             }))
           case Constants.RestApiRateLimits =>
             val settings = rateApiLimits match {
@@ -407,23 +522,28 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             }
             DBIO.successful(None)
           case Constants.WelcomeMessage =>
+            Configurations.applyWelcomeMessage(value)
             if (value.isDefined) {
-              Configurations.WELCOME_MESSAGE = value.get
               DBIO.successful(None)
             } else {
-              Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
               DBIO.successful(Some(
-                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE_DEFAULT), None), defaultSetting = true, environmentSetting = false)
               ))
             }
-          case Constants.WelcomeTitle =>
+          case Constants.WelcomeMessageHidden =>
+            val hidden = value.exists(_.toBoolean)
+            Configurations.applyWelcomeMessageHidden(hidden)
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessageHidden, Some(hidden.toString), None), defaultSetting = value.isEmpty, environmentSetting = false)
+            ))
+          case Constants.WelcomeTexts =>
             if (value.isDefined) {
-              Configurations.WELCOME_TITLE = value.get
+              Configurations.WELCOME_TEXTS = JsonUtil.parseJsWelcomeTexts(value.get)
               DBIO.successful(None)
             } else {
-              Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
+              Configurations.WELCOME_TEXTS = WelcomeTexts.defaultConfiguration()
               DBIO.successful(Some(
-                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTexts, Some(JsonUtil.jsWelcomeTexts(Configurations.WELCOME_TEXTS).toString()), None), defaultSetting = true, environmentSetting = false)
               ))
             }
           case Constants.AccountRetentionPeriod =>
@@ -460,6 +580,39 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             settings.toEnvironment()
             DBIO.successful(Some(
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(settings).toString()), None), fromDefault, fromEnv)
+            ))
+          case Constants.TestServiceCallbacks =>
+            var fromDefault = false
+            var fromEnv = false
+            val settings = if (value.isDefined) {
+              JsonUtil.parseJsTestEngineCallbackSettings(value.get)
+            } else {
+              fromDefault = true
+              fromEnv = sys.env.contains("TEST_SERVICE_CALLBACKS_ENABLED")
+              defaultTestEngineCallbackSettings.get
+            }
+            settings.toEnvironment()
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.TestServiceCallbacks, Some(JsonUtil.jsTestEngineCallbackSettings(settings).toString()), None), fromDefault, fromEnv)
+            ))
+          case Constants.ReportSettings =>
+            val settings = if (value.isDefined) {
+              JsonUtil.parseJsReportSettings(value.get)
+            } else {
+              ReportSettings.defaultConfiguration()
+            }
+            Configurations.applyReportSettings(settings)
+            // When not enabled, report back the built-in default expressions as a starting point for the form.
+            // Always report the currently applicable time zone and date formats, so the form has values to display.
+            val settingsToReport = settings.copy(
+              fileNameExpressions = if (settings.enabled) settings.fileNameExpressions else Configurations.REPORT_NAMING_EXPRESSIONS,
+              timeZone = Some(Configurations.TIME_ZONE.getId),
+              dateFormat = Some(Configurations.DATE_FORMAT_DATE),
+              dateTimeFormat = Some(Configurations.DATE_FORMAT_DATETIME),
+              dateFileFormat = Some(Configurations.DATE_FORMAT_DATE_FILE)
+            )
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.ReportSettings, Some(JsonUtil.jsReportSettings(settingsToReport).toString()), None), defaultSetting = !settings.enabled, environmentSetting = false)
             ))
           case _ => DBIO.successful(None)
         }
@@ -748,14 +901,18 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             x.headerBorderColor :: x.headerSeparatorColor :: x.headerLogoPath :: x.footerBackgroundColor ::
             x.footerBorderColor :: x.footerLogoPath :: x.footerLogoDisplay :: x.faviconPath ::
             x.primaryButtonColor :: x.primaryButtonLabelColor :: x.primaryButtonHoverColor :: x.primaryButtonActiveColor ::
-            x.secondaryButtonColor :: x.secondaryButtonLabelColor :: x.secondaryButtonHoverColor :: x.secondaryButtonActiveColor :: HNil
+            x.secondaryButtonColor :: x.secondaryButtonLabelColor :: x.secondaryButtonHoverColor :: x.secondaryButtonActiveColor ::
+            x.welcomeLoginColor :: x.welcomeLoginLabelColor :: x.welcomeOptionLabelColor ::
+            x.alertInfoBackgroundColor :: x.alertInfoTextColor :: x.alertInfoBorderColor :: HNil
           ).update(
             theme.key :: theme.description :: newActiveStatus :: theme.separatorTitleColor :: theme.modalTitleColor :: theme.tableTitleColor :: theme.cardTitleColor ::
             theme.pageTitleColor :: theme.headingColor :: theme.tabLinkColor :: theme.footerTextColor :: theme.headerBackgroundColor ::
             theme.headerBorderColor :: theme.headerSeparatorColor :: headerPathToUse :: theme.footerBackgroundColor ::
             theme.footerBorderColor :: footerPathToUse :: theme.footerLogoDisplay :: faviconPathToUse ::
             theme.primaryButtonColor :: theme.primaryButtonLabelColor :: theme.primaryButtonHoverColor :: theme.primaryButtonActiveColor ::
-            theme.secondaryButtonColor :: theme.secondaryButtonLabelColor :: theme.secondaryButtonHoverColor :: theme.secondaryButtonActiveColor :: HNil
+            theme.secondaryButtonColor :: theme.secondaryButtonLabelColor :: theme.secondaryButtonHoverColor :: theme.secondaryButtonActiveColor ::
+            theme.welcomeLoginColor :: theme.welcomeLoginLabelColor :: theme.welcomeOptionLabelColor ::
+            theme.alertInfoBackgroundColor :: theme.alertInfoTextColor :: theme.alertInfoBorderColor :: HNil
           ).map(_ => Some(headerPathToUse, footerPathToUse, faviconPathToUse))
         } else {
           DBIO.successful(None)
@@ -931,6 +1088,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     defaultSoftwareVersionCheckSettings.get
   }
 
+  def recordDefaultTestEngineCallbackSettings(): TestEngineCallbackSettings = {
+    // This is called before we adapt the settings based on stored values.
+    defaultTestEngineCallbackSettings = Some(TestEngineCallbackSettings.fromEnvironment())
+    defaultTestEngineCallbackSettings.get
+  }
+
   def disableStartupWizard(): Future[Unit] = {
     DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(_ => ())
   }
@@ -942,25 +1105,33 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           config.flatMap(_.parameter).map(x => JsonUtil.parseJsSessionTimeoutConfiguration(x))
         }
       }
-      sessionsToTerminate <- {
+      sessionsToProcess <- {
         if (timeoutConfig.exists(_.enabled)) {
-          getIdleSessions(timeoutConfig.get).map(Some(_))
+          getIdleAndDeadCandidateSessions(timeoutConfig.get).map(Some(_))
         } else {
           Future.successful(None)
         }
       }
       _ <- {
-        if (sessionsToTerminate.isDefined) {
-          Future.sequence {
-            sessionsToTerminate.get.map { sessionId =>
-              testExecutionManager.endSession(sessionId).map { _ =>
-                logger.info("Terminated idle session [{}]", sessionId)
-              }.recover {
-                case e: Exception =>
-                  logger.warn("Failure while terminating idle session [%s]".formatted(sessionId), e)
+        if (sessionsToProcess.isDefined) {
+          val (idleSessions, deadCandidateSessions) = sessionsToProcess.get
+          for {
+            _ <- terminateSessions(idleSessions, "idle", signalStop = true)
+            deadSessions <- {
+              if (deadCandidateSessions.nonEmpty) {
+                testbedClient.getDeadSessions(deadCandidateSessions).recover {
+                  case e: Exception =>
+                    // The test engine may be unreachable - this must never be treated as all sessions being dead.
+                    logger.warn("Failure while checking for dead test sessions", e)
+                    Iterable.empty
+                }
+              } else {
+                Future.successful(Iterable.empty)
               }
             }
-          }
+            // Dead sessions are already unknown to the test engine - no need to signal them to stop.
+            _ <- terminateSessions(deadSessions, "dead", signalStop = false)
+          } yield ()
         } else {
           Future.successful(())
         }
@@ -968,7 +1139,26 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     } yield ()
   }
 
-  private def getIdleSessions(config: SessionTimeoutConfiguration): Future[Iterable[String]] = {
+  private def terminateSessions(sessionIds: Iterable[String], sessionKind: String, signalStop: Boolean): Future[Unit] = {
+    Future.sequence {
+      sessionIds.map { sessionId =>
+        testExecutionManager.endSession(sessionId, logResult = false, signalStop = signalStop).map { _ =>
+          logger.info("Terminated {} session [{}]", sessionKind, sessionId)
+        }.recover {
+          case e: Exception =>
+            logger.warn("Failure while terminating %s session [%s]".formatted(sessionKind, sessionId), e)
+        }
+      }
+    }.map(_ => ())
+  }
+
+  /**
+   * Determine, among the currently active test sessions, which are idle (per the admin/user/other pending
+   * interaction timeouts) and which are merely candidates for being considered dead (sessions not already
+   * classified as idle, whose age has nonetheless exceeded the configured dead session timeout). The
+   * latter still need to be confirmed as dead by pinging the test engine.
+   */
+  private def getIdleAndDeadCandidateSessions(config: SessionTimeoutConfiguration): Future[(Iterable[String], Iterable[String])] = {
     DB.run {
       for {
         activeSessions <- PersistenceSchema.testResults
@@ -981,26 +1171,28 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           .map { results =>
             results.map(x => x._1 -> x._2).toMap
           }
-        idleSessions <- {
+        result <- {
           DBIO.successful {
-            activeSessions.filter(x => {
-              val difference = TimeUtil.getTimeDifferenceInSeconds(x._2)
+            val sessionsWithAge = activeSessions.map(x => (x._1, TimeUtil.getTimeDifferenceInSeconds(x._2)))
+            val (idleSessions, otherSessions) = sessionsWithAge.partition(x => {
               if (pendingInteractions.contains(x._1)) {
                 if (pendingInteractions(x._1)) {
                   // Pending admin interaction
-                  difference >= config.adminPendingTimeout
+                  x._2 >= config.adminPendingTimeout
                 } else {
                   // Pending user interaction
-                  difference >= config.userPendingTimeout
+                  x._2 >= config.userPendingTimeout
                 }
               } else {
                 // Not pending interaction
-                difference >= config.otherTimeout
+                x._2 >= config.otherTimeout
               }
-            }).map(_._1)
+            })
+            val deadCandidateSessions = otherSessions.filter(_._2 >= config.deadTimeout)
+            (idleSessions.map(_._1), deadCandidateSessions.map(_._1))
           }
         }
-      } yield idleSessions
+      } yield result
     }
   }
 

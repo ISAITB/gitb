@@ -52,3 +52,6 @@
 @if (specification.badges) {
     <app-manage-badges [badges]="specification.badges"></app-manage-badges>
 }
+<app-documentation-form [(documentation)]="specification.documentation"
+                        [communityId]="communityId"
+                        tooltipText="Documentation to display as additional information in the conformance statement details page. Use this to provide background information, and to link to external or internal supporting resources."></app-documentation-form>

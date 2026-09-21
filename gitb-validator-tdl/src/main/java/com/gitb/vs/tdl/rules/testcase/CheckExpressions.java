@@ -63,6 +63,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     public void initialiseTestCase(TestCase currentTestCase) {
         super.initialiseTestCase(currentTestCase);
         testCaseScope.clear();
+        testCaseScope.put(Utils.ACTOR_MAP, true);
         testCaseScope.put(Utils.DOMAIN_MAP, true);
         testCaseScope.put(Utils.ORGANISATION_MAP, true);
         testCaseScope.put(Utils.SYSTEM_MAP, true);
@@ -170,6 +171,14 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     @Override
+    public void handleResultOutput(ReceiveOrListen step) {
+        super.handleResultOutput(step);
+        if (step.getResult() != null) {
+            checkBindings(step.getResult().getOutput());
+        }
+    }
+
+    @Override
     public void handleTestOutput(Output output) {
         super.handleTestOutput(output);
         if (output != null) {
@@ -233,6 +242,14 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 checkToken(receiveStep.getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutFlag(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutIsError(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            }
+            if (step instanceof ReceiveOrListen receiveOrListenStep && receiveOrListenStep.getResult() != null) {
+                if (step instanceof Listen) {
+                    addReportItem(ErrorCode.RESULT_NOT_SUPPORTED_ON_LISTEN, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet));
+                }
+                checkToken(receiveOrListenStep.getResult().getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                // result/output is checked separately, in handleResultOutput() - which runs after result/steps
+                // has been walked, so that result/output can see variables result/steps produces.
             }
         } else if (step instanceof BeginProcessingTransaction beginProcessingTransactionStep) {
             checkToken(beginProcessingTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
@@ -350,9 +367,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
             if (userInteractionStep.getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: userInteractionStep.getInstructOrRequest()) {
-                    checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);
                     checkConstantReferenceInScriptlet(ir.getWith(), ATTRIBUTE_WITH);
+                    checkToken(ir.getIncluded(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                    checkToken(ir.getDependsOnValue(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     if (ir instanceof UserRequest userRequest) {
+                        checkConstantReferenceInScriptlet(userRequest.getDesc(), ATTRIBUTE_DESC);
                         checkToken(ir.getValue(), TokenType.VARIABLE_REFERENCE);
                         checkToken(userRequest.getOptions(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getOptionLabels(), TokenType.STRING_OR_VARIABLE_REFERENCE);
@@ -363,6 +382,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         checkToken(userRequest.getDefault(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getAccept(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     } else if (ir instanceof Instruction instruction) {
+                        checkConstantReferenceInScriptlet(instruction.getDesc(), ATTRIBUTE_DESC);
                         checkToken(instruction.getLevel(), TokenType.INSTRUCTION_LEVEL_OR_VARIABLE_REFERENCE);
                         checkExpression(ir);
                     }
@@ -380,6 +400,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof FlowStep flowStep) {
             checkConstantReferenceInScriptlet(flowStep.getDesc(), ATTRIBUTE_DESC);
             checkConstantReferenceInScriptlet(flowStep.getTitle(), ATTRIBUTE_TITLE);
+            checkConstantReferenceInScriptlet(flowStep.getHiddenContainer(), ATTRIBUTE_HIDDEN_CONTAINER);
             for (var thread: flowStep.getThread()) {
                 checkConstantReferenceInScriptlet(thread.getHidden(), ATTRIBUTE_HIDDEN);
             }
@@ -533,9 +554,12 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void finalise() {
         super.finalise();
-        reportCustomPropertyUsage(ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE, context.getCustomDomainParametersUsed());
+        reportCustomPropertyUsage(
+                context.getExternalConfiguration().isCheckExternalReferences() ? ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE : ErrorCode.EXTERNAL_PARAMETER_REFERENCES_NOT_CHECKED,
+                context.getCustomDomainParametersUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ORGANISATION_VARIABLE, context.getCustomOrganisationPropertiesUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_SYSTEM_VARIABLE, context.getCustomSystemPropertiesUsed());
+        reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ACTOR_VARIABLE, context.getCustomActorParametersUsed());
     }
 
     private void reportCustomPropertyUsage(ErrorCode code, Collection<String> propertyNames) {

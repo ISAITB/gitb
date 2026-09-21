@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-tokgen-string" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TokenGenerator string from format</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- Generate a 6-digit number string -->
+        <process handler="TokenGenerator" operation="string" output="token">
+            <input name="format">"[0-9]{6}"</input>
+        </process>
+        <verify handler="RegExpValidator" desc="6-digit format">
+            <input name="input">$token</input>
+            <input name="expression">'[0-9]{6}'</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="length is 6">
+            <input name="expression">string-length($token) = 6</input>
+        </verify>
+    </steps>
+</testcase>

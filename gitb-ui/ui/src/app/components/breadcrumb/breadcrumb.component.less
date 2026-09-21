@@ -26,6 +26,12 @@
         margin: 0px 3px;
     }
     .breacrumbItem {
+        /*
+         * Explicit even though flex-item blockification already achieves this for the <a> crumbs
+         * (actionable crumbs are now rendered as anchors so the browser exposes normal link
+         * behaviour - open in new tab, copy link, etc.) - kept for clarity/defensiveness.
+         */
+        display: block;
         padding: 1px 5px;
         margin: 0px 2px;
         border-radius: @border-radius;

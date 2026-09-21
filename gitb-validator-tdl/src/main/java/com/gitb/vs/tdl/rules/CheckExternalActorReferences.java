@@ -20,17 +20,29 @@ import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.ValidationReport;
 
+import java.util.Set;
+import java.util.TreeSet;
+
 public class CheckExternalActorReferences extends AbstractCheck {
 
     @Override
     public void doCheck(Context context, ValidationReport report) {
+        boolean checkExternalReferences = context.getExternalConfiguration().isCheckExternalReferences();
+        Set<String> externalActorReferencesUsed = new TreeSet<>();
         for (Actor actor: context.getTestSuiteActors().values()) {
             if (actor.getId() != null && actor.getName() == null) {
                 // This is a reference to an external actor.
-                if (!context.getExternalConfiguration().getExternalActorIds().contains(actor.getId())) {
-                    report.addItem(ErrorCode.INVALID_EXTERNAL_ACTOR_REFERENCE, getTestSuiteLocation(context), actor.getId());
+                if (checkExternalReferences) {
+                    if (!context.getExternalConfiguration().getExternalActorIds().contains(actor.getId())) {
+                        report.addItem(ErrorCode.INVALID_EXTERNAL_ACTOR_REFERENCE, getTestSuiteLocation(context), actor.getId());
+                    }
+                } else {
+                    externalActorReferencesUsed.add(actor.getId());
                 }
             }
+        }
+        if (!checkExternalReferences && !externalActorReferencesUsed.isEmpty()) {
+            report.addItem(ErrorCode.EXTERNAL_ACTOR_REFERENCES_NOT_CHECKED, getTestSuiteLocation(context), String.format("[%s]", String.join(", ", externalActorReferencesUsed)));
         }
     }
 }

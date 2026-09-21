@@ -5,7 +5,7 @@
     <parent>
         <artifactId>GITB</artifactId>
         <groupId>com.gitb</groupId>
-        <version>1.29.5</version>
+        <version>1.30.0</version>
     </parent>
     <packaging>war</packaging>
     <properties>
@@ -20,15 +20,21 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <executable>true</executable>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <HMAC_KEY>test-hmac-key-for-integration-tests</HMAC_KEY>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>
@@ -39,6 +45,14 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.itb</groupId>
+            <artifactId>gitb-types-specs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>swagger-ui</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -54,6 +68,10 @@
         </dependency>
         <dependency>
             <groupId>com.gitb</groupId>
+            <artifactId>gitb-lib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.gitb</groupId>
             <artifactId>gitb-engine</artifactId>
         </dependency>
         <dependency>
@@ -65,12 +83,24 @@
             <artifactId>jakarta.jws-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.activation</groupId>
             <artifactId>jakarta.activation-api</artifactId>
+        </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>3.13.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

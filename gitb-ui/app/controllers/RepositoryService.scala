@@ -180,6 +180,15 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def getTestSessionResultMinimal(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestResultForSession(request, sessionId).flatMap { _ =>
+      testResultManager.getTestResultMinimal(sessionId).map {
+        case Some(result) => ResponseConstructor.constructStringResponse(JsonUtil.jsTestResultMinimal(result).toString())
+        case None => ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
   def getTestSessionLog(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId).flatMap { _ =>
       testResultManager.getTestSessionLog(sessionId, isExpected = true).map { logContents =>
@@ -247,7 +256,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
                 FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
               }
             }
-          )
+          ).as(mimeTypeToUse.getOrElse("application/octet-stream"))
         }
       }
     }
@@ -306,21 +315,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         stepReportPath
       }
       path = codec.decode(path)
-      reportManager.generateTestStepReport(reportPath, sessionId, path, contentType, ParameterExtractor.extractOptionalUserId(request)).map { reportFile =>
-        if (reportFile.isEmpty) {
-          NotFound
-        } else {
-          Ok.sendFile(
-            content = reportFile.get.toFile,
-            fileName = _ => Some("step_report"+suffix),
-            onClose = () => {
-              if (reportFile.isDefined) {
-                FileUtils.deleteQuietly(reportFile.get.toFile)
-              }
-            }
-          )
-        }
-      }
+      reportManager.generateTestStepReport(reportPath, sessionId, path, contentType, ParameterExtractor.extractOptionalUserId(request)).map(sendReportFile)
     }.recover {
       case e: Exception =>
         if (Files.exists(reportPath)) {
@@ -330,27 +325,30 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  private def sendReportFile(reportFile: ReportFileInfo): Result = {
+    Ok.sendFile(
+      content = reportFile.file.toFile,
+      fileName = _ => Some(reportFile.fileName),
+      onClose = () => {
+        FileUtils.deleteQuietly(reportFile.file.toFile)
+      }
+    )
+  }
+
+  private def sendReportFile(reportFile: Option[ReportFileInfo]): Result = {
+    reportFile match {
+      case Some(reportFile) => sendReportFile(reportFile)
+      case None => NotFound
+    }
+  }
+
   def exportTestCaseReport(): Action[AnyContent] = authorizedAction.async { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SESSION_ID)
     val contentType = request.headers.get(Constants.AcceptHeader).getOrElse(Constants.MimeTypeXML)
     val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
     val reportPath = getReportTempFile(suffix)
     authorizationManager.canViewTestResultForSession(request, session).flatMap { _ =>
-      reportManager.generateTestCaseReport(reportPath, session, contentType, None, ParameterExtractor.extractOptionalUserId(request)).map { reportFile =>
-        if (reportFile.isDefined) {
-          Ok.sendFile(
-            content = reportFile.get.toFile,
-            fileName = _ => Some("test_report"+suffix),
-            onClose = () => {
-              if (reportFile.isDefined) {
-                FileUtils.deleteQuietly(reportFile.get.toFile)
-              }
-            }
-          )
-        } else {
-          NotFound
-        }
-      }
+      reportManager.generateTestCaseReport(reportPath, session, contentType, None, ParameterExtractor.extractOptionalUserId(request)).map(sendReportFile)
     }.recover {
       case e: Exception =>
         if (Files.exists(reportPath)) {
@@ -362,19 +360,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   private def exportConformanceOverviewCertificateInternal(settings: Option[ConformanceOverviewCertificateWithMessages], communityId: Long, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], snapshotId: Option[Long]): Future[Result] = {
     val reportPath = getReportTempFile(".pdf")
-    reportManager.generateConformanceOverviewCertificate(reportPath, settings, systemId, domainId, groupId, specificationId, communityId, snapshotId).map { _ =>
-      Ok.sendFile(
-        content = reportPath.toFile,
-        fileName = _ => Some("conformance_certificate.pdf"),
-        onClose = () => {
+    reportManager.generateConformanceOverviewCertificate(reportPath, settings, systemId, domainId, groupId, specificationId, communityId, snapshotId)
+      .map(sendReportFile)
+      .recover {
+        case e: Exception =>
           FileUtils.deleteQuietly(reportPath.toFile)
-        }
-      )
-    }.recover {
-      case e: Exception =>
-        FileUtils.deleteQuietly(reportPath.toFile)
-        logger.warn("Error while generating conformance certificate preview", e)
-        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
+          logger.warn("Error while generating conformance certificate preview", e)
+          ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
     }
   }
 
@@ -422,17 +414,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
             systemManager.getCommunityIdOfSystem(systemId)
           }
         }
-        result <- {
-          reportManager.generateConformanceOverviewReport(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId).map { _ =>
-            Ok.sendFile(
-              content = reportPath.toFile,
-              fileName = _ => Some(reportPath.toFile.getName),
-              onClose = () => {
-                FileUtils.deleteQuietly(reportPath.toFile)
-              }
-            )
-          }
-        }
+        result <- reportManager.generateConformanceOverviewReport(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId).map(sendReportFile)
       } yield result
       task.recover {
         case e: Exception =>
@@ -459,19 +441,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         val specificationId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
         systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
           val reportPath = getReportTempFile(".pdf")
-          reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId).map { _ =>
-            Ok.sendFile(
-              content = reportPath.toFile,
-              fileName = _ => Some("conformance_report.xml"),
-              onClose = () => {
+          reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId)
+            .map(sendReportFile)
+            .recover {
+              case e: Exception =>
                 FileUtils.deleteQuietly(reportPath.toFile)
-              }
-            )
-          }.recover {
-            case e: Exception =>
-              FileUtils.deleteQuietly(reportPath.toFile)
-              throw e
-          }
+                throw e
+            }
         }
       }
     } yield result
@@ -486,19 +462,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       val specificationId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
       val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
       val reportPath = getReportTempFile(".pdf")
-      reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId).map { _ =>
-        Ok.sendFile(
-          content = reportPath.toFile,
-          fileName = _ => Some("conformance_report.xml"),
-          onClose = () => {
+      reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId).map(sendReportFile)
+        .recover {
+          case e: Exception =>
             FileUtils.deleteQuietly(reportPath.toFile)
-          }
-        )
-      }.recover {
-        case e: Exception =>
-          FileUtils.deleteQuietly(reportPath.toFile)
-          throw e
-      }
+            throw e
+        }
     }
   }
 
@@ -510,19 +479,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.TESTS).getOrElse(false)
       systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
         val reportPath = getReportTempFile(".pdf")
-        reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId).map { _ =>
-          Ok.sendFile(
-            content = reportPath.toFile,
-            fileName = _ => Some("conformance_report.xml"),
-            onClose = () => {
+        reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId)
+          .map(sendReportFile)
+          .recover {
+            case e: Exception =>
               FileUtils.deleteQuietly(reportPath.toFile)
-            }
-          )
-        }.recover {
-          case e: Exception =>
-            FileUtils.deleteQuietly(reportPath.toFile)
-            throw e
-        }
+              throw e
+          }
       }
     }
   }
@@ -535,18 +498,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
       val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
       val reportPath = getReportTempFile(".xml")
-      reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId).map { _ =>
-        Ok.sendFile(
-          content = reportPath.toFile,
-          fileName = _ => Some("conformance_report.xml"),
-          onClose = () => {
+      reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId)
+        .map(sendReportFile)
+        .recover {
+          case e: Exception =>
             FileUtils.deleteQuietly(reportPath.toFile)
-          }
-        )
-      }.recover {
-        case e: Exception =>
-          FileUtils.deleteQuietly(reportPath.toFile)
-          throw e
+            throw e
       }
     }
   }
@@ -568,38 +525,43 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
         val includeTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TESTS).toBoolean
         val reportPath = getReportTempFile(".pdf")
-        reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId, systemId, labels, communityId, snapshotId).map { _ =>
-          Ok.sendFile(
-            content = reportPath.toFile,
-            fileName = _ => Some("conformance_report.pdf"),
-            onClose = () => {
+        reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId, systemId, labels, communityId, snapshotId)
+          .map(sendReportFile)
+          .recover {
+            case e: Exception =>
               FileUtils.deleteQuietly(reportPath.toFile)
-            }
-          )
-        }.recover {
-          case e: Exception =>
-            FileUtils.deleteQuietly(reportPath.toFile)
-            throw e
-        }
+              throw e
+          }
       }
     } yield result
   }
 
+  def exportConformanceStatementDocumentationReport(): Action[AnyContent] = authorizedAction.async { request =>
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
+    authorizationManager.canViewConformanceStatementReport(request, systemId).flatMap { _ =>
+      systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
+        val reportPath = getReportTempFile(".pdf")
+        reportManager.generateConformanceStatementDocumentationReport(reportPath, actorId, systemId, communityId)
+          .map(sendReportFile)
+          .recover {
+            case e: Exception =>
+              FileUtils.deleteQuietly(reportPath.toFile)
+              throw e
+          }
+      }
+    }
+  }
+
   private def exportConformanceCertificateInternal(settings: Option[ConformanceCertificateInfo], communityId: Long, systemId: Long, actorId: Long, snapshotId: Option[Long]): Future[Result] = {
     val reportPath = getReportTempFile(".pdf")
-    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId, communityId, snapshotId).map { _ =>
-      Ok.sendFile(
-        content = reportPath.toFile,
-        fileName = _ => Some("conformance_certificate.pdf"),
-        onClose = () => {
+    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId, communityId, snapshotId)
+      .map(sendReportFile)
+      .recover {
+        case e: Exception =>
           FileUtils.deleteQuietly(reportPath.toFile)
-        }
-      )
-    }.recover {
-      case e: Exception =>
-        FileUtils.deleteQuietly(reportPath.toFile)
-        throw e
-    }
+          throw e
+      }
   }
 
   def exportDemoConformanceOverviewCertificateReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
@@ -699,14 +661,17 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       }
       result <- {
         if (stylesheetInfo._1.isEmpty) {
-          reportGenerator.apply(ExportDemoCertificateInfo(reportSettings, stylesheetInfo._2, jsSettings, reportPath, paramMap)).map { _ =>
-            Ok.sendFile(
-              content = reportPath.toFile,
-              fileName = _ => Some("conformance_certificate.pdf"),
-              onClose = () => {
-                FileUtils.deleteQuietly(reportPath.toFile)
-              }
-            )
+          reportGenerator.apply(ExportDemoCertificateInfo(reportSettings, stylesheetInfo._2, jsSettings, reportPath, paramMap)).flatMap { _ =>
+            communityLabelManager.getLabels(communityId).map { labels =>
+              val ctx = reportManager.getDemoReportNameContext(labels)
+              Ok.sendFile(
+                content = reportPath.toFile,
+                fileName = _ => Some(reportManager.resolveReportFileName(reportType, reportSettings.fileNameExpression, ctx, "pdf")),
+                onClose = () => {
+                  FileUtils.deleteQuietly(reportPath.toFile)
+                }
+              )
+            }
           }
         } else {
           Future.successful(stylesheetInfo._1.get)
@@ -749,33 +714,33 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportDemoTestStepReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReport(request, communityId, "step_report.pdf", ReportType.TestStepReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+    exportDemoReport(request, communityId, ReportType.TestStepReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
       val settings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
       reportManager.generateDemoTestStepReport(reportPath, settings, xsltPath).map(_ => ())
     })
   }
 
   def exportDemoTestStepReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReportInXML(request, communityId, "step_report.xml", ReportType.TestStepReport, (reportPath: Path, xsltPath: Option[Path], _: Option[Map[String, Seq[String]]]) => {
+    exportDemoReportInXML(request, communityId, ReportType.TestStepReport, (reportPath: Path, xsltPath: Option[Path], _: Option[Map[String, Seq[String]]]) => {
       reportManager.generateDemoTestStepReportInXML(reportPath, xsltPath).map(_ => ())
     })
   }
 
   def exportDemoTestCaseReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReport(request, communityId, "test_report.pdf", ReportType.TestCaseReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+    exportDemoReport(request, communityId, ReportType.TestCaseReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
       val settings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
       reportManager.generateDemoTestCaseReport(reportPath, settings, xsltPath).map(_ => ())
     })
   }
 
   def exportDemoTestCaseReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReportInXML(request, communityId, "test_report.xml", ReportType.TestCaseReport, (reportPath: Path, xsltPath: Option[Path], _: Option[Map[String, Seq[String]]]) => {
+    exportDemoReportInXML(request, communityId, ReportType.TestCaseReport, (reportPath: Path, xsltPath: Option[Path], _: Option[Map[String, Seq[String]]]) => {
       reportManager.generateDemoTestCaseReportInXML(reportPath, xsltPath).map(_ => ())
     })
   }
 
   def exportDemoConformanceOverviewReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReport(request, communityId, "conformance_report.pdf", ReportType.ConformanceOverviewReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+    exportDemoReport(request, communityId, ReportType.ConformanceOverviewReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
       val level = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.LEVEL).map(OverviewLevelType.withName).getOrElse(OverviewLevelType.OrganisationLevel)
       val settings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
       reportManager.generateDemoConformanceOverviewReport(reportPath, settings, xsltPath, communityId, level).map(_ => ())
@@ -783,14 +748,14 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportDemoConformanceOverviewReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReportInXML(request, communityId, "conformance_report.xml", ReportType.ConformanceOverviewReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+    exportDemoReportInXML(request, communityId, ReportType.ConformanceOverviewReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
       val level = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.LEVEL).map(OverviewLevelType.withName).getOrElse(OverviewLevelType.OrganisationLevel)
       reportManager.generateDemoConformanceOverviewReportInXML(reportPath, xsltPath, communityId, level).map(_ => ())
     })
   }
 
   def exportDemoConformanceStatementReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReport(request, communityId, "conformance_report.pdf", ReportType.ConformanceStatementReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+    exportDemoReport(request, communityId, ReportType.ConformanceStatementReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
       val settings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
       val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(paramMap, ParameterNames.TESTS).getOrElse(false)
       reportManager.generateDemoConformanceStatementReport(reportPath, settings, xsltPath, withTestSteps, communityId).map(_ => ())
@@ -798,13 +763,69 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportDemoConformanceStatementReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    exportDemoReportInXML(request, communityId, "conformance_report.xml", ReportType.ConformanceStatementReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+    exportDemoReportInXML(request, communityId, ReportType.ConformanceStatementReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
       val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(paramMap, ParameterNames.TESTS).getOrElse(false)
       reportManager.generateDemoConformanceStatementReportInXML(reportPath, xsltPath, withTestSteps, communityId).map(_ => ())
     })
   }
 
-  private def exportDemoReport(request: RequestWithAttributes[AnyContent], communityId: Long, reportName: String, reportType: ReportType, handler: (Path, Option[Path], Option[Map[String, Seq[String]]]) => Future[Unit]): Future[Result] = {
+  def exportDemoConformanceStatementDocumentationReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoReport(request, communityId, ReportType.ConformanceStatementDocumentationReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+      val reportSettings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
+      val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SETTINGS)
+      val settings = JsonUtil.parseJsConformanceStatementDocumentationReportSettings(jsSettings, communityId)
+      reportManager.generateDemoConformanceStatementDocumentationReport(reportPath, reportSettings, xsltPath, settings, communityId).map(_ => ())
+    })
+  }
+
+  def exportDemoConformanceStatementDocumentationReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoReportInXML(request, communityId, ReportType.ConformanceStatementDocumentationReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
+      val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SETTINGS)
+      val settings = JsonUtil.parseJsConformanceStatementDocumentationReportSettings(jsSettings, communityId)
+      reportManager.generateDemoConformanceStatementDocumentationReportInXML(reportPath, xsltPath, settings, communityId).map(_ => ())
+    })
+  }
+
+  def exportDemoTestCaseDocumentationReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoDocumentationReport(communityId, request, ReportType.TestCaseDocumentationReport, (reportPath, reportSettings) => {
+      reportManager.generateDemoTestCaseDocumentationReport(reportPath, communityId, reportSettings)
+    })
+  }
+
+  def exportDemoTestSuiteDocumentationReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    exportDemoDocumentationReport(communityId, request, ReportType.TestSuiteDocumentationReport, (reportPath, reportSettings) => {
+      reportManager.generateDemoTestSuiteDocumentationReport(reportPath, communityId, reportSettings)
+    })
+  }
+
+  /**
+   * Generic handler for demo/preview PDF-only report types that have no stylesheet or external
+   * service configuration option (only a naming expression and, optionally, a signature setting).
+   */
+  private def exportDemoDocumentationReport(communityId: Long, request: RequestWithAttributes[AnyContent], reportType: ReportType, generator: (Path, CommunityReportSettings) => Future[Unit]): Future[Result] = {
+    val reportPath = getReportTempFile(".pdf")
+    val task = for {
+      paramMap <- Future.successful(ParameterExtractor.paramMap(request))
+      _ <- authorizationManager.canManageCommunity(request, communityId)
+      reportSettings <- Future.successful(ParameterExtractor.extractCommunityReportSettings(paramMap, communityId))
+      _ <- generator(reportPath, reportSettings)
+      labels <- communityLabelManager.getLabels(communityId)
+    } yield {
+      val ctx = reportManager.getDemoReportNameContext(labels)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some(reportManager.resolveReportFileName(reportType, reportSettings.fileNameExpression, ctx, "pdf")),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    }
+    task.recover {
+      case e: Exception => handleDemoReportGeneralError(e, reportPath)
+    }
+  }
+
+  private def exportDemoReport(request: RequestWithAttributes[AnyContent], communityId: Long, reportType: ReportType, handler: (Path, Option[Path], Option[Map[String, Seq[String]]]) => Future[Unit]): Future[Result] = {
     val reportPath = getReportTempFile(".pdf")
     val task = for {
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
@@ -832,14 +853,18 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       }
       result <- {
         if (stylesheetInfo._1.isEmpty) {
-          handler.apply(reportPath, stylesheetInfo._2, paramMap).map { _ =>
-            Ok.sendFile(
-              content = reportPath.toFile,
-              fileName = _ => Some(reportName),
-              onClose = () => {
-                FileUtils.deleteQuietly(reportPath.toFile)
-              }
-            )
+          handler.apply(reportPath, stylesheetInfo._2, paramMap).flatMap { _ =>
+            val fileNameOverride = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.FILE_NAME_EXPRESSION)
+            communityLabelManager.getLabels(communityId).map { labels =>
+              val ctx = reportManager.getDemoReportNameContext(labels)
+              Ok.sendFile(
+                content = reportPath.toFile,
+                fileName = _ => Some(reportManager.resolveReportFileName(reportType, fileNameOverride, ctx, "pdf")),
+                onClose = () => {
+                  FileUtils.deleteQuietly(reportPath.toFile)
+                }
+              )
+            }
           }
         } else {
           Future.successful(stylesheetInfo._1.get)
@@ -875,7 +900,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
   }
 
-  private def exportDemoReportInXML(request: RequestWithAttributes[AnyContent], communityId: Long, reportName: String, reportType: ReportType, handler: (Path, Option[Path], Option[Map[String, Seq[String]]]) => Future[Unit]): Future[Result] = {
+  private def exportDemoReportInXML(request: RequestWithAttributes[AnyContent], communityId: Long, reportType: ReportType, handler: (Path, Option[Path], Option[Map[String, Seq[String]]]) => Future[Unit]): Future[Result] = {
     val reportPath = getReportTempFile(".xml")
     val task = for {
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
@@ -904,14 +929,18 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       }
       result <- {
         if (stylesheetInfo._1.isEmpty) {
-          handler.apply(reportPath, stylesheetInfo._2, paramMap).map { _ =>
-            Ok.sendFile(
-              content = reportPath.toFile,
-              fileName = _ => Some(reportName),
-              onClose = () => {
-                FileUtils.deleteQuietly(reportPath.toFile)
-              }
-            )
+          handler.apply(reportPath, stylesheetInfo._2, paramMap).flatMap { _ =>
+            val fileNameOverride = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.FILE_NAME_EXPRESSION)
+            communityLabelManager.getLabels(communityId).map { labels =>
+              val ctx = reportManager.getDemoReportNameContext(labels)
+              Ok.sendFile(
+                content = reportPath.toFile,
+                fileName = _ => Some(reportManager.resolveReportFileName(reportType, fileNameOverride, ctx, "xml")),
+                onClose = () => {
+                  FileUtils.deleteQuietly(reportPath.toFile)
+                }
+              )
+            }
           }
         } else {
           Future.successful(stylesheetInfo._1.get)
@@ -966,6 +995,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     handleUpdateCertificateSettings(communityId, request, (reportSettings, stylesheet, jsSettings) => {
       val certificateSettings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
       reportManager.updateConformanceOverviewCertificateSettings(certificateSettings, reportSettings, stylesheet)
+    })
+  }
+
+  def updateConformanceStatementDocumentationReportSettings(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    handleUpdateCertificateSettings(communityId, request, (reportSettings, stylesheet, jsSettings) => {
+      val settings = JsonUtil.parseJsConformanceStatementDocumentationReportSettings(jsSettings, communityId)
+      reportManager.updateConformanceStatementDocumentationReportSettings(settings, reportSettings, stylesheet)
     })
   }
 
@@ -1072,6 +1108,62 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       }
     }
 	}
+
+  def exportTestCaseDocumentationReport(testCaseId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestCase(request, testCaseId.toString).flatMap { _ =>
+      testCaseManager.getTestCaseDocumentation(testCaseId).flatMap { documentation =>
+        if (documentation.isDefined) {
+          val userId = ParameterExtractor.extractUserId(request)
+          val reportPath = getReportTempFile(".pdf")
+          communityManager.getUserCommunityId(userId).flatMap { communityId =>
+            reportManager.generateTestCaseDocumentationReport(reportPath, communityId, documentation.get, testCaseId).map { reportInfo =>
+              Ok.sendFile(
+                content = reportInfo.file.toFile,
+                fileName = _ => Some(reportInfo.fileName),
+                onClose = () => {
+                  FileUtils.deleteQuietly(reportPath.toFile)
+                }
+              )
+            }
+          }.recover {
+            case e: Exception =>
+              FileUtils.deleteQuietly(reportPath.toFile)
+              throw e
+          }
+        } else {
+          Future.successful(NotFound)
+        }
+      }
+    }
+  }
+
+  def exportTestSuiteDocumentationReport(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestSuite(request, testSuiteId).flatMap { _ =>
+      testSuiteManager.getTestSuiteDocumentation(testSuiteId).flatMap { documentation =>
+        if (documentation.isDefined) {
+          val userId = ParameterExtractor.extractUserId(request)
+          val reportPath = getReportTempFile(".pdf")
+          communityManager.getUserCommunityId(userId).flatMap { communityId =>
+            reportManager.generateTestSuiteDocumentationReport(reportPath, communityId, documentation.get, testSuiteId).map { reportInfo =>
+              Ok.sendFile(
+                content = reportInfo.file.toFile,
+                fileName = _ => Some(reportInfo.fileName),
+                onClose = () => {
+                  FileUtils.deleteQuietly(reportPath.toFile)
+                }
+              )
+            }
+          }.recover {
+            case e: Exception =>
+              FileUtils.deleteQuietly(reportPath.toFile)
+              throw e
+          }
+        } else {
+          Future.successful(NotFound)
+        }
+      }
+    }
+  }
 
   def searchTestCases(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewAllTestCases(request).flatMap { _ =>
@@ -1221,7 +1313,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def uploadSystemSettingsExport(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSystemSettings(request).flatMap { _ =>
-      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = true, requireDeletions = false, (exportData: Export, settings: ImportSettings) => {
+      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = true, requireDeletions = false, (exportData: Export, _: ImportSettings) => {
         importPreviewManager.previewSystemSettingsImport(exportData.getSettings).map { result =>
           List(result._1)
         }
@@ -1233,7 +1325,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def uploadDeletionsExport(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canDeleteAnyDomain(request).flatMap { _ =>
-      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = false, requireDeletions = true, (exportData: Export, settings: ImportSettings) => {
+      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = false, requireDeletions = true, (exportData: Export, _: ImportSettings) => {
         importPreviewManager.previewDeletionsImport(exportData.getDeletions)
       })
     }.andThen { _ =>
@@ -1447,11 +1539,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canExportTestSessionData(request, session).flatMap { _ =>
       Files.createDirectories(archiveFolder)
       val archiveFile = archiveFolder.resolve("test_data.zip")
-      reportManager.generateTestSessionDataArchive(archiveFile, session).map { resultingFile =>
-        if (resultingFile.isDefined) {
+      val userId = ParameterExtractor.extractUserId(request)
+      reportManager.generateTestSessionDataArchive(archiveFile, session, Some(userId)).map { resultingReport =>
+        if (resultingReport.isDefined) {
           Ok.sendFile(
-            content = resultingFile.get.toFile,
-            fileName = _ => Some("test_data.zip"),
+            content = resultingReport.get.file.toFile,
+            fileName = _ => Some(resultingReport.get.fileName),
             onClose = () => {
               if (Files.exists(archiveFolder)) {
                 FileUtils.deleteQuietly(archiveFolder.toFile)

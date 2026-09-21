@@ -68,6 +68,11 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
       this.communityId = Constants.DEFAULT_COMMUNITY_ID
       this.tooltipForDefaultCheck = 'Check this to make this error template the default one assumed for all communities.'
     }
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.systemConfigurationBreadcrumbs()
+    } else {
+      this.routingService.communityChildBreadcrumbs(this.communityId)
+    }
     this.placeholders = [
       { key: Constants.PLACEHOLDER__ERROR_DESCRIPTION, value: "The error message text (a text value that may be empty)." },
       { key: Constants.PLACEHOLDER__ERROR_ID, value: "The error identifier (used to trace the error in the logs)." }

@@ -27,7 +27,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager)
+class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager, restApiErrorHandler: RestApiErrorHandler)
                              (implicit ec: ExecutionContext) extends HttpErrorHandler {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -36,6 +36,8 @@ class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager)
     Future.successful {
       if (statusCode == 404) {
         NotFound
+      } else if (request.path.startsWith(Configurations.API_PUBLIC_ROOT)) {
+        restApiErrorHandler.onClientError(request, statusCode, message)
       } else {
         ResponseConstructor.constructServerError("Unexpected error", message, Some(""))
       }

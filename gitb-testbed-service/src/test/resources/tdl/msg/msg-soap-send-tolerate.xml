@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-soap-send-tolerate" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>SoapMessagingV2 send tolerates non-SOAP response</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="envelope" type="object"><![CDATA['<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><request/></soapenv:Body></soapenv:Envelope>']]></assign>
+        <!-- WireMock returns plain text (non-SOAP); tolerateNonSoapResponse=true → still SUCCESS -->
+        <send handler="SoapMessagingV2" desc="Send tolerating non-SOAP response">
+            <input name="uri">concat($backendUrl, '/soap-non-soap-response')</input>
+            <input name="version">'1.1'</input>
+            <input name="envelope">$envelope</input>
+            <input name="tolerateNonSoapResponse">'true'</input>
+        </send>
+    </steps>
+</testcase>

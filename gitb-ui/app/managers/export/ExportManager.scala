@@ -42,6 +42,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                                domainParameterManager: DomainParameterManager,
                                communityResourceManager: CommunityResourceManager,
                                triggerManager: TriggerManager,
+                               testFlagManager: TestFlagManager,
                                communityManager: CommunityManager,
                                testSuiteManager: TestSuiteManager,
                                landingPageManager: LandingPageManager,
@@ -471,6 +472,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedSpecification.setFullName(specification.fullname)
               exportedSpecification.setDescription(specification.description.orNull)
               exportedSpecification.setReportMetadata(specification.reportMetadata.orNull)
+              exportedSpecification.setDocumentation(data.specificationDocumentation.flatMap(_.get(specification.id)).orNull)
               exportedSpecification.setApiKey(specification.apiKey)
               exportedSpecification.setHidden(specification.hidden)
               exportedSpecification.setDisplayOrder(specification.displayOrder)
@@ -502,6 +504,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                   exportedActor.setApiKey(actor.apiKey)
                   exportedActor.setDescription(actor.description.orNull)
                   exportedActor.setReportMetadata(actor.reportMetadata.orNull)
+                  exportedActor.setDocumentation(data.actorDocumentation.flatMap(_.get(actor.id)).orNull)
                   if (actor.default.isDefined) {
                     exportedActor.setDefault(actor.default.get)
                   } else {
@@ -624,7 +627,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 exportedTestService.setAuthTokenUsername(testService.authTokenUsername.orNull)
                 exportedTestService.setAuthTokenPassword(encryptText(testService.authTokenPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
                 exportedTestService.setAuthTokenPasswordType(testService.authTokenPasswordType.map(x => toExportedTestServiceAuthTokenPasswordType(models.Enums.TestServiceAuthTokenPasswordType.apply(x))).orNull)
+                exportedTestService.setAuthHeaderName(testService.authHttpHeaderName.orNull)
+                exportedTestService.setAuthHeaderValue(encryptText(testService.authHttpHeaderValue, isAlreadyEncrypted = true, exportSettings.encryptionKey))
                 exportedTestService.setMonitorHealth(testService.monitorHealth)
+                exportedTestService.setApiKey(testService.apiKey)
                 exportedTestService.setParameter(exportedDomainParameterMap(testService.parameter))
                 exportedDomain.getTestServices.getService.add(exportedTestService)
               }
@@ -811,6 +817,12 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedTheme.setSecondaryButtonLabelColor(theme.secondaryButtonLabelColor)
               exportedTheme.setSecondaryButtonHoverColor(theme.secondaryButtonHoverColor)
               exportedTheme.setSecondaryButtonActiveColor(theme.secondaryButtonActiveColor)
+              exportedTheme.setWelcomeLoginColor(theme.welcomeLoginColor)
+              exportedTheme.setWelcomeLoginLabelColor(theme.welcomeLoginLabelColor)
+              exportedTheme.setWelcomeOptionLabelColor(theme.welcomeOptionLabelColor)
+              exportedTheme.setAlertInfoBackgroundColor(theme.alertInfoBackgroundColor)
+              exportedTheme.setAlertInfoTextColor(theme.alertInfoTextColor)
+              exportedTheme.setAlertInfoBorderColor(theme.alertInfoBorderColor)
               exportedThemes.getTheme.add(exportedTheme)
             }
             exportedSettings.setThemes(exportedThemes)
@@ -940,6 +952,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedSetting.setCustomPdfs(setting.customPdfs)
     exportedSetting.setCustomPdfsWithCustomXml(setting.customPdfsWithCustomXml)
     exportedSetting.setCustomPdfService(setting.customPdfService.orNull)
+    exportedSetting.setFileNameExpression(setting.fileNameExpression.orNull)
     exportedSetting
   }
 
@@ -956,6 +969,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       exportedUser.getPreferences.setStatementsCollapsed(prefs.statementsCollapsed)
       exportedUser.getPreferences.setPageSize(BigInteger.valueOf(prefs.pageSize))
       exportedUser.getPreferences.setHomePageType(toExportedHomePageType(prefs.homePageType))
+      exportedUser.getPreferences.setOwnSessions(prefs.ownSessions)
+      exportedUser.getPreferences.setAllSessions(prefs.allSessions)
+      exportedUser.getPreferences.setStatementsListView(prefs.statementsListView)
+      exportedUser.getPreferences.setMessagesSplitView(prefs.messagesSplitView)
     }
   }
 
@@ -978,280 +995,213 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           exportSettings.communityAdministrators = false
           exportSettings.organisationUsers = false
         }
-        // Load all data
-        loadIfApplicable(exportSettings.domain,
-          () => loadDomainExportData(community.get.domain.get, exportSettings)
-        ).zip(
-          // Administrators
-          loadIfApplicable(exportSettings.communityAdministrators,
-            () => loadCommunityAdministrators(communityId)
-          ).zip {
-            // Conformance statement certificate
-            loadIfApplicable(exportSettings.certificateSettings,
-              () => communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false, None)
-            ).zip(
-              // Conformance overview certificate
-              loadIfApplicable(exportSettings.certificateSettings,
-                () => communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = false, None, None, None)
-              ).zip(
-                // Signature settings
-                loadIfApplicable(exportSettings.certificateSettings,
-                  () => communityManager.getCommunityKeystore(communityId, decryptKeys = false)
-                ).zip{
-                  // Report settings
-                  loadIfApplicable(exportSettings.certificateSettings,
-                    () => reportManager.getAllReportSettings(communityId)
-                  ).zip(
-                    // Custom organisation properties
-                    loadIfApplicable(exportSettings.customProperties,
-                      () => loadOrganisationProperties(communityId)
-                    ).zip(
-                      // Custom system properties
-                      loadIfApplicable(exportSettings.customProperties,
-                        () => loadSystemProperties(communityId)
-                      ).zip(
-                        // Custom labels
-                        loadIfApplicable(exportSettings.customLabels,
-                          () => communityManager.getCommunityLabels(communityId)
-                        ).zip(
-                          // Landing pages
-                          loadIfApplicable(exportSettings.landingPages,
-                            () => landingPageManager.getLandingPagesByCommunity(communityId)
-                          ).zip(
-                            // Legal notices
-                            loadIfApplicable(exportSettings.legalNotices,
-                              () => legalNoticeManager.getLegalNoticesByCommunity(communityId)
-                            ).zip(
-                              // Error templates
-                              loadIfApplicable(exportSettings.errorTemplates,
-                                () => errorTemplateManager.getErrorTemplatesByCommunity(communityId)
-                              ).zip(
-                                // Triggers
-                                loadIfApplicable(exportSettings.triggers,
-                                  () => triggerManager.getTriggerAndDataByCommunityId(communityId)
-                                ).zip(
-                                  // Resources
-                                  loadIfApplicable(exportSettings.resources,
-                                    () => communityResourceManager.getCommunityResources(communityId)
-                                  ).zip(
-                                    // Organisations
-                                    loadIfApplicable(exportSettings.organisations,
-                                      () => loadOrganisations(communityId)
-                                    ).zip(
-                                      // Organisation users
-                                      loadIfApplicable(exportSettings.organisations && exportSettings.organisationUsers,
-                                        () => loadOrganisationUserMap(communityId)
-                                      ).zip(
-                                        // Organisation property values
-                                        loadIfApplicable(exportSettings.organisations && exportSettings.customProperties && exportSettings.organisationPropertyValues,
-                                          () => loadOrganisationParameterValueMap(communityId)
-                                        ).zip(
-                                          // Systems
-                                          loadIfApplicable(exportSettings.organisations && exportSettings.systems,
-                                            () => loadOrganisationSystemMap(communityId)
-                                          ).zip(
-                                            // System property values
-                                            loadIfApplicable(exportSettings.organisations && exportSettings.systems && exportSettings.customProperties && exportSettings.systemPropertyValues,
-                                              () => loadSystemParameterValues(communityId)
-                                            ).zip(
-                                              // Statements
-                                              loadIfApplicable(exportSettings.organisations && exportSettings.systems && exportSettings.statements && exportSettings.domain,
-                                                () => loadSystemStatementsMap(community.get.id, community.get.domain)
-                                              ).zip(
-                                                // Statement configurations
-                                                loadIfApplicable(exportSettings.organisations && exportSettings.systems && exportSettings.statements && exportSettings.domain && exportSettings.statementConfigurations,
-                                                  () => loadSystemConfigurationsMap(community.get)
-                                                ).zip(
-                                                  // System settings
-                                                  loadIfApplicable(exportSettings.hasSystemSettings(),
-                                                    () => loadSystemSettingsExportData(exportSettings)
-                                                  ).zip(
-                                                    // User preferences
-                                                    loadIfApplicable(exportSettings.communityAdministrators || (exportSettings.organisations && exportSettings.organisationUsers),
-                                                      () => userPreferenceManager.loadUserPreferencesMap(communityId)
-                                                    )
-                                                  )
-                                                )
-                                              )
-                                            )
-                                          )
-                                        )
-                                      )
-                                    )
-                                  )
-                                )
-                              )
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
-                }
-              )
-            )
-          }
-        ).map { results =>
-          (CommunityExportData(
-            community = community,
-            userPreferences = userPreferences,
-            domainExportData = results._1,
-            administrators = results._2._1,
-            statementCertificateSettings = results._2._2._1,
-            overviewCertificateSettings = results._2._2._2._1,
-            keystore = results._2._2._2._2._1,
-            reportSettings = results._2._2._2._2._2._1,
-            organisationProperties = results._2._2._2._2._2._2._1,
-            systemProperties = results._2._2._2._2._2._2._2._1,
-            labels = results._2._2._2._2._2._2._2._2._1,
-            landingPages = results._2._2._2._2._2._2._2._2._2._1,
-            legalNotices = results._2._2._2._2._2._2._2._2._2._2._1,
-            errorTemplates = results._2._2._2._2._2._2._2._2._2._2._2._1,
-            triggers = results._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            resources = results._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            organisations = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            organisationUserMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            organisationParameterValueMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            organisationSystemMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            systemParameterValueMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            systemStatementsMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            systemConfigurationsMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            systemSettings = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            userPreferenceMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2,
-          ), exportSettings)
-        }
+        // Load all data in parallel
+        val fDomainExportData = loadIfApplicable(exportSettings.domain,
+          () => loadDomainExportData(community.get.domain.get, exportSettings))
+        val fAdministrators = loadIfApplicable(exportSettings.communityAdministrators,
+          () => loadCommunityAdministrators(communityId))
+        val fStatementCertificateSettings = loadIfApplicable(exportSettings.certificateSettings,
+          () => communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false, None))
+        val fOverviewCertificateSettings = loadIfApplicable(exportSettings.certificateSettings,
+          () => communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = false, None, None, None))
+        val fStatementDocumentationReportSettings = loadIfApplicable(exportSettings.certificateSettings,
+          () => communityManager.getConformanceStatementDocumentationReportSettingsWrapper(communityId, defaultIfMissing = false))
+        val fKeystore = loadIfApplicable(exportSettings.certificateSettings,
+          () => communityManager.getCommunityKeystore(communityId, decryptKeys = false))
+        val fReportSettings = loadIfApplicable(exportSettings.certificateSettings,
+          () => reportManager.getAllReportSettings(communityId))
+        val fOrganisationProperties = loadIfApplicable(exportSettings.customProperties,
+          () => loadOrganisationProperties(communityId))
+        val fSystemProperties = loadIfApplicable(exportSettings.customProperties,
+          () => loadSystemProperties(communityId))
+        val fLabels = loadIfApplicable(exportSettings.customLabels,
+          () => communityManager.getCommunityLabels(communityId))
+        val fLandingPages = loadIfApplicable(exportSettings.landingPages,
+          () => landingPageManager.getLandingPagesByCommunity(communityId))
+        val fLegalNotices = loadIfApplicable(exportSettings.legalNotices,
+          () => legalNoticeManager.getLegalNoticesByCommunity(communityId))
+        val fErrorTemplates = loadIfApplicable(exportSettings.errorTemplates,
+          () => errorTemplateManager.getErrorTemplatesByCommunity(communityId))
+        val fTriggers = loadIfApplicable(exportSettings.triggers,
+          () => triggerManager.getTriggerAndDataByCommunityId(communityId))
+        val fTestFlags = loadIfApplicable(exportSettings.testFlags,
+          () => testFlagManager.getAllTestFlagsByCommunity(communityId))
+        val fResources = loadIfApplicable(exportSettings.resources,
+          () => communityResourceManager.getCommunityResources(communityId))
+        val fOrganisations = loadIfApplicable(exportSettings.organisations,
+          () => loadOrganisations(communityId))
+        val fOrganisationUserMap = loadIfApplicable(exportSettings.organisations && exportSettings.organisationUsers,
+          () => loadOrganisationUserMap(communityId))
+        val fOrganisationParameterValueMap = loadIfApplicable(exportSettings.organisations && exportSettings.customProperties && exportSettings.organisationPropertyValues,
+          () => loadOrganisationParameterValueMap(communityId))
+        val fOrganisationSystemMap = loadIfApplicable(exportSettings.organisations && exportSettings.systems,
+          () => loadOrganisationSystemMap(communityId))
+        val fSystemParameterValueMap = loadIfApplicable(exportSettings.organisations && exportSettings.systems && exportSettings.customProperties && exportSettings.systemPropertyValues,
+          () => loadSystemParameterValues(communityId))
+        val fSystemStatementsMap = loadIfApplicable(exportSettings.organisations && exportSettings.systems && exportSettings.statements && exportSettings.domain,
+          () => loadSystemStatementsMap(community.get.id, community.get.domain))
+        val fSystemConfigurationsMap = loadIfApplicable(exportSettings.organisations && exportSettings.systems && exportSettings.statements && exportSettings.domain && exportSettings.statementConfigurations,
+          () => loadSystemConfigurationsMap(community.get))
+        val fSystemSettings = loadIfApplicable(exportSettings.hasSystemSettings(),
+          () => loadSystemSettingsExportData(exportSettings))
+        val fUserPreferenceMap = loadIfApplicable(exportSettings.communityAdministrators || (exportSettings.organisations && exportSettings.organisationUsers),
+          () => userPreferenceManager.loadUserPreferencesMap(communityId))
+        for {
+          domainExportData              <- fDomainExportData
+          administrators                <- fAdministrators
+          statementCertificateSettings  <- fStatementCertificateSettings
+          overviewCertificateSettings   <- fOverviewCertificateSettings
+          statementDocumentationReportSettings <- fStatementDocumentationReportSettings
+          keystore                      <- fKeystore
+          reportSettings                <- fReportSettings
+          organisationProperties        <- fOrganisationProperties
+          systemProperties              <- fSystemProperties
+          labels                        <- fLabels
+          landingPages                  <- fLandingPages
+          legalNotices                  <- fLegalNotices
+          errorTemplates                <- fErrorTemplates
+          triggers                      <- fTriggers
+          testFlags                     <- fTestFlags
+          resources                     <- fResources
+          organisations                 <- fOrganisations
+          organisationUserMap           <- fOrganisationUserMap
+          organisationParameterValueMap <- fOrganisationParameterValueMap
+          organisationSystemMap         <- fOrganisationSystemMap
+          systemParameterValueMap       <- fSystemParameterValueMap
+          systemStatementsMap           <- fSystemStatementsMap
+          systemConfigurationsMap       <- fSystemConfigurationsMap
+          systemSettings                <- fSystemSettings
+          userPreferenceMap             <- fUserPreferenceMap
+        } yield (CommunityExportData(
+          community                     = community,
+          userPreferences               = userPreferences,
+          domainExportData              = domainExportData,
+          administrators                = administrators,
+          statementCertificateSettings  = statementCertificateSettings,
+          overviewCertificateSettings   = overviewCertificateSettings,
+          statementDocumentationReportSettings = statementDocumentationReportSettings,
+          keystore                      = keystore,
+          reportSettings                = reportSettings,
+          organisationProperties        = organisationProperties,
+          systemProperties              = systemProperties,
+          labels                        = labels,
+          landingPages                  = landingPages,
+          legalNotices                  = legalNotices,
+          errorTemplates                = errorTemplates,
+          triggers                      = triggers,
+          testFlags                     = testFlags,
+          resources                     = resources,
+          organisations                 = organisations,
+          organisationUserMap           = organisationUserMap,
+          organisationParameterValueMap = organisationParameterValueMap,
+          organisationSystemMap         = organisationSystemMap,
+          systemParameterValueMap       = systemParameterValueMap,
+          systemStatementsMap           = systemStatementsMap,
+          systemConfigurationsMap       = systemConfigurationsMap,
+          systemSettings                = systemSettings,
+          userPreferenceMap             = userPreferenceMap,
+        ), exportSettings)
       }
     } yield data
   }
 
   private def loadDomainExportData(domainId: Long, exportSettings: ExportSettings): Future[DomainExportData] = {
-    // Load export data with zipping to load in parallel
-    // Domain
-    domainManager.getDomainById(domainId).zip(
-      // Shared test suites.
-      loadIfApplicable(exportSettings.testSuites,
-        () => loadSharedTestSuites(domainId)
-      ).zip(
-        // Specification groups.
-        loadIfApplicable(exportSettings.specifications,
-          () => specificationManager.getSpecificationGroups(domainId)
-        ).zip(
-          // Specifications
-          loadIfApplicable(exportSettings.specifications,
-            () => specificationManager.getSpecificationsWithoutGroups(domainId)
-          ).zip(
-            // Specification actors
-            loadIfApplicable(exportSettings.specifications && exportSettings.actors,
-              () => loadSpecificationActorMap(domainId)
-            ).zip(
-              // Actor endpoints
-              loadIfApplicable(exportSettings.specifications && exportSettings.actors && exportSettings.endpoints,
-                () => loadActorEndpointMap(domainId)
-              ).zip(
-                // Endpoint parameters.
-                loadIfApplicable(exportSettings.specifications && exportSettings.actors && exportSettings.endpoints,
-                  () => loadEndpointParameterMap(domainId)
-                ).zip(
-                  // Test suites.
-                  loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
-                    () => loadActorTestSuiteMap(domainId)
-                  ).zip(
-                    // Test case groups.
-                    loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
-                      () => loadTestCaseGroupMap(domainId)
-                    ).zip(
-                      // Test suite test cases
-                      loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
-                        () => loadTestSuiteTestCaseMap(domainId)
-                      ).zip(
-                        // Specification test suites
-                        loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
-                          () => loadSpecificationTestSuiteMap(domainId)
-                        ).zip(
-                          // Domain parameters
-                          loadIfApplicable(exportSettings.domainParameters,
-                            () => domainParameterManager.getDomainParameters(domainId)
-                          )
-                        ).zip(
-                          // Test services
-                          loadIfApplicable(exportSettings.domainParameters && exportSettings.testServices,
-                            () => domainParameterManager.getTestServices(domainId)
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    ).map { results =>
-      DomainExportData(
-        domain = Some(results._1),
-        sharedTestSuites =          results._2._1,
-        specificationGroups =       results._2._2._1,
-        specifications =            results._2._2._2._1,
-        specificationActorMap =     results._2._2._2._2._1,
-        actorEndpointMap =          results._2._2._2._2._2._1,
-        endpointParameterMap =      results._2._2._2._2._2._2._1,
-        testSuiteActorMap =         results._2._2._2._2._2._2._2._1,
-        testSuiteTestCaseGroupMap = results._2._2._2._2._2._2._2._2._1,
-        testSuiteTestCaseMap =      results._2._2._2._2._2._2._2._2._2._1,
-        specificationTestSuiteMap = results._2._2._2._2._2._2._2._2._2._2._1._1,
-        domainParameters =          results._2._2._2._2._2._2._2._2._2._2._1._2,
-        testServices =              results._2._2._2._2._2._2._2._2._2._2._2
-      )
-    }
+    val fDomain = domainManager.getDomainById(domainId)
+    val fSharedTestSuites = loadIfApplicable(exportSettings.testSuites,
+      () => loadSharedTestSuites(domainId))
+    val fSpecificationGroups = loadIfApplicable(exportSettings.specifications,
+      () => specificationManager.getSpecificationGroups(domainId))
+    val fSpecifications = loadIfApplicable(exportSettings.specifications,
+      () => specificationManager.getSpecificationsWithoutGroups(domainId))
+    val fSpecificationActorMap = loadIfApplicable(exportSettings.specifications && exportSettings.actors,
+      () => loadSpecificationActorMap(domainId))
+    val fActorEndpointMap = loadIfApplicable(exportSettings.specifications && exportSettings.actors && exportSettings.endpoints,
+      () => loadActorEndpointMap(domainId))
+    val fEndpointParameterMap = loadIfApplicable(exportSettings.specifications && exportSettings.actors && exportSettings.endpoints,
+      () => loadEndpointParameterMap(domainId))
+    val fTestSuiteActorMap = loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
+      () => loadActorTestSuiteMap(domainId))
+    val fTestSuiteTestCaseGroupMap = loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
+      () => loadTestCaseGroupMap(domainId))
+    val fTestSuiteTestCaseMap = loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
+      () => loadTestSuiteTestCaseMap(domainId))
+    val fSpecificationTestSuiteMap = loadIfApplicable(exportSettings.specifications && exportSettings.testSuites,
+      () => loadSpecificationTestSuiteMap(domainId))
+    val fDomainParameters = loadIfApplicable(exportSettings.domainParameters,
+      () => domainParameterManager.getDomainParameters(domainId))
+    val fTestServices = loadIfApplicable(exportSettings.domainParameters && exportSettings.testServices,
+      () => domainParameterManager.getTestServices(domainId))
+    val fSpecificationDocumentation = loadIfApplicable(exportSettings.specifications,
+      () => loadSpecificationDocumentationMap(domainId))
+    val fActorDocumentation = loadIfApplicable(exportSettings.specifications && exportSettings.actors,
+      () => loadActorDocumentationMap(domainId))
+    for {
+      domain                    <- fDomain
+      sharedTestSuites          <- fSharedTestSuites
+      specificationGroups       <- fSpecificationGroups
+      specifications            <- fSpecifications
+      specificationActorMap     <- fSpecificationActorMap
+      actorEndpointMap          <- fActorEndpointMap
+      endpointParameterMap      <- fEndpointParameterMap
+      testSuiteActorMap         <- fTestSuiteActorMap
+      testSuiteTestCaseGroupMap <- fTestSuiteTestCaseGroupMap
+      testSuiteTestCaseMap      <- fTestSuiteTestCaseMap
+      specificationTestSuiteMap <- fSpecificationTestSuiteMap
+      domainParameters          <- fDomainParameters
+      testServices              <- fTestServices
+      specificationDocumentation <- fSpecificationDocumentation
+      actorDocumentation        <- fActorDocumentation
+    } yield DomainExportData(
+      domain                     = Some(domain),
+      sharedTestSuites           = sharedTestSuites,
+      specificationGroups        = specificationGroups,
+      specifications             = specifications,
+      specificationActorMap      = specificationActorMap,
+      actorEndpointMap           = actorEndpointMap,
+      endpointParameterMap       = endpointParameterMap,
+      testSuiteActorMap          = testSuiteActorMap,
+      testSuiteTestCaseGroupMap  = testSuiteTestCaseGroupMap,
+      testSuiteTestCaseMap       = testSuiteTestCaseMap,
+      specificationTestSuiteMap  = specificationTestSuiteMap,
+      domainParameters           = domainParameters,
+      testServices               = testServices,
+      specificationDocumentation = specificationDocumentation,
+      actorDocumentation         = actorDocumentation
+    )
   }
 
   private def loadSystemSettingsExportData(exportSettings: ExportSettings): Future[SystemSettingsExportData] = {
-    // Load export data with zipping to load in parallel
-    // Resources
-    loadIfApplicable(exportSettings.systemResources,
-      () => communityResourceManager.getCommunityResources(Constants.DefaultCommunityId)
-    ).zip(
-      // Themes
-      loadIfApplicable(exportSettings.themes,
-        () => loadThemes()
-      ).zip(
-        // Default landing pages
-        loadIfApplicable(exportSettings.defaultLandingPages,
-          () => landingPageManager.getLandingPagesByCommunity(Constants.DefaultCommunityId)
-        ).zip(
-          // Default legal notices
-          loadIfApplicable(exportSettings.defaultLegalNotices,
-            () => legalNoticeManager.getLegalNoticesByCommunity(Constants.DefaultCommunityId)
-          ).zip(
-            // Default error templates
-            loadIfApplicable(exportSettings.defaultErrorTemplates,
-              () => errorTemplateManager.getErrorTemplatesByCommunity(Constants.DefaultCommunityId)
-            ).zip(
-              // System administrators
-              loadIfApplicable(exportSettings.systemAdministrators,
-                () => loadSystemAdministrators()
-              ).zip(
-                // System configurations
-                loadIfApplicable(exportSettings.systemConfigurations,
-                  () => systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
-                )
-              )
-            )
-          )
-        )
-      )
-    ).map { results =>
-      SystemSettingsExportData(
-        systemResources = results._1,
-        themes = results._2._1,
-        landingPages = results._2._2._1,
-        legalNotices = results._2._2._2._1,
-        errorTemplates = results._2._2._2._2._1,
-        systemAdministrators = results._2._2._2._2._2._1,
-        systemConfigurations = results._2._2._2._2._2._2
-      )
-    }
+    val fSystemResources = loadIfApplicable(exportSettings.systemResources,
+      () => communityResourceManager.getCommunityResources(Constants.DefaultCommunityId))
+    val fThemes = loadIfApplicable(exportSettings.themes,
+      () => loadThemes())
+    val fLandingPages = loadIfApplicable(exportSettings.defaultLandingPages,
+      () => landingPageManager.getLandingPagesByCommunity(Constants.DefaultCommunityId))
+    val fLegalNotices = loadIfApplicable(exportSettings.defaultLegalNotices,
+      () => legalNoticeManager.getLegalNoticesByCommunity(Constants.DefaultCommunityId))
+    val fErrorTemplates = loadIfApplicable(exportSettings.defaultErrorTemplates,
+      () => errorTemplateManager.getErrorTemplatesByCommunity(Constants.DefaultCommunityId))
+    val fSystemAdministrators = loadIfApplicable(exportSettings.systemAdministrators,
+      () => loadSystemAdministrators())
+    val fSystemConfigurations = loadIfApplicable(exportSettings.systemConfigurations,
+      () => systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true))
+    for {
+      systemResources      <- fSystemResources
+      themes               <- fThemes
+      landingPages         <- fLandingPages
+      legalNotices         <- fLegalNotices
+      errorTemplates       <- fErrorTemplates
+      systemAdministrators <- fSystemAdministrators
+      systemConfigurations <- fSystemConfigurations
+    } yield SystemSettingsExportData(
+      systemResources      = systemResources,
+      themes               = themes,
+      landingPages         = landingPages,
+      legalNotices         = legalNotices,
+      errorTemplates       = errorTemplates,
+      systemAdministrators = systemAdministrators,
+      systemConfigurations = systemConfigurations
+    )
   }
 
   private def loadTestSuiteTestCaseMap(domainId: Long): Future[Map[Long, List[models.TestCases]]] = {
@@ -1318,6 +1268,26 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
+  private def loadSpecificationDocumentationMap(domainId: Long): Future[Map[Long, String]] = {
+    DB.run(
+      PersistenceSchema.specificationDocumentation
+        .join(PersistenceSchema.specifications).on(_.id === _.id)
+        .filter(_._2.domain === domainId)
+        .map(_._1)
+        .result
+    ).map(_.map(d => d.id -> d.documentation).toMap)
+  }
+
+  private def loadActorDocumentationMap(domainId: Long): Future[Map[Long, String]] = {
+    DB.run(
+      PersistenceSchema.actorDocumentation
+        .join(PersistenceSchema.actors).on(_.id === _.id)
+        .filter(_._2.domain === domainId)
+        .map(_._1)
+        .result
+    ).map(_.map(d => d.id -> d.documentation).toMap)
+  }
+
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): Future[com.gitb.xml.export.Export] = {
     for {
       dataResults <- loadCommunityExportData(communityId, exportSettings)
@@ -1367,6 +1337,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setAllowCommunityView(community.get.allowCommunityView)
         communityData.setAllowUserManagement(community.get.allowUserManagement)
         communityData.setAllowXmlReports(community.get.allowXmlReports)
+        communityData.setAllowObsoleteSessionDeletion(community.get.allowObsoleteSessionDeletion)
+        communityData.setAllowAdminSenderNames(community.get.allowAdminSenderNames)
+        communityData.setAllowOrganisationSenderNames(community.get.allowOrganisationSenderNames)
         communityData.setInteractionNotification(community.get.interactionNotification)
         // User preference defaults.
         communityData.setDefaultUserPreferences(new com.gitb.xml.export.UserPreferences)
@@ -1374,6 +1347,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.getDefaultUserPreferences.setStatementsCollapsed(data.userPreferences.statementsCollapsed)
         communityData.getDefaultUserPreferences.setPageSize(BigInteger.valueOf(data.userPreferences.pageSize))
         communityData.getDefaultUserPreferences.setHomePageType(toExportedHomePageType(data.userPreferences.homePageType))
+        communityData.getDefaultUserPreferences.setOwnSessions(data.userPreferences.ownSessions)
+        communityData.getDefaultUserPreferences.setAllSessions(data.userPreferences.allSessions)
+        communityData.getDefaultUserPreferences.setStatementsListView(data.userPreferences.statementsListView)
+        communityData.getDefaultUserPreferences.setMessagesSplitView(data.userPreferences.messagesSplitView)
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
         SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -1445,7 +1422,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             communityData.getConformanceOverviewCertificateSettings.setTitle(certificateOverviewSettings.get.settings.title.orNull)
             // Messages.
             if (certificateOverviewSettings.get.messages.nonEmpty) {
-              communityData.getConformanceOverviewCertificateSettings.setMessages(new ConformanceOverviewCertificateMessages)
+              val messages = new ConformanceOverviewCertificateMessages
               certificateOverviewSettings.get.messages.foreach { message =>
                 val exportedMessage = new com.gitb.xml.export.ConformanceOverviewCertificateMessage
                 exportedMessage.setMessage(message.message)
@@ -1486,10 +1463,25 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                     }
                 }
                 if (includeInExport) {
-                  communityData.getConformanceOverviewCertificateSettings.getMessages.getMessage.add(exportedMessage)
+                  messages.getMessage.add(exportedMessage)
                 }
               }
+              if (!messages.getMessage.isEmpty) {
+                communityData.getConformanceOverviewCertificateSettings.setMessages(new ConformanceOverviewCertificateMessages)
+              }
             }
+          }
+          // Conformance statement documentation report.
+          val statementDocumentationReportSettings = data.statementDocumentationReportSettings.get
+          if (statementDocumentationReportSettings.isDefined) {
+            communityData.setConformanceStatementDocumentationReportSettings(new com.gitb.xml.export.ConformanceStatementDocumentationReportSettings)
+            communityData.getConformanceStatementDocumentationReportSettings.setEnabled(statementDocumentationReportSettings.get.enabled)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddOverview(statementDocumentationReportSettings.get.includeOverview)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddStatementDocumentation(statementDocumentationReportSettings.get.includeStatementDocumentation)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddTestCaseListing(statementDocumentationReportSettings.get.includeTestCaseListing)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddTestSuiteDocumentation(statementDocumentationReportSettings.get.includeTestSuiteDocumentation)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddTestCaseDocumentation(statementDocumentationReportSettings.get.includeTestCaseDocumentation)
+            communityData.getConformanceStatementDocumentationReportSettings.setAddSignature(statementDocumentationReportSettings.get.includeSignature)
           }
           // Signature settings.
           val keystore = data.keystore.get
@@ -1514,6 +1506,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceStatementReport, communityData.getReportStylesheets)
             addCommunityStylesheetToExport(communityId, models.Enums.ReportType.TestCaseReport, communityData.getReportStylesheets)
             addCommunityStylesheetToExport(communityId, models.Enums.ReportType.TestStepReport, communityData.getReportStylesheets)
+            addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceStatementDocumentationReport, communityData.getReportStylesheets)
           }
           // Report settings.
           val reportSettings = data.reportSettings.get
@@ -1668,8 +1661,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 case models.Enums.TriggerEventType.TestSessionStarted => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_STARTED)
               }
               models.Enums.TriggerServiceType.apply(trigger.trigger.serviceType) match {
-                case models.Enums.TriggerServiceType.GITB => exportedTrigger.setServiceType(TriggerServiceType.GITB)
-                case models.Enums.TriggerServiceType.JSON => exportedTrigger.setServiceType(TriggerServiceType.JSON)
+                case models.Enums.TriggerServiceType.GitbSoap => exportedTrigger.setServiceType(TriggerServiceType.GITB)
+                case models.Enums.TriggerServiceType.GitbRest => exportedTrigger.setServiceType(TriggerServiceType.GITB_REST)
+                case models.Enums.TriggerServiceType.Json => exportedTrigger.setServiceType(TriggerServiceType.JSON)
               }
               if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
                 exportedTrigger.setDataItems(new TriggerDataItems)
@@ -1749,6 +1743,25 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 }
               }
               communityData.getTriggers.getTrigger.add(exportedTrigger)
+            }
+          }
+        }
+        // Test flags
+        if (exportSettings.testFlags) {
+          val testFlags = data.testFlags.get
+          if (testFlags.nonEmpty) {
+            communityData.setTestFlags(new com.gitb.xml.export.TestFlags)
+            testFlags.foreach { testFlag =>
+              val exportedTestFlag = new com.gitb.xml.export.TestFlag
+              exportedTestFlag.setId(toId(idSequence.next()))
+              exportedTestFlag.setName(testFlag.name)
+              exportedTestFlag.setDescription(testFlag.description.orNull)
+              exportedTestFlag.setColour(testFlag.colour)
+              exportedTestFlag.setPublicName(testFlag.publicName.orNull)
+              exportedTestFlag.setPublicColour(testFlag.publicColour.orNull)
+              exportedTestFlag.setAdminOnly(testFlag.adminOnly)
+              exportedTestFlag.setDisplayOrder(testFlag.displayOrder.toInt)
+              communityData.getTestFlags.getTestFlag.add(exportedTestFlag)
             }
           }
         }
@@ -1923,6 +1936,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       case models.Enums.ReportType.TestStepReport => com.gitb.xml.export.ReportType.TEST_STEP
       case models.Enums.ReportType.ConformanceOverviewCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE
       case models.Enums.ReportType.ConformanceStatementCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_CERTIFICATE
+      case models.Enums.ReportType.ConformanceStatementDocumentationReport => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_DOCUMENTATION
+      case models.Enums.ReportType.TestSuiteDocumentationReport => com.gitb.xml.export.ReportType.TEST_SUITE_DOCUMENTATION
+      case models.Enums.ReportType.TestCaseDocumentationReport => com.gitb.xml.export.ReportType.TEST_CASE_DOCUMENTATION
+      case models.Enums.ReportType.TestDataArchive => com.gitb.xml.export.ReportType.TEST_DATA_ARCHIVE
       case _ => throw new IllegalArgumentException("Unknown report type %s".formatted(reportType.id))
     }
   }

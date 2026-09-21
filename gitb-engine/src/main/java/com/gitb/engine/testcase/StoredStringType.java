@@ -49,7 +49,7 @@ public class StoredStringType extends StringType {
     @Override
     public void setValue(Object value) {
         try {
-            Files.write(reference, ((String) value).getBytes(getEncoding()), StandardOpenOption.WRITE);
+            Files.write(reference, ((String) value).getBytes(getEncoding()), StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             throw new IllegalStateException("Error while storing session data to temporary filesystem", e);
         }

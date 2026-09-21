@@ -16,13 +16,11 @@
 package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
-
-import javax.inject.Inject
 import managers.AuthorizationManager
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{JsonUtil, MimeUtil}
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class TestResultService @Inject() (authorizedAction: AuthorizedAction,

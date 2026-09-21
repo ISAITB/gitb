@@ -357,6 +357,15 @@ public class MessagingHandlerUtils {
 		return message;
 	}
 
+	/** Dumps a {@link Message}'s fragments into a {@link MapType} as-is, with no filtering/renaming. */
+	public static MapType messageToMap(Message message) {
+		MapType map = new MapType();
+		if (message != null) {
+			message.getFragments().forEach(map::addItem);
+		}
+		return map;
+	}
+
 	private static List<TypedParameter> getExpectedInputs(IMessagingHandler messagingHandler) {
 		List<TypedParameter> expectedInputs = new ArrayList<>();
 		var definition = messagingHandler.getModuleDefinition();

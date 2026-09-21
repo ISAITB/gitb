@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-multitype-pipeline" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Number assign, arithmetic, JSON build, JsonPathProcessor, NumberValidator pipeline</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="base" type="number">7</assign>
+        <assign to="squared" type="number">$base * $base</assign>
+        <assign to="jsonStr">'{"value": ' || string($squared) || ', "label": "sq"}'</assign>
+        <process handler="JsonPathProcessor" output="extracted">
+            <operation>process</operation>
+            <input name="content">$jsonStr</input>
+            <input name="expression">'$.value'</input>
+        </process>
+        <verify handler="NumberValidator" desc="extracted value equals 49">
+            <input name="actual">$extracted</input>
+            <input name="expected">49</input>
+        </verify>
+    </steps>
+</testcase>

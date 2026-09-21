@@ -188,6 +188,8 @@ export class DomainParameterService {
       authTokenPassword : data.service.authTokenPassword,
       authTokenUsername : data.service.authTokenUsername,
       authTokenPasswordType : data.service.authTokenPasswordType,
+      authHttpHeaderName : data.service.authHttpHeaderName,
+      authHttpHeaderValue : data.service.authHttpHeaderValue,
       monitor: data.service.monitor,
     }
     if (updateExistingParameter != undefined) {
@@ -208,6 +210,14 @@ export class DomainParameterService {
     return this.restService.delete<void>({
       path: ROUTES.controllers.DomainParameterService.deleteTestService(domainId, serviceId).url,
       authenticate: true
+    })
+  }
+
+  updateTestServiceApiKey(domainId: number, serviceId: number) {
+    return this.restService.post<string>({
+      path: ROUTES.controllers.DomainParameterService.updateTestServiceApiKey(domainId, serviceId).url,
+      authenticate: true,
+      text: true
     })
   }
 

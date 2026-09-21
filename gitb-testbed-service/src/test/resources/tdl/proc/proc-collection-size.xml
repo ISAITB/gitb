@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-collection-size" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>CollectionUtils size operation</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="myList" append="true">'one'</assign>
+        <assign to="myList" append="true">'two'</assign>
+        <assign to="myList" append="true">'three'</assign>
+        <assign to="myList" append="true">'four'</assign>
+        <assign to="myList" append="true">'five'</assign>
+        <process id="p1" handler="CollectionUtils" operation="size">
+            <input name="list">$myList</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="size is 5">
+            <input name="expression">$p1{output} = 5</input>
+        </verify>
+    </steps>
+</testcase>

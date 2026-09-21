@@ -13,8 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {Constants} from 'src/app/common/constants';
 import {CommunityService} from 'src/app/services/community.service';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -27,6 +29,7 @@ import {OrganisationService} from 'src/app/services/organisation.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {TriggerService} from 'src/app/services/trigger.service';
+import {TestFlagService} from 'src/app/services/test-flag.service';
 import {UserService} from 'src/app/services/user.service';
 import {Community} from 'src/app/types/community';
 import {Domain} from 'src/app/types/domain';
@@ -36,6 +39,7 @@ import {LegalNotice} from 'src/app/types/legal-notice';
 import {Organisation} from 'src/app/types/organisation.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {Trigger} from 'src/app/types/trigger';
+import {TestFlag} from 'src/app/types/test-flag';
 import {User} from 'src/app/types/user.type';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
@@ -49,6 +53,18 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 import {ResourceState} from '../../../../../components/resource-management-tab/resource-state';
 import {UserPreferences} from '../../../../../types/user-preferences';
 import {TagData} from '../../../../../types/tag-data';
+import {DisplayState} from '../../../../../types/display-state';
+import {NavigationTarget} from '../../../../../types/navigation-target';
+import {CreateEditTestFlagModalComponent} from '../../../../../modals/create-edit-test-flag-modal/create-edit-test-flag-modal.component';
+
+/** Persisted search/sort/paging state for the Organisations tab - restored when returning here
+ * (e.g. via Back from an organisation's detail page) so the list looks the same as when left. */
+interface CommunityOrganisationsListState {
+  filter?: string
+  sortColumn: string
+  sortOrder: string
+  sortByCreationOrder: string
+}
 
 @Component({
     selector: 'app-community-details',
@@ -56,7 +72,7 @@ import {TagData} from '../../../../../types/tag-data';
     styleUrls: ['./community-details.component.less'],
     standalone: false
 })
-export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
+export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild("organisationTable") organisationTable?: TableApi
   @ViewChild("adminsTable") adminsTable?: TableApi
@@ -64,6 +80,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
   @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
   @ViewChild("triggersTable") triggersTable?: TableApi
+  @ViewChild("testFlagsTable") testFlagsTable?: TableApi
 
   community!: Community
   currentTags?: TagData[]
@@ -73,9 +90,11 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   errorTemplateStatus = {status: Constants.STATUS.NONE}
   legalNoticeStatus = {status: Constants.STATUS.NONE}
   triggerStatus = {status: Constants.STATUS.NONE}
+  testFlagStatus = {status: Constants.STATUS.NONE}
   loaded = false
   savePending = false
   deletePending = false
+  communityFormValid = true
   communityId!: number
   originalDomainId?: number
   adminColumns: TableColumnDefinition[] = []
@@ -105,6 +124,12 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     { field: 'active', title: 'Active', headerClass: 'th-min centered', cellClass: 'td-min centered' },
     { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
+  testFlagColumns: TableColumnDefinition[] = [
+    { field: 'flagDisplay', title: 'Flag', iconFn: () => Constants.BUTTON_ICON.SNAPSHOT, iconColourFn: (d: {colour: string, name: string}) => d.colour, iconLabelFn: (d: {colour: string, name: string}) => d.name },
+    { field: 'description', title: 'Description' },
+    { field: 'adminOnly', title: '', headerClass: 'th-min centered', cellClass: 'td-min centered td-padded-icon', atEnd: true, iconFn: this.iconForTestFlagPermission, iconTooltipFn: this.tooltipForTestFlagPermission }
+  ]
+  testFlagsRefreshRows = new EventEmitter<void>()
   domains: Domain[] = []
   admins: User[] = []
   organizations: Organisation[] = []
@@ -112,18 +137,21 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
   triggers: Trigger[] = []
+  testFlags: (TestFlag & {flagDisplay: {colour: string, name: string}})[] = []
   adminsPage = 1
   organizationsPage = 1
   landingPagesPage = 1
   legalNoticesPage = 1
   errorTemplatesPage = 1
   triggersPage = 1
+  testFlagsPage = 1
   adminsTotal = 0
   organizationsTotal = 0
   landingPagesTotal = 0
   legalNoticesTotal = 0
   errorTemplatesTotal = 0
   triggersTotal = 0
+  testFlagsTotal = 0
   resourceState: ResourceState = {
     resources: [],
     total: 0,
@@ -157,15 +185,23 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   legalNoticesRefreshing = false
   errorTemplatesRefreshing = false
   triggersRefreshing = false
+  testFlagsRefreshing = false
   selfRegistrationWarningActive = false
+
+  managingTestFlagOrder = false
+  testFlagOrderSaving = false
+  showPublicTestFlagInfo = false
+  dragOngoingTestFlags = false
 
   resourceActions!: ResourceActions
   validation = new ValidationState()
   initialUserPreferences!: UserPreferences
+  showBackButton = false
+  private viewReturnTarget?: string
 
   constructor(
     public readonly dataService: DataService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly userService: UserService,
     private readonly landingPageService: LandingPageService,
     private readonly legalNoticeService: LegalNoticeService,
@@ -176,7 +212,9 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     private readonly communityService: CommunityService,
     private readonly conformanceService: ConformanceService,
     private readonly communityResourceService: CommunityResourceService,
+    private readonly testFlagService: TestFlagService,
     private readonly popupService: PopupService,
+    private readonly modalService: NgbModal,
     route: ActivatedRoute,
     router: Router,
   ) {
@@ -193,6 +231,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.tags = []
     }
     this.communityId = this.community.id
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
+    this.showBackButton = this.dataService.isSystemAdmin || this.viewReturnTarget != undefined
     this.copyTags(this.community.tags)
     this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
@@ -227,6 +267,22 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
+  ngOnDestroy(): void {
+    if (this.organisationStatus.status != Constants.STATUS.NONE) {
+      const state: DisplayState<CommunityOrganisationsListState> = {
+        key: String(this.communityId),
+        state: {
+          filter: this.organisationFilter,
+          sortColumn: this.organisationSortColumn,
+          sortOrder: this.organisationSortOrder,
+          sortByCreationOrder: this.sortByCreationOrder
+        },
+        paging: this.organisationTable?.getPagingControls()?.getCurrentStatus()
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.COMMUNITY_ORGANISATIONS, state)
+    }
+  }
+
   loadTab(tabIndex: number) {
     if (tabIndex == Constants.TAB.COMMUNITY.ORGANISATIONS) {
       this.showOrganisations()
@@ -240,6 +296,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.showErrorTemplates()
     } else if (tabIndex == Constants.TAB.COMMUNITY.TRIGGERS) {
       this.showTriggers()
+    } else if (tabIndex == Constants.TAB.COMMUNITY.TEST_FLAGS) {
+      this.showTestFlags()
     } else if (tabIndex == Constants.TAB.COMMUNITY.RESOURCES) {
       this.showResources()
     }
@@ -251,9 +309,46 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
-      this.refreshOrganisations()
+      let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+      const existingState = this.getDisplayState<CommunityOrganisationsListState>(Constants.DISPLAY_STATE_KEY.COMMUNITY_ORGANISATIONS, true)
+      if (existingState && existingState.key == String(this.communityId)) {
+        if (existingState.state) {
+          this.organisationFilter = existingState.state.filter
+          this.organisationSortColumn = existingState.state.sortColumn
+          this.organisationSortOrder = existingState.state.sortOrder
+          this.sortByCreationOrder = existingState.state.sortByCreationOrder
+          this.sortByCreationOrderLabel = this.labelForCreationOrderSort(this.sortByCreationOrder)
+          this.applyOrganisationColumnSortState()
+        }
+        if (existingState.paging) {
+          targetPaging = { targetPage: existingState.paging.currentPage, targetPageSize: existingState.paging.pageSize }
+        }
+      }
+      this.queryOrganisations(targetPaging)
     } else {
       this.updateOrganisationPagination(this.organizationsPage, this.organizationsTotal)
+    }
+  }
+
+  private labelForCreationOrderSort(type: string): string {
+    if (type == this.sortByCreationOrderAsc) return this.sortByCreationOrderLabelAsc
+    if (type == this.sortByCreationOrderDesc) return this.sortByCreationOrderLabelDesc
+    return this.sortByCreationOrderLabelNone
+  }
+
+  private applyOrganisationColumnSortState() {
+    if (this.sortByCreationOrder == this.sortByCreationOrderNone) {
+      const fieldForSortColumn: {[key: string]: string} = { shortname: 'sname', fullname: 'fname', template: 'templateName' }
+      const matchingField = fieldForSortColumn[this.organisationSortColumn]
+      for (let column of this.organizationColumns) {
+        column.sortable = true
+        column.order = (column.field == matchingField) ? (this.organisationSortOrder as 'asc'|'desc') : null
+      }
+    } else {
+      for (let column of this.organizationColumns) {
+        column.sortable = false
+        column.order = undefined
+      }
     }
   }
 
@@ -294,6 +389,14 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.queryTriggers({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
     } else {
       this.updateTriggerPagination(this.triggersPage, this.triggersTotal)
+    }
+  }
+
+  showTestFlags() {
+    if (this.testFlagStatus.status == Constants.STATUS.NONE) {
+      this.queryTestFlags({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateTestFlagPagination(this.testFlagsPage, this.testFlagsTotal)
     }
   }
 
@@ -430,12 +533,66 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
+  private queryTestFlags(pagingInfo: PagingEvent) {
+    if (this.testFlagStatus.status == Constants.STATUS.FINISHED) {
+      this.testFlagsRefreshing = true
+    } else {
+      this.testFlagStatus.status = Constants.STATUS.PENDING
+    }
+    this.testFlagService.getTestFlagsByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.testFlags = data.data.map(x => this.decorateTestFlag(x))
+        this.updateTestFlagPagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.testFlagsRefreshing = false
+      this.testFlagStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private decorateTestFlag(flag: TestFlag): TestFlag & {flagDisplay: {colour: string, name: string}} {
+    return {
+      ...flag,
+      flagDisplay: this.testFlagDisplayInfo(flag)
+    }
+  }
+
+  private testFlagDisplayInfo(flag: TestFlag): {colour: string, name: string} {
+    return {
+      colour: this.showPublicTestFlagInfo ? (flag.publicColour ?? flag.colour) : flag.colour,
+      name: this.showPublicTestFlagInfo ? (flag.publicName ?? flag.name) : flag.name
+    }
+  }
+
+  /** Re-applies the name/colour shown in the table for the current showPublicTestFlagInfo toggle,
+   * without a re-fetch (the full records are already loaded). Mutates the existing flagDisplay objects
+   * in place (rather than replacing the row or flagDisplay objects with new ones) so the table's
+   * identity-based @for track doesn't tear down and recreate every row's DOM, then explicitly asks the
+   * (already-rendered) table rows to refresh their cell data - row-level cell data is precomputed once
+   * from the row object and does not otherwise pick up in-place field mutations. */
+  togglePublicTestFlagInfo() {
+    this.showPublicTestFlagInfo = !this.showPublicTestFlagInfo
+    for (const flag of this.testFlags) {
+      const info = this.testFlagDisplayInfo(flag)
+      flag.flagDisplay.colour = info.colour
+      flag.flagDisplay.name = info.name
+    }
+    this.testFlagsRefreshRows.emit()
+  }
+
+  private iconForTestFlagPermission(adminOnly: boolean): string {
+    return adminOnly ? Constants.BUTTON_ICON.USER_ADMIN : ''
+  }
+
+  private tooltipForTestFlagPermission(adminOnly: boolean): string {
+    return adminOnly ? 'Flag that can only be set by administrators.' : ''
+  }
+
   showResources() {
     // No action needed.
   }
 
   saveDisabled() {
-    return !this.loaded || this.deletePending || this.savePending || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+    return !this.loaded || this.deletePending || this.savePending || !this.communityFormValid || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled ||
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
@@ -469,7 +626,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput, selfRegDefaultOrganisationId,
       this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
-      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement, this.community.allowXmlReports,
+      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement, this.community.allowXmlReports, this.community.allowObsoleteSessionDeletion!,
+      this.community.allowAdminSenderNames!, this.community.allowOrganisationSenderNames!,
       this.community.domain?.id, this.community.preferences!, forceUserPreferenceUpdate, this.dataService.serializeTags(this.community!.tags))
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id
@@ -478,6 +636,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       if (forceUserPreferenceUpdate && this.communityId == this.dataService.community?.id) {
         this.dataService.setMenuVisibility(!this.community.preferences!.menuCollapsed)
         this.dataService.setConformanceStatementDetailVisibility(!this.community.preferences!.statementsCollapsed)
+        this.dataService.setStatementsListView(this.community.preferences!.statementsListView)
+        this.dataService.setMessagesSplitView(this.community.preferences!.messagesSplitView)
         this.dataService.setDefaultPageSize(this.community.preferences!.pageSize)
         this.dataService.setHomePageType(this.community.preferences!.homePageType)
       }
@@ -518,7 +678,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       if (!notificationValid) {
         this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
       }
-      if (emailValid && notificationValid) {
+      // The column preference editors already surface an inline validation message (highlighting the
+      // affected checkboxes) when a required column group is emptied, and saveDisabled() already keeps
+      // the Save button disabled in that case (communityFormValid) - this is just the final gate.
+      if (emailValid && notificationValid && this.communityFormValid) {
         let descriptionToUse: string|undefined
         if (!this.community.sameDescriptionAsDomain) {
           descriptionToUse = this.community.activeDescription
@@ -568,69 +731,36 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
-  organisationSelect(organization: Organisation) {
-    this.routingService.toOrganisationDetails(this.communityId, organization.id)
+  organisationRowTarget = (organization: Organisation): NavigationTarget => {
+    return this.routingService.linkToOrganisationDetails(this.communityId, organization.id)
   }
 
-  createLandingPage(copyTestBedDefault: boolean) {
-    this.routingService.toCreateLandingPage(this.communityId, copyTestBedDefault)
+  landingPageRowTarget = (landingPage: LandingPage): NavigationTarget => {
+    return this.routingService.linkToLandingPage(this.communityId, landingPage.id)
   }
 
-  landingPageSelect(landingPage: LandingPage) {
-    this.routingService.toLandingPage(this.communityId, landingPage.id)
+  legalNoticeRowTarget = (legalNotice: LegalNotice): NavigationTarget => {
+    return this.routingService.linkToLegalNotice(this.communityId, legalNotice.id)
   }
 
-  createLegalNotice(copyTestBedDefault: boolean) {
-    this.routingService.toCreateLegalNotice(this.communityId, copyTestBedDefault)
+  errorTemplateRowTarget = (errorTemplate: ErrorTemplate): NavigationTarget => {
+    return this.routingService.linkToErrorTemplate(this.communityId, errorTemplate.id)
   }
 
-  legalNoticeSelect(legalNotice: LegalNotice) {
-    this.routingService.toLegalNotice(this.communityId, legalNotice.id)
+  triggerRowTarget = (trigger: Trigger): NavigationTarget => {
+    return this.routingService.linkToTrigger(this.communityId, trigger.id)
   }
 
-  createErrorTemplate(copyTestBedDefault: boolean) {
-    this.routingService.toCreateErrorTemplate(this.communityId, copyTestBedDefault)
-  }
-
-  errorTemplateSelect(errorTemplate: ErrorTemplate) {
-    this.routingService.toErrorTemplate(this.communityId, errorTemplate.id)
-  }
-
-  createTrigger() {
-    this.routingService.toCreateTrigger(this.communityId)
-  }
-
-  triggerSelect(trigger: Trigger) {
-    this.routingService.toTrigger(this.communityId, trigger.id)
-  }
-
-  adminSelect(admin: User) {
-    this.routingService.toCommunityAdmin(this.communityId, admin.id!)
+  adminRowTarget = (admin: User): NavigationTarget => {
+    return this.routingService.linkToCommunityAdmin(this.communityId, admin.id!)
   }
 
   cancelCommunityDetail() {
-    this.routingService.toUserManagement()
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      this.routingService.toUserManagement()
+    })
   }
 
-  updateReportSettings() {
-    this.routingService.toCommunityReportSettings(this.community.id)
-  }
-
-  updateParameters() {
-    this.routingService.toCommunityParameters(this.communityId)
-  }
-
-  editLabels() {
-    this.routingService.toCommunityLabels(this.communityId)
-  }
-
-  createAdmin() {
-    this.routingService.toCreateCommunityAdmin(this.communityId)
-  }
-
-  createOrganisation() {
-    this.routingService.toCreateOrganisation(this.communityId)
-  }
 
   doOrganisationPaging(event: PagingEvent) {
     this.queryOrganisations(event)
@@ -640,6 +770,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.legalNoticeStatus.status = Constants.STATUS.NONE
       this.errorTemplateStatus.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
+      this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
   }
@@ -652,6 +783,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.legalNoticeStatus.status = Constants.STATUS.NONE
       this.errorTemplateStatus.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
+      this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
   }
@@ -664,6 +796,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.legalNoticeStatus.status = Constants.STATUS.NONE
       this.errorTemplateStatus.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
+      this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
   }
@@ -676,6 +809,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.landingPageStatus.status = Constants.STATUS.NONE
       this.errorTemplateStatus.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
+      this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
   }
@@ -688,6 +822,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.landingPageStatus.status = Constants.STATUS.NONE
       this.legalNoticeStatus.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
+      this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
   }
@@ -700,6 +835,20 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.landingPageStatus.status = Constants.STATUS.NONE
       this.legalNoticeStatus.status = Constants.STATUS.NONE
       this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.testFlagStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doTestFlagPaging(event: PagingEvent) {
+    this.queryTestFlags(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
   }
@@ -711,6 +860,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     this.legalNoticeStatus.status = Constants.STATUS.NONE
     this.errorTemplateStatus.status = Constants.STATUS.NONE
     this.triggerStatus.status = Constants.STATUS.NONE
+    this.testFlagStatus.status = Constants.STATUS.NONE
   }
 
   refreshOrganisations() {
@@ -751,6 +901,85 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     this.triggersTable?.getPagingControls()?.updateStatus(page, count)
     this.triggersPage = page
     this.triggersTotal = count
+  }
+
+  private updateTestFlagPagination(page: number, count: number) {
+    this.testFlagsTable?.getPagingControls()?.updateStatus(page, count)
+    this.testFlagsPage = page
+    this.testFlagsTotal = count
+  }
+
+  createTestFlag() {
+    this.openTestFlagModal({ community: this.communityId })
+  }
+
+  openTestFlagModal(testFlag: Partial<TestFlag>) {
+    const modalRef = this.modalService.open(CreateEditTestFlagModalComponent, { size: 'lg' })
+    const modalInstance = modalRef.componentInstance as CreateEditTestFlagModalComponent
+    modalInstance.testFlag = testFlag
+    modalInstance.communityId = this.communityId
+    modalRef.closed.subscribe(() => {
+      this.testFlagStatus.status = Constants.STATUS.NONE
+      this.showTestFlags()
+      this.refreshCachedTestFlags()
+    })
+  }
+
+  private refreshCachedTestFlags() {
+    this.testFlagService.getAllTestFlagsByCommunity(this.communityId).subscribe((flags) => {
+      this.dataService.updateCachedTestFlagsForCommunity(this.communityId, flags.map(f => ({ id: f.id, name: f.name, colour: f.colour, adminOnly: f.adminOnly })))
+    })
+  }
+
+  manageTestFlagOrder() {
+    this.managingTestFlagOrder = true
+    this.testFlagService.getAllTestFlagsByCommunity(this.communityId).subscribe((flags) => {
+      this.testFlags = flags.map(x => this.decorateTestFlag(x))
+    })
+  }
+
+  cancelManageTestFlagOrder() {
+    this.managingTestFlagOrder = false
+    this.testFlagStatus.status = Constants.STATUS.NONE
+    this.showTestFlags()
+  }
+
+  dropTestFlag(event: CdkDragDrop<any>) {
+    if (event.currentIndex != event.previousIndex) {
+      moveItemInArray(this.testFlags, event.previousIndex, event.currentIndex)
+    }
+  }
+
+  saveTestFlagOrder() {
+    this.testFlagOrderSaving = true
+    const orderedIds = this.testFlags.map(x => x.id)
+    this.testFlagService.orderTestFlags(this.communityId, orderedIds)
+    .subscribe(() => {
+      this.popupService.success('Ordering saved successfully.')
+      this.refreshCachedTestFlags()
+    }).add(() => {
+      this.managingTestFlagOrder = false
+      this.testFlagOrderSaving = false
+      this.testFlagStatus.status = Constants.STATUS.NONE
+      this.showTestFlags()
+    })
+  }
+
+  resetTestFlagOrder() {
+    this.testFlagOrderSaving = true
+    this.testFlagService.resetTestFlagOrder(this.communityId)
+    .subscribe(() => {
+      this.popupService.success('Ordering reset successfully.')
+      this.refreshCachedTestFlags()
+      if (this.managingTestFlagOrder) {
+        this.manageTestFlagOrder()
+      } else {
+        this.testFlagStatus.status = Constants.STATUS.NONE
+        this.showTestFlags()
+      }
+    }).add(() => {
+      this.testFlagOrderSaving = false
+    })
   }
 
   sortOrganisations(column: TableColumnDefinition) {
@@ -832,7 +1061,11 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     return this.community.preferences?.menuCollapsed != this.initialUserPreferences.menuCollapsed ||
       this.community.preferences?.statementsCollapsed != this.initialUserPreferences.statementsCollapsed ||
       this.community.preferences?.pageSize != this.initialUserPreferences.pageSize ||
-      this.community.preferences?.homePageType != this.initialUserPreferences.homePageType
+      this.community.preferences?.homePageType != this.initialUserPreferences.homePageType ||
+      this.community.preferences?.ownSessions != this.initialUserPreferences.ownSessions ||
+      this.community.preferences?.allSessions != this.initialUserPreferences.allSessions ||
+      this.community.preferences?.statementsListView != this.initialUserPreferences.statementsListView ||
+      this.community.preferences?.messagesSplitView != this.initialUserPreferences.messagesSplitView
   }
 
   protected readonly Constants = Constants;

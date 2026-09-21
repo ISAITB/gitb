@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-collection-remove" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>CollectionUtils remove element</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="items" append="true">'keep1'</assign>
+        <assign to="items" append="true">'remove-me'</assign>
+        <assign to="items" append="true">'keep2'</assign>
+        <!-- remove mutates $items in place; item is zero-based index -->
+        <process handler="CollectionUtils" operation="remove">
+            <input name="list">$items</input>
+            <input name="item">1</input>
+        </process>
+        <process id="sz" handler="CollectionUtils" operation="size">
+            <input name="list">$items</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="size is 2 after remove">
+            <input name="expression">$sz{output} = 2</input>
+        </verify>
+        <verify handler="StringValidator" desc="first remaining">
+            <input name="actual">$items{0}</input>
+            <input name="expected">'keep1'</input>
+        </verify>
+    </steps>
+</testcase>

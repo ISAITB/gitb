@@ -23,6 +23,7 @@ import com.gitb.vs.ValidationResponse;
 import com.gitb.vs.ValidationService;
 import com.gitb.vs.ValidationService_Service;
 import com.gitb.vs.tdl.*;
+import com.gitb.utils.XMLDateTimeUtils;
 import config.Configurations;
 import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.codec.binary.Base64;
@@ -32,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -142,17 +142,21 @@ public class TestSuiteValidationAdapter {
     }
 
     public TAR doValidation(InputStreamSource testSuite, Set<String> externalActorIds, Set<String> externalParams, String tmpFolderPath) {
+        return doValidation(testSuite, externalActorIds, externalParams, tmpFolderPath, true);
+    }
+
+    public TAR doValidation(InputStreamSource testSuite, Set<String> externalActorIds, Set<String> externalParams, String tmpFolderPath, boolean checkExternalReferences) {
         TAR report;
         if (Configurations.VALIDATION_TDL_EXTERNAL_ENABLED()) {
-            report = doValidationRemote(testSuite, externalActorIds, externalParams);
+            report = doValidationRemote(testSuite, externalActorIds, externalParams, checkExternalReferences);
         } else {
-            report = doValidationLocal(testSuite, externalActorIds, externalParams, tmpFolderPath);
+            report = doValidationLocal(testSuite, externalActorIds, externalParams, tmpFolderPath, checkExternalReferences);
         }
         LOG.info("Completed validation with result {}. Resulted in {} error(s), {} warning(s) and {} information message(s).", report.getResult(), report.getCounters().getNrOfErrors(), report.getCounters().getNrOfWarnings(), report.getCounters().getNrOfAssertions());
         return report;
     }
 
-    private TAR doValidationRemote(InputStreamSource testSuite, Set<String> externalActorIds, Set<String> externalParams) {
+    private TAR doValidationRemote(InputStreamSource testSuite, Set<String> externalActorIds, Set<String> externalParams, boolean checkExternalReferences) {
         ValidateRequest request = new ValidateRequest();
         request.setSessionId("ID");
         // Test suite input.
@@ -169,6 +173,13 @@ public class TestSuiteValidationAdapter {
         addInputAsListOfStrings(externalActorIds, request, "externalActors");
         // Domain parameters.
         addInputAsListOfStrings(externalParams, request, "externalParameters");
+        // Whether external actor/parameter references should be checked (defaults to true on remote validators that don't yet support this input).
+        if (!checkExternalReferences) {
+            AnyContent checkExternalReferencesInput = new AnyContent();
+            checkExternalReferencesInput.setName("checkExternalReferences");
+            checkExternalReferencesInput.setValue(Boolean.toString(false));
+            request.getInput().add(checkExternalReferencesInput);
+        }
         // Call service.
         ValidationResponse response = getRemoteValidationServiceClient().validate(request);
         return response.getReport();
@@ -187,7 +198,7 @@ public class TestSuiteValidationAdapter {
         }
     }
 
-    private TAR doValidationLocal(InputStreamSource testSuite, Set<String> externalActorIds, Set<String> externalParams, String tmpFolderPath) {
+    private TAR doValidationLocal(InputStreamSource testSuite, Set<String> externalActorIds, Set<String> externalParams, String tmpFolderPath, boolean checkExternalReferences) {
         // Prepare configuration.
         ExternalConfiguration externalConfig = new ExternalConfiguration();
         externalConfig.setDataTypes(dataTypes);
@@ -199,6 +210,7 @@ public class TestSuiteValidationAdapter {
         externalConfig.setEmbeddedProcessingHandlers(embeddedProcessingHandlers);
         externalConfig.setEmbeddedValidationHandlers(embeddedValidationHandlers);
         externalConfig.setAcceptedMimeTypes(acceptedMimeTypes);
+        externalConfig.setCheckExternalReferences(checkExternalReferences);
         // Run the validation.
         Validator validator = new Validator(tmpFolderPath, externalConfig);
         ValidationReport result = validator.validate(testSuite);
@@ -207,8 +219,7 @@ public class TestSuiteValidationAdapter {
         // Add the current timestamp to the report.
         report.setReports(new TestAssertionGroupReportsType());
         try {
-            GregorianCalendar calendar = new GregorianCalendar();
-            report.setDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar));
+            report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
         } catch (DatatypeConfigurationException e) {
             throw new IllegalStateException(e);
         }

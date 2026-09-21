@@ -1,4 +1,4 @@
-<div class="root-container" (click)="$event.stopPropagation()">
+<div class="root-container" (click)="$event.stopPropagation();$event.preventDefault()">
     @if (hasIgnored) {
         <div class="expand-icon" (click)="expand()" ngbTooltip="Expand" tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"><span><i [class]="Constants.BUTTON_ICON.MORE"></i></span></div>
     }

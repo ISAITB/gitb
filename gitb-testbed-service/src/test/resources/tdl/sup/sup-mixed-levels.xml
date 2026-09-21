@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-mixed-levels" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>WARNING failures followed by ERROR failure produces FAILED session</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="false">
+        <assign to="val" type="number">1</assign>
+        <verify handler="ExpressionValidator" desc="warning failure 1" level="WARNING">
+            <input name="expression">$val = 99</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="warning failure 2" level="WARNING">
+            <input name="expression">$val = 88</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="error failure">
+            <input name="expression">$val = 77</input>
+        </verify>
+    </steps>
+</testcase>

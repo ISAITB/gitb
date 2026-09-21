@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-expr-pass" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>ExpressionValidator passes</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">42</assign>
+        <verify handler="ExpressionValidator" desc="expression is true">
+            <input name="expression">$x = 42</input>
+        </verify>
+    </steps>
+</testcase>

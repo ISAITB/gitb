@@ -18,6 +18,7 @@ import {Constants} from 'src/app/common/constants';
 import {AuthProviderService} from 'src/app/services/auth-provider.service';
 import {DataService} from 'src/app/services/data.service';
 import {RoutingService} from 'src/app/services/routing.service';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-header-menu',
@@ -57,15 +58,17 @@ export class HeaderMenuComponent {
     this.expanded = false
   }
 
-  toProfile() {
-    this.dataService.clearAllDisplayStates()
-    this.routingService.toProfile()
-    this.expanded = false
-  }
-
-  toChangePassword() {
-    this.dataService.clearAllDisplayStates()
-    this.routingService.toChangePassword()
+  /**
+   * Called on click of the "My profile"/"Change password" links (which navigate via their own
+   * [navTarget]), so the popup still closes and (for a plain, unmodified, primary-button click)
+   * display state still gets cleared before leaving this page - a modified click opens the
+   * destination in a new tab/window rather than navigating away from this one, so it must not
+   * clear state here.
+   */
+  profileOptionNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.dataService.clearAllDisplayStates()
+    }
     this.expanded = false
   }
 

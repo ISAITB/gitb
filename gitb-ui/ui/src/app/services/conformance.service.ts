@@ -20,6 +20,7 @@ import {TestSuiteUploadResult} from '../modals/test-suite-upload-modal/test-suit
 import {ExportSettings} from '../types/export-settings';
 import {Actor} from '../types/actor';
 import {ConformanceCertificateSettings} from '../types/conformance-certificate-settings';
+import {ConformanceStatementDocumentationReportSettings} from '../types/conformance-statement-documentation-report-settings';
 import {ConformanceResultFullList} from '../types/conformance-result-full-list';
 import {Domain} from '../types/domain';
 import {Endpoint} from '../types/endpoint';
@@ -58,6 +59,7 @@ import {CreateConformanceStatementSearchResult} from '../types/create-conformanc
 import {CreateStatementSearchCriteria} from '../pages/organisation/create-conformance-statement/create-statement-search-criteria';
 import {TestCaseSearchCriteria} from '../types/test-case-search-criteria';
 import {TestSuiteMinimalInfo} from '../types/test-suite-minimal-info';
+import {TestCaseTagsForFiltering} from '../types/test-case-tag-filter-info';
 import {Observable, tap} from 'rxjs';
 import {share} from 'rxjs/operators';
 import {PopupService} from './popup.service';
@@ -506,6 +508,20 @@ export class ConformanceService {
     })
   }
 
+  getConformanceStatementDocumentationReportSettings(communityId: number) {
+    return this.restService.get<ConformanceStatementDocumentationReportSettings|undefined>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementDocumentationReportSettings(communityId).url,
+      authenticate: true
+    })
+  }
+
+  conformanceStatementDocumentationReportEnabled(communityId: number) {
+    return this.restService.get<{exists: boolean}>({
+      path: ROUTES.controllers.ConformanceService.conformanceStatementDocumentationReportEnabled(communityId).url,
+      authenticate: true
+    })
+  }
+
   testCommunityKeystore(communityId: number, settings: Partial<CommunityKeystore>) {
     let data: any
     let files: FileParam[]|undefined
@@ -583,15 +599,20 @@ export class ConformanceService {
   }
 
 
-  deployTestSuite(domainId: number, specificationIds: number[], sharedTestSuite: boolean, file: File) {
-    return this.restService.post<TestSuiteUploadResult>({
+  deployTestSuite(domainId: number, specificationIds: number[], sharedTestSuite: boolean, file: File|undefined, uri?: string) {
+    const data: any = {
+      specification_ids: specificationIds.join(','),
+      domain_id: domainId,
+      shared: sharedTestSuite
+    }
+    if (uri !== undefined) {
+      data.testSuiteUri = uri
+    }
+    const files: FileParam[]|undefined = (file !== undefined) ? [{param: 'file', data: file}] : undefined
+    return this.restService.post<TestSuiteUploadResult|ErrorDescription>({
       path: ROUTES.controllers.ConformanceService.deployTestSuiteToSpecifications().url,
-      data: {
-        specification_ids: specificationIds.join(','),
-        domain_id: domainId,
-        shared: sharedTestSuite
-      },
-      files: [{param: 'file', data: file}],
+      data: data,
+      files: files,
       authenticate: true
     })
   }
@@ -613,7 +634,7 @@ export class ConformanceService {
     })
   }
 
-  createSpecification(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
+  createSpecification(shortName: string, fullName: string, description: string|undefined, documentation: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -625,6 +646,9 @@ export class ConformanceService {
     }
     if (description != undefined) {
       params.description = description
+    }
+    if (documentation != undefined) {
+      params.documentation = documentation
     }
     if (reportMetadata != undefined) {
       params.metadata = reportMetadata
@@ -701,7 +725,7 @@ export class ConformanceService {
     })
   }
 
-  createActor(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined,defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
+  createActor(shortName: string, fullName: string, description: string|undefined, documentation: string|undefined, reportMetadata: string|undefined,defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
     if (hiddenActor == undefined) {
       hiddenActor = false
     }
@@ -712,6 +736,7 @@ export class ConformanceService {
         actor_id: shortName,
         name: fullName,
         description: description,
+        documentation: documentation,
         metadata: reportMetadata,
         default: defaultActor,
         hidden: hiddenActor,
@@ -1253,9 +1278,26 @@ export class ConformanceService {
     }
     if (searchCriteria.testSuiteId != undefined) params.testSuite = searchCriteria.testSuiteId
     if (searchCriteria.testCaseFilterText != undefined) params.testCase = searchCriteria.testCaseFilterText
+    if (searchCriteria.tagKeys != undefined) {
+      params.tags = searchCriteria.tagKeys.join(',')
+      params.untagged = searchCriteria.untagged ?? true
+    }
     if (snapshotId != undefined) params.snapshot = snapshotId
     return this.restService.get<SearchResult<ConformanceStatus>>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatementTests(system, actor).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  getConformanceStatementTagsForFiltering(system: number, actor: number, snapshotId: number|undefined) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {}
+      params.snapshot = snapshotId
+    }
+    return this.restService.get<TestCaseTagsForFiltering>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementTagsForFiltering(system, actor).url,
       authenticate: true,
       params: params
     })

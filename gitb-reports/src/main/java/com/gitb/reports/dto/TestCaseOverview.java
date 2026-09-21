@@ -57,6 +57,24 @@ public class TestCaseOverview {
     private boolean inGroup;
     private boolean firstInGroup;
     private boolean lastInGroup;
+    private UserComment userComment;
+    private AdminComment adminComment;
+
+    public UserComment getUserComment() {
+        return userComment;
+    }
+
+    public void setUserComment(UserComment userComment) {
+        this.userComment = userComment;
+    }
+
+    public AdminComment getAdminComment() {
+        return adminComment;
+    }
+
+    public void setAdminComment(AdminComment adminComment) {
+        this.adminComment = adminComment;
+    }
 
     private List<Report> steps = new ArrayList<>();
 
@@ -393,4 +411,6 @@ public class TestCaseOverview {
     }
 
     public record Tag(String name, String description, String foreground, String background) {}
+    public record UserComment(String content, String date) {}
+    public record AdminComment(String content, String date, boolean forcedResult, boolean showFirst) {}
 }

@@ -27,13 +27,25 @@
     align-items: center;
     & .button-label {
         display: flex;
+        // Flex items default to min-width:auto, i.e. they refuse to shrink below their content's natural
+        // width. Without min-width:0 here and on .button-label-text below, the label would keep growing
+        // the button to fit its text instead of ever engaging the ellipsis.
+        min-width: 0;
         .button-label-text {
             flex-grow: 1;
+            min-width: 0;
             text-align: start;
             margin-right: 0.5rem;
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+    }
+
+    // Bootstrap's dropdown caret (the ::after pseudo-element in button mode) is a flex sibling of
+    // .button-label - once the label is allowed to shrink, keep the caret itself from being squeezed.
+    &::after {
+        flex-shrink: 0;
     }
 }
 .filterForm {
@@ -82,6 +94,7 @@
     .formButtons {
         border-top: 1px solid @gray-light-2;
         padding: 8px;
+        justify-content: flex-end;
     }
     &.multiSelection .itemsContainer .itemContainer:last-child {
         border-bottom-left-radius: 0;
@@ -115,11 +128,16 @@
             }
             .form-check-label {
                 cursor: pointer;
-                .item-text-decoration {
-                    opacity: 0.4;
-                    margin-left: 5px;
-                }
+
             }
+        }
+        .optionIcon {
+            font-size: 14px;
+            margin-right: 8px;
+            margin-left: 6px;
+        }
+        .itemSeparator {
+            border-top: 1px solid @gray-light-2;
         }
         &.availableItems {
             overflow-y: auto;
@@ -132,4 +150,8 @@
 .noItems {
     padding: 8px 10px;
     opacity: 0.5;
+}
+.item-text-decoration {
+    opacity: 0.4;
+    margin-left: 5px;
 }

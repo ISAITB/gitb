@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-call-optional-param" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Scriptlet optional parameter uses default when omitted</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <scriptlets>
+        <scriptlet id="build-label">
+            <params>
+                <var name="base" type="string"/>
+                <var name="suffix" type="string" optional="true" defaultEmpty="true"/>
+            </params>
+            <steps>
+                <assign to="label">$base</assign>
+            </steps>
+            <output name="label"/>
+        </scriptlet>
+    </scriptlets>
+    <steps stopOnError="true">
+        <call path="build-label" output="result">
+            <input name="base">'TestItem'</input>
+        </call>
+        <verify handler="StringValidator" desc="output matches base when optional param omitted">
+            <input name="actual">$result</input>
+            <input name="expected">'TestItem'</input>
+        </verify>
+    </steps>
+</testcase>

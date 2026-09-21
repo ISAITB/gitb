@@ -41,28 +41,23 @@
                     <div class="col-1"><input id="order" name="order" [(ngModel)]="testSuite.order" class="form-control" type="number"></div>
                     <div app-tooltip class="col-auto" [tbTooltip]="'A number used to determine the display and execution order of this test suite relative to others (default being zero). Test suites with the same order are sorted based on their name. Note that any numeric value can be provided for the order (negative, positive or zero), also without having to be sequential or unique compared to the order of other test suites.'"></div>
                 </div>
+                @if (testSuite.modificationDate) {
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label text-end" for="name">Last modified:</label>
+                        <div class="col-auto align-content-center">
+                            <app-tag [icon]="true" [label]="Constants.BUTTON_ICON.TIME" [value]="testSuite.modificationDate" [inForm]="true"></app-tag>
+                        </div>
+                        <div app-tooltip class="col-auto" tbTooltip="The last modification time of the test suite. This value is readonly and copied as-is from the test suite definition's metadata."></div>
+                    </div>
+                }
 				<app-specification-reference-form [reference]="testSuite"></app-specification-reference-form>
-				<app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
-					<div class="row py-3">
-						<div class="offset-1 col-10">
-                            <div class="mb-3">
-                                <app-placeholder-selector [resources]="communityId != undefined" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
-                            </div>
-							<div class="editorContainer">
-								<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
-								<div app-tooltip class="col-auto" tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources." [withMargin]="true"></div>
-							</div>
-						</div>
-					</div>
-					<div class="row form-group">
-						<div class="offset-1 col-10">
-							<div class="btn-toolbar">
-								<button (click)="previewDocumentation()" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
-								<button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
-							</div>
-						</div>
-					</div>
-				</app-form-section>
+				<app-documentation-form [(documentation)]="testSuite.documentation"
+                                        [communityId]="communityId"
+                                        [showPreviewAndCopy]="true"
+                                        [showPdfPreview]="true"
+                                        previewTitle="Test suite documentation"
+                                        tooltipText="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources."
+                                        (previewPdf)="previewDocumentationPdf()"></app-documentation-form>
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
@@ -97,6 +92,16 @@
                             <div class="tabControls">
                                 <div class="btn-toolbar">
                                     <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilter()"></app-text-filter>
+                                    <div class="btn-group collapse-group" ngbDropdown>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPAND" [disable]="!testCasesToShow || testCasesToShow.length == 0" class="btn btn-secondary" (click)="toggleTestCaseExpand(true)">Expand tests</button>
+                                        <button id="button-expand-tests" type="button" [disabled]="!testCasesToShow || testCasesToShow.length == 0" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Expand tests</span>
+                                        </button>
+                                        <div id="dropdown-expand-tests" ngbDropdownMenu aria-labelledby="button-expand-tests">
+                                            <button ngbDropdownItem type="button" (click)="toggleTestCaseExpand(false)">Collapse tests</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             @if (testCasesToShow && testCasesToShow.length > 0) {
@@ -110,9 +115,8 @@
                                                            [showExport]="false"
                                                            [showResults]="false"
                                                            [showViewDocumentation]="true"
-                                                           [showEdit]="true"
+                                                           [editTarget]="testCaseEditTarget"
                                                            [shaded]="false"
-                                                           (edit)="onTestCaseSelect($event.id)"
                                     ></app-test-case-display>
                                 </div>
                             } @else {
@@ -148,7 +152,7 @@
                                      [noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
                                      [loadingStatus]="specificationStatus"
                                      [allowSelect]="!selectingForUnlink"
-                                     (onSelect)="onSpecificationSelect($event)"
+                                     [rowTarget]="specificationRowTarget"
                                      [checkboxEnabled]="selectingForUnlink"
                                      [contentRefreshing]="specificationsRefreshing"
                                      [supportPaging]="true"

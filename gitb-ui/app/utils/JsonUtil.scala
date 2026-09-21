@@ -17,7 +17,6 @@ package utils
 
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
 import com.gitb.ps.{ProcessRequest, ProcessResponse}
-import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
 import controllers.dto.ParameterInfo
@@ -27,28 +26,21 @@ import jakarta.xml.bind.JAXBElement
 import managers.breadcrumb.BreadcrumbLabelResponse
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums.{ServiceHealthStatusType, _}
-import models._
-import models.TestCaseGroup
+import models.Enums._
+import models.{TestCaseGroup, _}
 import models.automation._
+import models.health._
 import models.snapshot.ConformanceSnapshot
+import models.statement.TestSuiteMinimalInformation
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang3.{StringUtils, Strings}
-import play.api.libs.json.{JsObject, Json, _}
+import play.api.libs.json._
 
-import java.util
+import java.time.Instant
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
-import models.statement.TestSuiteMinimalInformation
-import models.health.SoftwareVersionInfo
-import models.health.ReleaseInfo
-
-import java.time.Instant
-import models.health.ReleaseMessages
-import models.health.ReleaseMessage
-import models.health.SoftwareVersionCheckSettings
 
 object JsonUtil {
 
@@ -91,7 +83,13 @@ object JsonUtil {
       "secondaryButtonColor" -> theme.secondaryButtonColor,
       "secondaryButtonLabelColor" -> theme.secondaryButtonLabelColor,
       "secondaryButtonHoverColor" -> theme.secondaryButtonHoverColor,
-      "secondaryButtonActiveColor" -> theme.secondaryButtonActiveColor
+      "secondaryButtonActiveColor" -> theme.secondaryButtonActiveColor,
+      "welcomeLoginColor" -> theme.welcomeLoginColor,
+      "welcomeLoginLabelColor" -> theme.welcomeLoginLabelColor,
+      "welcomeOptionLabelColor" -> theme.welcomeOptionLabelColor,
+      "alertInfoBackgroundColor" -> theme.alertInfoBackgroundColor,
+      "alertInfoTextColor" -> theme.alertInfoTextColor,
+      "alertInfoBorderColor" -> theme.alertInfoBorderColor
     )
   }
 
@@ -144,8 +142,20 @@ object JsonUtil {
     val json = Json.obj(
       "organisation" -> (if (apiKeyInfo.organisation.isDefined) apiKeyInfo.organisation.get else JsNull),
       "systems" -> jsApiKeySystemInfo(apiKeyInfo.systems),
-      "specifications" -> jsApiKeySpecificationsInfo(apiKeyInfo.specifications)
+      "specifications" -> jsApiKeySpecificationsInfo(apiKeyInfo.specifications),
+      "statements" -> jsApiKeyStatementInfo(apiKeyInfo.statements)
     )
+    json
+  }
+
+  private def jsApiKeyStatementInfo(statementMap: Map[Long, Set[String]]): JsArray = {
+    var json = Json.arr()
+    statementMap.foreach { entry =>
+      json = json.append(Json.obj(
+        "system" -> entry._1,
+        "actors" -> Json.toJson(entry._2)
+      ))
+    }
     json
   }
 
@@ -167,8 +177,7 @@ object JsonUtil {
       json = json.append(Json.obj(
         "id" -> specification.id,
         "name" -> specification.name,
-        "actors" -> jsApiKeyActorsInfo(specification.actors),
-        "testSuites" -> jsApiKeyTestSuiteInfo(specification.testSuites)
+        "actors" -> jsApiKeyActorsInfo(specification.actors)
       ))
     }
     json
@@ -180,7 +189,8 @@ object JsonUtil {
       json = json.append(Json.obj(
         "id" -> actor.id,
         "name" -> actor.name,
-        "key" -> actor.key
+        "key" -> actor.key,
+        "testSuites" -> jsApiKeyTestSuiteInfo(actor.testSuites)
       ))
     }
     json
@@ -193,7 +203,7 @@ object JsonUtil {
         "id" -> testSuite.id,
         "name" -> testSuite.name,
         "key" -> testSuite.key,
-        "testCases" -> jsApiKeyTestCaseInfo(testSuite.testcases)
+        "testCases" -> jsApiKeyTestCaseInfo(testSuite.testCases)
       ))
     }
     json
@@ -234,10 +244,10 @@ object JsonUtil {
       var obj = Json.obj(
         "session" -> item.sessionId,
         "result" -> item.result,
-        "startTime" -> TimeUtil.serializeTimestampUTC(item.startTime)
+        "startTime" -> TimeUtil.serializeTimestamp(item.startTime)
       )
       if (item.endTime.isDefined) {
-        obj = obj.+("endTime", JsString(TimeUtil.serializeTimestampUTC(item.endTime.get)))
+        obj = obj.+("endTime", JsString(TimeUtil.serializeTimestamp(item.endTime.get)))
       }
       if (item.outputMessage.isDefined) {
         obj = obj.+("message", JsString(item.outputMessage.get))
@@ -742,7 +752,11 @@ object JsonUtil {
       "menuCollapsed"       -> preferences.menuCollapsed,
       "statementsCollapsed" -> preferences.statementsCollapsed,
       "pageSize"            -> preferences.pageSize,
-      "homePageType"        -> preferences.homePageType
+      "homePageType"        -> preferences.homePageType,
+      "ownSessions"         -> preferences.ownSessions,
+      "allSessions"         -> preferences.allSessions,
+      "statementsListView"  -> preferences.statementsListView,
+      "messagesSplitView"   -> preferences.messagesSplitView
     )
   }
 
@@ -852,6 +866,9 @@ object JsonUtil {
       "allowCommunityView" -> community.allowCommunityView,
       "allowUserManagement" -> community.allowUserManagement,
       "allowXmlReports" -> community.allowXmlReports,
+      "allowObsoleteSessionDeletion" -> community.allowObsoleteSessionDeletion,
+      "allowAdminSenderNames" -> community.allowAdminSenderNames,
+      "allowOrganisationSenderNames" -> community.allowOrganisationSenderNames,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -883,7 +900,16 @@ object JsonUtil {
     json
   }
 
-  def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
+  def jsCommunityInfoForLogin(communityInfo: CommunityInfoForLogin): JsObject = {
+    var json = serializeCommunity(communityInfo.community, Some(communityInfo.labels), includeAdminInfo = false)
+    if (communityInfo.statementDocumentationReportEnabled) {
+      json = json.+("statementDocumentationReportEnabled" -> JsBoolean(communityInfo.statementDocumentationReportEnabled))
+    }
+    json = json.+("testFlags" -> jsTestFlagsForUser(communityInfo.testFlags, communityInfo.isAdmin))
+    json
+  }
+
+  def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean): JsObject = {
     var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo, community.defaultSelfRegOrganisation)
     if (community.domain.isDefined){
       jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false, withTags = false))
@@ -896,7 +922,7 @@ object JsonUtil {
     if (labels.isDefined) {
       jCommunity = jCommunity ++ Json.obj("labels" -> jsCommunityLabels(labels.get))
     }
-    jCommunity.toString
+    jCommunity
   }
 
   /**
@@ -937,7 +963,7 @@ object JsonUtil {
   }
 
   def jsTestService(service: TestService): JsObject = {
-    Json.obj(
+    var json = Json.obj(
       "id" -> service.id,
       "identifier" -> service.identifier,
       "version" -> service.version,
@@ -948,8 +974,13 @@ object JsonUtil {
       "authBasicUsername" -> service.authBasicUsername,
       "authTokenUsername" -> service.authTokenUsername,
       "authTokenPasswordType" -> service.authTokenPasswordType,
+      "authHttpHeaderName" -> service.authHttpHeaderName,
       "monitor" -> service.monitorHealth
     )
+    if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
+      json = json.+("apiKey" -> JsString(service.apiKey))
+    }
+    json
   }
 
   def jsTestServicesBasicInfo(list: Iterable[TestServiceBasicInfo]):JsArray = {
@@ -1031,7 +1062,7 @@ object JsonUtil {
    * @param spec Specification object to be converted
    * @return JsObject
    */
-  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
+  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None, documentation: Option[String] = None) : JsObject = {
     var json = Json.obj(
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
@@ -1048,6 +1079,9 @@ object JsonUtil {
     }
     if (badgeStatus.isDefined) {
       json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
+    }
+    if (documentation.isDefined) {
+      json = json.+("documentation" -> JsString(documentation.get))
     }
     json
   }
@@ -1176,7 +1210,7 @@ object JsonUtil {
     json
   }
 
-  def jsActor(actor:Actor, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
+  def jsActor(actor:Actor, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None, documentation: Option[String] = None) : JsObject = {
     var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
@@ -1194,6 +1228,9 @@ object JsonUtil {
     }
     if (badgeStatus.isDefined) {
       json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
+    }
+    if (documentation.isDefined) {
+      json = json.+("documentation" -> JsString(documentation.get))
     }
     json
   }
@@ -1314,13 +1351,22 @@ object JsonUtil {
     TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential, waitForCompletion, maximumWaitTime, executionDelay)
   }
 
-  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, String) = {
+  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, models.automation.TestSuiteArchiveSource) = {
     val specification = if (sharedTestSuite) {
       None
     } else {
       Some((jsonConfig \ "specification").as[String])
     }
-    val testSuite = (jsonConfig \ "testSuite").as[String]
+    val testSuiteBase64 = (jsonConfig \ "testSuite").asOpt[String]
+    val testSuiteUri = (jsonConfig \ "testSuiteUri").asOpt[String]
+    val archiveSource: models.automation.TestSuiteArchiveSource = (testSuiteBase64, testSuiteUri) match {
+      case (Some(base64), None) => models.automation.Base64ArchiveSource(base64)
+      case (None, Some(uri))   => models.automation.UriArchiveSource(uri)
+      case (None, None) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Either 'testSuite' (base64) or 'testSuiteUri' must be provided.")
+      case (Some(_), Some(_)) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Only one of 'testSuite' (base64) or 'testSuiteUri' may be provided, not both.")
+    }
     val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
     val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean]
     val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean]
@@ -1339,7 +1385,20 @@ object JsonUtil {
       testCaseMap.put(action.identifier, action)
     }
     val showIdentifiers = (jsonConfig \ "showIdentifiers").asOpt[Boolean].getOrElse(true)
-    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite, showIdentifiers), testSuite)
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite, showIdentifiers), archiveSource)
+  }
+
+  def parseJsTestSuiteValidateRequest(jsonConfig: JsValue): models.automation.TestSuiteArchiveSource = {
+    val testSuiteBase64 = (jsonConfig \ "testSuite").asOpt[String]
+    val testSuiteUri = (jsonConfig \ "testSuiteUri").asOpt[String]
+    (testSuiteBase64, testSuiteUri) match {
+      case (Some(base64), None) => models.automation.Base64ArchiveSource(base64)
+      case (None, Some(uri))   => models.automation.UriArchiveSource(uri)
+      case (None, None) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Either 'testSuite' (base64) or 'testSuiteUri' must be provided.")
+      case (Some(_), Some(_)) =>
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Only one of 'testSuite' (base64) or 'testSuiteUri' may be provided, not both.")
+    }
   }
 
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): TestSuiteUndeployRequest = {
@@ -1646,6 +1705,8 @@ object JsonUtil {
       (json \ "authTokenUsername").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "authTokenPassword").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
       (json \ "authTokenPasswordType").asOpt[String].map(x => Some(Enums.parseTestServiceAuthTokenPasswordTypeForApi(x))),
+      (json \ "authHttpHeaderName").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "authHttpHeaderValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
       (json \ "identifier").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "version").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "domain").asOpt[String],
@@ -1680,6 +1741,12 @@ object JsonUtil {
       if (info.authTokenUsername.flatten.isEmpty && (info.authTokenPassword.flatten.isDefined || info.authTokenPasswordType.flatten.isDefined)) {
         throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a token authentication password but no username")
       }
+      if (info.authHeaderName.flatten.isDefined && info.authHeaderValue.flatten.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When an HTTP header name is provided for authentication you must also set the header value")
+      }
+      if (info.authHeaderName.flatten.isEmpty && info.authHeaderValue.flatten.isDefined) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a HTTP header value for authentication but no header name")
+      }
     } else {
       // Provided empty usernames means that we delete the relevant password information.
       if (info.authBasicUsername.exists(_.isEmpty) && info.authBasicPassword.exists(_.isDefined)) {
@@ -1693,6 +1760,12 @@ object JsonUtil {
       }
       if ((info.authTokenUsername.exists(_.isDefined) || info.authTokenUsername.isEmpty) && (info.authTokenPassword.exists(_.isEmpty) || info.authTokenPasswordType.exists(_.isEmpty))) {
         throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When token authentication is used the password and password type are required")
+      }
+      if (info.authHeaderName.exists(_.isEmpty) && info.authHeaderValue.exists(_.isDefined)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When removing HTTP header-based authentication you must not specify the header value")
+      }
+      if ((info.authHeaderName.exists(_.isDefined) || info.authHeaderName.isEmpty) && info.authHeaderValue.exists(_.isEmpty)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When HTTP header-based authentication is used the header value is required")
       }
     }
     info
@@ -1747,12 +1820,8 @@ object JsonUtil {
   }
 
   def parseJsSystemConfigurations(json: String): Iterable[SystemConfigurations] = {
-    Json.parse(json).as[JsArray].value.map { value =>
-      SystemConfigurations(
-        (value \ "name").as[String],
-        (value \ "value").asOpt[String],
-        None
-      )
+    Json.parse(json).as[JsObject].fields.map { case (name, value) =>
+      SystemConfigurations(name, value.asOpt[String], None)
     }
   }
 
@@ -2004,6 +2073,7 @@ object JsonUtil {
     settings.errorTemplates = (jsonConfig \ "errorTemplates").as[Boolean]
     settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
     settings.triggers = (jsonConfig \ "triggers").as[Boolean]
+    settings.testFlags = (jsonConfig \ "testFlags").as[Boolean]
     settings.resources = (jsonConfig \ "resources").as[Boolean]
     settings.certificateSettings = (jsonConfig \ "certificateSettings").as[Boolean]
     settings.customLabels = (jsonConfig \ "customLabels").as[Boolean]
@@ -2091,11 +2161,11 @@ object JsonUtil {
     )
   }
 
-  def parseJsUserInputs(json:String): List[UserInput] = {
+  def parseJsUserInputs(json:String): List[UserInputWithCounter] = {
     val jsArray = Json.parse(json).as[JsArray].value
-    val list = ListBuffer[UserInput]()
+    val list = ListBuffer[UserInputWithCounter]()
     jsArray.foreach { jsonInput =>
-      val input = new UserInput()
+      val input = new UserInputWithCounter((jsonInput \ "counter").asOpt[Short])
       input.setId((jsonInput \ "id").as[String])
       input.setName((jsonInput \ "name").as[String])
       input.setType((jsonInput \ "type").as[String])
@@ -2339,7 +2409,8 @@ object JsonUtil {
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
       "tpl"       -> (if(tpl.isDefined) tpl.get else JsNull),
       "outputMessage" -> (if (withOutputMessage && testResult.outputMessage.isDefined) testResult.outputMessage.get else JsNull),
-      "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
+      "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true),
+      "flagId"    -> (if (testResult.flagId.isDefined) testResult.flagId.get else JsNull)
     )
     json
   }
@@ -2428,6 +2499,12 @@ object JsonUtil {
           "sname" -> (if (result.organization.isDefined) result.organization.get else JsNull),
           "community" -> (if (result.communityId.isDefined) result.communityId.get else JsNull),
           "parameters" -> (if (result.organizationId.isDefined && parameterInfo.isDefined) jsOrgParameterValuesForExport(result.organizationId.get, parameterInfo.get.orgDefinitions, parameterInfo.get.orgValues) else JsNull)
+        )
+      },
+      "community" -> {
+        Json.obj(
+          "id"    -> (if (result.communityId.isDefined) result.communityId.get else JsNull),
+          "sname" -> (if (result.community.isDefined) result.community.get else JsNull)
         )
       },
       "system" -> {
@@ -2672,12 +2749,15 @@ object JsonUtil {
       "savedFileMaxSize" -> Configurations.SAVED_FILE_MAX_SIZE,
       "mode" -> Configurations.TESTBED_MODE,
       "automationApiEnabled" -> Configurations.AUTOMATION_API_ENABLED,
+      "testServiceCallbacksApiKeysEnabled" -> Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED,
       "versionNumber" -> Configurations.versionInfo(),
       "hasDefaultLegalNotice" -> hasDefaultLegalNotice,
       "conformanceStatementReportMaxTestCases" -> Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES,
       "headerNameAuthenticationCookiePath" -> Configurations.HEADER_NAME_AUTHENTICATION_COOKIE_PATH,
-      "welcomePageTitle" -> Configurations.WELCOME_TITLE,
-      "preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN
+      "welcomePageTitle" -> Configurations.WELCOME_TEXTS.title,
+      "preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN,
+      "dateFormat" -> Configurations.DATE_FORMAT_DATE,
+      "dateTimeFormat" -> Configurations.DATE_FORMAT_DATETIME
     )
     json
   }
@@ -2701,9 +2781,10 @@ object JsonUtil {
     val jsonObject = Json.parse(json)
     SessionTimeoutConfiguration(
       enabled = (jsonObject \ "enabled").as[Boolean],
-      userPendingTimeout = (jsonObject \ "userPendingTimeout").as[Long],
-      adminPendingTimeout = (jsonObject \ "adminPendingTimeout").as[Long],
-      otherTimeout = (jsonObject \ "otherTimeout").as[Long]
+      userPendingTimeout = (jsonObject \ "userPendingTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout),
+      adminPendingTimeout = (jsonObject \ "adminPendingTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout),
+      otherTimeout = (jsonObject \ "otherTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout),
+      deadTimeout = (jsonObject \ "deadTimeout").asOpt[Long].getOrElse(Constants.DefaultSessionTimeout)
     )
   }
 
@@ -2812,6 +2893,197 @@ object JsonUtil {
     var json = Json.arr()
     list.foreach { landingPage =>
       json = json.append(jsLandingPage(landingPage))
+    }
+    json
+  }
+
+  /** Full record, for the community details management tab (create/edit form, table listing). */
+  def jsTestFlag(testFlag: TestFlags): JsObject = {
+    Json.obj(
+      "id" -> testFlag.id,
+      "name" -> testFlag.name,
+      "description" -> (if (testFlag.description.isDefined) testFlag.description.get else JsNull),
+      "colour" -> testFlag.colour,
+      "publicName" -> (if (testFlag.publicName.isDefined) testFlag.publicName.get else JsNull),
+      "publicColour" -> (if (testFlag.publicColour.isDefined) testFlag.publicColour.get else JsNull),
+      "adminOnly" -> testFlag.adminOnly,
+      "displayOrder" -> testFlag.displayOrder,
+      "community" -> testFlag.community
+    )
+  }
+
+  def jsTestFlags(list: Iterable[TestFlags]): JsArray = {
+    var json = Json.arr()
+    list.foreach { testFlag =>
+      json = json.append(jsTestFlag(testFlag))
+    }
+    json
+  }
+
+  def parseJsMessageTargets(json: String): List[MessageTarget] = {
+    val jsArray = Json.parse(json).as[JsArray].value
+    var list: List[MessageTarget] = List()
+    jsArray.foreach { jsonTarget =>
+      list ::= MessageTarget(
+        (jsonTarget \ "targetType").as[Short],
+        (jsonTarget \ "communityId").asOpt[Long],
+        (jsonTarget \ "organisationId").asOpt[Long]
+      )
+    }
+    list
+  }
+
+  def jsReceivedMessage(message: ReceivedMessageListItem): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "bodyPreview" -> (if (message.bodyPreview.isDefined) message.bodyPreview.get else JsNull),
+      "senderName" -> message.senderName,
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "read" -> message.read,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+    )
+  }
+
+  def jsReceivedMessages(list: Iterable[ReceivedMessageListItem]): JsArray = {
+    var json = Json.arr()
+    list.foreach { message =>
+      json = json.append(jsReceivedMessage(message))
+    }
+    json
+  }
+
+  def jsSentMessage(message: SentMessageListItem): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "bodyPreview" -> (if (message.bodyPreview.isDefined) message.bodyPreview.get else JsNull),
+      "recipientName" -> message.recipientName,
+      "recipientCount" -> message.recipientCount,
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull)
+    )
+  }
+
+  def jsSentMessages(list: Iterable[SentMessageListItem]): JsArray = {
+    var json = Json.arr()
+    list.foreach { message =>
+      json = json.append(jsSentMessage(message))
+    }
+    json
+  }
+
+  def jsReceivedMessageWithChain(message: ReceivedMessageDetail, chain: List[MessageChainItem]): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "body" -> (if (message.body.isDefined) message.body.get else JsNull),
+      "senderName" -> message.senderName,
+      "senderUserName" -> (if (message.senderUserName.isDefined) message.senderUserName.get else JsNull),
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull),
+      "chain" -> jsMessageChain(chain)
+    )
+  }
+
+  def jsSentMessageWithChain(message: SentMessageDetail, chain: List[MessageChainItem]): JsObject = {
+    Json.obj(
+      "id" -> message.id,
+      "subject" -> (if (message.subject.isDefined) message.subject.get else JsNull),
+      "body" -> (if (message.body.isDefined) message.body.get else JsNull),
+      "recipientCount" -> message.recipientCount,
+      "singleRecipientName" -> (if (message.singleRecipientName.isDefined) message.singleRecipientName.get else JsNull),
+      "date" -> TimeUtil.serializeTimestamp(message.date),
+      "important" -> message.important,
+      "parentMessageId" -> (if (message.parentMessageId.isDefined) message.parentMessageId.get else JsNull),
+      "chain" -> jsMessageChain(chain)
+    )
+  }
+
+  def jsMessageRecipientNames(names: Iterable[String]): JsArray = {
+    var json = Json.arr()
+    names.foreach { name =>
+      json = json.append(JsString(name))
+    }
+    json
+  }
+
+  def jsMessageChainItem(item: MessageChainItem): JsObject = {
+    Json.obj(
+      "id" -> item.id,
+      "subject" -> (if (item.subject.isDefined) item.subject.get else JsNull),
+      "body" -> (if (item.body.isDefined) item.body.get else JsNull),
+      "date" -> TimeUtil.serializeTimestamp(item.date),
+      "important" -> item.important,
+      "senderName" -> item.senderName,
+      "senderUserName" -> (if (item.senderUserName.isDefined) item.senderUserName.get else JsNull),
+      "viewerIsSender" -> item.viewerIsSender,
+    )
+  }
+
+  def jsMessageChain(list: Iterable[MessageChainItem]): JsArray = {
+    var json = Json.arr()
+    list.foreach { item =>
+      json = json.append(jsMessageChainItem(item))
+    }
+    json
+  }
+
+  def jsReplyTargetInfo(info: ReplyTargetInfo): JsObject = {
+    Json.obj(
+      "targetType" -> (if (info.targetType.isDefined) info.targetType.get else JsNull),
+      "communityId" -> (if (info.communityId.isDefined) info.communityId.get else JsNull),
+      "communityName" -> (if (info.communityName.isDefined) info.communityName.get else JsNull),
+      "organisationId" -> (if (info.organisationId.isDefined) info.organisationId.get else JsNull),
+      "organisationName" -> (if (info.organisationName.isDefined) info.organisationName.get else JsNull)
+    )
+  }
+
+  /** Minimal record for the client-side login cache. For administrators (Test Bed or community) this
+   * carries the internal name/colour. For organisation users the effective (public-or-fallback-to-
+   * internal) name/colour is used instead - so an organisation user's browser never receives a
+   * community's internal-only flag naming. `adminOnly` is included for every role and every flag
+   * (including admin-only ones) since an admin-only flag, once set on a session, is still shown
+   * read-only to organisation users - only the *assignment* control needs to filter admin-only flags
+   * out client-side; display (tag, column, filter) applies to all flags regardless. */
+  def jsTestFlagForUser(testFlag: TestFlags, isAdmin: Boolean): JsObject = {
+    if (isAdmin) {
+      Json.obj(
+        "id" -> testFlag.id,
+        "name" -> testFlag.name,
+        "colour" -> testFlag.colour,
+        "adminOnly" -> testFlag.adminOnly
+      )
+    } else {
+      Json.obj(
+        "id" -> testFlag.id,
+        "name" -> testFlag.effectiveName,
+        "colour" -> testFlag.effectiveColour,
+        "adminOnly" -> testFlag.adminOnly
+      )
+    }
+  }
+
+  def jsTestFlagsForUser(list: Iterable[TestFlags], isAdmin: Boolean): JsArray = {
+    var json = Json.arr()
+    list.foreach { testFlag =>
+      json = json.append(jsTestFlagForUser(testFlag, isAdmin))
+    }
+    json
+  }
+
+  /** The Test Bed administrator's all-communities login cache - always the admin view (every flag,
+   * internal name/colour) since the Test Bed administrator has full access to every community. */
+  def jsAllCommunityTestFlagsForAdminLogin(flagsByCommunity: Map[Long, List[TestFlags]]): JsArray = {
+    var json = Json.arr()
+    flagsByCommunity.foreach { case (communityId, flags) =>
+      json = json.append(Json.obj(
+        "communityId" -> communityId,
+        "flags" -> jsTestFlagsForUser(flags, isAdmin = true)
+      ))
     }
     json
   }
@@ -2944,15 +3216,46 @@ object JsonUtil {
     jErrorTemplate.toString
   }
 
+  def jsConformanceStatementDocumentationReportSettings(settings: ConformanceStatementDocumentationReportSettings): JsObject = {
+    Json.obj(
+      "enabled" -> settings.enabled,
+      "includeOverview" -> settings.includeOverview,
+      "includeStatementDocumentation" -> settings.includeStatementDocumentation,
+      "includeTestCaseListing" -> settings.includeTestCaseListing,
+      "includeTestSuiteDocumentation" -> settings.includeTestSuiteDocumentation,
+      "includeTestCaseDocumentation" -> settings.includeTestCaseDocumentation,
+      "includeSignature" -> settings.includeSignature
+    )
+  }
+
+  def parseJsConformanceStatementDocumentationReportSettings(json: String, communityId: Long): ConformanceStatementDocumentationReportSettings = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceStatementDocumentationReportSettings(
+      0L,
+      (jsonConfig \ "enabled").as[Boolean],
+      (jsonConfig \ "includeOverview").as[Boolean],
+      (jsonConfig \ "includeStatementDocumentation").as[Boolean],
+      (jsonConfig \ "includeTestCaseListing").as[Boolean],
+      (jsonConfig \ "includeTestSuiteDocumentation").as[Boolean],
+      (jsonConfig \ "includeTestCaseDocumentation").as[Boolean],
+      (jsonConfig \ "includeSignature").as[Boolean],
+      communityId
+    )
+  }
+
   def jsReportSettings(settings: CommunityReportSettings, stylesheetExists: Boolean): JsObject = {
     var json = Json.obj(
     "stylesheetExists" -> stylesheetExists,
     "signPdfs" -> settings.signPdfs,
     "customPdfs" -> settings.customPdfs,
-    "customPdfsWithCustomXml" -> settings.customPdfsWithCustomXml
+    "customPdfsWithCustomXml" -> settings.customPdfsWithCustomXml,
+    "defaultFileNameExpression" -> ReportNameResolver.effectiveDefault(settings.reportType)
     )
     if (settings.customPdfService.isDefined) {
       json += ("customPdfService" -> JsString(settings.customPdfService.get))
+    }
+    if (settings.fileNameExpression.isDefined) {
+      json += ("fileNameExpression" -> JsString(settings.fileNameExpression.get))
     }
     json
   }
@@ -3099,16 +3402,13 @@ object JsonUtil {
     testCaseArray
   }
 
-  def jsTestSuiteDeployInfo(resultWithKeys: TestSuiteUploadResultWithApiKeys, showIdentifiers: Boolean):JsObject = {
+  /** Splits a TAR validation report's items into errors/warnings/messages JSON arrays, omitting arrays that end up empty. */
+  private def jsValidationReportItems(validationReport: Option[TAR], extraMessages: JsArray = Json.arr()): (JsArray, JsArray, JsArray) = {
     var errors = Json.arr()
     var warnings = Json.arr()
-    var messages = Json.arr()
-    if (resultWithKeys.result.existsForSpecs.nonEmpty) {
-      // Non-shared test suite that we tried to deploy to a specification with a matching (by identifier) shared test suite.
-      messages = messages.append(Json.obj("description" -> "The specification contains a shared test suite with the same identifier. Deployment was skipped."))
-    }
-    if (resultWithKeys.result.validationReport.exists(_.getReports != null)) {
-      resultWithKeys.result.validationReport.get.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
+    var messages = extraMessages
+    if (validationReport.exists(_.getReports != null)) {
+      validationReport.get.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
         var itemJson = Json.obj("description" -> item.getValue.asInstanceOf[BAR].getDescription)
         if (item.getValue.asInstanceOf[BAR].getLocation != null) {
           itemJson = itemJson.+("location", JsString(item.getValue.asInstanceOf[BAR].getLocation))
@@ -3122,18 +3422,42 @@ object JsonUtil {
         }
       })
     }
-    var json = Json.obj(
-      "completed" -> resultWithKeys.result.success
-    )
+    (errors, warnings, messages)
+  }
+
+  private def withValidationReportItems(json: JsObject, errors: JsArray, warnings: JsArray, messages: JsArray): JsObject = {
+    var result = json
     if (errors.value.nonEmpty) {
-      json = json.+("errors", errors)
+      result = result.+("errors", errors)
     }
     if (warnings.value.nonEmpty) {
-      json = json.+("warnings", warnings)
+      result = result.+("warnings", warnings)
     }
     if (messages.value.nonEmpty) {
-      json = json.+("messages", messages)
+      result = result.+("messages", messages)
     }
+    result
+  }
+
+  def jsTestSuiteValidationInfo(validationReport: TAR): JsObject = {
+    val (errors, warnings, messages) = jsValidationReportItems(Some(validationReport))
+    withValidationReportItems(
+      Json.obj("valid" -> (validationReport.getCounters.getNrOfErrors.longValue() == 0)),
+      errors, warnings, messages
+    )
+  }
+
+  def jsTestSuiteDeployInfo(resultWithKeys: TestSuiteUploadResultWithApiKeys, showIdentifiers: Boolean):JsObject = {
+    var extraMessages = Json.arr()
+    if (resultWithKeys.result.existsForSpecs.nonEmpty) {
+      // Non-shared test suite that we tried to deploy to a specification with a matching (by identifier) shared test suite.
+      extraMessages = extraMessages.append(Json.obj("description" -> "The specification contains a shared test suite with the same identifier. Deployment was skipped."))
+    }
+    val (errors, warnings, messages) = jsValidationReportItems(resultWithKeys.result.validationReport, extraMessages)
+    var json = withValidationReportItems(
+      Json.obj("completed" -> resultWithKeys.result.success),
+      errors, warnings, messages
+    )
     // API key identifiers.
     if (showIdentifiers && resultWithKeys.testSuiteIdentifier.isDefined) {
       var identifiers = Json.obj(
@@ -3299,13 +3623,17 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatement(statement: ConformanceStatementItem, results: SearchResult[models.ConformanceStatus], systemInfo: models.System): JsObject = {
-    Json.obj(
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: SearchResult[models.ConformanceStatus], systemInfo: models.System, documentation: Option[String] = None): JsObject = {
+    var json = Json.obj(
       "statement" -> jsConformanceStatementItem(statement),
       "results" -> jsSearchResult(results, jsConformanceStatusForPaging),
       "system" -> jsSystem(systemInfo.toCaseObject),
       "organisation" -> jsOrganization(systemInfo.owner.get) // This is always present.
     )
+    if (documentation.isDefined && documentation.get.nonEmpty) {
+      json = json + ("documentation" -> JsString(documentation.get))
+    }
+    json
   }
 
   def jsConformanceStatusForPaging(list: Iterable[ConformanceStatus]): JsArray = {
@@ -3603,7 +3931,7 @@ object JsonUtil {
     json
   }
 
-  def jsProcessRequest(processRequest: ProcessRequest): JsObject = {
+  def jsProcessRequest(processRequest: ProcessRequest, forGitbRestApi: Boolean): JsObject = {
     var json = Json.obj()
     if (processRequest.getOperation != null) {
       json += ("operation" -> JsString(processRequest.getOperation))
@@ -3613,7 +3941,7 @@ object JsonUtil {
       processRequest.getInput.asScala.foreach { input =>
         inputs = inputs.append(jsAnyContent(input))
       }
-      json += ("inputs" -> inputs)
+      json += ((if (forGitbRestApi) "input" else "inputs") -> inputs)
     }
     json
   }
@@ -3656,6 +3984,109 @@ object JsonUtil {
       enabled = (json \ "enabled").as[Boolean],
       jws = (json \ "jws").as[String],
       jwks = (json \ "jwks").as[String]
+    )
+  }
+
+  def jsReportSettings(settings: ReportSettings): JsObject = {
+    // Backfill any report type missing from the persisted map (e.g. one added after the settings
+    // were last saved) with its built-in default, so the editing screen never shows a blank value.
+    val completeFileNameExpressions = Configurations.REPORT_NAMING_EXPRESSIONS.map { case (reportType, builtInDefault) =>
+      reportType -> settings.fileNameExpressions.getOrElse(reportType, builtInDefault)
+    }
+    var json = Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "fileNameExpressions" -> JsObject(completeFileNameExpressions.map { case (reportType, expression) =>
+        reportType.toString -> (JsString(expression): JsValue)
+      })
+    )
+    if (settings.timeZone.isDefined) {
+      json = json ++ Json.obj("timeZone" -> JsString(settings.timeZone.get))
+    }
+    if (settings.dateFormat.isDefined || settings.dateTimeFormat.isDefined || settings.dateFileFormat.isDefined) {
+      var dateFormats = Json.obj()
+      if (settings.dateFormat.isDefined) {
+        dateFormats = dateFormats ++ Json.obj("date" -> JsString(settings.dateFormat.get))
+      }
+      if (settings.dateTimeFormat.isDefined) {
+        dateFormats = dateFormats ++ Json.obj("dateTime" -> JsString(settings.dateTimeFormat.get))
+      }
+      if (settings.dateFileFormat.isDefined) {
+        dateFormats = dateFormats ++ Json.obj("dateFile" -> JsString(settings.dateFileFormat.get))
+      }
+      json = json ++ Json.obj("dateFormats" -> dateFormats)
+    }
+    json
+  }
+
+  def parseJsReportSettings(jsonString: String): ReportSettings = {
+    val json = Json.parse(jsonString)
+    val expressions = (json \ "fileNameExpressions").asOpt[JsObject].map { obj =>
+      obj.fields.map { case (reportType, expression) => reportType.toShort -> expression.as[String] }.toMap
+    }.getOrElse(Map[Short, String]())
+    val dateFormats = (json \ "dateFormats").asOpt[JsObject]
+    ReportSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      fileNameExpressions = expressions,
+      timeZone = (json \ "timeZone").asOpt[String],
+      dateFormat = dateFormats.flatMap(obj => (obj \ "date").asOpt[String]),
+      dateTimeFormat = dateFormats.flatMap(obj => (obj \ "dateTime").asOpt[String]),
+      dateFileFormat = dateFormats.flatMap(obj => (obj \ "dateFile").asOpt[String])
+    )
+  }
+
+  def jsWelcomeTexts(texts: WelcomeTexts): JsObject = {
+    Json.obj(
+      "title" -> JsString(texts.title),
+      "logInCardTitle" -> JsString(texts.logInCardTitle),
+      "logInCardContent" -> JsString(texts.logInCardContent),
+      "confirmRoleCardTitle" -> JsString(texts.confirmRoleCardTitle),
+      "confirmRoleCardContent" -> JsString(texts.confirmRoleCardContent),
+      "registerCardTitle" -> JsString(texts.registerCardTitle),
+      "registerCardContent" -> JsString(texts.registerCardContent),
+      "demoCardTitle" -> JsString(texts.demoCardTitle),
+      "demoCardContent" -> JsString(texts.demoCardContent)
+    )
+  }
+
+  /**
+   * Parses a persisted welcome page texts JSON value, falling back to the built-in default for any
+   * property that is missing or blank. This means a partial JSON value (e.g. one written by a
+   * migration, or predating a text added after it was last saved) always yields a complete result.
+   */
+  def parseJsWelcomeTexts(jsonString: String): WelcomeTexts = {
+    val json = Json.parse(jsonString)
+    def textOrDefault(propertyName: String, default: String): String = {
+      (json \ propertyName).asOpt[String].filter(StringUtils.isNotBlank).getOrElse(default)
+    }
+    WelcomeTexts(
+      title = textOrDefault("title", WelcomeTexts.TitleDefault),
+      logInCardTitle = textOrDefault("logInCardTitle", WelcomeTexts.LogInCardTitleDefault),
+      logInCardContent = textOrDefault("logInCardContent", WelcomeTexts.LogInCardContentDefault),
+      confirmRoleCardTitle = textOrDefault("confirmRoleCardTitle", WelcomeTexts.ConfirmRoleCardTitleDefault),
+      confirmRoleCardContent = textOrDefault("confirmRoleCardContent", WelcomeTexts.ConfirmRoleCardContentDefault),
+      registerCardTitle = textOrDefault("registerCardTitle", WelcomeTexts.RegisterCardTitleDefault),
+      registerCardContent = textOrDefault("registerCardContent", WelcomeTexts.RegisterCardContentDefault),
+      demoCardTitle = textOrDefault("demoCardTitle", WelcomeTexts.DemoCardTitleDefault),
+      demoCardContent = textOrDefault("demoCardContent", WelcomeTexts.DemoCardContentDefault)
+    )
+  }
+
+  def jsTestEngineCallbackSettings(settings: TestEngineCallbackSettings): JsObject = {
+    Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "soapEnabled" -> JsBoolean(settings.soapEnabled),
+      "restEnabled" -> JsBoolean(settings.restEnabled),
+      "apiKeysEnabled" -> JsBoolean(settings.apiKeysEnabled)
+    )
+  }
+
+  def parseJsTestEngineCallbackSettings(jsonString: String): TestEngineCallbackSettings = {
+    val json = Json.parse(jsonString)
+    TestEngineCallbackSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      soapEnabled = (json \ "soapEnabled").as[Boolean],
+      restEnabled = (json \ "restEnabled").as[Boolean],
+      apiKeysEnabled = (json \ "apiKeysEnabled").as[Boolean]
     )
   }
 
@@ -3781,14 +4212,14 @@ object JsonUtil {
     }
   }
 
-  def validatorForProcessRequest(): Reads[ProcessRequest] = {
+  def validatorForProcessRequest(forGitbRestApi: Boolean): Reads[ProcessRequest] = {
     (js: JsValue) => {
       val processRequest = new ProcessRequest()
       val obj = js.asInstanceOf[JsObject]
       val definedKeys = new mutable.HashSet[String]()
       definedKeys.addAll(obj.keys)
       processRequest.setOperation(parseOptionalStringField(obj, "operation", definedKeys).orNull)
-      parseOptionalArrayField(obj, "inputs", validatorForAnyContent(), definedKeys).foreach { item =>
+      parseOptionalArrayField(obj, (if (forGitbRestApi) "input" else "inputs"), validatorForAnyContent(), definedKeys).foreach { item =>
         processRequest.getInput.add(item)
       }
       ensureNoExtraFields(definedKeys.toSet)
@@ -3841,10 +4272,10 @@ object JsonUtil {
       "error_code" -> code,
       "error_description" -> errorDescToUse
     )
-    if (errorIdentifier.isDefined) {
+    if (errorIdentifier.exists(!_.isBlank)) {
       obj = obj.+("error_id" -> JsString(errorIdentifier.get))
     }
-    if (errorHint.isDefined) {
+    if (errorHint.exists(!_.isBlank)) {
       obj = obj.+("error_hint" -> JsString(errorHint.get))
     }
     obj
@@ -4048,6 +4479,9 @@ object JsonUtil {
     if (service.service.service.version.isDefined) {
       json = json + ("version" -> JsString(service.service.service.version.get))
     }
+    if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
+      json = json + ("apiKey" -> JsString(service.service.service.apiKey))
+    }
     json
   }
 
@@ -4060,6 +4494,51 @@ object JsonUtil {
       "id" -> value.id,
       "sname" -> value.shortName
     )
+  }
+
+  def jsTestCaseTagsForFiltering(tags: Seq[models.statement.TestCaseTagInfo], untagged: Boolean): JsObject = {
+    Json.obj(
+      "tags" -> JsArray(tags.map { tag =>
+        Json.obj(
+          "key" -> tag.key,
+          "name" -> tag.name,
+          "foreground" -> tag.foreground,
+          "background" -> tag.background
+        )
+      }),
+      "untagged" -> untagged
+    )
+  }
+
+  def jsTestResultMinimal(value: TestResultMinimal): JsObject = {
+    var json = Json.obj(
+      "sessionId" -> value.sessionId,
+      "result" -> value.result
+    )
+    if (value.outputMessage.isDefined) json = json + ("outputMessage" -> JsString(value.outputMessage.get))
+    json
+  }
+
+  def jsTestResultComments(value: TestResultComments): JsObject = {
+    var json = Json.obj(
+      "sessionId" -> value.sessionId,
+      "userCommentAllowed" -> value.userCommentAllowed
+    )
+    if (value.userComment.isDefined) json = json + ("userComment" -> JsString(value.userComment.get))
+    if (value.userCommentTime.isDefined) {
+      json = json + ("userCommentTime" -> JsString(TimeUtil.serializeTimestamp(value.userCommentTime.get)))
+      json = json + ("userCommentTimeMillis" -> JsNumber(value.userCommentTime.get.getTime))
+    }
+    if (value.adminComment.isDefined) json = json + ("adminComment" -> JsString(value.adminComment.get))
+    if (value.adminCommentTime.isDefined) {
+      json = json + ("adminCommentTime" -> JsString(TimeUtil.serializeTimestamp(value.adminCommentTime.get)))
+      json = json + ("adminCommentTimeMillis" -> JsNumber(value.adminCommentTime.get.getTime))
+    }
+    if (value.resultForced.isDefined) json = json + ("resultForced" -> JsString(value.resultForced.get))
+    if (value.resultOriginal.isDefined) json = json + ("resultOriginal" -> JsString(value.resultOriginal.get))
+    if (value.outputMessageForced.isDefined) json = json + ("outputMessageForced" -> JsString(value.outputMessageForced.get))
+    if (value.outputMessageOriginal.isDefined) json = json + ("outputMessageOriginal" -> JsString(value.outputMessageOriginal.get))
+    json
   }
 
   def parseJsSoftwareVersionInfo(json: JsValue): SoftwareVersionInfo = {

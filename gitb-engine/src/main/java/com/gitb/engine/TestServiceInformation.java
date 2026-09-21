@@ -15,7 +15,8 @@
 
 package com.gitb.engine;
 
+import com.gitb.tdl.HandlerApiType;
+
 import java.util.Properties;
 
-public record TestServiceInformation(Properties authenticationProperties) {
-}
+public record TestServiceInformation(Properties authenticationProperties, HandlerApiType apiType) { }

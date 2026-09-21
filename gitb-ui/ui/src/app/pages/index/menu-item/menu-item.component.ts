@@ -18,6 +18,8 @@ import {Subscription} from 'rxjs';
 import {DataService} from 'src/app/services/data.service';
 import {MenuItem} from 'src/app/types/menu-item.enum';
 import {MenuItemStatus} from '../../../types/menu-item-status.enum';
+import {NavigationTarget} from 'src/app/types/navigation-target';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-menu-item',
@@ -31,6 +33,12 @@ export class MenuItemComponent implements OnInit, OnDestroy {
   @Input() icon?: string
   @Input() expanded = false
   @Input() type!: MenuItem
+  /**
+   * Set for entries that navigate (the majority) so the component renders an anchor. Left
+   * undefined for entries that trigger an in-page action instead (e.g. "Link to current page",
+   * "Collapse menu"), which render as a plain clickable div as before.
+   */
+  @Input() target?: NavigationTarget
   @ContentChild(TemplateRef) customTemplate?: TemplateRef<any>;
 
   active = false
@@ -70,8 +78,15 @@ export class MenuItemComponent implements OnInit, OnDestroy {
     if (this.statusSubscription) this.statusSubscription.unsubscribe()
   }
 
-  itemClicked() {
-    this.dataService.clearAllDisplayStates()
+  /**
+   * @param event Passed only when the item is rendered as a link (see `target`). A modified click
+   * (ctrl/cmd/shift/alt, or a non-primary button) opens the destination in a new tab/window rather
+   * than navigating away from the current one, so display state must not be cleared in that case.
+   */
+  itemClicked(event?: MouseEvent) {
+    if (event == undefined || Utils.isPlainNavigationClick(event)) {
+      this.dataService.clearAllDisplayStates()
+    }
   }
 
 }

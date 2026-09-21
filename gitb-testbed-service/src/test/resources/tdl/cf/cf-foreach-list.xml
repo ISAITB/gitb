@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-foreach-list" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Foreach over list</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="fruits" append="true">'apple'</assign>
+        <assign to="fruits" append="true">'banana'</assign>
+        <assign to="fruits" append="true">'cherry'</assign>
+        <assign to="count" type="number">0</assign>
+        <foreach of="$fruits" item="fruit">
+            <do>
+                <log>'visiting ' || $fruit</log>
+                <assign to="count" type="number">$count + 1</assign>
+            </do>
+        </foreach>
+        <verify handler="ExpressionValidator" desc="iterated 3 times">
+            <input name="expression">$count = 3</input>
+        </verify>
+    </steps>
+</testcase>

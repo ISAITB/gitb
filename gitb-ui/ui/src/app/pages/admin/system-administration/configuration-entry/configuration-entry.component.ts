@@ -13,9 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { ConfigStatus } from '../config-status';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ConfigStatus} from '../config-status';
+import {ConfigurationEntryComponentApi} from './configuration-entry-component-api';
 
 @Component({
     selector: 'app-configuration-entry',
@@ -23,7 +24,7 @@ import { ConfigStatus } from '../config-status';
     styleUrls: ['./configuration-entry.component.less'],
     standalone: false
 })
-export class ConfigurationEntryComponent implements OnInit {
+export class ConfigurationEntryComponent implements ConfigurationEntryComponentApi {
 
   @Input() configTitle!: string
   @Input() configDescription?: string
@@ -39,17 +40,13 @@ export class ConfigurationEntryComponent implements OnInit {
 
   constructor() { }
 
-  ngOnInit(): void {
-    this.status.deferredExpand?.subscribe((proceed) => {
-      this.pendingExpand = false
-      if (proceed) {
-        setTimeout(() => {
-          this.status.collapsed = false
-          this.loaded = true
-          this.statusChange.emit(this.status)
-        }, 1)
-      }
-    })
+  expand() {
+    this.pendingExpand = false
+    setTimeout(() => {
+      this.status.collapsed = false
+      this.loaded = true
+      this.statusChange.emit(this.status)
+    }, 1)
   }
 
   headerClicked() {

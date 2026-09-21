@@ -547,6 +547,26 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		} yield report
 	}
 
+	/**
+	 * Validate a test suite archive with no domain or specification context, and hence no side-effects.
+	 * <p/>
+	 * Unlike [[validateTestSuite]] this performs no domain parameter or actor lookups. External actor and
+	 * domain parameter references are not checked against a target instance; they are instead reported once
+	 * each as INFO-level findings (see [[com.gitb.vs.tdl.ExternalConfiguration#isCheckExternalReferences]]).
+	 */
+	def validateTestSuiteArchive(tempTestSuiteArchive: File): Future[TAR] = {
+		import scala.jdk.CollectionConverters._
+		Future.successful {
+			TestSuiteValidationAdapter.getInstance().doValidation(
+				new FileSource(tempTestSuiteArchive),
+				Set.empty[String].asJava,
+				Set.empty[String].asJava,
+				repositoryUtils.getTmpValidationFolder().getAbsolutePath,
+				false
+			)
+		}
+	}
+
 	private def testSuiteDefinesExistingActors(specification: Long, actorIdentifiers: List[String]): DBIO[Int] = {
 		PersistenceSchema.actors
 		  .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
@@ -1059,8 +1079,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	private def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
 		for {
 			_ <- {
-				val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.order, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden, t.specReference, t.specDescription, t.specLink)
-				q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.order, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden, newData.specReference, newData.specDescription, newData.specLink)
+				val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.order, t.authors, t.keywords, t.modificationDate, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden, t.specReference, t.specDescription, t.specLink)
+				q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.order, newData.authors, newData.keywords, newData.modificationDate, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden, newData.specReference, newData.specDescription, newData.specLink)
 			}
 			_ <- testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 		} yield ()
@@ -1199,7 +1219,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 						if (!updateActions.updateActors.get || isActorReference(actorToSave) || theSameActor(existingActor.get, actorToSave)) {
 							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, specificationId)
 						} else {
-							updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.reportMetadata, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false, None, onSuccessCalls))
+							updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.reportMetadata, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false, None, None, onSuccessCalls))
 							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, specificationId)
 						}
 						savedActorId = DBIO.successful(existingActor.get.id)
@@ -1209,7 +1229,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 							throw new IllegalStateException("Actor reference [" + actorToSave.actorId + "] not found in specification")
 						} else {
 							// New actor.
-							savedActorId = actorManager.createActor(actorToSave, specificationId, checkApiKeyUniqueness = false, None, onSuccessCalls)
+							savedActorId = actorManager.createActor(actorToSave, specificationId, checkApiKeyUniqueness = false, None, None, onSuccessCalls)
 							savedActorStringId = actorToSave.actorId
 						}
 						result += new TestSuiteUploadItemResult(actorToSave.actorId, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_ADD, specificationId)
@@ -1359,7 +1379,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 								for {
 									_ <- testCaseManager.updateTestCase(
 										existingTestCaseId, testCaseToStore.identifier, testCaseToStore.shortname, testCaseToStore.fullname,
-										testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
+										testCaseToStore.version, testCaseToStore.authors, testCaseToStore.modificationDate, testCaseToStore.description,
 										testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
 										testCaseToStore.targetActors.get, testCaseToStore.documentation.isDefined, testCaseToStore.documentation,
 										testCaseToStore.isOptional, testCaseToStore.isDisabled, testCaseToStore.tags,
@@ -1739,6 +1759,12 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 
 	def getTestSuiteDocumentation(testSuiteId: Long): Future[Option[String]] = {
 		DB.run(PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.documentation).result.headOption).map(_.flatten)
+	}
+
+	def getTestSuiteDocumentationByIds(testSuiteIds: Iterable[Long]): Future[Map[Long, String]] = {
+		DB.run(PersistenceSchema.testSuites.filter(_.id inSet testSuiteIds).map(x => (x.id, x.documentation)).result).map { results =>
+			results.collect { case (id, Some(documentation)) if documentation.nonEmpty => id -> documentation }.toMap
+		}
 	}
 
 	def extractTestSuite(testSuite: TestSuites, testSuiteOutputPath: Option[Path]): Path = {
@@ -2196,7 +2222,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 							id = 0L,
 							apiKey = CryptoUtil.generateApiKey()
 						)
-						actorManager.createActor(missingActor, targetSpecificationId, checkApiKeyUniqueness = false, None, onSuccessCalls)
+						actorManager.createActor(missingActor, targetSpecificationId, checkApiKeyUniqueness = false, None, None, onSuccessCalls)
 					}
 				)
 			}

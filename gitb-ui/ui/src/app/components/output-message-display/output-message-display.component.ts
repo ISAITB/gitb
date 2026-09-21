@@ -14,6 +14,7 @@
  */
 
 import {Component, Input, OnInit} from '@angular/core';
+import {OutputMessageDisplayApi} from './output-message-display-api';
 
 @Component({
   selector: 'app-output-message-display',
@@ -21,14 +22,24 @@ import {Component, Input, OnInit} from '@angular/core';
   templateUrl: './output-message-display.component.html',
   styleUrl: './output-message-display.component.less'
 })
-export class OutputMessageDisplayComponent implements OnInit {
+export class OutputMessageDisplayComponent implements OnInit, OutputMessageDisplayApi {
 
+  @Input() testCaseId: number|undefined;
   @Input() message!: string
   @Input() messageType!: string
   lines!: string[]
 
   ngOnInit() {
+    this.update(this.message)
+  }
+
+  update(message: string): void {
+    this.message = message;
     this.lines = this.message.split('\n')
+  }
+
+  testCaseIdReference(): number | undefined {
+    return this.testCaseId;
   }
 
 }

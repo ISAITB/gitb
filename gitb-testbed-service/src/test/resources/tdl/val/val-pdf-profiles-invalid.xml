@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-pdf-profiles-invalid" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>PdfValidator profile validation - one valid and one unknown profile identifier</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- NOT_A_PROFILE is unknown and is skipped with a session log warning; PDFA_1B still runs and passes. -->
+        <verify handler="PdfValidator" desc="one valid profile plus one unknown identifier">
+            <input name="content">$content</input>
+            <input name="profiles">'PDFA_1B,NOT_A_PROFILE'</input>
+        </verify>
+    </steps>
+</testcase>

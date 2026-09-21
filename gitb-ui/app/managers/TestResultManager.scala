@@ -32,6 +32,7 @@ import utils.{EmailUtil, JacksonUtil, RepositoryUtils, TimeUtil}
 import java.io.{File, StringReader}
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.sql.Timestamp
+import java.time.YearMonth
 import java.util.Calendar
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
@@ -39,7 +40,7 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -158,6 +159,22 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         .map(r => (r.testSessionId, r.organizationId, r.communityId))
         .result
         .headOption
+    )
+  }
+
+  def getFlagInfoForTestSession(sessionId: String): Future[Option[(String, Option[Long], Option[Long])]] = {
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(r => (r.testSessionId, r.flagId, r.communityId))
+        .result
+        .headOption
+    )
+  }
+
+  def setTestSessionFlag(sessionId: String, flagId: Option[Long]): Future[Unit] = {
+    DB.run(
+      PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.flagId).update(flagId).map(_ => ())
     )
   }
 
@@ -705,7 +722,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                        sortColumn: Option[String],
                                        sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
-      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting)
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, None, None, pendingAdministratorInteraction = false, skipSorting)
       DB.run(
         for {
           results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
@@ -732,10 +749,14 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                      endTimeEnd: Option[String],
                      sessionId: Option[String],
                      sortColumn: Option[String],
-                     sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
+                     sortOrder: Option[String],
+                     hasComments: Option[Boolean],
+                     commentText: Option[String],
+                     flagIds: Option[List[Long]] = None,
+                     includeUnflagged: Boolean = false): Future[SearchResult[TestResult]] = {
 
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
-      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting)
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, hasComments, commentText, pendingAdministratorInteraction = false, skipSorting, flagIds, includeUnflagged)
       DB.run(
         for {
           results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
@@ -771,7 +792,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
       val specIds = data._2
       val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds,
         memberIds.organisationIds, memberIds.systemIds, None,
-        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdminInteraction, skipSorting
+        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, None, None, pendingAdminInteraction, skipSorting
       )
       DB.run(
         for {
@@ -802,7 +823,11 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                              orgParameters: Option[Map[Long, Set[String]]],
                              sysParameters: Option[Map[Long, Set[String]]],
                              sortColumn: Option[String],
-                             sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
+                             sortOrder: Option[String],
+                             hasComments: Option[Boolean],
+                             commentText: Option[String],
+                             flagIds: Option[List[Long]] = None,
+                             includeUnflagged: Boolean = false): Future[SearchResult[TestResult]] = {
     communityHelper.memberIdsToUse(organisationIds, systemIds, orgParameters, sysParameters).zip(
       getSpecIdsCriterionToUse(specIds, specGroupIds)
     ).flatMap { data =>
@@ -810,7 +835,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
       val specsIds = data._2
       val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specsIds,
         actorIds, testSuiteIds, testCaseIds, memberIds.organisationIds, memberIds.systemIds,
-        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting
+        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, hasComments, commentText, pendingAdministratorInteraction = false, skipSorting, flagIds, includeUnflagged
       )
       DB.run(
         for {
@@ -822,8 +847,22 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
   }
 
   def getTestResult(sessionId: String): Future[Option[TestResult]] = {
-    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, pendingAdministratorInteraction = false, skipSorting = false)
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, None, None, pendingAdministratorInteraction = false, skipSorting = false)
     DB.run(query.result.headOption)
+  }
+
+  def getTestResultMinimal(sessionId: String): Future[Option[TestResultMinimal]] = {
+    DB.run {
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(x => (x.result, x.outputMessage))
+        .result
+        .headOption
+        .map {
+          case Some(result) => Some(TestResultMinimal(sessionId, result._1, result._2))
+          case None => None
+        }
+    }
   }
 
   private def getSpecIdsCriterionToUse(specIds: Option[List[Long]], specGroupIds: Option[List[Long]]): Future[Option[List[Long]]] = {
@@ -855,79 +894,111 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                   completedStatus: Option[Boolean],
                                   sortColumn: Option[String],
                                   sortOrder: Option[String],
+                                  hasComments: Option[Boolean],
+                                  commentText: Option[String],
                                   pendingAdministratorInteraction: Boolean,
-                                  skipSorting: Boolean) = {
-    var query = if (pendingAdministratorInteraction) {
+                                  skipSorting: Boolean,
+                                  flagIds: Option[List[Long]] = None,
+                                  includeUnflagged: Boolean = false) = {
+    // Phase 1: build base query by composing optional joins, always projecting back to TestResultsTable
+    var baseQuery = if (pendingAdministratorInteraction) {
       PersistenceSchema.testResults
         .join(PersistenceSchema.testInteractions).on(_.testSessionId === _.testSessionId)
         .filter(_._2.admin === true)
-        .filterOpt(communityIds)((table, ids) => table._1.communityId inSet ids)
-        .filterOpt(domainIds)((table, ids) => table._1.domainId inSet ids)
-        .filterOpt(specIds)((table, ids) => table._1.specificationId inSet ids)
-        .filterOpt(actorIds)((table, ids) => table._1.actorId inSet ids)
-        .filterOpt(testCaseIds)((table, ids) => table._1.testCaseId inSet ids)
-        .filterOpt(organizationIds)((table, ids) => table._1.organizationId inSet ids)
-        .filterOpt(systemIds)((table, ids) => table._1.sutId inSet ids)
-        .filterOpt(results)((table, results) => table._1.result inSet results)
-        .filterOpt(testSuiteIds)((table, ids) => table._1.testSuiteId inSet ids)
-        .filterOpt(startTimeBegin)((table, timeStr) => table._1.startTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(startTimeEnd)((table, timeStr) => table._1.startTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeBegin)((table, timeStr) => table._1.endTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeEnd)((table, timeStr) => table._1.endTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(sessionId)((table, id) => table._1.testSessionId === id)
-        .filterOpt(completedStatus)((table, completed) => if (completed) table._1.endTime.isDefined else table._1.endTime.isEmpty)
         .map(_._1)
-        .distinct
+        .distinct   // session can have multiple interactions
     } else {
-      PersistenceSchema.testResults
-        .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
-        .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
-        .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
-        .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
-        .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
-        .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
-        .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
-        .filterOpt(results)((table, results) => table.result inSet results)
-        .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
-        .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
-        .filterOpt(sessionId)((table, id) => table.testSessionId === id)
-        .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+      PersistenceSchema.testResults: Query[PersistenceSchema.TestResultsTable, TestResult, Seq]
+    }
+    val tokens = commentText.map(_.toLowerCase.split("\\s+").filter(_.nonEmpty).toList).getOrElse(Nil)
+    if (hasComments.contains(true) || tokens.nonEmpty) {
+      val likePattern = if (tokens.nonEmpty) Some(tokens.mkString("%", "%", "%")) else None
+      baseQuery = baseQuery
+        .join(PersistenceSchema.testResultComments).on(_.testSessionId === _.testSessionId)
+        .filter { case (_, c) =>
+          val present = c.userComment.isDefined || c.adminComment.isDefined
+          likePattern match {
+            case Some(p) => present && (c.userComment.getOrElse("").toLowerCase.like(p) || c.adminComment.getOrElse("").toLowerCase.like(p))
+            case None    => present
+          }
+        }
+        .map(_._1) // no distinct: testResultComments PK is testSessionId (1:1)
+    }
+    // Phase 2: apply all common filters once against the uniform base query
+    var query = baseQuery
+      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
+      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
+      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
+      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
+      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
+      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
+      .filterOpt(results)((table, results) => table.result inSet results)
+      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
+      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(sessionId)((table, id) => table.testSessionId === id)
+      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+    // Flag filtering - flag_id is inline on TestResults, so this never needs a join.
+    val nonEmptyFlagIds = flagIds.filter(_.nonEmpty)
+    query = (nonEmptyFlagIds, includeUnflagged) match {
+      case (Some(ids), true)  => query.filter(t => (t.flagId inSet ids) || t.flagId.isEmpty)
+      case (Some(ids), false) => query.filter(t => t.flagId inSet ids)
+      case (None, true)       => query.filter(t => t.flagId.isEmpty)
+      case (None, false)      => query
     }
     // Apply sorting
     if (!skipSorting && sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {
         query = sortColumn.get match {
           case "specification" => query.sortBy(_.specification)
-          case "session" => query.sortBy(_.testSessionId)
-          case "startTime" => query.sortBy(_.startTime)
-          case "endTime" => query.sortBy(_.endTime)
-          case "organization" => query.sortBy(_.organization)
-          case "system" => query.sortBy(_.sut)
-          case "result" => query.sortBy(_.result)
-          case "testCase" => query.sortBy(_.testCase)
-          case "actor" => query.sortBy(_.actor)
+          case "session"       => query.sortBy(_.testSessionId)
+          case "startTime"     => query.sortBy(_.startTime)
+          case "endTime"       => query.sortBy(_.endTime)
+          case "organization"  => query.sortBy(_.organization)
+          case "system"        => query.sortBy(_.sut)
+          case "result"        => query.sortBy(_.result)
+          case "testCase"      => query.sortBy(_.testCase)
+          case "actor"         => query.sortBy(_.actor)
+          case "domain"        => query.sortBy(_.domain)
+          case "testSuite"     => query.sortBy(_.testSuite)
+          case "community"     => query.sortBy(_.community)
+          case "flag"          => query.sortBy(_.flagId)
           case _ => query
         }
       }
       if (sortOrder.get == "desc") {
         query = sortColumn.get match {
           case "specification" => query.sortBy(_.specification.desc)
-          case "session" => query.sortBy(_.testSessionId.desc)
-          case "startTime" => query.sortBy(_.startTime.desc)
-          case "endTime" => query.sortBy(_.endTime.desc)
-          case "organization" => query.sortBy(_.organization.desc)
-          case "system" => query.sortBy(_.sut.desc)
-          case "result" => query.sortBy(_.result.desc)
-          case "testCase" => query.sortBy(_.testCase.desc)
-          case "actor" => query.sortBy(_.actor.desc)
+          case "session"       => query.sortBy(_.testSessionId.desc)
+          case "startTime"     => query.sortBy(_.startTime.desc)
+          case "endTime"       => query.sortBy(_.endTime.desc)
+          case "organization"  => query.sortBy(_.organization.desc)
+          case "system"        => query.sortBy(_.sut.desc)
+          case "result"        => query.sortBy(_.result.desc)
+          case "testCase"      => query.sortBy(_.testCase.desc)
+          case "actor"         => query.sortBy(_.actor.desc)
+          case "domain"        => query.sortBy(_.domain.desc)
+          case "testSuite"     => query.sortBy(_.testSuite.desc)
+          case "community"     => query.sortBy(_.community.desc)
           case _ => query
         }
       }
     }
     query
+  }
+
+  def getActiveTestSessionStartMonths(): Future[Set[YearMonth]] = {
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(_.endTime.isEmpty)
+        .map(_.startTime)
+        .result
+    ).map(_.map { result =>
+      YearMonth.from(result.toInstant.atZone(Configurations.TIME_ZONE))
+    }.toSet)
   }
 
 }

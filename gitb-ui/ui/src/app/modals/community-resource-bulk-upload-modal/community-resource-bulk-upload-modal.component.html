@@ -22,13 +22,13 @@
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" id="updateMatching" name="updateMatching" [(ngModel)]="updateMatching" [value]="true">
                     <label class="form-check-label" for="updateMatching">Replace matching resources
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will update the existing ones."></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Uploaded files matching existing resources will update the existing ones."></div>
                     </label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" id="keepMatching" name="keepMatching" [(ngModel)]="updateMatching" [value]="false">
                     <label class="form-check-label" for="keepMatching">Keep matching resources
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></div>
                     </label>
                 </div>
             </div>

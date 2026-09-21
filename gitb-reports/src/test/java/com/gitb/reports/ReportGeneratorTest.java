@@ -20,9 +20,12 @@ import ch.qos.logback.classic.Logger;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.reports.dto.ConformanceOverview;
+import com.gitb.reports.dto.ConformanceStatementDocumentation;
 import com.gitb.reports.dto.ConformanceStatementOverview;
+import com.gitb.reports.dto.TestCaseDocumentation;
 import com.gitb.reports.dto.TestCaseGroup;
 import com.gitb.reports.dto.TestCaseOverview;
+import com.gitb.reports.dto.TestSuiteDocumentation;
 import com.gitb.reports.dto.TestSuiteOverview;
 import com.gitb.reports.dto.*;
 import com.gitb.tr.*;
@@ -140,6 +143,7 @@ public class ReportGeneratorTest {
         data.setLabelActor("Actor");
         // Basic data
         data.setGroup(groupId);
+//        data.setOrganisation("My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation My organisation ");
         data.setOrganisation("My organisation");
         data.setSystem("My system");
         data.setTestDomain("My domain");
@@ -161,6 +165,9 @@ public class ReportGeneratorTest {
         data.setOutputMessages(List.of("This is the output message for your test session. Check the different report steps for details.", "This is an extra message."));
         data.setOptional(optional);
         data.setDisabled(disabled);
+        // Comments
+        data.setAdminComment(new TestCaseOverview.AdminComment("<p>The test case is set as <strong>failed</strong>.</p>", "06/04/2023 10:21:48", true, true));
+        data.setUserComment(new TestCaseOverview.UserComment("<p>Please review.</p>", "06/04/2023 10:21:44"));
         // Test steps
         data.setSteps(List.of(
                 generator.fromTestStepReportType(getTAR(), "Step 1.1: Define access identifiers", specs),
@@ -428,6 +435,63 @@ public class ReportGeneratorTest {
         }
     }
 
+    @Test
+    void testConformanceStatementDocumentation() throws IOException {
+        ConformanceStatementDocumentation data = new ConformanceStatementDocumentation();
+        data.setTitle("Conformance Statement Documentation");
+        data.setLabelDomain("Domain");
+        data.setLabelSpecificationGroup("Group");
+        data.setLabelSpecificationInGroup("Option");
+        data.setLabelSpecification("Specification");
+        data.setLabelActor("Actor");
+        data.setTestDomain("My domain");
+        data.setTestSpecification("My specification");
+        data.setTestActor("My actor");
+
+        data.setIncludeOverview(true);
+        data.setIncludeStatementDocumentation(true);
+        data.setIncludeTestCaseListing(true);
+        data.setIncludeTestSuiteDocumentation(true);
+        data.setIncludeTestCaseDocumentation(true);
+
+        data.setStatementDocumentation("<p>This is the <strong>documentation</strong> relevant to the conformance statement as a whole.</p>");
+
+        var testCase1 = new TestCaseDocumentation();
+        testCase1.setName("Test case 1");
+        testCase1.setDocumentation("<p>Documentation for <strong>test case 1</strong>.</p>");
+        var testCase2 = new TestCaseDocumentation();
+        testCase2.setName("Test case 2");
+        // No documentation set - should not get a page or listing link.
+        var testCase3 = new TestCaseDocumentation();
+        testCase3.setName("Test case 3");
+        testCase3.setDocumentation("<p>Documentation for <strong>test case 3</strong>.</p>");
+
+        var testSuite1 = new TestSuiteDocumentation();
+        testSuite1.setName("The first test suite");
+        testSuite1.setDocumentation("<p>Documentation for the <strong>first test suite</strong>.</p>");
+        testSuite1.setTestCases(List.of(testCase1, testCase2));
+
+        var testSuite2 = new TestSuiteDocumentation();
+        testSuite2.setName("The second test suite");
+        // No documentation set - should not get a page or listing link.
+        testSuite2.setTestCases(List.of(testCase3));
+
+        var testCase4 = new TestCaseDocumentation();
+        testCase4.setName("Test case 4");
+        // No documentation set.
+        var testSuite3 = new TestSuiteDocumentation();
+        testSuite3.setName("The third test suite");
+        testSuite3.setDocumentation("<p>Documentation for the <strong>third test suite</strong>.</p>");
+        // No test case has documentation - the whole suite should be hidden from the listing.
+        testSuite3.setTestCases(List.of(testCase4));
+
+        data.setTestSuites(List.of(testSuite1, testSuite2, testSuite3));
+
+        try (var outputStream = Files.newOutputStream(Path.of(tempDirectory.toString(), "ConformanceStatementDocumentation.pdf"))) {
+            generator.writeConformanceStatementDocumentationReport(data, outputStream, ReportSpecs.build());
+        }
+    }
+
     private TAR getTAR() throws DatatypeConfigurationException {
         return getTAR(TestResultType.FAILURE, true, true);
     }
@@ -499,8 +563,35 @@ public class ReportGeneratorTest {
             tar.getContext().getItem().get(3).setName("This is an item without a value");
             tar.getContext().getItem().add(new AnyContent());
             tar.getContext().getItem().get(4).setName("This is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value");
+
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=INFO");
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=WARNING");
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=ERROR");
+            addHtmlContent(tar.getContext(), "instruction=true;sanitized=true;level=SUCCESS");
+
+            AnyContent listContent = new AnyContent();
+            listContent.setName("My list");
+            listContent.getItem().add(new AnyContent());
+            listContent.getItem().get(0).setValue("The value of item 1");
+            listContent.getItem().get(0).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            listContent.getItem().add(new AnyContent());
+            listContent.getItem().get(1).setValue("The value of item 2");
+            listContent.getItem().get(1).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            tar.getContext().getItem().add(listContent);
         }
         return tar;
+    }
+
+    private void addHtmlContent(AnyContent context, String metadata) {
+        var htmlContent = new AnyContent();
+        htmlContent.setName("Instructions");
+        htmlContent.setValue("This is an item with <b>HTML content</b>."
+                + "<p style='margin-bottom:0'>This is a <a href=\"https://www.itb.ec.europa.eu/docs/guides/latest/\">link</a>.</p>"
+        );
+        htmlContent.setMimeType("text/html");
+        htmlContent.setMetadata(metadata);
+        htmlContent.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        context.getItem().add(htmlContent);
     }
 
     private JAXBElement<TestAssertionReportType> createItem(String description, String level, String test, String location) {

@@ -5253,6 +5253,20 @@ Written Offer for Source Code
        offers spare parts or customer support for that product model.
 ```
 
+### The 0-Clause BSD License
+
+```
+BSD Zero Clause License
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+OF THIS SOFTWARE.
+```
+
 ### The 2-Clause BSD License
 
 ```
@@ -5409,32 +5423,6 @@ The Apache Software Foundation (http://www.apache.org/).
 ```
 Apache FreeMarker
 Copyright 2015-2018 The Apache Software Foundation
-
-This product includes software developed at
-The Apache Software Foundation (http://www.apache.org/).
-```
-
-### Apache HttpClient (org.apache.httpcomponents.client5.*)
-
-```
-Apache HttpComponents Client
-Copyright 1999-2025 The Apache Software Foundation
-
-This product includes software developed at
-The Apache Software Foundation (http://www.apache.org/).
-
-This product includes a copy of in https://publicsuffix.org/list/effective_tld_names.dat
-in httpclient5/src/test/resources/org/publicsuffix/list/effective_tld_names.dat
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
-```
-
-### Apache HttpCore / Apache HttpComponents Core (org.apache.httpcomponents.*)
-
-```
-Apache HttpComponents Core
-Copyright 2005-2024 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
@@ -8446,6 +8434,13 @@ TopBraid SHACL API
 ==================
 
 Original commit content: Copyright 2015-2017 TopQuadrant Inc.
+```
+
+### veraPDF (org.verapdf)
+
+```
+veraPDF Validation Library
+Copyright: © 2015–2026 veraPDF Consortium info@verapdf.org
 ```
 
 ### Xerces2-j (xerces.xercesImpl)

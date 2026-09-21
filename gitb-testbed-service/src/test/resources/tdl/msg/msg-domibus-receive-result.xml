@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-domibus-receive-result" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>DomibusMessaging receive with result (real third-party-shaped handler, no messaging server involved)</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- DeferredTask polls the Domibus backend (WireMock) for message status, then calls back via
+             CallbackManager - result/steps runs against the handler's already-complete report (no CallbackData
+             match/servlet is ever involved for Domibus), proving the generic (non-HTTP/SOAP) 'result' path. -->
+        <receive id="msg" handler="DomibusMessaging" desc="Receive Domibus acknowledgement with dynamic result">
+            <input name="type">'acknowledgement'</input>
+            <input name="messageIdentifier">'test-msg-001'</input>
+            <input name="backendAddress">$backendUrl</input>
+            <input name="initialPollDelay">50</input>
+            <input name="pollInterval">100</input>
+            <input name="maximumPollAttempts">5</input>
+            <result>
+                <steps>
+                    <assign to="verdict">'acked-' || $msg{status}</assign>
+                </steps>
+                <output name="verdict">$verdict</output>
+            </result>
+        </receive>
+        <verify handler="StringValidator" desc="result/output patched onto the step variable">
+            <input name="actual">$msg{verdict}</input>
+            <input name="expected">'acked-ACKNOWLEDGED'</input>
+        </verify>
+        <verify handler="StringValidator" desc="handler's own report items still present alongside the patched output">
+            <input name="actual">$msg{messageIdentifier}</input>
+            <input name="expected">'test-msg-001'</input>
+        </verify>
+    </steps>
+</testcase>

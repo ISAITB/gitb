@@ -25,7 +25,10 @@ export interface TestService {
   authTokenUsername?: string
   authTokenPassword?: string
   authTokenPasswordType?: number
+  authHttpHeaderName?: string
+  authHttpHeaderValue?: string
   monitor: boolean
   parameter: number
+  apiKey?: string
 
 }

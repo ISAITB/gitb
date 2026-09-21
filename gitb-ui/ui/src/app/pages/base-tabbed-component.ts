@@ -13,7 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, inject, ViewChild} from '@angular/core';
+import {Location} from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
 import {BaseComponent} from './base-component.component';
 import {Constants} from '../common/constants';
@@ -25,6 +26,7 @@ import {NgbNav} from '@ng-bootstrap/ng-bootstrap';
 })
 export abstract class BaseTabbedComponent extends BaseComponent implements AfterViewInit {
 
+    private location = inject(Location)
     @ViewChild('tabs', { static: false }) tabs?: NgbNav;
     tabIdToShow = 0
 
@@ -56,11 +58,11 @@ export abstract class BaseTabbedComponent extends BaseComponent implements After
               } else {
                 this.loadTab(this.tabIdToShow)
                 // Set the tab ID as a URL query parameter. This ensures we don't lose the tab upon refresh.
-                this.router.navigate([], {
-                  queryParams: {tab: this.tabIdToShow},
-                  queryParamsHandling: 'merge',
-                  replaceUrl: true
-                })
+                const urlTree = this.router.createUrlTree([], {
+                  queryParams: { tab: this.tabIdToShow },
+                  queryParamsHandling: 'merge'
+                });
+                this.location.replaceState(this.router.serializeUrl(urlTree))
               }
             }
         })

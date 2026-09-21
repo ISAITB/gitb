@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-exit-success" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Exit with success</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">1</assign>
+        <exit success="true"/>
+        <!-- This step should never run -->
+        <verify handler="ExpressionValidator" desc="should be skipped">
+            <input name="expression">false()</input>
+        </verify>
+    </steps>
+</testcase>

@@ -1564,5 +1564,3 @@ INSERT INTO `schema_version` VALUES
 (137,'137','Community and domain tags','SQL','V137__Community_and_domain_tags.sql',-1218863229,'gitb',CURRENT_TIMESTAMP(),1,1),
 (138,'138','Community and domain tag flags','JDBC','db.migration.default.V138__Community_and_domain_tag_flags',NULL,'gitb',CURRENT_TIMESTAMP(),1,1),
 (139,'138.1','TPL storage and interactions as MEDIUMBLOB','SQL','V138_1__TPL_storage_and_interactions_as_MEDIUMBLOB.sql',NULL,'gitb',CURRENT_TIMESTAMP(),1,1);
-
-

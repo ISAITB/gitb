@@ -15,9 +15,11 @@
 
 package com.gitb.engine.testcase;
 
+import com.gitb.tdl.HandlerApiType;
+
 import java.util.Properties;
 
 public record TransactionInfo(String fromActorId, String fromEndpointName, String toActorId, String toEndpointName,
-                              String handler, String handlerDomainIdentifier, String handlerTimeoutExpression,
+                              String handler, String handlerDomainIdentifier, String handlerTimeoutExpression, HandlerApiType handlerApiType,
                               Properties properties) {
 }

@@ -15,7 +15,6 @@
 
 package com.gitb.engine.messaging.handlers.layer;
 
-import com.gitb.PropertyConstants;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
@@ -23,9 +22,6 @@ import com.gitb.engine.SessionManager;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.ms.InitiateResponse;
-import com.gitb.types.DataType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
 import org.apache.commons.lang3.Strings;
 
 import java.util.List;
@@ -87,16 +83,9 @@ public abstract class AbstractNonWorkerMessagingHandler extends AbstractMessagin
     }
 
     public String getReceptionEndpoint(String sessionId, String handlerApiPath, Message inputs, String uriExtensionInputName) {
-        DataType systemData = SessionManager.getInstance().getContext(sessionId).getScope().getVariable(PropertyConstants.SYSTEM_MAP).getValue();
-        String systemApiKey;
-        if (systemData instanceof MapType systemMap) {
-            if (systemMap.getItems().get("apiKey") instanceof StringType apiKey) {
-                systemApiKey = apiKey.toString();
-            } else {
-                throw new IllegalStateException("The SYSTEM map did not contain the expected apiKey property");
-            }
-        } else {
-            throw new IllegalStateException("No SYSTEM map was found in the test session");
+        String systemApiKey = SessionManager.getInstance().getContext(sessionId).getSystemApiKey();
+        if (systemApiKey == null) {
+            throw new IllegalStateException("No SYSTEM API key was found in the test session");
         }
         Optional<String> uriExtension = getUriExtension(inputs.getFragments(), uriExtensionInputName);
         return "%s%s%s%s".formatted(

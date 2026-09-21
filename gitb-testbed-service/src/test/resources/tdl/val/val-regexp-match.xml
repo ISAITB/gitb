@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-regexp-match" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RegExpValidator match succeeds</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="postcode">'SW1A 2AA'</assign>
+        <!-- expression input must be a string (quoted regex pattern) -->
+        <verify handler="RegExpValidator" desc="UK postcode pattern">
+            <input name="input">$postcode</input>
+            <input name="expression">'[A-Z]{1,2}[0-9][A-Z0-9]? [0-9][A-Z]{2}'</input>
+        </verify>
+    </steps>
+</testcase>

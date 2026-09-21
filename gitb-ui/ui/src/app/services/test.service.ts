@@ -24,6 +24,8 @@ import {RestService} from './rest.service';
 import {TestCaseDefinitionActors} from '../types/test-case-definition-actors';
 import {ErrorDescription} from '../types/error-description';
 import {Value} from '../types/value';
+import {TestResultComments} from '../types/test-result-comments';
+import {TestResultMinimal} from '../types/test-result-minimal';
 
 @Injectable({
   providedIn: 'root'
@@ -158,18 +160,27 @@ export class TestService {
     const inputsToSend: any[] = []
     let files: FileParam[] = []
     for (let input of inputs) {
-      const inputToSend: any = {
-        id: input.id,
-        name: input.name,
-        type: input.type,
-        embeddingMethod: input.embeddingMethod
-      }
       if (input.file) {
-        files.push({param: 'file_'+input.id, data: input.file})
+        input.file.forEach((file, index) => {
+          inputsToSend.push({
+            id: input.id,
+            name: input.name,
+            type: input.type,
+            embeddingMethod: input.embeddingMethod,
+            value: input.value,
+            counter: index
+          })
+          files.push({param: `file_${input.id}_${index}`, data: file})
+        })
       } else {
-        inputToSend.value = input.value
+        inputsToSend.push({
+          id: input.id,
+          name: input.name,
+          type: input.type,
+          embeddingMethod: input.embeddingMethod,
+          value: input.value
+        })
       }
-      inputsToSend.push(inputToSend)
     }
     let path: string
     if (admin) {
@@ -222,6 +233,54 @@ export class TestService {
         return of(actorDataToUse)
       }), share()
     )
+  }
+
+  getTestSessionComments(sessionId: string) {
+    return this.restService.get<TestResultComments|undefined>({
+      path: ROUTES.controllers.TestService.getTestSessionComments(sessionId).url,
+      authenticate: true
+    })
+  }
+
+  getTestSessionResultMinimal(sessionId: string) {
+    return this.restService.get<TestResultMinimal|undefined>({
+      path: ROUTES.controllers.RepositoryService.getTestSessionResultMinimal(sessionId).url,
+      authenticate: true
+    })
+  }
+
+  updateTestSessionUserComment(sessionId: string, comment: string|undefined) {
+    return this.restService.post<TestResultComments|undefined>({
+      path: ROUTES.controllers.TestService.updateTestSessionUserComment(sessionId).url,
+      data: {
+        comment: comment
+      },
+      authenticate: true
+    })
+  }
+
+  updateTestSessionAdminComment(sessionId: string, comment: string|undefined, forcedResult: string|undefined, forcedOutputMessage: string|undefined, userCommentAllowed: boolean|undefined) {
+    return this.restService.post<TestResultComments|undefined>({
+      path: ROUTES.controllers.TestService.updateTestSessionAdminComment(sessionId).url,
+      data: {
+        comment: comment,
+        result: forcedResult,
+        output: forcedOutputMessage,
+        allowed: userCommentAllowed
+      },
+      authenticate: true
+    })
+  }
+
+  /** Sets (or, with flagId undefined, clears) the flag on a completed test session. */
+  setTestSessionFlag(sessionId: string, flagId: number|undefined) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.TestService.setTestSessionFlag(sessionId).url,
+      data: {
+        flag_id: flagId
+      },
+      authenticate: true
+    })
   }
 
 }

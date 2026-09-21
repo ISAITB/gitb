@@ -21,5 +21,6 @@ export interface TestSuiteDisplayComponentApi {
   closeOptions: (source: ConformanceTestCase) => void
   documentEscape: () => void;
   documentClick: (event: Event) => void;
+  expandAll: (expand: boolean) => void;
 
 }

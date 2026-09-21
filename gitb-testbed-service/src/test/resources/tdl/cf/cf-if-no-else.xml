@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-if-no-else" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>If false no else session passes</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="x" type="number">3</assign>
+        <assign to="executed" type="boolean">false()</assign>
+        <if>
+            <cond>$x &gt; 100</cond>
+            <then>
+                <steps>
+                    <assign to="executed" type="boolean">true()</assign>
+                </steps>
+            </then>
+        </if>
+        <!-- executed should still be false -->
+        <verify handler="ExpressionValidator" desc="then branch did not run">
+            <input name="expression">not($executed)</input>
+        </verify>
+    </steps>
+</testcase>

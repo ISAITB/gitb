@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {DataService} from 'src/app/services/data.service';
@@ -27,11 +27,13 @@ import {FilterUpdate} from '../../../../../components/test-filter/filter-update'
 import {Organisation} from '../../../../../types/organisation.type';
 import {OrganisationService} from '../../../../../services/organisation.service';
 import {ConfirmationDialogService} from '../../../../../services/confirmation-dialog.service';
+import {SessionColumnCase} from 'src/app/services/session-columns.service';
+import {NavigationTarget} from 'src/app/types/navigation-target';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-community-form',
     templateUrl: './community-form.component.html',
-    styles: [],
     standalone: false
 })
 export class CommunityFormComponent extends BaseComponent implements OnInit {
@@ -41,13 +43,20 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   @Input() admin = false
   @Input() validation!: ValidationState
   @Input() animationsEnabled = true
+  @Output() validityChange = new EventEmitter<boolean>()
+  protected readonly SessionColumnCase = SessionColumnCase
   selfRegEnabled = false
   ssoEnabled = false
   emailEnabled = false
   selfRegOptionsCollapsed = false
   userPermissionsCollapsed = false
   userPreferencesCollapsed = false
+  ownSessionsValid = true
+  allSessionsValid = true
   selfRegDefaultOrganisationSelectionConfig!: MultiSelectConfig<Organisation>
+
+  protected readonly OWN_SESSIONS_TOOLTIP = 'The columns to display in tables listing your own test sessions. These columns are in addition to the session time and result. Note that these can also be adapted directly from test session tables.'
+  protected readonly ALL_SESSIONS_TOOLTIP = 'The columns to display in tables listing test sessions in the session dashboard and the community test session screen (if enabled). These columns are in addition to the session time and result. Note that these can also be adapted directly from test session tables.'
 
   domainSelectionConfig: MultiSelectConfig<Domain> = {
     name: "domainChoice",
@@ -62,7 +71,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
 
   constructor(
     public readonly dataService: DataService,
-    private readonly routingService: RoutingService,
+    public readonly routingService: RoutingService,
     private readonly organisationService: OrganisationService,
     private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
@@ -170,15 +179,29 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     }
   }
 
-  viewDomain() {
-    if (this.community.domain?.id != undefined) {
-      this.routingService.toDomain(this.community.domain.id)
+  viewDomainTarget(): NavigationTarget|undefined {
+    if (this.community.domainId != undefined) {
+      return this.routingService.linkToDomain(this.community.domainId)
     }
+    return undefined
   }
 
-  viewSelfRegDefaultOrganisation() {
+  viewSelfRegDefaultOrganisationTarget(): NavigationTarget|undefined {
     if (this.community.id != undefined && this.community.selfRegDefaultOrganisation != undefined) {
-      this.routingService.toOrganisationDetails(this.community.id, this.community.selfRegDefaultOrganisation.id)
+      return this.routingService.linkToOrganisationDetails(this.community.id, this.community.selfRegDefaultOrganisation.id)
+    }
+    return undefined
+  }
+
+  /**
+   * Called on click of the "View" links above (which navigate via their own [navTarget]) so the
+   * "return to source" location can still be recorded before leaving this page - guarded to a plain
+   * (unmodified, primary-button) click since a modified click opens the destination in a new
+   * tab/window rather than navigating away from this one.
+   */
+  optionNavigating(event: MouseEvent) {
+    if (Utils.isPlainNavigationClick(event)) {
+      this.routingService.recordViewReturnTarget()
     }
   }
 
@@ -203,6 +226,16 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   tagAdded(): void {
     this.community.tagForCommunityAdmin = true
     this.community.tagForTestBedAdmin = true
+  }
+
+  onOwnSessionsValidityChange(valid: boolean): void {
+    this.ownSessionsValid = valid
+    this.validityChange.emit(this.ownSessionsValid && this.allSessionsValid)
+  }
+
+  onAllSessionsValidityChange(valid: boolean): void {
+    this.allSessionsValid = valid
+    this.validityChange.emit(this.ownSessionsValid && this.allSessionsValid)
   }
 
 }

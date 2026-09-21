@@ -26,6 +26,7 @@ import {PreviewConfig} from './preview-config';
 import {ErrorService} from 'src/app/services/error.service';
 import {Constants} from '../../../../../common/constants';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from '../../../../../common/utils';
 
 @Component({
     template: '',
@@ -41,6 +42,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
   idValueStylesheet!: string
   idValueCustomPdf!: string
   idValueCustomPdfWithCustomXml!: string
+  idValueCustomiseFileName!: string
 
   useStylesheet = false
 
@@ -64,6 +66,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
     this.idValueCustomPdf = this.config.baseIdValue + 'UseCustomPdf'
     this.idValueStylesheet = this.config.baseIdValue + 'UseStylesheet'
     this.idValueCustomPdfWithCustomXml = this.config.baseIdValue + 'UseCustomOdfWithCustomXml'
+    this.idValueCustomiseFileName = this.config.baseIdValue + 'CustomiseFileName'
   }
 
   loadData(): Observable<any> {
@@ -75,12 +78,13 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
           this.useStylesheet = true
           this.stylesheetNameToShow = 'stylesheet.xslt'
         }
+        this.initialiseFileNameCustomisation()
       }), share()
     )
   }
 
   updateEnabled() {
-    return this.reportSettings && (!this.useStylesheet || this.reportSettings.stylesheetExists) && (!this.reportSettings.customPdfs || this.textProvided(this.reportSettings.customPdfService))
+    return this.reportSettings && (!this.useStylesheet || this.reportSettings.stylesheetExists) && (!this.reportSettings.customPdfs || this.textProvided(this.reportSettings.customPdfService)) && this.fileNameExpressionOk()
   }
 
   handleExpanded(): void {
@@ -105,6 +109,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
       }
       updateObservable.subscribe((proceed) => {
         if (proceed) {
+          this.prepareFileNameExpressionForSave()
           this.updatePending = true
           this.reportService.updateReportSettings(this.communityId, this.config.reportType, this.useStylesheet, this.uploadedStylesheet, this.reportSettings!)
           .subscribe(() => {
@@ -126,20 +131,20 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
   preview(option: PreviewOption) {
     if (option.isXml) {
       this.previewPending = true
-      this.reportService.exportDemoReportXml(this.communityId, this.config.reportType, this.useStylesheet, this.uploadedStylesheet, option.data)
-      .subscribe((data) => {
+      this.reportService.exportDemoReportXml(this.communityId, this.config.reportType, this.useStylesheet, this.uploadedStylesheet, option.data, this.reportSettings?.fileNameExpression)
+      .subscribe((response) => {
         const modal = this.modalService.open(CodeEditorModalComponent, { size: 'lg' })
         const modalInstance = modal.componentInstance as CodeEditorModalComponent
         modalInstance.documentName = this.config.previewTitleXml
         modalInstance.editorOptions = {
-          value: data,
+          value: response.body ?? '',
           readOnly: true,
           lineNumbers: true,
           smartIndent: false,
           electricChars: false,
           mode: 'application/xml',
           download: {
-            fileName: this.config.previewFileNameXml,
+            fileName: Utils.fileNameFromContentDisposition(response, this.config.previewFileNameXml),
             mimeType: 'application/xml'
           }
         }

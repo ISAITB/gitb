@@ -21,8 +21,32 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0 5px;
+    padding: 5px;
     flex-wrap: wrap;
+    row-gap: 0.35rem;
+    column-gap: 0.5rem;
+    .page-size {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    // Forces exactly two rows (paging links on their own row, page-size/columns + summary sharing the
+    // other) instead of the browser's default wrap, which can otherwise split the three groups across
+    // an arbitrary number of lines in an inconsistent order. Toggled by the component once it detects
+    // (via ResizeObserver) that the groups no longer fit on a single line - see calculateGroupStacking().
+    &.groups-stacked {
+        .paging-controls {
+            order: 1;
+            flex: 1 0 100%;
+            justify-content: center;
+        }
+        .page-size {
+            order: 2;
+        }
+        .summary {
+            order: 3;
+        }
+    }
     &.in-card {
         margin: 0px -16px -16px -16px;
         padding: 16px;
@@ -37,13 +61,12 @@
         display: flex;
         margin: 0 auto;
         flex-wrap: wrap;
+        gap: 0.4rem;
         button {
             white-space: nowrap;
-            margin: 0 0.2rem;
         }
         .page-link-container {
             display: flex;
-            margin: 0 0.25rem;
             &.disabled-paging {
                 pointer-events: none;
             }

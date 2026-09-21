@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-repuntil-basic" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Repeat-until basic</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="counter" type="number">0</assign>
+        <repuntil>
+            <do>
+                <assign to="counter" type="number">$counter + 1</assign>
+            </do>
+            <!-- continue while counter < 3; stops when counter reaches 3 -->
+            <cond>$counter &lt; 3</cond>
+        </repuntil>
+        <verify handler="ExpressionValidator" desc="ran exactly 3 times">
+            <input name="expression">$counter = 3</input>
+        </verify>
+    </steps>
+</testcase>

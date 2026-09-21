@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-assign-boolean" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Assign boolean value</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="flag" type="boolean">true()</assign>
+        <assign to="other" type="boolean">false()</assign>
+        <verify handler="ExpressionValidator" desc="flag is true">
+            <input name="expression">$flag</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="other is false">
+            <input name="expression">not($other)</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="boolean operations">
+            <input name="expression">$flag and not($other)</input>
+        </verify>
+    </steps>
+</testcase>

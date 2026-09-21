@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-collection-append" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>CollectionUtils append to list</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="base" append="true">'a'</assign>
+        <assign to="base" append="true">'b'</assign>
+        <assign to="extra" append="true">'c'</assign>
+        <assign to="extra" append="true">'d'</assign>
+        <!-- append mutates $base in place; no output -->
+        <process handler="CollectionUtils" operation="append">
+            <input name="toList">$base</input>
+            <input name="fromList">$extra</input>
+        </process>
+        <process id="sz" handler="CollectionUtils" operation="size">
+            <input name="list">$base</input>
+        </process>
+        <verify handler="ExpressionValidator" desc="combined has 4 elements">
+            <input name="expression">$sz{output} = 4</input>
+        </verify>
+    </steps>
+</testcase>

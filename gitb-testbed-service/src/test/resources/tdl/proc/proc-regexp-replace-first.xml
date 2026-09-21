@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-regexp-replace-first" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RegExpProcessor replace only the first match</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="text">'Order 123 and 456'</assign>
+        <process handler="RegExpProcessor" operation="replace" output="result">
+            <input name="input">$text</input>
+            <input name="expression">'\d+'</input>
+            <input name="replacement">'N'</input>
+            <input name="all">false()</input>
+        </process>
+        <verify handler="StringValidator" desc="only the first match replaced">
+            <input name="actual">$result</input>
+            <input name="expected">'Order N and 456'</input>
+        </verify>
+    </steps>
+</testcase>

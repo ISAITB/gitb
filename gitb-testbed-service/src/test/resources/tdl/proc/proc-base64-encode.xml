@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-base64-encode" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Base64Processor encode</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="content">'Hello'</assign>
+        <process handler="Base64Processor" operation="encode" output="encoded">
+            <input name="input">$content</input>
+        </process>
+        <!-- Base64 of 'Hello' is 'SGVsbG8=' -->
+        <verify handler="StringValidator" desc="encoded value">
+            <input name="actual">normalize-space($encoded)</input>
+            <input name="expected">'SGVsbG8='</input>
+        </verify>
+    </steps>
+</testcase>

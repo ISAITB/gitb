@@ -21,9 +21,12 @@ export interface SessionData {
     endTime?: string
     result: 'SUCCESS'|'FAILURE'|'UNDEFINED'
     diagramLoaded?: boolean
-    hideLoadingIcon?: boolean
-    diagramExpanded?: boolean
     expanded?: boolean
+    expansionPending?: boolean
+    // Timestamp of the most recent expansion - used to determine, among several simultaneously
+    // expanded rows (across both the active and completed tables), which one to restore on a
+    // "View XYZ" Back navigation (the most recently expanded one, i.e. the one the user acted from).
+    expandedOrder?: number
     testSuite: string
     testCase: string
     diagramState?: SessionPresentationData

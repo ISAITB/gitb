@@ -22,25 +22,28 @@
             </div>
         </div>
     </div>
-    <div class="child">
+    <div class="child error-page-child">
         <section class="page-top">
             <div class="container">
                 <div class="row">
                     <div class="col-12">
-                        <div class="page-title">An error occurred</div>
+                        <div class="page-title">Unexpected error</div>
                     </div>
                 </div>
             </div>
         </section>
-        <div class="container mt-4 mb-4">
-            <div class="row">
-                <div class="col-12">
-                    An unexpected error occurred while processing your request. If you need to contact the support team about this you can refer to error code <b>@config.errorId</b>.
-                </div>
-            </div>
-            <div class="row" style="padding-top: 15px">
-                <div class="col-12">
-                    To return to the Test Bed's welcome page click <a href="@config.testBedHomeLink">here</a>.
+        <div class="error-page-content">
+            <div class="error-page-panel">
+                <div class="error-page-icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></div>
+                <p class="error-page-message">An unexpected error occurred while processing your request.</p>
+                <p class="error-page-message">If the problem persists please contact the support team and mention reference code <span class="error-page-code">@config.errorId</span>.</p>
+                <div class="error-page-actions">
+                    <button type="button" id="copyErrorCodeButton" class="btn btn-secondary" data-error-code="@config.errorId">
+                        <span class="mini-tab"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></span>Copy reference code
+                    </button>
+                    <a href="@config.testBedHomeLink" class="btn btn-secondary">
+                        <span class="mini-tab"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>Return to welcome page
+                    </a>
                 </div>
             </div>
         </div>
@@ -92,5 +95,17 @@
     </div>
 </div>
 <script src='@(config.contextPath)assets/lib/bootstrap/js/bootstrap.bundle.min.js'></script>
+<script>
+    document.getElementById('copyErrorCodeButton').addEventListener('click', function() {
+        var button = this;
+        var icon = button.querySelector('i');
+        navigator.clipboard.writeText(button.getAttribute('data-error-code')).then(function() {
+            icon.className = 'fa-solid fa-check';
+            setTimeout(function() {
+                icon.className = 'fa-solid fa-clipboard';
+            }, 2000);
+        });
+    });
+</script>
 </body>
 </html>

@@ -1,0 +1,12 @@
+<div #primaryArea class="split-view-primary" [style.height.px]="enabled && sized ? primaryHeight : null">
+    <ng-content select="[splitViewPrimary]"></ng-content>
+</div>
+@if (enabled) {
+    <div #divider class="split-view-divider" (mousedown)="onDividerMouseDown($event)">
+        <div class="split-view-divider-top"></div>
+        <div class="split-view-divider-bottom"></div>
+    </div>
+}
+<div #secondaryArea class="split-view-secondary" [style.min-height.px]="enabled && sized ? secondaryHeight : null">
+    <ng-content select="[splitViewSecondary]"></ng-content>
+</div>

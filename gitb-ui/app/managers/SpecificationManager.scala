@@ -94,8 +94,10 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- PersistenceSchema.conformanceOverviewCertificateMessages.filter(row => row.specification.isDefined && row.specification === specId).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.specificationId === specId).map(_.specificationId).update(specId * -1)
       _ <- PersistenceSchema.conformanceSnapshotSpecifications.filter(_.id === specId).map(_.id).update(specId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotSpecificationDocumentation.filter(_.id === specId).map(_.id).update(specId * -1)
       _ <- PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(row => row.specificationId.isDefined && row.specificationId === specId).map(_.specificationId).update(Some(specId * -1))
       _ <- PersistenceSchema.conformanceResults.filter(_.spec === specId).delete
+      _ <- PersistenceSchema.specificationDocumentation.filter(_.id === specId).delete
       _ <- PersistenceSchema.specifications.filter(_.id === specId).delete
       _ <- {
         onSuccessCalls += (() => repositoryUtils.deleteSpecificationBadges(specId))
@@ -538,7 +540,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield idsToReturn)
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], documentation: Option[Option[String]], badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       _ <- {
         for {
@@ -572,12 +574,30 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
       _ <- {
+        documentation match {
+          case Some(doc) => upsertOrDeleteSpecificationDocumentation(specId, doc)
+          case None => DBIO.successful(())
+        }
+      }
+      _ <- {
         if (badges.isDefined) {
           onSuccessCalls += (() => updateSpecificationBadges(specId, badges.get.forWeb, badges.get.forReport))
         }
         DBIO.successful(())
       }
     } yield ()
+  }
+
+  def getSpecificationDocumentation(specId: Long): Future[Option[String]] = {
+    DB.run(PersistenceSchema.specificationDocumentation.filter(_.id === specId).map(_.documentation).result.headOption)
+  }
+
+  private def upsertOrDeleteSpecificationDocumentation(specId: Long, documentation: Option[String]): DBIO[_] = {
+    if (documentation.isDefined && documentation.get.nonEmpty) {
+      PersistenceSchema.specificationDocumentation.insertOrUpdate(models.SpecificationDocumentation(specId, documentation.get))
+    } else {
+      PersistenceSchema.specificationDocumentation.filter(_.id === specId).delete
+    }
   }
 
   private def updateSpecificationBadges(specId: Long, badges: Badges, badgesForReport: Badges): Unit = {
@@ -605,9 +625,9 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     if (badges.failure.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo): Future[Unit] = {
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, groupId: Option[Long], documentation: Option[String], badges: BadgeInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateSpecificationInternal(specId, sname, fname, descr, reportMetadata, hidden, None, checkApiKeyUniqueness = false, groupId, None, Some(badges), onSuccessCalls)
+    val dbAction = updateSpecificationInternal(specId, sname, fname, descr, reportMetadata, hidden, None, checkApiKeyUniqueness = false, groupId, None, Some(documentation), Some(badges), onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
@@ -649,6 +669,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
             checkApiKeyUniqueness = false,
             groupId.getOrElse(specification.get.group),
             updateRequest.displayOrder,
+            None, // documentation not supported via automation API
             None,
             onSuccessCalls
           )
@@ -972,7 +993,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     )
   }
 
-  def createSpecificationsInternal(specification: Specifications, checkApiKeyUniqueness: Boolean, badges: BadgeInfo, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
+  def createSpecificationsInternal(specification: Specifications, checkApiKeyUniqueness: Boolean, documentation: Option[String], badges: BadgeInfo, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {
         PersistenceSchema.specifications.filter(_.apiKey === specification.apiKey).exists.result
@@ -983,6 +1004,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         val specToUse = if (replaceApiKey) specification.withApiKey(CryptoUtil.generateApiKey()) else specification
         PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specToUse
       }
+      _ <- upsertOrDeleteSpecificationDocumentation(newSpecId, documentation)
       _ <- {
         onSuccessCalls += (() => updateSpecificationBadges(newSpecId, badges.forWeb, badges.forReport))
         DBIO.successful(())
@@ -990,9 +1012,9 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield newSpecId
   }
 
-  def createSpecifications(specification: Specifications, badges: BadgeInfo): Future[Long] = {
+  def createSpecifications(specification: Specifications, documentation: Option[String], badges: BadgeInfo): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = createSpecificationsInternal(specification, checkApiKeyUniqueness = false, badges, onSuccessCalls)
+    val dbAction = createSpecificationsInternal(specification, checkApiKeyUniqueness = false, documentation, badges, onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
@@ -1040,7 +1062,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- {
         createSpecificationsInternal(Specifications(0L, input.shortName, input.fullName, input.description, input.reportMetadata,
           input.hidden.getOrElse(false), apiKeyToUse, domainId, input.displayOrder.getOrElse(0), groupIdToUse
-        ), checkApiKeyUniqueness = false, BadgeInfo.noBadges(), onSuccessCalls)
+        ), checkApiKeyUniqueness = false, None, BadgeInfo.noBadges(), onSuccessCalls)
       }
     } yield apiKeyToUse
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)

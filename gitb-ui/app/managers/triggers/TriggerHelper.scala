@@ -16,24 +16,40 @@
 package managers.triggers
 
 import actors.events.{ConformanceStatementCreatedEvent, OrganisationCreatedEvent, SystemCreatedEvent, TriggerEvent}
+import com.fasterxml.jackson.annotation.JsonInclude
 import managers.BaseManager
+import managers.triggers.TriggerHelper.JSON
 import models.Enums.TriggerDataType
 import models.Enums.TriggerDataType.TriggerDataType
-import models.{OrganisationCreationDbInfo, SystemCreationDbInfo}
+import models.{Constants, OrganisationCreationDbInfo, ServiceTestResult, SystemCreationDbInfo}
 import org.apache.pekko.actor.ActorSystem
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.api._
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
+object TriggerHelper {
+
+  val JSON: ObjectMapper = JsonMapper.builder()
+    .changeDefaultPropertyInclusion(inc => inc.withContentInclusion(JsonInclude.Include.NON_EMPTY))
+    .build()
+
+}
+
 @Singleton
 class TriggerHelper @Inject() (actorSystem: ActorSystem,
                                dbConfigProvider: DatabaseConfigProvider)
                               (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
+
+  def processTestServiceTestCallViaRest(response: Object): ServiceTestResult = {
+    ServiceTestResult(success = true, Some(List(JSON.writeValueAsString(response))), Constants.MimeTypeJSON)
+  }
 
   def publishTriggerEvent[T <: TriggerEvent](event:T):Unit = {
     actorSystem.eventStream.publish(event)

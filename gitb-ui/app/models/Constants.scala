@@ -26,19 +26,24 @@ object Constants {
 
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
+  val DefaultSessionTimeout = 3600L
   val RestApiEnabled = "rest_api_enabled"
   val RestApiAdminKey = "rest_api_admin_key"
+  val RestApiDevelopmentKey = "rest_api_development_key"
   val RestApiRateLimits = "rest_api_rate_limits"
   val SelfRegistrationEnabled = "self_registration_enabled"
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
   val WelcomeMessage = "welcome"
-  val WelcomeTitle = "welcome_title"
+  val WelcomeMessageHidden = "welcome_hidden"
+  val WelcomeTexts = "welcome_texts"
   val AccountRetentionPeriod = "account_retention_period"
   val EmailSettings = "email_settings"
   val SoftwareVersionCheck = "software_version_check"
   val StartupWizard = "startup_wizard"
   val UsageTips = "usage_tips"
+  val TestServiceCallbacks = "test_service_callbacks"
+  val ReportSettings = "report_settings"
 
   // env variables
   val EnvironmentTheme = "THEME"
@@ -67,7 +72,6 @@ object Constants {
   val ProductionMode = "production"
   val DevelopmentMode = "development"
 
-  val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
   val AcceptHeader = "Accept"
   val AccessTokenKey = "tat"
 
@@ -97,7 +101,7 @@ object Constants {
   val HttpMethods: Set[String] = Set("get", "post", "put", "patch", "delete", "head", "options", "trace")
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.29.5"
+  val VersionNumber = "1.30.0"
   val VersionNumberPostfixForResources = ""
 
 }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="expr-list-string-join" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>List string-join</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="words" append="true">'foo'</assign>
+        <assign to="words" append="true">'bar'</assign>
+        <assign to="words" append="true">'baz'</assign>
+        <assign to="joined">string-join(($words{0}, $words{1}, $words{2}), ',')</assign>
+        <verify handler="StringValidator" desc="joined string">
+            <input name="actual">$joined</input>
+            <input name="expected">'foo,bar,baz'</input>
+        </verify>
+    </steps>
+</testcase>

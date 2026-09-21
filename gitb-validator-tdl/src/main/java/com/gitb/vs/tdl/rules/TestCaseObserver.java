@@ -33,6 +33,13 @@ public interface TestCaseObserver {
 
     void handleStep(Object step);
 
+    /**
+     * Invoked for a {@code receive}/{@code listen} step that defines a {@code result} element, once its
+     * {@code result/steps} (if any) have already been walked - so that {@code result/output} bindings are checked
+     * with visibility of any variables those steps produce.
+     */
+    void handleResultOutput(ReceiveOrListen step);
+
     void handleActor(TestRole testRole);
 
     void handleTestOutput(Output output);

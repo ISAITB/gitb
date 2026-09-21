@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="proc-varutils-type" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>VariableUtils type check</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="strVar">'hello'</assign>
+        <assign to="numVar" type="number">42</assign>
+        <process handler="VariableUtils" operation="type" output="strType">
+            <input name="name">'strVar'</input>
+        </process>
+        <verify handler="StringValidator" desc="string type is string">
+            <input name="actual">$strType</input>
+            <input name="expected">'string'</input>
+        </verify>
+        <process handler="VariableUtils" operation="type" output="numType">
+            <input name="name">'numVar'</input>
+        </process>
+        <verify handler="StringValidator" desc="number type is number">
+            <input name="actual">$numType</input>
+            <input name="expected">'number'</input>
+        </verify>
+    </steps>
+</testcase>

@@ -5,7 +5,7 @@
             <div class="card-title">Communities</div>
             <div class="btn-toolbar">
                 <app-text-filter name="communityFilter" [width]="300" [placeholder]="'Search communities...'" [(ngModel)]="communityFilter" (apply)="applyFilter()"></app-text-filter>
-                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createCommunity()">Create community</button>
+                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateCommunity()">Create community</a>
             </div>
         </div>
         <div #communityTable table-directive
@@ -17,7 +17,7 @@
             [allowSelect]="true"
             [supportPaging]="true"
             (pageNavigation)="doCommunityPaging($event)"
-            (onSelect)="communitySelect($event)">
+            [rowTarget]="communityRowTarget">
         </div>
     </div>
 </div>

@@ -69,6 +69,12 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
     }
 
     @Override
+    public void handleResultOutput(ReceiveOrListen step) {
+        // By the time this is called, currentStep will have been overwritten by the last step inside result/steps.
+        currentStep = step;
+    }
+
+    @Override
     public void handleImport(Object artifactObj) {
         currentStep = artifactObj;
     }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-http-receive-status" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>HttpMessagingV2 receive with expected status input</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- status input specifies expected HTTP status for the receive step -->
+        <receive id="msg" handler="HttpMessagingV2" desc="Receive with expected 200 status">
+            <input name="status">'200'</input>
+        </receive>
+    </steps>
+</testcase>

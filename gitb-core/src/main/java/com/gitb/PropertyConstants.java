@@ -26,14 +26,25 @@ public class PropertyConstants {
     public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE = "auth.token.password.type";
     public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT = "text";
     public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST = "digest";
-
     public static final String AUTH_BASIC_USERNAME = "auth.basic.username";
     public static final String AUTH_BASIC_PASSWORD = "auth.basic.password";
+    public static final String AUTH_HEADER_NAME = "auth.header.name";
+    public static final String AUTH_HEADER_VALUE = "auth.header.value";
 
     public static final String TEST_SESSION_ID = "TEST_SESSION_ID";
     public static final String TEST_CASE_ID = "TEST_CASE_ID";
     public static final String TEST_STEP_ID = "TEST_STEP_ID";
 
+    public static final String TEST_SERVICE_CALLBACKS_SOAP_ENABLED = "TEST_SERVICE_CALLBACKS_SOAP_ENABLED";
+    public static final String TEST_SERVICE_CALLBACKS_REST_ENABLED = "TEST_SERVICE_CALLBACKS_REST_ENABLED";
+    public static final String TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED = "TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED";
+
+    public static final String TEST_SERVICE_API_TYPE = "TEST_SERVICE_API_TYPE";
+    public static final String TEST_SERVICE_API_TYPE_SOAP = "SOAP";
+    public static final String TEST_SERVICE_API_TYPE_REST = "REST";
+    public static final String TEST_SERVICE_API_KEY = "TEST_SERVICE_API_KEY";
+
+    public static final String ACTOR_MAP = "ACTOR";
     public static final String DOMAIN_MAP = "DOMAIN";
     public static final String ORGANISATION_MAP = "ORGANISATION";
     public static final String SYSTEM_MAP = "SYSTEM";
@@ -44,6 +55,7 @@ public class PropertyConstants {
     public static final String ACTOR_CONFIG_SYSTEM = "com.gitb.SYSTEM";
     public static final String ACTOR_CONFIG_TEST_SERVICE = "com.gitb.TEST_SERVICE";
     public static final String ACTOR_CONFIG_VARIABLES = "com.gitb.VARIABLES";
+    public static final String ACTOR_CONFIG_SETTINGS = "com.gitb.SETTINGS";
     public static final char ACTOR_CONFIG_TEST_SERVICE_SEPARATOR = '|';
 
     /**
@@ -72,7 +84,7 @@ public class PropertyConstants {
 
     public static final String SYSTEM_MAP_API_KEY = "apiKey";
 
-    private static final Set<String> BUILT_IN_PROPERTIES = Set.of(DOMAIN_MAP, ORGANISATION_MAP, SYSTEM_MAP, SESSION_MAP, STEP_STATUS_MAP, STEP_SUCCESS_MAP, TEST_SUCCESS);
+    private static final Set<String> BUILT_IN_PROPERTIES = Set.of(ACTOR_MAP, DOMAIN_MAP, ORGANISATION_MAP, SYSTEM_MAP, SESSION_MAP, STEP_STATUS_MAP, STEP_SUCCESS_MAP, TEST_SUCCESS);
 
     public static boolean isBuiltInProperty(String name) {
         return name != null && BUILT_IN_PROPERTIES.contains(name);

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="msg-http-receive-race" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>HttpMessagingV2 receive reached only after a delay, to open a race window</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- delay=2000 keeps the session away from the receive step below for 2s, giving the test time to fire
+             a real incoming HTTP call at the system's endpoint before it is parked. -->
+        <receive handler="SimulatedMessaging" desc="Delay before the real receive step is reached">
+            <input name="delay">2000</input>
+        </receive>
+        <receive id="msg" handler="HttpMessagingV2" desc="Receive HTTP callback (no method/uriExtension - matches any call for the system)"/>
+    </steps>
+</testcase>

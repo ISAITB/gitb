@@ -7,7 +7,7 @@
                     @if (reference.specReference) {
                         <span class="ref-reference" tooltipClass="shortTooltip" container="body" ngbTooltip="Visit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">{{reference.specReference}}</span>
                     } @else {
-                        <span class="ref-reference" tooltipClass="shortTooltip" container="body" ngbTooltip="Visit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.GO"></i></span>
+                        <span class="ref-reference" tooltipClass="shortTooltip" container="body" ngbTooltip="Visit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.GO_IN_NEW_TAB"></i></span>
                     }
                 </a>
             } @else if (reference.specReference) {

@@ -30,6 +30,8 @@ export class TagComponent implements OnInit {
   @Input() tooltipText?: string
   @Input() foreground?: string
   @Input() background?: string
+  /** Colour override for the label icon only (e.g. a flag's configured colour), independent of `foreground`. */
+  @Input() iconColour?: string
   @Input() styleClass?: string
   @Input() editable? = false
   @Input() icon? = false
@@ -37,6 +39,7 @@ export class TagComponent implements OnInit {
   @Input() toggleEnabled?: boolean = false
   @Input() toggledByDefault?: boolean = false
   @Input() inTable? = false
+  @Input() inForm? = false
 
   @Output() edit = new EventEmitter<number>()
   @Output() delete = new EventEmitter<number>()

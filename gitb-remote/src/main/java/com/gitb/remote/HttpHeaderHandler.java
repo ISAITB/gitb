@@ -25,7 +25,6 @@ import jakarta.xml.ws.handler.soap.SOAPHandler;
 import jakarta.xml.ws.handler.soap.SOAPMessageContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHeaders;
 
 import javax.xml.namespace.QName;
 import java.nio.charset.StandardCharsets;
@@ -124,7 +123,7 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
                     Map<String, List<String>> requestHeaders = getRequestHeaders(context);
                     String auth = callProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME) + ":" + callProperties.getProperty(PropertyConstants.AUTH_BASIC_PASSWORD);
                     String authHeader = "Basic " + org.apache.commons.codec.binary.Base64.encodeBase64String(auth.getBytes());
-                    requestHeaders.put(HttpHeaders.AUTHORIZATION, Collections.singletonList(authHeader));
+                    requestHeaders.put("Authorization", Collections.singletonList(authHeader));
                 }
                 // Add WS-Security UsernameToken.
                 if (StringUtils.isNotBlank(callProperties.getProperty(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME))) {

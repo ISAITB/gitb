@@ -18,12 +18,13 @@ package controllers
 import actors.events.TestSessionStartedEvent
 import actors.events.sessions.TerminateAllSessionsEvent
 import com.gitb.tbs._
+import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers._
 import managers.triggers.TriggerHelper
-import models.SessionConfigurationData
+import models.{SessionConfigurationData, TestResultComments, TypedActorConfiguration}
 import org.apache.commons.io.FileUtils
 import org.apache.pekko.actor.ActorSystem
 import play.api.mvc._
@@ -123,7 +124,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         organisationParameters = None,
         systemParameters = None,
         testServiceParameters = None,
-        predefinedVariables = None
+        predefinedVariables = None,
+        settings = Some(TypedActorConfiguration.fromSettings())
       )
     }
   }
@@ -144,7 +146,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
         organisationParameters = Some(x._2._2._1._2),
         systemParameters = Some(x._2._2._2._1),
         testServiceParameters = x._2._2._2._2,
-        predefinedVariables = None
+        predefinedVariables = None,
+        settings = Some(TypedActorConfiguration.fromSettings())
       )
     }
   }
@@ -178,8 +181,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
       val userInputs = JsonUtil.parseJsUserInputs(inputs)
       // Set files to inputs.
       userInputs.foreach { userInput =>
-        if (userInput.getValue == null && files.contains(s"file_${userInput.getId}")) {
-          val fileInfo = files(s"file_${userInput.getId}")
+        if (userInput.getValue == null && userInput.counter.exists(counter => files.contains(s"file_${userInput.getId}_$counter"))) {
+          val fileInfo = files(s"file_${userInput.getId}_${userInput.counter.get}")
           userInput.setValue(MimeUtil.getFileAsDataURL(fileInfo.file, fileInfo.contentType.orNull))
           userInput.setFileName(Path.of(fileInfo.name).getFileName.toString)
         }
@@ -337,6 +340,52 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
           authorizationManager.markRequestAsAuthorized(request)
           ResponseConstructor.constructEmptyResponse
         }
+      }
+    }
+  }
+
+  private def serializeTestResultComments(comments: Option[TestResultComments]): Result = {
+    if (comments.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsTestResultComments(comments.get).toString())
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getTestSessionComments(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestResultForSession(request, sessionId).flatMap { _ =>
+      testExecutionManager.getTestSessionComments(sessionId).map { comments =>
+        serializeTestResultComments(comments)
+      }
+    }
+  }
+
+  def updateTestSessionUserComment(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = false, requireOwnTestSessionIfNotAdmin = true).flatMap { _ =>
+      val comment = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMENT).map(HtmlUtil.sanitizeMinimalEditorContent)
+      testExecutionManager.updateTestSessionUserComment(sessionId, comment).map { comments =>
+        serializeTestResultComments(comments)
+      }
+    }
+  }
+
+  def updateTestSessionAdminComment(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = true, requireOwnTestSessionIfNotAdmin = true).flatMap { _ =>
+      val comment = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMENT).map(HtmlUtil.sanitizeMinimalEditorContent)
+      val forcedResult = ParameterExtractor.optionalBodyParameter(request, ParameterNames.RESULT).map(TestResultType.fromValue)
+      val forcedOutputMessage = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OUTPUT)
+      val userCommentAllowed = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED).forall(_.toBoolean)
+      testExecutionManager.updateTestSessionAdminComment(sessionId, comment, forcedResult, forcedOutputMessage, userCommentAllowed).map { comments =>
+        serializeTestResultComments(comments)
+      }
+    }
+  }
+
+  def setTestSessionFlag(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    val flagId = ParameterExtractor.optionalBodyParameter(request, ParameterNames.FLAG_ID).map(_.toLong)
+    authorizationManager.canSetTestSessionFlag(request, sessionId, flagId).flatMap { _ =>
+      testResultManager.setTestSessionFlag(sessionId, flagId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }

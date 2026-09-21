@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="cf-nested-loops" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Foreach nested inside while</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="outer" type="number">0</assign>
+        <assign to="total" type="number">0</assign>
+        <assign to="items" append="true">'x'</assign>
+        <assign to="items" append="true">'y'</assign>
+        <while>
+            <cond>$outer &lt; 2</cond>
+            <do>
+                <assign to="outer" type="number">$outer + 1</assign>
+                <foreach of="$items" item="it">
+                    <do>
+                        <assign to="total" type="number">$total + 1</assign>
+                    </do>
+                </foreach>
+            </do>
+        </while>
+        <!-- 2 outer iterations x 2 items = 4 -->
+        <verify handler="ExpressionValidator" desc="total is 4">
+            <input name="expression">$total = 4</input>
+        </verify>
+    </steps>
+</testcase>

@@ -48,13 +48,19 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   validation = new ValidationState()
   hasBasicAuthentication!: boolean
   hasTokenAuthentication!: boolean
+  hasHttpHeaderAuthentication!: boolean
   hasExistingBasicAuthentication!: boolean
   hasExistingTokenAuthentication!: boolean
+  hasExistingHttpHeaderAuthentication!: boolean
   isUpdate!: boolean
   updateBasicAuthPassword!: boolean
   updateTokenAuthPassword!: boolean
+  updateHttpHeaderAuthValue!: boolean
   basicAuthPasswordMask!: string
   tokenAuthPasswordMask!: string
+  httpHeaderAuthName?: string
+  httpHeaderAuthValueMask!: string
+  apiKeyUpdatePending = false
 
   constructor(
     private readonly modalInstance: NgbActiveModal,
@@ -79,7 +85,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
       this.testService.service = {
         id: 0,
         serviceType: Constants.TEST_SERVICE_TYPE.VALIDATION,
-        apiType: Constants.TEST_SERVICE_API_TYPE.SOAP,
+        apiType: Constants.TEST_SERVICE_API_TYPE.REST,
         parameter: 0,
         monitor: true
       }
@@ -87,12 +93,17 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
     this.isUpdate = this.testService.service?.id != 0
     this.hasBasicAuthentication = this.isUpdate && this.textProvided(this.testService.service.authBasicUsername)
     this.hasTokenAuthentication = this.isUpdate && this.textProvided(this.testService.service.authTokenUsername)
+    this.hasHttpHeaderAuthentication = this.isUpdate && this.textProvided(this.testService.service.authHttpHeaderName)
     this.hasExistingBasicAuthentication = this.hasBasicAuthentication
     this.hasExistingTokenAuthentication = this.hasTokenAuthentication
+    this.hasExistingHttpHeaderAuthentication = this.hasHttpHeaderAuthentication
     this.basicAuthPasswordMask = this.hasBasicAuthentication?'*****':''
     this.tokenAuthPasswordMask = this.hasTokenAuthentication?'*****':''
+    this.httpHeaderAuthValueMask = this.httpHeaderAuthValueMask?'*****':''
     this.updateBasicAuthPassword = !this.isUpdate || !this.hasExistingBasicAuthentication
     this.updateTokenAuthPassword = !this.isUpdate || !this.hasExistingTokenAuthentication
+    this.updateHttpHeaderAuthValue = !this.isUpdate || !this.hasExistingHttpHeaderAuthentication
+    this.httpHeaderAuthName = this.testService.service?.authHttpHeaderName
     if (this.testService.service.authTokenPasswordType == undefined) {
       this.testService.service.authTokenPasswordType = Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.DIGEST
     }
@@ -143,6 +154,8 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
             && ((!this.updateBasicAuthPassword && this.hasExistingBasicAuthentication) || (this.updateBasicAuthPassword && this.textProvided(this.testService.service!.authBasicPassword)))))
         && (!this.hasTokenAuthentication || (this.textProvided(this.testService.service!.authTokenUsername)
             && ((!this.updateTokenAuthPassword && this.hasExistingTokenAuthentication) || (this.updateTokenAuthPassword && this.textProvided(this.testService.service!.authTokenPassword)))))
+        && (!this.hasHttpHeaderAuthentication || (this.textProvided(this.testService.service!.authHttpHeaderName)
+            && ((!this.updateHttpHeaderAuthValue && this.hasExistingHttpHeaderAuthentication) || (this.updateHttpHeaderAuthValue && this.textProvided(this.testService.service!.authHttpHeaderValue)))))
   }
 
   private doCreate(serviceData: TestServiceWithParameter, updateExistingParameter: boolean) {
@@ -243,6 +256,20 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
 
   cancel() {
     this.modalInstance.dismiss()
+  }
+
+  updateApiKey(): void {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the API key value?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
+    .subscribe(() => {
+      this.apiKeyUpdatePending = true
+      this.domainParameterService.updateTestServiceApiKey(this.domainId, this.testService.service!.id!)
+      .subscribe((newApiKey) => {
+        this.testService.service!.apiKey = newApiKey
+        this.popupService.success('Test service API key updated.')
+      }).add(() => {
+        this.apiKeyUpdatePending = false
+      })
+    })
   }
 
   private isMatchingParameterId(obj: Id|any): obj is Id {

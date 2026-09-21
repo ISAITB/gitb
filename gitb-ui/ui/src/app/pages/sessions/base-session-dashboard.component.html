@@ -1,10 +1,11 @@
-<div class="page dashboard">
+﻿<div class="page dashboard">
     <app-test-filter [filterState]="filterState"
                      [communityId]="communityId"
                      [organisationId]="organisationId"
                      [initialSessionId]="sessionIdToShow"
                      [initialTestCaseId]="testCaseIdToShow"
                      [initialSystemId]="systemIdToShow"
+                     [initialFilters]="restoredFilters"
                      (onApply)="filterControlApplied()"></app-test-filter>
     @if (showActiveSessions) {
         <div class="card">
@@ -50,7 +51,10 @@
                      [refreshComplete]="sessionRefreshCompleteEmitter"
                      [contentRefreshing]="refreshActivePending"
                      [copyForOtherRoleOption]="copyForOtherRoleOption"
-                     [showNavigationControls]="showSessionNavigationControls">
+                     [showNavigationControls]="showSessionNavigationControls"
+                     [columnChooserOptions]="activeColumnChooserOptions"
+                     (columnChooserUpdated)="onColumnChooserUpdated($event, false)"
+                     (columnChooserClosed)="onColumnChooserClosed()">
                 </div>
             </div>
         </div>
@@ -103,7 +107,10 @@
                  [showCheckbox]="completedTestsCheckboxEmitter"
                  [contentRefreshing]="refreshCompletedPending"
                  [copyForOtherRoleOption]="copyForOtherRoleOption"
-                 [showNavigationControls]="showSessionNavigationControls">
+                 [showNavigationControls]="showSessionNavigationControls"
+                 [columnChooserOptions]="completedColumnChooserOptions"
+                 (columnChooserUpdated)="onColumnChooserUpdated($event, true)"
+                 (columnChooserClosed)="onColumnChooserClosed()">
             </div>
         </div>
     </div>

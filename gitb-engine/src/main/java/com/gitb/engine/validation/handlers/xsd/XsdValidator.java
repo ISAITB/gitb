@@ -19,6 +19,7 @@ import com.gitb.XmlSchemaVersion;
 import com.gitb.core.Configuration;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.common.XmlInputProvider;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.*;
@@ -53,21 +54,35 @@ public class XsdValidator extends AbstractValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        // Get inputs.
         ObjectType contentToProcess = getAndConvert(inputs, XML_ARGUMENT_NAME, DataType.OBJECT_DATA_TYPE, ObjectType.class);
+        return validate(configurations, inputs, new XmlInputProvider(contentToProcess));
+    }
+
+    /**
+     * Carry out the validation using an {@link XmlInputProvider} supplied by the caller, rather than building one
+     * from scratch. Used by {@code XmlValidator} to share a single serialisation of the input content across the
+     * XSD and every Schematron validation of one {@code verify} step.
+     *
+     * @param configurations The step configuration.
+     * @param inputs The step inputs.
+     * @param inputProvider The shared input provider.
+     * @return The validation report.
+     */
+    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, XmlInputProvider inputProvider) {
+        // Get inputs.
         SchemaType xsd = getAndConvert(inputs, XSD_ARGUMENT_NAME, DataType.SCHEMA_DATA_TYPE, SchemaType.class);
         BooleanType showSchema = getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         BooleanType sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         Optional<XmlSchemaVersion> schemaVersion = Optional.ofNullable(getAndConvert(inputs, SCHEMA_VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
                 .map(v -> XmlSchemaVersion.from(v.getValue()));
         // Create error handler.
-        XsdReportHandler handler = new XsdReportHandler(contentToProcess, (showSchema == null || showSchema.getValue())?xsd:null);
+        XsdReportHandler handler = new XsdReportHandler(inputProvider.getContentAsString(), (showSchema == null || showSchema.getValue())?xsd:null);
         // Validate.
         try {
             var schemaSource = new DOMSource((Node)xsd.getValue());
             XMLUtils.validateAgainstSchema(
                     // Use a StreamSource rather than a DomSource below to be able to get the line & column number of possible errors.
-                    new StreamSource(new ByteArrayInputStream(contentToProcess.toString().getBytes())),
+                    new StreamSource(new ByteArrayInputStream(inputProvider.getSerialisedContent())),
                     schemaSource,
                     handler,
                     new XSDResolver(xsd.getImportTestSuite(), getTestCaseId(inputs), xsd.getImportPath()),

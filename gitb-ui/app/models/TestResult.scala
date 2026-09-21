@@ -41,5 +41,6 @@ case class TestResult(
                        result:String,
                        startTime:Timestamp,
                        endTime:Option[Timestamp],
-                       outputMessage: Option[String]
+                       outputMessage: Option[String],
+                       flagId: Option[Long]
 )

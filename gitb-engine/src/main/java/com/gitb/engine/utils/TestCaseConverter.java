@@ -168,9 +168,15 @@ public class TestCaseConverter {
                     String childId = childIdPrefix + index++;
                     addToSequence(sequence, convertWhileStep(testCaseId, childId, whileStep));
                 }
-                case com.gitb.tdl.FlowStep flowStep -> {
+                case com.gitb.tdl.FlowStep flow -> {
                     String childId = childIdPrefix + index++;
-                    addToSequence(sequence, convertFlowStep(testCaseId, childId, flowStep));
+                    var flowStep = convertFlowStep(testCaseId, childId, flow);
+                    if (flowStep.isHiddenContainer() && !flowStep.isHidden()) {
+                        // Skip the flow step itself and add its children directly.
+                        flowStep.getThread().forEach(thread -> thread.getSteps().forEach(childStep -> addToSequence(sequence, childStep)));
+                    } else {
+                        addToSequence(sequence, flowStep);
+                    }
                 }
                 case CallStep callStep -> {
                     String childId = childIdPrefix + index++;
@@ -243,12 +249,13 @@ public class TestCaseConverter {
         Preliminary preliminary = new Preliminary();
         for(com.gitb.tdl.InstructionOrRequest interaction : description.getInstructOrRequest()){
             com.gitb.tpl.InstructionOrRequest ior = new com.gitb.tpl.InstructionOrRequest();
-            ior.setDesc(interaction.getDesc());
             ior.setWith(interaction.getWith());
 
-            if(interaction instanceof Instruction){
+            if (interaction instanceof Instruction instruction){
+                ior.setDesc(instruction.getDesc());
                 preliminary.getInstructOrRequest().add(ior);
-            } else if(interaction instanceof UserRequest){
+            } else if (interaction instanceof UserRequest request){
+                ior.setDesc(request.getDesc());
                 preliminary.getInstructOrRequest().add(ior);
             }
         }
@@ -383,6 +390,7 @@ public class TestCaseConverter {
         flow.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         flow.setHidden(hiddenValueToUse(description.getHidden(), false));
         flow.setCollapsed(description.isCollapsed());
+        flow.setHiddenContainer(fixedOrVariableValueAsBoolean(description.getHiddenContainer(), false));
         for (int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);
             if (!hiddenValueToUse(thread.getHidden(), false)) {
@@ -481,15 +489,16 @@ public class TestCaseConverter {
 
         for (com.gitb.tdl.InstructionOrRequest interaction : description.getInstructOrRequest()){
             com.gitb.tpl.InstructionOrRequest ior = null;
-            if (interaction instanceof Instruction) {
+            if (interaction instanceof Instruction instruction) {
                 ior = new com.gitb.tpl.Instruction();
-                ((com.gitb.tpl.Instruction)ior).setForceDisplay(((Instruction) interaction).isForceDisplay());
-            } else if (interaction instanceof UserRequest) {
+                ior.setDesc(fixedOrVariableValueAsString(instruction.getDesc()));
+                ((com.gitb.tpl.Instruction)ior).setForceDisplay((instruction.isForceDisplay()));
+            } else if (interaction instanceof UserRequest request) {
                 ior = new com.gitb.tpl.UserRequest();
+                ior.setDesc(fixedOrVariableValueAsString(request.getDesc()));
             }
             if (ior != null) {
                 ior.setId("" + childIndex);
-                ior.setDesc(fixedOrVariableValueAsString(interaction.getDesc()));
                 ior.setWith(interaction.getWith());
             }
             interactionStep.getInstructOrRequest().add(ior);

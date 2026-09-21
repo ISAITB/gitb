@@ -238,3 +238,31 @@
         </div>
     </div>
 </#macro>
+<#macro printUserComment comment author>
+  <div class="comment-container"><#t>
+    <div class="comment-header"><#t>
+      <div class="comment-header-icon"><#t>
+        <img src="classpath:reports/images/icon-comment-user.svg"/><#t>
+      </div><#t>
+      <div class="comment-header-author">${escape(author)}</div><#t>
+      <div class="comment-header-date-container"><div class="comment-header-date">${escape(comment.date())}</div></div><#t>
+    </div><#t>
+    <div class="comment-content">${comment.content()}</div><#t>
+  </div>
+</#macro>
+<#macro printAdminComment comment>
+  <div class="comment-container admin"><#t>
+    <div class="comment-header"><#t>
+      <div class="comment-header-icon"><#t>
+        <img src="classpath:reports/images/icon-comment-admin.svg"/><#t>
+      </div><#t>
+      <div class="comment-header-author">Administrator</div><#t>
+      <#if comment.forcedResult()><#t>
+        <div class="comment-header-forced-container"><div class="comment-header-forced">Forced test result</div></div><#t>
+      </#if><#t>
+      <div class="comment-header-date-container"><div class="comment-header-date">${escape(comment.date())}</div></div><#t>
+    </div><#t>
+    <div class="comment-content">${comment.content()}</div><#t>
+  </div>
+</#macro>
+

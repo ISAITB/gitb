@@ -21,19 +21,19 @@
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_1" value="SIMPLE">
                     <label class="form-check-label" for="kind_1">Simple
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A plain text value."></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A plain text value."></div>
                     </label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_2" value="BINARY">
                     <label class="form-check-label" for="kind_2">Binary
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A file."></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A file."></div>
                     </label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_3" value="HIDDEN">
                     <label class="form-check-label" for="kind_3">Secret
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A secret text value such as a password."></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A secret text value such as a password."></div>
                     </label>
                 </div>
             </div>

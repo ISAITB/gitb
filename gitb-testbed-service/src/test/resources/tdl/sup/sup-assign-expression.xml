@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-assign-expression" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Assign from XPath expression</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="base" type="number">7</assign>
+        <assign to="computed" type="number">$base * $base</assign>
+        <verify handler="ExpressionValidator" desc="computed is 49">
+            <input name="expression">$computed = 49</input>
+        </verify>
+        <assign to="label">'Value: ' || string($computed)</assign>
+        <verify handler="StringValidator" desc="label">
+            <input name="actual">$label</input>
+            <input name="expected">'Value: 49'</input>
+        </verify>
+    </steps>
+</testcase>

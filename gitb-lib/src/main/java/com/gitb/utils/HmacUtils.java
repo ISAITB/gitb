@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.crypto.Mac;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 
 public class HmacUtils {
@@ -76,19 +77,33 @@ public class HmacUtils {
         if (!isConfigured()) {
             throw new IllegalStateException("HMAC configuration not present");
         }
-        TokenData expectedTokenData = getTokenDataInternal(expectedText, expectedTimestamp);
-        if (expectedTokenData.getTokenValue().equals(receivedTokenValue)) {
-            // Token matches.
-            long now = System.currentTimeMillis();
-            if (now - Long.parseLong(expectedTimestamp) <= hmacMaxValidityWindow) {
-                return true;
-            } else {
-                LOG.warn("Expired HMAC token received and rejected.");
-            }
-        } else {
-            LOG.warn("Invalid HMAC token received and rejected.");
+        if (receivedTokenValue == null || expectedTimestamp == null) {
+            LOG.warn("Missing HMAC token or timestamp header; rejecting.");
+            return false;
         }
-        return false;
+        long expectedTimestampMillis;
+        try {
+            expectedTimestampMillis = Long.parseLong(expectedTimestamp);
+        } catch (NumberFormatException e) {
+            LOG.warn("Malformed HMAC timestamp received and rejected.");
+            return false;
+        }
+        TokenData expectedTokenData = getTokenDataInternal(expectedText, expectedTimestamp);
+        boolean tokenMatches = MessageDigest.isEqual(
+                expectedTokenData.getTokenValue().getBytes(StandardCharsets.UTF_8),
+                receivedTokenValue.getBytes(StandardCharsets.UTF_8)
+        );
+        if (!tokenMatches) {
+            LOG.warn("Invalid HMAC token received and rejected.");
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        if (now - expectedTimestampMillis <= hmacMaxValidityWindow) {
+            return true;
+        } else {
+            LOG.warn("Expired HMAC token received and rejected.");
+            return false;
+        }
     }
 
     public static class TokenData {

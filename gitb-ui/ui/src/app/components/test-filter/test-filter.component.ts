@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {FilterState} from 'src/app/types/filter-state';
@@ -47,6 +47,8 @@ import {FilterUpdate} from './filter-update';
 import {EntityWithId} from 'src/app/types/entity-with-id';
 import {Utils} from '../../common/utils';
 import {DateRange} from '../date-range/date-range';
+import {TextFilterComponentApi} from '../text-filter/text-filter-component-api';
+import {TestFlagForUser} from 'src/app/types/test-flag-for-user';
 
 @Component({
     selector: 'app-test-filter',
@@ -54,7 +56,7 @@ import {DateRange} from '../date-range/date-range';
     styleUrls: ['./test-filter.component.less'],
     standalone: false
 })
-export class TestFilterComponent implements OnInit {
+export class TestFilterComponent implements OnInit, AfterViewInit {
 
   @Input() filterState!: FilterState
   @Input() communityId?: number
@@ -65,6 +67,9 @@ export class TestFilterComponent implements OnInit {
   @Input() initialTestCaseId?: number
   @Input() initialSystemId?: number
   @Input() snapshotId?: number
+  /** The result of a previous currentFilters() call (e.g. saved when leaving this page), used to
+   * fully restore the filter selections - including custom properties and dates - on arrival. */
+  @Input() initialFilters?: {[key: string]: any}
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -79,6 +84,13 @@ export class TestFilterComponent implements OnInit {
   @Input() loadSystemPropertiesFn?: (_: number) => Observable<SystemParameter[]>
 
   @Output() onApply = new EventEmitter<any>()
+  /** Emitted while the organisation/system custom properties (needed before the panel can
+   * expand) are being loaded - lets an embedding parent (e.g. the conformance dashboard's
+   * external "Filter..." button) show its own loading feedback, given that in embedded mode
+   * this component's own header (and pending icon) isn't rendered. */
+  @Output() loadingStatus = new EventEmitter<boolean>()
+
+  @ViewChild("commentFilter") commentFilterComponent?: TextFilterComponentApi
 
   Constants = Constants
   filterValues: { [key: string]: FilterValues<EntityWithId> } = {}
@@ -96,12 +108,22 @@ export class TestFilterComponent implements OnInit {
 
   startDateModel?: DateRange
   endDateModel?: DateRange
+  withComments = false
+  commentText?: string
   addingOrganisationProperty = false
   addingSystemProperty = false
   loadingOrganisationProperties = false
   loadingSystemProperties = false
   applicableCommunityId?: number
   names: {[key: string]: string} = {}
+
+  /** Sentinel id for the "Unflagged" filter entry - safely outside real (positive, auto-increment) flag ids. */
+  private static readonly UNFLAGGED_ID = -1
+  /** Maps a flag filter option's id to the real flag ids it represents - for organisation users this
+   * groups flags that resolve to the same (name, colour) presentation under one representative id
+   * (the first flag in the group); for administrators it's always a single-element identity mapping. */
+  flagGroupMap: {[id: number]: number[]} = {}
+  showFlagFilter = false
 
   initialised = false
   showOrganisationProperties = false
@@ -129,6 +151,7 @@ export class TestFilterComponent implements OnInit {
     this.names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY] = this.dataService.labelOrganisation() + ' properties'
     this.names[Constants.FILTER_TYPE.RESULT] = 'Result'
     this.names[Constants.FILTER_TYPE.SESSION] = 'Session'
+    this.names[Constants.FILTER_TYPE.COMMENTS] = 'Comment'
     this.names[Constants.FILTER_TYPE.SPECIFICATION] = this.dataService.labelSpecification()
     this.names[Constants.FILTER_TYPE.SPECIFICATION_GROUP] = this.dataService.labelSpecificationGroup()
     this.names[Constants.FILTER_TYPE.START_TIME] = 'Start time'
@@ -136,6 +159,7 @@ export class TestFilterComponent implements OnInit {
     this.names[Constants.FILTER_TYPE.SYSTEM_PROPERTY] = this.dataService.labelSystem() + ' properties'
     this.names[Constants.FILTER_TYPE.TEST_CASE] = 'Test case'
     this.names[Constants.FILTER_TYPE.TEST_SUITE] = 'Test suite'
+    this.names[Constants.FILTER_TYPE.FLAG] = 'Flag'
     if (this.filterState.names != undefined) {
       for (let filter in this.filterState.names) {
         if (this.filterState.names[filter] != undefined) {
@@ -158,7 +182,9 @@ export class TestFilterComponent implements OnInit {
     this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
     this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
+    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', iconField: 'icon', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
+    this.initialiseIfDefined(Constants.FILTER_TYPE.FLAG, { name: Constants.FILTER_TYPE.FLAG, textField: 'label', iconField: 'icon', iconColourField: 'iconColour', loader: this.loadTestFlags.bind(this), clearItems: new EventEmitter(), replaceItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
+    this.refreshFlagFilter()
     if (this.commands) {
       this.commands.subscribe((command) => {
         this.handleCommand(command)
@@ -173,6 +199,83 @@ export class TestFilterComponent implements OnInit {
     if (this.initialSystemId != undefined) {
       const initialSystem: System = { id: this.initialSystemId, identifier: '', sname: '', fname: '', apiKey: '', owner: -1 } // This will be replaced on load
       this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM].initialValues = [ initialSystem ]
+    }
+    if (this.initialFilters != undefined) {
+      this.restoreFromInitialFilters(this.initialFilters)
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.initialFilters?.hasComments === true) {
+      // The comment toggle's checked state is local UI state on the child component - sync it
+      // explicitly (the comment text itself is restored via the [(ngModel)] binding to commentText).
+      this.commentFilterComponent?.setToggleValue(true)
+    }
+  }
+
+  /** Restores every applicable filter selection (dropdown ids, dates, session id, comments, custom
+   * properties) from a previously captured currentFilters() object - each dropdown's placeholder
+   * initial values get replaced with the full entity once its loader runs, matching the existing
+   * initialTestCaseId/initialSystemId pattern above. */
+  private restoreFromInitialFilters(filters: {[key: string]: any}) {
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.DOMAIN, filters[Constants.FILTER_TYPE.DOMAIN])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.SPECIFICATION_GROUP, filters[Constants.FILTER_TYPE.SPECIFICATION_GROUP])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.SPECIFICATION, filters[Constants.FILTER_TYPE.SPECIFICATION])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.ACTOR, filters[Constants.FILTER_TYPE.ACTOR])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.TEST_SUITE, filters[Constants.FILTER_TYPE.TEST_SUITE])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.TEST_CASE, filters[Constants.FILTER_TYPE.TEST_CASE])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.COMMUNITY, filters[Constants.FILTER_TYPE.COMMUNITY])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.ORGANISATION, filters[Constants.FILTER_TYPE.ORGANISATION])
+    this.setInitialValuesForIds(Constants.FILTER_TYPE.SYSTEM, filters[Constants.FILTER_TYPE.SYSTEM])
+    if (this.filterDefined(Constants.FILTER_TYPE.RESULT) && filters[Constants.FILTER_TYPE.RESULT] != undefined) {
+      // Result values are stored as result codes (SUCCESS/FAILURE/UNDEFINED) - map back to the 0/1/2
+      // ids used by loadTestResults().
+      const resultIds = (filters[Constants.FILTER_TYPE.RESULT] as string[]).map((code) => {
+        if (code == Constants.TEST_CASE_RESULT.SUCCESS) return 0
+        else if (code == Constants.TEST_CASE_RESULT.FAILURE) return 1
+        else return 2
+      })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.RESULT].initialValues = resultIds.map((id) => ({ id: id, label: '' }) as IdLabel)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.START_TIME) && (filters.startTimeBegin != undefined || filters.startTimeEnd != undefined)) {
+      this.startDateModel = {
+        start: filters.startTimeBegin != undefined ? new Date(filters.startTimeBegin) : undefined,
+        end: filters.startTimeEnd != undefined ? new Date(filters.startTimeEnd) : undefined
+      }
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.END_TIME) && (filters.endTimeBegin != undefined || filters.endTimeEnd != undefined)) {
+      this.endDateModel = {
+        start: filters.endTimeBegin != undefined ? new Date(filters.endTimeBegin) : undefined,
+        end: filters.endTimeEnd != undefined ? new Date(filters.endTimeEnd) : undefined
+      }
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.SESSION) && filters.sessionId != undefined) {
+      this.sessionId = filters.sessionId
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+      this.withComments = filters.hasComments === true
+      this.commentText = filters.commentText
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY) && filters.organisationProperties?.length > 0) {
+      this.organisationProperties = (filters.organisationProperties as {id: number, value: string}[]).map((p) => {
+        this.uuidCounter += 1
+        return { id: p.id, value: p.value, uuid: this.uuidCounter }
+      })
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY) && filters.systemProperties?.length > 0) {
+      this.systemProperties = (filters.systemProperties as {id: number, value: string}[]).map((p) => {
+        this.uuidCounter += 1
+        return { id: p.id, value: p.value, uuid: this.uuidCounter }
+      })
+    }
+  }
+
+  private setInitialValuesForIds(filterType: string, ids: number[]|undefined) {
+    if (this.filterDefined(filterType) && ids != undefined && ids.length > 0) {
+      // The text field must be set to '' (rather than left undefined) so that isSelected() in
+      // MultiSelectFilterComponent recognises this as a placeholder to replace once real data loads.
+      const textField = this.filterDropdownSettings[filterType].textField
+      this.filterDropdownSettings[filterType].initialValues = ids.map((id) => ({ id: id, [textField]: '' }) as EntityWithId)
     }
   }
 
@@ -423,8 +526,10 @@ export class TestFilterComponent implements OnInit {
     } else {
       this.applicableCommunityId = undefined
     }
+    this.refreshFlagFilter()
+    this.loadingStatus.emit(true)
     this.resetCustomProperties().subscribe(() => {
-      this.initialised = true
+      this.completeInitialisation()
     })
     if (update.applyFilters) {
       this.applyFilters()
@@ -453,7 +558,9 @@ export class TestFilterComponent implements OnInit {
 
   resultsChanged(update: FilterUpdate<IdLabel>) {
     this.filterValues[Constants.FILTER_TYPE.RESULT] = update.values
-    this.applyFilters()
+    if (update.applyFilters) {
+      this.applyFilters()
+    }
   }
 
   private resetApplicableCommunityId() {
@@ -501,15 +608,29 @@ export class TestFilterComponent implements OnInit {
         else return Constants.TEST_CASE_RESULT.UNDEFINED
       })
     }
+    const flagValues = this.filterValue(Constants.FILTER_TYPE.FLAG)
+    if (flagValues) {
+      const realFlagIds: number[] = []
+      let includeUnflagged = false
+      for (const value of flagValues) {
+        if (value == TestFilterComponent.UNFLAGGED_ID) {
+          includeUnflagged = true
+        } else {
+          realFlagIds.push(...(this.flagGroupMap[value] ?? [value]))
+        }
+      }
+      filters[Constants.FILTER_TYPE.FLAG] = realFlagIds
+      filters.includeUnflagged = includeUnflagged
+    }
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
         if (this.startDateModel.start !== undefined) {
           filters.startTimeBegin = this.startDateModel.start
-          filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.startTimeBeginStr = formatDate(filters.startTimeBegin, this.dataService.configuration.dateTimeFormat, 'en')
         }
         if (this.startDateModel.end !== undefined) {
           filters.startTimeEnd = this.startDateModel.end
-          filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.startTimeEndStr = formatDate(filters.startTimeEnd, this.dataService.configuration.dateTimeFormat, 'en')
         }
       }
     }
@@ -517,16 +638,20 @@ export class TestFilterComponent implements OnInit {
       if (this.endDateModel !== undefined) {
         if (this.endDateModel.start !== undefined) {
           filters.endTimeBegin = this.endDateModel.start
-          filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.endTimeBeginStr = formatDate(filters.endTimeBegin, this.dataService.configuration.dateTimeFormat, 'en')
         }
         if (this.endDateModel.end !== undefined) {
           filters.endTimeEnd = this.endDateModel.end
-          filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+          filters.endTimeEndStr = formatDate(filters.endTimeEnd, this.dataService.configuration.dateTimeFormat, 'en')
         }
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
       filters.sessionId = this.sessionId
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+      filters.hasComments = this.withComments
+      filters.commentText = (this.withComments && this.commentText) ? this.commentText : undefined
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)) {
       filters.organisationProperties = []
@@ -579,6 +704,7 @@ export class TestFilterComponent implements OnInit {
     this.clearFilter(Constants.FILTER_TYPE.ORGANISATION)
     this.clearFilter(Constants.FILTER_TYPE.SYSTEM)
     this.clearFilter(Constants.FILTER_TYPE.RESULT)
+    this.clearFilter(Constants.FILTER_TYPE.FLAG)
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       this.startDateModel = undefined
     }
@@ -586,6 +712,7 @@ export class TestFilterComponent implements OnInit {
       this.endDateModel = undefined
     }
     this.resetApplicableCommunityId()
+    this.refreshFlagFilter()
     this.organisationProperties = []
     this.systemProperties = []
     this.availableOrganisationProperties = []
@@ -602,14 +729,39 @@ export class TestFilterComponent implements OnInit {
 
   clickedHeader() {
     this.showFiltering = !this.showFiltering
-    if (this.showFiltering) {
+    if (this.showFiltering && this.initialised) {
+      // Already loaded - the panel expands right away, so drop the header's "collapsed"
+      // (rounded-corner) styling in step with it. If not yet initialised, this is instead
+      // done from completeInitialisation() once the panel is actually about to expand -
+      // see the comment there for why this must not happen earlier.
       this.toggleFilterCollapsedFinished(false)
     }
     if (!this.initialised) {
+      this.loadingStatus.emit(true)
       this.resetCustomProperties().subscribe(() => {
-        this.initialised = true
+        this.completeInitialisation()
       })
     }
+  }
+
+  /** Marks the panel as ready to expand, deferred to a follow-up macrotask so that the
+   * organisation/system property fields (whose visibility is set by resetCustomProperties(),
+   * just completed) have already rendered into the still-collapsed panel on this tick.
+   * Flipping "initialised" (and so [ngbCollapse]) in the same cycle as their first render
+   * makes ngbCollapse measure a stale (too short) target height, so the fields pop in
+   * mid-animation instead of the panel expanding in one smooth motion. The header's
+   * "collapsed" styling (filterCollapsedFinished) must flip in this same step rather than
+   * immediately on click - otherwise the header's rounded corners change well before the
+   * panel actually starts expanding, which is its own visible pop disconnected from the
+   * expand animation. */
+  private completeInitialisation() {
+    setTimeout(() => {
+      this.initialised = true
+      this.loadingStatus.emit(false)
+      if (this.showFiltering) {
+        this.toggleFilterCollapsedFinished(false)
+      }
+    })
   }
 
   private resetCustomProperties(): Observable<boolean> {
@@ -620,6 +772,11 @@ export class TestFilterComponent implements OnInit {
         mergeMap((data) => {
           this.showOrganisationProperties = data[0].length > 0
           this.showSystemProperties = data[1].length > 0
+          // Populate the available property definitions up front (rather than only on "Add") so that
+          // any already-applied property filters (e.g. restored from a saved state) can immediately
+          // resolve their display labels.
+          this.availableOrganisationProperties = data[0]
+          this.availableSystemProperties = data[1]
           return of(true)
         })
       )
@@ -646,6 +803,11 @@ export class TestFilterComponent implements OnInit {
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
       this.sessionId = undefined
     }
+    if (this.filterDefined(Constants.FILTER_TYPE.COMMENTS)) {
+      this.commentFilterComponent?.clearToggle()
+      this.withComments = false
+      this.commentText = undefined
+    }
     this.organisationProperties = []
     this.systemProperties = []
     this.startDateModel = undefined
@@ -654,10 +816,67 @@ export class TestFilterComponent implements OnInit {
 
   private loadTestResults(): Observable<IdLabel[]> {
     return of([
-      { id: 0, label: "Success" },
-      { id: 1, label: "Failure" },
-      { id: 2, label: "Incomplete" }
+      { id: 0, label: "Success", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS) },
+      { id: 1, label: "Failure", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE) },
+      { id: 2, label: "Incomplete", icon: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED) }
     ])
+  }
+
+  /** Recomputes flag filter visibility and options for the current applicableCommunityId - called
+   * whenever that changes (initial setup, and the Community filter narrowing to a single community
+   * for the Test Bed administrator). Only visible if the user has any (settable or admin-set) flags
+   * applicable in that community - matching the same DataService.getApplicableTestFlags used
+   * elsewhere for the flag assignment control and column. */
+  private refreshFlagFilter() {
+    const wasVisible = this.showFlagFilter
+    this.showFlagFilter = this.dataService.getApplicableTestFlags(this.applicableCommunityId).length > 0
+    if (this.filterDefined(Constants.FILTER_TYPE.FLAG) && (this.showFlagFilter || wasVisible)) {
+      this.filterDropdownSettings[Constants.FILTER_TYPE.FLAG].replaceItems!.emit(this.buildFlagFilterOptions())
+    }
+  }
+
+  private buildFlagFilterOptions(): IdLabel[] {
+    this.flagGroupMap = {}
+    // getApplicableTestFlags() returns flags already ordered by their configured display order (the
+    // server sorts by displayOrder then name) - preserved here rather than re-sorted, so the filter
+    // options follow that same order (grouping below uses a Map, which preserves first-occurrence
+    // insertion order too).
+    const flags = this.dataService.getApplicableTestFlags(this.applicableCommunityId)
+    const isAdminView = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin
+    const options: IdLabel[] = []
+    if (isAdminView) {
+      for (const flag of flags) {
+        this.flagGroupMap[flag.id] = [flag.id]
+        options.push({ id: flag.id, label: flag.name, icon: Constants.BUTTON_ICON.SNAPSHOT, iconColour: flag.colour })
+      }
+    } else {
+      // Group flags resolving to the same (name, colour) presentation under one representative entry.
+      const groupsByPresentation = new Map<string, TestFlagForUser[]>()
+      for (const flag of flags) {
+        const key = flag.name + '|' + flag.colour
+        const group = groupsByPresentation.get(key)
+        if (group) group.push(flag)
+        else groupsByPresentation.set(key, [flag])
+      }
+      for (const group of groupsByPresentation.values()) {
+        const representative = group[0]
+        this.flagGroupMap[representative.id] = group.map(f => f.id)
+        options.push({ id: representative.id, label: representative.name, icon: Constants.BUTTON_ICON.SNAPSHOT, iconColour: representative.colour })
+      }
+    }
+    options.push({ id: TestFilterComponent.UNFLAGGED_ID, label: 'Unflagged', icon: Constants.BUTTON_ICON.UNFLAGGED })
+    return options
+  }
+
+  private loadTestFlags(): Observable<IdLabel[]> {
+    return of(this.buildFlagFilterOptions())
+  }
+
+  flagsChanged(update: FilterUpdate<IdLabel>) {
+    this.filterValues[Constants.FILTER_TYPE.FLAG] = update.values
+    if (update.applyFilters) {
+      this.applyFilters()
+    }
   }
 
   addOrganisationProperty() {

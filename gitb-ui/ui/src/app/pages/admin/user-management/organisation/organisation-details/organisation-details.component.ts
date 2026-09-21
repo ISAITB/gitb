@@ -38,6 +38,7 @@ import {ErrorTemplate} from 'src/app/types/error-template';
 import {LandingPageService} from 'src/app/services/landing-page.service';
 import {LegalNoticeService} from 'src/app/services/legal-notice.service';
 import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
@@ -87,6 +88,8 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   deletePending = false
   @ViewChild('form') form?: OrganisationFormComponent
   showAdminInfo!: boolean
+  showBackButton!: boolean
+  private viewReturnTarget?: string
   showLandingPage!: boolean
   showCreateUser!: boolean
   showCreateSystem!: boolean
@@ -189,6 +192,8 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     this.organisation.id = this.orgId
     this.communityId = this.getCommunityId()
     this.showAdminInfo = this.isShowAdminInfo()
+    this.viewReturnTarget = this.routingService.consumeViewReturnTarget()
+    this.showBackButton = this.showAdminInfo || this.viewReturnTarget != undefined
     this.showLandingPage = this.isShowLandingPage()
     this.readonly = this.isReadonly()
     this.showCreateUser = this.isShowCreateUser()
@@ -375,51 +380,56 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     }
   }
 
-  userSelect(user: User) {
+  /** Only navigational when row selection is itself allowed (see [allowSelect]="showCreateUser") -
+   * users without user-management permission cannot view other users' details. */
+  userRowTarget = (user: User): NavigationTarget|undefined => {
+    if (!this.showCreateUser) {
+      return undefined
+    }
     if (user.id == this.dataService.user?.id) {
-      this.routingService.toProfile()
+      return this.routingService.linkToProfile()
+    } else if (this.fromCommunityManagement) {
+      return this.routingService.linkToOrganisationUser(this.communityId, this.orgId, user.id!)
     } else {
-      if (this.fromCommunityManagement) {
-        this.routingService.toOrganisationUser(this.communityId, this.orgId, user.id!)
-      } else {
-        this.routingService.toOwnOrganisationUser(user.id!)
-      }
+      return this.routingService.linkToOwnOrganisationUser(user.id!)
     }
   }
 
   cancelDetailOrganisation() {
-    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
+    this.routingService.returnToSource(this.viewReturnTarget, () => {
+      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
+    })
   }
 
-  manageOrganisationTests() {
+  manageOrganisationTestsTarget(): NavigationTarget {
     if (this.orgId == this.dataService.vendor?.id) {
-      this.routingService.toOwnConformanceStatements(this.orgId)
+      return this.routingService.linkToOwnConformanceStatements(this.orgId)
     } else {
-      this.routingService.toConformanceStatements(this.communityId, this.orgId)
+      return this.routingService.linkToConformanceStatements(this.communityId, this.orgId)
     }
   }
 
-  createUser() {
+  createUserTarget(): NavigationTarget {
     if (this.fromCommunityManagement) {
-      this.routingService.toCreateOrganisationUser(this.communityId, this.organisation.id!)
+      return this.routingService.linkToCreateOrganisationUser(this.communityId, this.organisation.id!)
     } else {
-      this.routingService.toCreateOwnOrganisationUser()
+      return this.routingService.linkToCreateOwnOrganisationUser()
     }
   }
 
-  systemSelect(system: System) {
+  systemRowTarget = (system: System): NavigationTarget => {
     if (this.fromCommunityManagement) {
-      this.routingService.toSystemDetails(this.communityId, this.orgId, system.id)
+      return this.routingService.linkToSystemDetails(this.communityId, this.orgId, system.id)
     } else {
-      this.routingService.toOwnSystemDetails(system.id)
+      return this.routingService.linkToOwnSystemDetails(system.id)
     }
   }
 
-	createSystem() {
+  createSystemTarget(): NavigationTarget {
     if (this.fromCommunityManagement) {
-      this.routingService.toCreateSystem(this.communityId, this.orgId)
+      return this.routingService.linkToCreateSystem(this.communityId, this.orgId)
     } else {
-      this.routingService.toCreateOwnSystem()
+      return this.routingService.linkToCreateOwnSystem()
     }
   }
 

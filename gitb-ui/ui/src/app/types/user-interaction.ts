@@ -29,7 +29,7 @@ export interface UserInteraction {
   data?: string;
   selectedOption?: ValueLabel;
   selectedOptions?: ValueLabel[];
-  file?: FileData;
+  file?: FileData[];
   name?: string;
   variableType?: string;
   contentType?: string;
@@ -44,7 +44,11 @@ export interface UserInteraction {
   level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE';
   default?: string;
   accept?: string;
+  metadata?: string;
+  dependsOn?: string;
+  dependsOnValue?: string;
 
   reset?: EventEmitter<void>;
+  tempFiles: Array<Partial<FileData>>;
 
 }

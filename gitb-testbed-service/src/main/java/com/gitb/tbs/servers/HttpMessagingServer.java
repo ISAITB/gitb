@@ -16,6 +16,7 @@
 package com.gitb.tbs.servers;
 
 import com.gitb.engine.CallbackManager;
+import com.gitb.engine.CallbackPayloadStore;
 import com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2;
 import com.gitb.engine.messaging.handlers.layer.application.http.ReportVisibilitySettings;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -27,11 +28,8 @@ import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,8 +37,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2.*;
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
@@ -49,118 +48,150 @@ import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 @RestController
 public class HttpMessagingServer extends AbstractMessagingServer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HttpMessagingServer.class);
+    public HttpMessagingServer(@Qualifier("messagingCallbackExecutor") Executor messagingCallbackExecutor) {
+        super(messagingCallbackExecutor);
+    }
 
     @RequestMapping(path = "/"+ API_PATH+"/{system}/{*extension}")
-    public ResponseEntity<byte[]> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
+    public CompletableFuture<ResponseEntity<byte[]>> handleForSystem(@PathVariable String system, @PathVariable String extension, HttpServletRequest request) {
         if (system == null || system.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
         } else {
-            return handleInternal(CallbackManager.getInstance().lookupHandlingData(CallbackType.HTTP, system, (data) -> matchIncomingRequest(
-                    HttpMethod.valueOf(request.getMethod()),
+            HttpMethod detectedMethod = HttpMethod.valueOf(request.getMethod());
+            Optional<String> detectedQueryString = Optional.ofNullable(request.getQueryString());
+            var lookup = CallbackManager.getInstance().lookupHandlingData(CallbackType.HTTP, system, (data) -> matchIncomingRequest(
+                    detectedMethod,
                     extension,
-                    Optional.ofNullable(request.getQueryString()),
+                    detectedQueryString,
                     data,
                     () -> getMethod(data.getFragments(), METHOD_ARGUMENT_NAME),
                     URI_EXTENSION_ARGUMENT_NAME
-            )), request);
+            ));
+            if (lookup.isDone() && lookup.getNow(Optional.empty()).isEmpty()) {
+                // Rejected outright (no matching or held call possible) - avoid needlessly reading the request body.
+                return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+            }
+            // Only a call we are about to park is worth spilling to disk - one already matched is consumed immediately.
+            CapturedRequest captured = capture(request, !lookup.isDone());
+            return lookup.thenComposeAsync(data -> handleInternal(data, captured), messagingCallbackExecutor)
+                    .whenComplete((response, error) -> captured.release());
         }
     }
 
-    private ResponseEntity<byte[]> handleInternal(Optional<SessionCallbackData> data, HttpServletRequest request) {
+    private CompletableFuture<ResponseEntity<byte[]>> handleInternal(Optional<SessionCallbackData> data, CapturedRequest request) {
         if (data.isEmpty()) {
-            // No test session found to be waiting for this call.
-            return ResponseEntity.notFound().build();
-        } else {
+            // No test session found to be waiting for this call (or none appeared while it was held).
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+        } else if (data.get().dynamic()) {
+            /*
+             * The receive step defines a 'result' element - its response cannot be built from the step's own
+             * declared inputs alone. Hand the actual incoming request over to the step's actor and wait for it to
+             * resolve the response (running result/steps and result/output) before building it below - note that
+             * this resolution mutates (in place) the very same Message returned by data.get().data().inputs(),
+             * which is what buildResponse() reads from.
+             */
             try {
-                /*
-                 * Prepare response for SUT.
-                 */
-                var responseBody = Optional.ofNullable(getAndConvert(data.get().data().inputs().getFragments(), HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, DataType.BINARY_DATA_TYPE, BinaryType.class)).map(BinaryType::serializeByDefaultEncoding);
-                var responseHeaders = getMapOfValues(data.get().data().inputs().getFragments(), HttpMessagingHandlerV2.HEADERS_ARGUMENT_NAME);
-                var responseStatus = getStatus(data.get().data().inputs().getFragments(), STATUS_ARGUMENT_NAME, () -> HttpStatus.OK);
-                // Build response.
-                var builder = ResponseEntity.status(responseStatus); // Status
-                // Headers.
-                responseHeaders.forEach((key, value) -> value.forEach(headerValue -> builder.header(key, headerValue)));
-                // Body.
-                ResponseEntity<byte[]> responseResult = responseBody.map(builder::body).orElse(builder.build());
-                /*
-                 * Prepare report for test step.
-                 */
-                Message report = new Message();
-                MapType requestMap = new MapType();
-                MapType responseMap = new MapType();
-                report.addInput(REPORT_ITEM_REQUEST, requestMap);
-                report.addInput(REPORT_ITEM_RESPONSE, responseMap);
-                // Request method.
-                requestMap.addItem(REPORT_ITEM_METHOD, new StringType(request.getMethod()));
-                // Request URI.
-                requestMap.addItem(REPORT_ITEM_URI, getFullRequestURI(request));
-                // Request headers.
-                Optional<MapType> requestHeaders = getRequestHeaders(request);
-                requestHeaders.ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
-                Optional<String> requestContentTypeHeader = requestHeaders.flatMap(this::getContentTypeHeader);
-                // Request body.
-                DataType requestBodyType = null;
-                if (requestContentTypeHeader.isPresent() && requestContentTypeHeader.get().contains("multipart/form-data")) {
-                    // Multipart request parts
-                    MapType multipartBodyType = new MapType();
-                    try {
-                        for (var part: request.getParts()) {
-                            var partBytes = IOUtils.toByteArray(part.getInputStream());
-                            if (partBytes != null && partBytes.length > 0) {
-                                if (part.getSubmittedFileName() == null) {
-                                    multipartBodyType.addItem(part.getName(), new StringType(new String(partBytes)));
-                                } else {
-                                    var binaryPartType = new BinaryType(partBytes);
-                                    binaryPartType.setContentType(part.getContentType());
-                                    multipartBodyType.addItem(part.getName(), binaryPartType);
-                                }
-                            }
-                        }
-                    } catch (IOException | ServletException e) {
-                        throw new IllegalStateException("Error processing request parts", e);
-                    }
-                    if (!multipartBodyType.isEmpty()) {
-                        requestBodyType = multipartBodyType;
-                    }
-                } else {
-                    // Non-multipart.
-                    byte[] requestBodyBytes;
-                    try (var in = request.getInputStream()) {
-                        requestBodyBytes = IOUtils.toByteArray(in);
-                    } catch (IOException e) {
-                        throw new IllegalStateException("Error processing request body", e);
-                    }
-                    if (requestBodyBytes.length > 0) {
-                        requestBodyType = new BinaryType(requestBodyBytes);
-                    }
-                }
-                if (requestBodyType != null) {
-                    requestMap.addItem(REPORT_ITEM_BODY, requestBodyType);
-                }
-                // Response status.
-                responseMap.addItem(REPORT_ITEM_STATUS, new StringType(String.valueOf(responseStatus.value())));
-                // Response headers.
-                getHeadersForReport(responseHeaders).ifPresent(headers -> responseMap.getItems().put(REPORT_ITEM_HEADERS, headers));
-                // Response body.
-                responseBody.flatMap(body -> getResponseBody(body, responseHeaders)).ifPresent(item -> responseMap.addItem(REPORT_ITEM_BODY, item));
-                // Prepare report.
-                MessagingReport messagingReport = generateSuccessReport(report);
-                new ReportVisibilitySettings(data.get().data().inputs()).apply(messagingReport);
-                // Make callback for step.
-                CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), messagingReport);
-                /*
-                 * Return response.
-                 */
-                return responseResult;
+                Message incomingRequest = buildRequestMessage(request);
+                return CallbackManager.getInstance().requestResult(data.get().sessionId(), data.get().callId(), incomingRequest)
+                        .thenApply(resolvedMessage -> buildResponse(data.get(), request))
+                        .exceptionally(error -> {
+                            CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), asException(error));
+                            return ResponseEntity.internalServerError().build();
+                        });
             } catch (Exception error) {
-                // Pass the caught exception as part of the notification. This will get logged by the relevant session actor.
                 CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), new GITBEngineInternalError("An unexpected error occurred while processing a HTTP request", error));
-                return ResponseEntity.internalServerError().build();
+                return CompletableFuture.completedFuture(ResponseEntity.internalServerError().build());
             }
+        } else {
+            return CompletableFuture.completedFuture(buildResponse(data.get(), request));
         }
+    }
+
+    /**
+     * Builds the {@link Message} representing the actual incoming request, using the same fragment names the
+     * handler itself uses (method/headers/body) so it can be both matched against by 'result/steps' (exposed as
+     * the 'request' scope variable) and used identically to how the report's own request map is built below.
+     */
+    private Message buildRequestMessage(CapturedRequest request) {
+        Message requestMessage = new Message();
+        requestMessage.addInput(REPORT_ITEM_METHOD, new StringType(request.method()));
+        requestMessage.addInput(REPORT_ITEM_URI, new StringType(request.fullUri()));
+        request.headers().ifPresent(headers -> requestMessage.addInput(REPORT_ITEM_HEADERS, headers));
+        Optional<MapType> multipartBody = toMultipartMap(request.multipartParts());
+        if (multipartBody.isPresent()) {
+            requestMessage.addInput(HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, multipartBody.get());
+        } else if (request.body().size() > 0) {
+            requestMessage.addInput(HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, new BinaryType(CallbackPayloadStore.getInstance().read(request.body())));
+        }
+        return requestMessage;
+    }
+
+    private ResponseEntity<byte[]> buildResponse(SessionCallbackData data, CapturedRequest request) {
+        try {
+            /*
+             * Prepare response for SUT.
+             */
+            var responseBody = Optional.ofNullable(getAndConvert(data.data().inputs().getFragments(), HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, DataType.BINARY_DATA_TYPE, BinaryType.class)).map(BinaryType::serializeByDefaultEncoding);
+            var responseHeaders = getMapOfValues(data.data().inputs().getFragments(), HttpMessagingHandlerV2.HEADERS_ARGUMENT_NAME);
+            var responseStatus = getStatus(data.data().inputs().getFragments(), STATUS_ARGUMENT_NAME, () -> HttpStatus.OK);
+            // Build response.
+            var builder = ResponseEntity.status(responseStatus); // Status
+            // Headers.
+            responseHeaders.forEach((key, value) -> value.forEach(headerValue -> builder.header(key, headerValue)));
+            // Body.
+            ResponseEntity<byte[]> responseResult = responseBody.map(builder::body).orElse(builder.build());
+            /*
+             * Prepare report for test step.
+             */
+            Message report = new Message();
+            MapType requestMap = new MapType();
+            MapType responseMap = new MapType();
+            report.addInput(REPORT_ITEM_REQUEST, requestMap);
+            report.addInput(REPORT_ITEM_RESPONSE, responseMap);
+            // Request method.
+            requestMap.addItem(REPORT_ITEM_METHOD, new StringType(request.method()));
+            // Request URI.
+            requestMap.addItem(REPORT_ITEM_URI, new StringType(request.fullUri()));
+            // Request headers.
+            request.headers().ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
+            // Request body.
+            Optional<MapType> multipartBody = toMultipartMap(request.multipartParts());
+            DataType requestBodyType = null;
+            if (multipartBody.isPresent()) {
+                // Multipart request parts
+                requestBodyType = multipartBody.get();
+            } else if (request.body().size() > 0) {
+                // Non-multipart.
+                requestBodyType = new BinaryType(CallbackPayloadStore.getInstance().read(request.body()));
+            }
+            if (requestBodyType != null) {
+                requestMap.addItem(REPORT_ITEM_BODY, requestBodyType);
+            }
+            // Response status.
+            responseMap.addItem(REPORT_ITEM_STATUS, new StringType(String.valueOf(responseStatus.value())));
+            // Response headers.
+            getHeadersForReport(responseHeaders).ifPresent(headers -> responseMap.getItems().put(REPORT_ITEM_HEADERS, headers));
+            // Response body.
+            responseBody.flatMap(body -> getResponseBody(body, responseHeaders)).ifPresent(item -> responseMap.addItem(REPORT_ITEM_BODY, item));
+            // Prepare report.
+            MessagingReport messagingReport = generateSuccessReport(report);
+            new ReportVisibilitySettings(data.data().inputs()).apply(messagingReport);
+            // Make callback for step.
+            CallbackManager.getInstance().callbackReceived(data.sessionId(), data.callId(), messagingReport);
+            /*
+             * Return response.
+             */
+            return responseResult;
+        } catch (Exception error) {
+            // Pass the caught exception as part of the notification. This will get logged by the relevant session actor.
+            CallbackManager.getInstance().callbackReceived(data.sessionId(), data.callId(), new GITBEngineInternalError("An unexpected error occurred while processing a HTTP request", error));
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private Exception asException(Throwable error) {
+        Throwable cause = (error instanceof java.util.concurrent.CompletionException && error.getCause() != null) ? error.getCause() : error;
+        return cause instanceof Exception exception ? exception : new GITBEngineInternalError("An unexpected error occurred while processing a HTTP request", cause);
     }
 
 }

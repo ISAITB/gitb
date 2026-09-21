@@ -16,7 +16,7 @@
 package controllers.rest
 
 import config.Configurations
-import controllers.rest.BaseAutomationService.{DeleteEndpoint, EndpointSignature, GetEndpoint, PostEndpoint, PutEndpoint}
+import controllers.rest.BaseAutomationService._
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.{AutomationApiException, ErrorCodes}
 import managers.ratelimit.RateLimitManager
@@ -91,17 +91,15 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
     process(request, GetEndpoint("/tests/report/{sessionId}"), () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val contentType = determineReportType(request)
-      val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
-      reportManager.processAutomationReportRequest(getReportTempFile(suffix), organisationKey, sessionId, contentType).map { report =>
-        if (report.isDefined) {
+      val suffix = if (contentType == Constants.MimeTypePDF) "pdf" else "xml"
+      reportManager.processAutomationReportRequest(getReportTempFile("."+suffix), organisationKey, sessionId, contentType).map {
+        case Some(report) =>
           Ok.sendFile(
-            content = report.get.toFile,
-            fileName = _ => Some("test_report"+suffix),
-            onClose = () => FileUtils.deleteQuietly(report.get.toFile)
+            content = report.file.toFile,
+            fileName = _ => Some(report.fileName),
+            onClose = () => FileUtils.deleteQuietly(report.file.toFile)
           ).as(contentType)
-        } else {
-          NotFound
-        }
+        case None => NotFound
       }
     })
   }
@@ -172,12 +170,12 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
     process(request, signature, () => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val contentType = determineReportType(request)
-      val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
-      reportManager.generateConformanceStatementReportViaApi(getReportTempFile(suffix), organisationKey, systemKey, actorKey, snapshotKey, contentType).map { report =>
+      val suffix = if (contentType == Constants.MimeTypePDF) "pdf" else "xml"
+      reportManager.generateConformanceStatementReportViaApi(getReportTempFile("."+suffix), organisationKey, systemKey, actorKey, snapshotKey, contentType).map { report =>
         Ok.sendFile(
-          content = report.toFile,
-          fileName = _ => Some("conformance_report"+suffix),
-          onClose = () => FileUtils.deleteQuietly(report.toFile)
+          content = report.file.toFile,
+          fileName = _ => Some(report.fileName),
+          onClose = () => FileUtils.deleteQuietly(report.file.toFile)
         ).as(contentType)
       }
     })

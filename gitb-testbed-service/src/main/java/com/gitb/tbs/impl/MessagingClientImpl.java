@@ -31,16 +31,26 @@ import static com.gitb.utils.MessagingReportUtils.getMessagingReport;
  * Created by simatosc on 25/11/2016.
  */
 @Component
-public class MessagingClientImpl implements MessagingClient {
+public class MessagingClientImpl extends BaseClientImpl implements MessagingClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessagingClientImpl.class);
 
     @Override
     public Void notifyForMessage(NotifyForMessageRequest parameters) {
-        CallbackManager.getInstance().callbackReceived(
-                parameters.getSessionId(),
-                parameters.getCallId(),
-                getMessagingReport(parameters.getReport()));
+        if (parameters.getSessionId() != null) {
+            var testSessionId = SessionManager.getInstance().getTestSessionForMessagingSession(parameters.getSessionId());
+            if (testSessionId == null) {
+                LOG.warn("Could not determine test session for messaging notification [{}]", parameters.getSessionId());
+            } else {
+                checkApiKey(testSessionId);
+                CallbackManager.getInstance().callbackReceived(
+                        parameters.getSessionId(),
+                        parameters.getCallId(),
+                        getMessagingReport(parameters.getReport()));
+            }
+        } else {
+            LOG.warn("Received notification from messaging service but no session ID was provided");
+        }
         return new Void();
     }
 
@@ -50,8 +60,9 @@ public class MessagingClientImpl implements MessagingClient {
         if (logRequest.getSessionId() != null) {
             var testSessionId = SessionManager.getInstance().getTestSessionForMessagingSession(logRequest.getSessionId());
             if (testSessionId == null) {
-                LOG.warn("Could not determine test session for messaging session [{}]", logRequest.getSessionId());
+                LOG.warn("Could not determine test session for log call [{}]", logRequest.getSessionId());
             } else {
+                checkApiKey(testSessionId);
                 CallbackManager.getInstance().logMessageReceived(testSessionId, logRequest.getMessage(), logRequest.getLevel());
             }
         } else {

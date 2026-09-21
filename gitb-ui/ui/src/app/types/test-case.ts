@@ -28,5 +28,6 @@ export interface TestCase extends EntityWithId, SpecificationReferenceInfo {
   disabled?: boolean
   tags?: TagData[]
   group?: number
+  modificationDate?: string
 
 }

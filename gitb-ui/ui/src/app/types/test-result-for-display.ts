@@ -13,7 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { SessionData } from "src/app/components/diagram/test-session-presentation/session-data";
+import {SessionData} from 'src/app/components/diagram/test-session-presentation/session-data';
+import {NavigationControlsConfig} from 'src/app/components/navigation-controls/navigation-controls-config';
 
 export interface TestResultForDisplay extends SessionData {
 
@@ -27,6 +28,7 @@ export interface TestResultForDisplay extends SessionData {
     organizationId?: number,
     system?: string,
     systemId?: number,
+    community?: string,
     startTime: string,
     obsolete: boolean,
     testSuiteId?: number,
@@ -37,5 +39,19 @@ export interface TestResultForDisplay extends SessionData {
     optionPending?: boolean,
     checked?: boolean,
     communityId?: number
+    flagId?: number
+    /** Precomputed (colour, name) for the optional "Flag" column - avoids a lookup in the column's
+     * render functions, which only ever receive a single field's value (see session-columns.service.ts). */
+    flagDisplay?: {colour: string, name: string}
+
+    commentsPending?: boolean
+    commentsLoaded?: boolean
+    hasComments?: boolean
+
+    // Precomputed/cached display state (avoids per-change-detection work in the session table template).
+    rowClass?: string
+    navigationConfig?: NavigationControlsConfig
+    // Cached @for track key (session|result). Recomputed only when the result changes in-place.
+    trackKey?: string
 
 }

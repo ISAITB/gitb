@@ -24,7 +24,7 @@ import managers._
 import managers.export.ImportCompleteManager
 import managers.ratelimit.RateLimitManager
 import models.Enums.UserRole
-import models.{Constants, RestApiLimits}
+import models.{Constants, ReportSettings, RestApiLimits, WelcomeTexts}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
@@ -36,10 +36,11 @@ import utils._
 
 import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
-import java.time.LocalDate
+import java.nio.file.{Files, Path, StandardCopyOption}
+import java.time.{LocalDate, YearMonth}
+import java.time.format.TextStyle
 import java.util
-import java.util.Properties
+import java.util.{Locale, Properties}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -50,7 +51,6 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                                actorSystem: ActorSystem,
                                systemConfigurationManager: SystemConfigurationManager,
                                testResultManager: TestResultManager,
-                               testExecutionManager: TestExecutionManager,
                                importCompleteManager: ImportCompleteManager,
                                repositoryUtils: RepositoryUtils,
                                environment: Environment,
@@ -60,6 +60,12 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                               (implicit ec: ExecutionContext) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
+  // Suffix used for the temporary file a month folder is first zipped into, before it atomically replaces the
+  // folder as the archive. Also used to detect and clean up leftovers from an interrupted archival run.
+  private val TEMP_ARCHIVE_SUFFIX = ".zip.tmp"
+  // Suffix used for the temporary merged copy of an existing archive - kept here too so that a leftover from an
+  // interrupted merge is also cleaned up.
+  private val TEMP_MERGE_ARCHIVE_SUFFIX = ".zip.merge.tmp"
 
   onStart()
 
@@ -113,6 +119,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
       Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("banner.txt")) { stream =>
         banner = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
       }
+      logger.info("Using time zone [{}] ({})", Configurations.TIME_ZONE.getId, Configurations.TIME_ZONE.getDisplayName(TextStyle.FULL, Locale.ENGLISH));
       logger.info("Web context root is [{}], public context root is [{}] and public home link is [{}]", Configurations.WEB_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT, Configurations.TESTBED_HOME_LINK)
       logger.info("Started ITB frontend (itb-ui) in {} mode - release {} ({})\n{}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP, banner)
     }
@@ -191,6 +198,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     // Record the default settings (from the config, fixed values and the environment).
     val defaultEmailSettings = systemConfigurationManager.recordDefaultEmailSettings()
     systemConfigurationManager.recordDefaultSoftwareVersionCheckSettings()
+    systemConfigurationManager.recordDefaultTestEngineCallbackSettings()
     // Load persisted configuration parameters.
     systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).flatMap { persistedConfigs =>
       // Check against environment settings.
@@ -207,6 +215,21 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
             val initialApiKeyValue = Configurations.AUTOMATION_API_MASTER_KEY.getOrElse(CryptoUtil.generateApiKey())
             systemConfigurationManager.updateSystemParameter(Constants.RestApiAdminKey, Some(initialApiKeyValue))
           } else {
+            Future.successful(())
+          }
+        }
+        // Development API key.
+        _ <- {
+          val restApiDevelopmentKey = persistedConfigs.find(config => config.config.name == Constants.RestApiDevelopmentKey).map(_.config)
+          val existingValue = restApiDevelopmentKey.flatMap(_.parameter)
+          if (existingValue.isEmpty) {
+            // Not yet seeded - create it (this also synchronises the key file with the current operation mode).
+            val initialApiKeyValue = Configurations.AUTOMATION_API_DEVELOPMENT_KEY.getOrElse(CryptoUtil.generateApiKey())
+            systemConfigurationManager.updateSystemParameter(Constants.RestApiDevelopmentKey, Some(initialApiKeyValue))
+          } else {
+            // Already seeded - still (re)synchronise the key file, as the operation mode may have changed since it was last written.
+            Configurations.AUTOMATION_API_DEVELOPMENT_KEY = existingValue
+            repositoryUtils.updateDevelopmentApiKeyFile(existingValue)
             Future.successful(())
           }
         }
@@ -267,21 +290,19 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
         // Welcome page message.
         _ <- {
           val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage).map(_.config)
-          if (welcomeMessageConfig.nonEmpty && welcomeMessageConfig.get.parameter.nonEmpty) {
-            Configurations.WELCOME_MESSAGE = welcomeMessageConfig.get.parameter.get
-          } else {
-            Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
-          }
+          val welcomeHiddenConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessageHidden).map(_.config)
+          Configurations.applyWelcomeMessageSettings(
+            welcomeMessageConfig.flatMap(_.parameter),
+            welcomeHiddenConfig.flatMap(_.parameter).exists(_.toBoolean)
+          )
           Future.successful(())
         }
-        // Welcome page title.
+        // Welcome page texts.
         _ <- {
-          val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle).map(_.config)
-          if (welcomeTitleConfig.nonEmpty && welcomeTitleConfig.get.parameter.nonEmpty) {
-            Configurations.WELCOME_TITLE = welcomeTitleConfig.get.parameter.get
-          } else {
-            Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
-          }
+          val welcomeTextsConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTexts).map(_.config)
+          Configurations.WELCOME_TEXTS = welcomeTextsConfig.flatMap(_.parameter)
+            .map(JsonUtil.parseJsWelcomeTexts)
+            .getOrElse(WelcomeTexts.defaultConfiguration())
           Future.successful(())
         }
         // Email settings.
@@ -298,6 +319,29 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           if (checkSettings.nonEmpty && checkSettings.get.parameter.nonEmpty) {
             JsonUtil.parseJsSoftwareVersionCheckSettings(checkSettings.get.parameter.get).toEnvironment()
           }
+          Future.successful(())
+        }
+        // Test engine callback settings.
+        _ <- {
+          val callbackSettings = persistedConfigs.find(config => config.config.name == Constants.TestServiceCallbacks).map(_.config)
+          if (callbackSettings.nonEmpty && callbackSettings.get.parameter.nonEmpty) {
+            JsonUtil.parseJsTestEngineCallbackSettings(callbackSettings.get.parameter.get).toEnvironment()
+          }
+          // Push the current settings to the test engine as soon as possible, rather than relying only on the
+          // fallback propagation that takes place through test session initiation calls. The test engine may not
+          // yet be reachable at this point (e.g. still starting up) - this is retried internally.
+          systemConfigurationManager.notifyTestEngineOfUpdatedSettings()
+          Future.successful(())
+        }
+        // Report settings.
+        _ <- {
+          val reportSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.ReportSettings).map(_.config)
+          val settings = if (reportSettingsConfig.nonEmpty && reportSettingsConfig.get.parameter.nonEmpty) {
+            JsonUtil.parseJsReportSettings(reportSettingsConfig.get.parameter.get)
+          } else {
+            ReportSettings.defaultConfiguration()
+          }
+          Configurations.applyReportSettings(settings)
           Future.successful(())
         }
       } yield ()
@@ -558,52 +602,157 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     Future.successful {
       actorSystem.scheduler.scheduleAtFixedRate(0.minutes, 20.hours) {
         () => {
-          val now = LocalDate.now()
-          val archivalThreshold = now.minusDays(Configurations.TEST_SESSION_ARCHIVE_THRESHOLD)
-          val statusUpdatesFolder = repositoryUtils.getStatusUpdatesFolder()
-          if (statusUpdatesFolder.exists() && statusUpdatesFolder.isDirectory) {
-            val yearFolders = statusUpdatesFolder.listFiles(new FileFilter {
-              override def accept(pathname: File): Boolean = {
-                pathname.isDirectory && isNumeric(pathname.getName)
-              }
-            })
-            if (yearFolders != null) {
-              yearFolders.foreach { yearFolder =>
-                val monthFoldersToArchive = yearFolder.listFiles(new FileFilter {
-                  override def accept(pathname: File): Boolean = {
-                    if (pathname.isDirectory) {
-                      try {
-                        val year = Integer.parseInt(yearFolder.getName)
-                        val month = Integer.parseInt(pathname.getName)
-                        val folderDate = LocalDate.of(year, month, 1)
-                        folderDate.isBefore(archivalThreshold) && (now.getYear != year || month < now.getMonthValue)
-                      } catch {
-                        case _: NumberFormatException =>
-                          // In case we have unexpected folders that don't match what we expect
-                          false
-                      }
+          // First get the months for which we have currently active test sessions.
+          testResultManager.getActiveTestSessionStartMonths().map { activeMonths =>
+            processTestSessionArchival(activeMonths)
+          }.recover {
+            case e: Exception =>
+              // Errors here must never bubble up and cancel the schedule - log and retry on the next run.
+              logger.error("Failed to archive old test session folders.", e)
+          }
+        }
+      }
+    }
+  }
+
+  private def processTestSessionArchival(activeMonths: Set[YearMonth]): Unit = {
+    // Process the status update folders.
+    val now = LocalDate.now()
+    val nowYearMonth = YearMonth.from(now)
+    val archivalThreshold = now.minusDays(Configurations.TEST_SESSION_ARCHIVE_THRESHOLD)
+    val statusUpdatesFolder = repositoryUtils.getStatusUpdatesFolder()
+    if (statusUpdatesFolder.exists() && statusUpdatesFolder.isDirectory) {
+      val yearFolders = statusUpdatesFolder.listFiles(new FileFilter {
+        override def accept(pathname: File): Boolean = {
+          pathname.isDirectory && isNumeric(pathname.getName)
+        }
+      })
+      if (yearFolders != null) {
+        yearFolders.foreach { yearFolder =>
+          // Remove any leftover temporary archive files from a previous archival run that was interrupted
+          // (e.g. an application restart) before it could complete.
+          cleanupStaleArchiveTempFiles(yearFolder)
+          val monthFolders = yearFolder.listFiles(new FileFilter {
+            override def accept(pathname: File): Boolean = {
+              pathname.isDirectory && isNumeric(pathname.getName)
+            }
+          })
+          if (monthFolders != null) {
+            // Partition the month folders into the two cases handled below - a folder is never a candidate
+            // for both, given that whether it is due for a merge depends only on the presence of an archive.
+            val monthFoldersToMerge = new util.ArrayList[File]()
+            val monthFoldersToArchive = new util.ArrayList[File]()
+            monthFolders.foreach { monthFolder =>
+              try {
+                val folderYearMonth = YearMonth.of(Integer.parseInt(yearFolder.getName), Integer.parseInt(monthFolder.getName))
+                val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
+                if (Files.exists(zipArchive)) {
+                  /*
+                   * A month folder found alongside its own archive is an anomaly - normally, a folder linked to
+                   * active test sessions is never selected for archival below, so the two should never coexist.
+                   * It can still arise in the exceptional case of a test session that was already running when
+                   * its month was archived, and only completed afterwards - re-creating this folder with the
+                   * remaining data for that session. This is handled independently of the archival eligibility
+                   * checks (in particular the age threshold), since leaving it in place until the folder would
+                   * otherwise be due for archival would mean the folder's test session data stays effectively
+                   * invisible in the meantime (reporting always prefers a live folder over an archive for the
+                   * same test session). The one check still applied is for active test sessions, so as to never
+                   * delete a folder that a running session is still writing into - if found, the merge is
+                   * skipped and retried on the next run. Coexistence is also only handled for months before the
+                   * current one, since an archive for the current month cannot have been produced by this
+                   * process in the first place, and would therefore point to manual intervention.
+                   */
+                  if (nowYearMonth.isAfter(folderYearMonth)) {
+                    if (activeMonths.contains(folderYearMonth)) {
+                      logger.warn("Test session folder for year [{}] and month [{}] exists alongside its archive, but has incomplete test sessions - skipping the merge for now.", folderYearMonth.getYear, folderYearMonth.getMonthValue)
                     } else {
-                      false
+                      logger.warn("Test session folder for year [{}] and month [{}] exists alongside its archive. This should not normally occur - merging the folder into the existing archive.", folderYearMonth.getYear, folderYearMonth.getMonthValue)
+                      monthFoldersToMerge.add(monthFolder)
                     }
                   }
-                })
-                if (monthFoldersToArchive != null) {
-                  monthFoldersToArchive.foreach { monthFolder =>
-                    // Create the zip archive.
-                    val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
-                    Files.deleteIfExists(zipArchive)
-                    new ZipArchiver(monthFolder.toPath, zipArchive).zip()
-                    // All OK - delete the folder.
-                    FileUtils.deleteDirectory(monthFolder)
-                    logger.info("Archived test session folder for year [{}] and month [{}]", yearFolder.getName, monthFolder.getName)
+                } else {
+                  // Compared against the last (not first) day of the month so that a folder is only archived
+                  // once every test session that could ever have been recorded in it is older than the
+                  // threshold.
+                  val folderDate = folderYearMonth.atEndOfMonth()
+                  /*
+                   * Folders to archive are those that:
+                   * - Are before the archival threshold (measured from the end of the month).
+                   * - Are before the current month.
+                   * - Are not related to active test sessions.
+                   */
+                  if (folderDate.isBefore(archivalThreshold) && nowYearMonth.isAfter(folderYearMonth)) {
+                    if (activeMonths.contains(folderYearMonth)) {
+                      logger.info("Skipping archival of test session folder for year [{}] and month [{}] due to incomplete test sessions.", folderYearMonth.getYear, folderYearMonth.getMonthValue)
+                    } else {
+                      monthFoldersToArchive.add(monthFolder)
+                    }
                   }
                 }
+              } catch {
+                case _: NumberFormatException =>
+                // In case we have unexpected folders that don't match what we expect
+              }
+            }
+            // Process the merge cases first - by the time archival eligibility is (re)considered on a later run,
+            // any coexisting archive will already have been merged and removed.
+            monthFoldersToMerge.forEach { monthFolder =>
+              try {
+                mergeMonthFolder(yearFolder, monthFolder)
+              } catch {
+                case e: Exception =>
+                  // Do not let a single problematic month folder prevent the others from being processed.
+                  logger.error("Failed to merge test session folder for year [{}] and month [{}] into its existing archive.", yearFolder.getName, monthFolder.getName, e)
+              }
+            }
+            monthFoldersToArchive.forEach { monthFolder =>
+              try {
+                archiveMonthFolder(yearFolder, monthFolder)
+              } catch {
+                case e: Exception =>
+                  // Do not let a single problematic month folder prevent the others from being processed.
+                  logger.error("Failed to archive test session folder for year [{}] and month [{}].", yearFolder.getName, monthFolder.getName, e)
               }
             }
           }
         }
       }
     }
+  }
+
+  private def cleanupStaleArchiveTempFiles(yearFolder: File): Unit = {
+    val staleTempFiles = yearFolder.listFiles(new FileFilter {
+      override def accept(pathname: File): Boolean = {
+        pathname.isFile && (pathname.getName.endsWith(TEMP_ARCHIVE_SUFFIX) || pathname.getName.endsWith(TEMP_MERGE_ARCHIVE_SUFFIX))
+      }
+    })
+    if (staleTempFiles != null) {
+      staleTempFiles.foreach { staleTempFile =>
+        logger.warn("Removing stale temporary test session archive file [{}] left over from a previous, presumably interrupted, archival run.", staleTempFile.getName)
+        FileUtils.deleteQuietly(staleTempFile)
+      }
+    }
+  }
+
+  private def mergeMonthFolder(yearFolder: File, monthFolder: File): Unit = {
+    val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
+    val workFolder = Path.of(repositoryUtils.getTempFolder().getAbsolutePath, "archive_merge", yearFolder.getName+"_"+monthFolder.getName+"_"+System.currentTimeMillis())
+    val result = new TestSessionArchiveMerger(monthFolder.toPath, zipArchive, workFolder).merge()
+    FileUtils.deleteDirectory(monthFolder)
+    logger.warn("Merged test session folder for year [{}] and month [{}] into its existing archive: [{}] file(s) added, [{}] file(s) replaced, [{}] session log(s) merged.", yearFolder.getName, monthFolder.getName, result.filesAdded(), result.filesReplaced(), result.filesLogMerged())
+  }
+
+  private def archiveMonthFolder(yearFolder: File, monthFolder: File): Unit = {
+    val zipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+".zip")
+    // Build the archive in a temporary file first, only replacing it into place once complete, so that an
+    // interruption between creating the archive and deleting the folder never leaves the folder deleted
+    // without a complete archive having taken its place.
+    val tempZipArchive = Path.of(yearFolder.getAbsolutePath, monthFolder.getName+TEMP_ARCHIVE_SUFFIX)
+    new ZipArchiver(monthFolder.toPath, tempZipArchive).zip()
+    Files.move(tempZipArchive, zipArchive, StandardCopyOption.REPLACE_EXISTING)
+    // All OK - delete the folder.
+    FileUtils.deleteDirectory(monthFolder)
+    logger.info("Archived test session folder for year [{}] and month [{}].", yearFolder.getName, monthFolder.getName)
   }
 
   private def prepareRestApiDocumentation(): Future[Unit] = {

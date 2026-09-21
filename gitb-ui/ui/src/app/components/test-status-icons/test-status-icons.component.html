@@ -1,4 +1,4 @@
-<div class="rootContainer" (click)="$event.stopPropagation()" [class.shaded]="shaded">
+<div class="rootContainer" (click)="$event.stopPropagation();$event.preventDefault()" [class.shaded]="shaded">
     <div class="statusRootContainer" #containerRoot>
         <div class="statusContainerGroup" [ngbTooltip]="completed + ' passed, '+failed+' failed, '+other+' incomplete required '+tooltipRequiredTestDescription+' ('+(completed+failed+other)+' in total)'" [placement]="tooltipOnLeft?'left':'top'" container="body" [openDelay]="Constants.TOOLTIP_DELAY">
             <div class="statusContainer"><div class="statusCount">{{ completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
