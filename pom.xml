@@ -290,7 +290,7 @@
                             </configuration>
                         </execution>
                         <execution>
-                            <!-- Generate the aggregate SBOM -->
+                            <!-- Generate the aggregate SBOM (builds and aggregates all components) -->
                             <id>sbom</id>
                             <goals>
                                 <goal>run</goal>
@@ -299,6 +299,24 @@
                                 <target>
                                     <ant antfile="etc/build.xml" dir=".">
                                         <target name="sbom"/>
+                                    </ant>
+                                </target>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!--
+                                Aggregate the SBOM assuming all components have already been built and their
+                                individual SBOMs already generated separately (e.g. by independent per-module
+                                builds/CI jobs) - only copies them into place and merges them.
+                            -->
+                            <id>sbom-aggregate</id>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <ant antfile="etc/build.xml" dir=".">
+                                        <target name="sbom-aggregate"/>
                                     </ant>
                                 </target>
                             </configuration>
@@ -364,8 +382,11 @@
                             <phase>none</phase>
                             <!--
                                 Run manually with `mvn cyclonedx:makeAggregateBom` to generate the gitb-srv SBOM alone.
-                                To generate the aggregate SBOM for all ITB components issue: `mvn antrun:run@sbom -pl .`
-                                This requires the CycloneDX CLI (cyclonedx-cli) to be available on the PATH to merge the
+                                To build and aggregate the SBOM for all ITB components issue: `mvn antrun:run@sbom -pl .`
+                                If gitb-srv, gitb-ui and the gitb-ui frontend have already been built separately and
+                                their individual SBOMs already generated, only the final aggregation/publishing step
+                                can be run instead with: `mvn antrun:run@sbom-aggregate -pl .`
+                                Both require the CycloneDX CLI (cyclonedx-cli) to be available on the PATH to merge the
                                 per-component SBOMs (gitb-srv, gitb-ui, gitb-ui frontend) into a single ITB SBOM.
                             -->
                         </execution>
