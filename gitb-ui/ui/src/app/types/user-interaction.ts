@@ -35,7 +35,7 @@ export interface UserInteraction {
   contentType?: string;
   multiple?: boolean;
   value?: string;
-  inputType: 'TEXT' | 'MULTILINE_TEXT' | 'SECRET' | 'CODE' | 'SELECT_SINGLE' | 'SELECT_MULTIPLE' | 'UPLOAD';
+  inputType: 'TEXT' | 'MULTILINE_TEXT' | 'SECRET' | 'CODE' | 'SELECT_SINGLE' | 'SELECT_MULTIPLE' | 'UPLOAD' | 'RICH_TEXT';
   mimeType?: string;
   forceDisplay?: boolean;
   required?: boolean;

@@ -74,6 +74,12 @@
 										<!-- Secret -->
 										<app-secret-input [inputId]="'input-'+index" [inputName]="'input-'+index" [name]="'secret-input-'+index" [(ngModel)]="interaction.data" [validation]="validation.get('input_'+index)"></app-secret-input>
 									}
+									@case ("RICH_TEXT") {
+										<!-- Rich text editor -->
+										@if (isVisible(interaction)) {
+											<app-editor [name]="'input-'+index" [attr.id]="'input-'+index" [type]="'minimal'" [height]="editorHeight(interaction)" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></app-editor>
+										}
+									}
 									@default {
 										<!-- Text field -->
 										<input [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"/>

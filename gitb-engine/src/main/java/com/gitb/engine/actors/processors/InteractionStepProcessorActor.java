@@ -554,7 +554,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         if (instructionCommand.getMimeType() != null && instructionCommand.getMimeType().startsWith("text/html")) {
             target.setMimeType("text/html");
             addMetadataToken(target, "sanitized", "true");
-            target.setValue(TestCaseUtils.sanitizeInstructionStepValue(target.getValue()));
+            target.setValue(TestCaseUtils.sanitizeRichTextValue(target.getValue()));
         }
     }
 
@@ -657,10 +657,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             if (inputRequest.getInputType() == null) {
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
-            // Rows for multiline text, code editors and select multiple.
+            // Rows for multiline text, code editors, select multiple and the rich text editor's height.
             if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT
                     || inputRequest.getInputType() == InputRequestInputType.CODE
-                    || inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
+                    || inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE
+                    || inputRequest.getInputType() == InputRequestInputType.RICH_TEXT) {
                 if (request.getSize() != null) {
                     Integer rowsToSet = null;
                     if (VariableResolver.isVariableReference(request.getSize())) {
@@ -846,6 +847,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         return requestIndex == stepIndex - 1;
                     })
                     .toList();
+            if (targetRequest.getInputType() == InputRequestInputType.RICH_TEXT) {
+                // Sanitize rich text inputs once here so that both the step report and the session context
+                // (variable/interaction map) hold the sanitized value.
+                matchingInputs.stream()
+                        .filter(userInput -> userInput.getValue() != null)
+                        .forEach(userInput -> userInput.setValue(TestCaseUtils.sanitizeRichTextValue(userInput.getValue())));
+            }
             if (!matchingInputs.isEmpty()) {
                 boolean multipleExpected = false;
                 if (targetRequest.getMultiple() != null) {
@@ -974,7 +982,15 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             reportItem.setName(requestInfo.getName());
         }
         reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
-        reportItem.setMimeType(requestInfo.getMimeType());
+        if (requestInfo.getInputType() == InputRequestInputType.RICH_TEXT) {
+            // The value has already been sanitized (see processUserInput) - mark it as such so that the UI
+            // and PDF/HTML reports render it as HTML rather than escaped text.
+            reportItem.setMimeType("text/html");
+            addMetadataToken(reportItem, "sanitized", "true");
+            addMetadataToken(reportItem, "forceDisplay", "true");
+        } else {
+            reportItem.setMimeType(requestInfo.getMimeType());
+        }
         return reportItem;
     }
 

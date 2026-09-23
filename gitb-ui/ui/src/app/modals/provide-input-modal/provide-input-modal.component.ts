@@ -117,6 +117,15 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
         } else if (interaction.inputType == 'UPLOAD') {
           interaction.reset = new EventEmitter<void>()
           this.resetTempFiles(interaction)
+        } else if (interaction.inputType == 'RICH_TEXT') {
+          // Not tracked via firstCodeIndex/firstTextIndex - the editor's content is in an iframe and
+          // cannot be focused via dataService.focus(id).
+          if (interaction.default != undefined) {
+            interaction.data = interaction.default
+          }
+          if (interaction.data == undefined) {
+            interaction.data = ''
+          }
         } else {
           // Basic text inputs (secret, text, multiline)
           if (this.firstTextIndex == undefined && this.isVisible(interaction)) {
@@ -230,10 +239,10 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     this.validation.clearErrors()
     let index = 0
     for (let interaction of this.interactions) {
-      if (this.editorFocus['input-'+index] == undefined) {
+      if (this.editorFocus['input-'+index] == undefined && interaction.inputType != 'RICH_TEXT') {
         delete interaction.data
       } else {
-        // Code editor.
+        // Code editor or rich text editor - these don't reflect an undefined model value, so clear explicitly.
         interaction.data = ''
       }
       if (interaction.reset) {
@@ -289,7 +298,9 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
             }
           }
         }
-        const hasValue = (inputData.value != undefined && inputData.value.length > 0) || inputData.file != undefined
+        const hasValue = interaction.inputType == 'RICH_TEXT'
+          ? this.hasRichTextContent(inputData.value)
+          : (inputData.value != undefined && inputData.value.length > 0) || inputData.file != undefined
         const inputValid = !interaction.required || hasValue || !this.isVisible(interaction)
         if (!inputValid) {
           inputsValid = false
@@ -346,6 +357,30 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       // Minimum height is 50px.
       editor.setHeight(sizeToSet)
     }
+  }
+
+  /**
+   * The rich text editor's height in pixels, based on the request's 'size'. Returns undefined (so
+   * app-editor falls back to its own 300px default) when no size is set - mirrors editorInitialized()'s
+   * treatment of 'size' for the code editor, clamped to the editor's own min_height (100).
+   */
+  editorHeight(interaction: UserInteraction): number|undefined {
+    if (interaction.size == undefined) {
+      return undefined
+    }
+    return Math.max(interaction.size, 100)
+  }
+
+  /**
+   * Whether a rich text value has any actual content once markup and non-breaking spaces are stripped -
+   * used to determine whether a required rich text input was answered (an editor left with only empty
+   * tags should not count as provided).
+   */
+  private hasRichTextContent(value: string|undefined): boolean {
+    if (value == undefined) {
+      return false
+    }
+    return value.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length > 0
   }
 
   protected readonly Constants = Constants;

@@ -690,12 +690,12 @@ public class TestCaseUtils {
     }
 
     /**
-     * Sanitize HTML content for a TDL instruction step.
+     * Sanitize HTML content for a TDL instruction step or a rich text interaction input.
      *
      * @param unsanitizedInput The unsafe input.
      * @return The safe input.
      */
-    public static String sanitizeInstructionStepValue(String unsanitizedInput) {
+    public static String sanitizeRichTextValue(String unsanitizedInput) {
         return INSTRUCTION_STEP_POLICY.sanitize(unsanitizedInput);
     }
 

@@ -29,6 +29,17 @@
         .cm-editor {
             border-color: @bs-input-border-color-invalid;
         }
+        // Rich text editor (HugeRTE) - the editor's outer container gets this border, mirroring the
+        // code editor's .cm-editor above. The default (non-focused) border needs !important as the
+        // HugeRTE skin styles are otherwise applied after this one - see the .tox-hugerte.tox-edit-focus
+        // override in app.less for the focused state equivalent.
+        .tox-hugerte {
+            border-color: @bs-input-border-color-invalid !important;
+            border-width: 1px;
+            &.tox-edit-focus {
+                box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color-invalid !important;
+            }
+        }
     }
     .focused .cm-editor {
         border-color: @bs-input-focus-highlight;
