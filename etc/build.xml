@@ -134,9 +134,9 @@
         <!-- Step 2: Merge the three SBOMs into a single hierarchical ITB SBOM -->
         <echo level="info">Merging SBOMs</echo>
         <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
-            <arg line="/c cyclonedx-cli merge --hierarchical --group com.gitb --name ITB --version ${project.version} --output-version v1_6 --input-files target/generated-sources/sbom/gitb-srv.bom.json target/generated-sources/sbom/gitb-ui.bom.json target/generated-sources/sbom/gitb-ui-frontend.bom.json --output-file target/generated-sources/sbom/sbom.json"/>
+            <arg line="/c cyclonedx merge --hierarchical --group com.gitb --name ITB --version ${project.version} --output-version v1_6 --input-files target/generated-sources/sbom/gitb-srv.bom.json target/generated-sources/sbom/gitb-ui.bom.json target/generated-sources/sbom/gitb-ui-frontend.bom.json --output-file target/generated-sources/sbom/sbom.json"/>
         </exec>
-        <exec executable="cyclonedx-cli" failonerror="true" failifexecutionfails="true" osfamily="unix">
+        <exec executable="cyclonedx" failonerror="true" failifexecutionfails="true" osfamily="unix">
             <arg value="merge"/>
             <arg value="--hierarchical"/>
             <arg value="--group"/>
