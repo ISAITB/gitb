@@ -1,6 +1,6 @@
 {
-  "name": "ui",
-  "version": "0.0.0",
+  "name": "gitb-ui-frontend",
+  "version": "1.31.0-SNAPSHOT",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --open --host 0.0.0.0",
@@ -11,7 +11,8 @@
     "licence-report": "license-report --only=prod --output=markdown --fields=licenseType --fields=name --fields=installedVersion --fields=link",
     "licence-report-save": "npm run licence-report > ./dist/THIRD_PARTY_LICENCES.md",
     "licence-check": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT;Apache-2.0 --summary",
-    "licence-check-linux": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT\\;Apache-2.0 --summary"
+    "licence-check-linux": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT\\;Apache-2.0 --summary",
+    "sbom": "cyclonedx-npm --omit dev --mc-type application --spec-version 1.6 --output-reproducible --output-format JSON --output-file ./dist/gitb-ui-frontend.bom.json"
   },
   "private": true,
   "dependencies": {
@@ -48,6 +49,7 @@
     "@angular-devkit/build-angular": "^22.1.8",
     "@angular/cli": "^22.1.8",
     "@angular/compiler-cli": "^22.1.7",
+    "@cyclonedx/cyclonedx-npm": "^6.0.1",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^24.1.0",
     "better-npm-audit": "^3.11.0",

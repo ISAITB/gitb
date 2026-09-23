@@ -79,6 +79,67 @@
         <echo level="info">Licence report ready at [target/generated-sources/license/NOTICE.md]</echo>
     </target>
     <!--
+        Generate the aggregate CycloneDX SBOM for all GITB components (gitb-srv, gitb-ui, gitb-ui frontend).
+    -->
+    <target name="sbom">
+        <!-- Step 1: Prepare output locations -->
+        <mkdir dir="target/generated-sources/sbom"/>
+        <mkdir dir="gitb-ui/ui/dist"/>
+        <!-- Step 2: Generate the gitb-srv SBOM (Maven reactor aggregate) -->
+        <echo level="info">Generating gitb-srv SBOM</echo>
+        <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c mvn cyclonedx:makeAggregateBom"/>
+        </exec>
+        <exec executable="mvn" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="cyclonedx:makeAggregateBom"/>
+        </exec>
+        <copy file="target/bom.json" tofile="target/generated-sources/sbom/gitb-srv.bom.json" overwrite="true"/>
+        <!-- Step 3: Generate the gitb-ui backend SBOM -->
+        <echo level="info">Generating gitb-ui SBOM</echo>
+        <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c sbt makeBom"/>
+        </exec>
+        <exec executable="sbt" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="makeBom"/>
+        </exec>
+        <copy file="gitb-ui/target/gitb-ui.bom.json" tofile="target/generated-sources/sbom/gitb-ui.bom.json" overwrite="true"/>
+        <!-- Step 4: Generate the gitb-ui frontend SBOM -->
+        <echo level="info">Generating gitb-ui frontend SBOM</echo>
+        <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c npm run sbom"/>
+        </exec>
+        <exec executable="npm" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="run"/>
+            <arg value="sbom"/>
+        </exec>
+        <copy file="gitb-ui/ui/dist/gitb-ui-frontend.bom.json" tofile="target/generated-sources/sbom/gitb-ui-frontend.bom.json" overwrite="true"/>
+        <!-- Step 5: Merge the three SBOMs into a single hierarchical ITB SBOM -->
+        <echo level="info">Merging SBOMs</echo>
+        <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c cyclonedx-cli merge --hierarchical --group com.gitb --name ITB --version ${project.version} --output-version v1_6 --input-files target/generated-sources/sbom/gitb-srv.bom.json target/generated-sources/sbom/gitb-ui.bom.json target/generated-sources/sbom/gitb-ui-frontend.bom.json --output-file target/generated-sources/sbom/sbom.json"/>
+        </exec>
+        <exec executable="cyclonedx-cli" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="merge"/>
+            <arg value="--hierarchical"/>
+            <arg value="--group"/>
+            <arg value="com.gitb"/>
+            <arg value="--name"/>
+            <arg value="ITB"/>
+            <arg value="--version"/>
+            <arg value="${project.version}"/>
+            <arg value="--output-version"/>
+            <arg value="v1_6"/>
+            <arg value="--input-files"/>
+            <arg value="target/generated-sources/sbom/gitb-srv.bom.json"/>
+            <arg value="target/generated-sources/sbom/gitb-ui.bom.json"/>
+            <arg value="target/generated-sources/sbom/gitb-ui-frontend.bom.json"/>
+            <arg value="--output-file"/>
+            <arg value="target/generated-sources/sbom/sbom.json"/>
+        </exec>
+        <!-- Step 6: Done -->
+        <echo level="info">SBOM ready at [target/generated-sources/sbom/sbom.json]</echo>
+    </target>
+    <!--
         Install the Xerces binary distribution to enable XML Schema 1.1 support (artefacts not available in Maven Central).
     -->
     <target name="check-and-install-xerces-jars" depends="xerces-install-xercesImpl,xerces-install-xpath2,xerces-install-cupv10k,xerces-install-icu4j">

@@ -180,6 +180,23 @@ licenseReportTitle := "THIRD_PARTY_LICENCES"
  */
 
 /*
+ * SBOM generation - START
+ *
+ * Run manually with "sbt makeBom".
+ */
+organization := "com.gitb"
+moduleName := "gitb-ui"
+crossPaths := false // Avoid the "_2.13" suffix being appended to the SBOM component name below.
+projectType := "application"
+bomFileName := "gitb-ui.bom.json"
+bomSchemaVersion := "1.6"
+includeBomSerialNumber := false
+includeBomTimestamp := false
+/*
+ * SBOM generation - END
+ */
+
+/*
  * Dependency check - START
  *
  * Dependency checking via the sbt-dependency-check plugin is disabled as it is not updated for the NVP 9+ API.

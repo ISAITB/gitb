@@ -35,6 +35,7 @@
         <version.plugin.versionsMavenPlugin>2.21.0</version.plugin.versionsMavenPlugin>
         <version.plugin.mavenSitePlugin>3.22.0</version.plugin.mavenSitePlugin>
         <version.plugin.projectInfoReports>3.9.0</version.plugin.projectInfoReports>
+        <version.plugin.cycloneDxPlugin>2.9.3</version.plugin.cycloneDxPlugin>
         <!-- Dependency versions -->
         <version.gitbTypes>1.31.0-SNAPSHOT</version.gitbTypes>
         <version.springBoot>4.1.1</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
@@ -289,6 +290,20 @@
                             </configuration>
                         </execution>
                         <execution>
+                            <!-- Generate the aggregate SBOM -->
+                            <id>sbom</id>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <ant antfile="etc/build.xml" dir=".">
+                                        <target name="sbom"/>
+                                    </ant>
+                                </target>
+                            </configuration>
+                        </execution>
+                        <execution>
                             <!-- Check and conditionally install Xerces JARs -->
                             <id>check-and-install-xerces-jars</id>
                             <phase>validate</phase>
@@ -324,6 +339,38 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.cyclonedx</groupId>
+                    <artifactId>cyclonedx-maven-plugin</artifactId>
+                    <version>${version.plugin.cycloneDxPlugin}</version>
+                    <configuration>
+                        <projectType>application</projectType>
+                        <schemaVersion>1.6</schemaVersion>
+                        <outputFormat>json</outputFormat>
+                        <includeBomSerialNumber>false</includeBomSerialNumber>
+                        <includeTestScope>false</includeTestScope>
+                        <includeProvidedScope>true</includeProvidedScope>
+                        <!--
+                            Most gitb-srv modules intentionally skip `mvn deploy` (maven-deploy-plugin
+                            <skip>true</skip>, since they're only ever consumed via the reactor/local
+                            repo, never published). The plugin's default skipNotDeployed=true would
+                            otherwise silently drop those modules (and their dependencies, e.g. Spring
+                            Boot, CXF) from the aggregate BOM.
+                        -->
+                        <skipNotDeployed>false</skipNotDeployed>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>none</phase>
+                            <!--
+                                Run manually with `mvn cyclonedx:makeAggregateBom` to generate the gitb-srv SBOM alone.
+                                To generate the aggregate SBOM for all ITB components issue: `mvn antrun:run@sbom -pl .`
+                                This requires the CycloneDX CLI (cyclonedx-cli) to be available on the PATH to merge the
+                                per-component SBOMs (gitb-srv, gitb-ui, gitb-ui frontend) into a single ITB SBOM.
+                            -->
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -334,6 +381,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
