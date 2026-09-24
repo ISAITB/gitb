@@ -13,44 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-@import '../../../styles/less/_common.less';
+@import (reference) '../../../styles/less/app.less';
 
-.provide-input-body ::ng-deep .cm-editor {
-	border: 1px solid @gray-button;
-	border-radius: @border-radius;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
 .provide-input-body ::ng-deep {
-    .is-invalid {
-        &.focused .cm-editor {
-            border-color: @bs-input-focus-highlight-invalid;
-            box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color-invalid;
-        }
-        .cm-editor {
-            border-color: @bs-input-border-color-invalid;
-        }
-        // Rich text editor (HugeRTE) - the editor's outer container gets this border, mirroring the
-        // code editor's .cm-editor above. The default (non-focused) border needs !important as the
-        // HugeRTE skin styles are otherwise applied after this one - see the .tox-hugerte.tox-edit-focus
-        // override in app.less for the focused state equivalent.
-        .tox-hugerte {
-            border-color: @bs-input-border-color-invalid !important;
-            border-width: 1px;
-            &.tox-edit-focus {
-                box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color-invalid !important;
-            }
-        }
-    }
-    .focused .cm-editor {
-        border-color: @bs-input-focus-highlight;
-        outline: 0;
-        box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
-        clip-path: none !important;
-    }
-    .cm-gutters {
-        border-top-left-radius: @border-radius;
-        border-bottom-left-radius: @border-radius;
-    }
+    .code-and-rich-text-editor-styles();
 }
 
 textarea {

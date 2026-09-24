@@ -32,6 +32,7 @@ import {PreviewParametersModalComponent} from 'src/app/modals/preview-parameters
 import {RoutingService} from 'src/app/services/routing.service';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
 import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-community-properties',
@@ -120,13 +121,7 @@ export class CommunityPropertiesComponent implements OnInit {
   }
 
   kindLabel(property: CustomProperty) {
-    if (property.kind == 'SIMPLE') {
-      return 'Simple'
-    } else if (property.kind == 'BINARY') {
-      return 'Binary'
-    } else {
-      return 'Secret'
-    }
+    return Utils.propertyKindLabel(property.kind)
   }
 
   extractParameterReferences<T extends CustomProperty>(properties: T[]): ParameterReference[] {

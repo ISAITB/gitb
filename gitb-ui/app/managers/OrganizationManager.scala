@@ -24,7 +24,7 @@ import models._
 import models.automation._
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, HtmlUtil, MimeUtil, RepositoryUtils}
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -748,15 +748,15 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
             val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
             if (matchedProvidedParameter.isDefined) {
               // Create or update
-              if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
+              if (parameterDefinition.kind != PropertyKind.SECRET || (parameterDefinition.kind == PropertyKind.SECRET && matchedProvidedParameter.get.value != "")) {
                 // Special case: No update for secret parameters that are defined but not updated.
                 var valueToSet = matchedProvidedParameter.get.value
                 var existingBinaryNotUpdated = false
                 var contentTypeToSet: Option[String] = None
-                if (parameterDefinition.kind == "SECRET") {
+                if (parameterDefinition.kind == PropertyKind.SECRET) {
                   // Encrypt secret value at rest.
                   valueToSet = MimeUtil.encryptString(valueToSet)
-                } else if (parameterDefinition.kind == "BINARY") {
+                } else if (parameterDefinition.kind == PropertyKind.BINARY) {
                   // Store file.
                   if (files.contains(parameterDefinition.id)) {
                     contentTypeToSet = files(parameterDefinition.id).contentType
@@ -764,6 +764,9 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                   } else {
                     existingBinaryNotUpdated = true
                   }
+                } else if (parameterDefinition.kind == PropertyKind.RICH_TEXT) {
+                  // Sanitise rich text content before storing it.
+                  valueToSet = HtmlUtil.sanitizeMinimalEditorContent(valueToSet)
                 }
                 if (!existingBinaryNotUpdated) {
                   actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete

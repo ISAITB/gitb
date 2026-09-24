@@ -13,12 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import { PropertyKind } from "./property-kind.type";
+
 export interface StatementParameterMinimal {
 
     id: number
     testKey: string
     name: string
-    kind: 'SIMPLE'|'SECRET'|'BINARY'
+    kind: PropertyKind
     kindLabel?: string
     selected?: boolean
 

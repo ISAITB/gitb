@@ -13,29 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-@import (reference) '../../../styles/less/app.less';
-
-.filePropertyRow {
-  display: flex;
-  align-items: center;
-}
-.secretField {
-  display: flex;
-  flex-grow: 1;
-  app-secret-input, input {
-      width: 100%;
-      margin-left: 10px;
-  }
-}
-app-secret-input {
-  flex-grow: 1;
-}
-.secretLabelInvalid {
-  margin-bottom: 1.3rem;
-}
-.custom-property-editor ::ng-deep {
-  .code-and-rich-text-editor-styles();
-}
-textarea {
-  resize: vertical;
-}
+/**
+ * The kinds ("kind") supported for organisation, system and actor endpoint configuration properties.
+ * SIMPLE, MULTILINE_TEXT, CODE and RICH_TEXT all hold a plain string value and are transported
+ * identically - they only differ in how the value is captured/rendered in the UI (a text input, a
+ * textarea, a code editor and a rich text editor, respectively). BINARY is held as a file and SECRET
+ * is held encrypted.
+ */
+export type PropertyKind = 'SIMPLE'|'BINARY'|'SECRET'|'MULTILINE_TEXT'|'CODE'|'RICH_TEXT'

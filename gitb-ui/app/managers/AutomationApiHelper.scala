@@ -16,6 +16,7 @@
 package managers
 
 import exceptions.{AutomationApiException, ErrorCodes}
+import models.PropertyKind
 import models.automation.{CustomPropertyInfo, KeyValueRequired, OrganisationIdsForApi, StatementIds}
 import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
@@ -360,6 +361,18 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
     } else {
       defaultValue
     }
+  }
+
+  /**
+   * Resolves and validates the kind requested for a property definition through the automation API.
+   * When not provided, the existing kind is kept (on update) or SIMPLE is used (on create).
+   */
+  def propertyKind(input: Option[String], existingKind: String = PropertyKind.SIMPLE): String = {
+    val kind = input.getOrElse(existingKind)
+    if (!PropertyKind.isValid(kind)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Invalid value [%s] for property kind".formatted(kind))
+    }
+    kind
   }
 
   def propertyAllowedValuesText(values: Option[List[KeyValueRequired]]): Option[String] = {

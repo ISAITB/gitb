@@ -28,6 +28,7 @@ import {CreateParameterModalComponent} from 'src/app/components/parameters/creat
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
 import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {Utils} from 'src/app/common/utils';
 
 @Component({
     selector: 'app-endpoint-parameter-tab-content',
@@ -196,13 +197,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
   }
 
   private kindLabel(kind: string) {
-    if (kind == 'SIMPLE') {
-      return 'Simple'
-    } else if (kind == 'BINARY') {
-      return 'Binary'
-    } else {
-      return 'Secret '
-    }
+    return Utils.propertyKindLabel(kind)
   }
 
   addEndpoint() {

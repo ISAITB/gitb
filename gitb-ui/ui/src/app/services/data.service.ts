@@ -16,6 +16,7 @@
 import {Injectable} from '@angular/core';
 import {mergeMap, Observable, of, ReplaySubject, Subject} from 'rxjs';
 import {Constants} from '../common/constants';
+import {Utils} from '../common/utils';
 import {ObjectWithId} from '../components/test-filter/object-with-id';
 import {ConformanceTestCase} from '../pages/organisation/conformance-statement/conformance-test-case';
 import {ActualUserInfo} from '../types/actual-user-info';
@@ -620,7 +621,10 @@ export class DataService {
       if (properties != undefined) {
         for (let property of properties) {
           if (property.use == 'R' ) {
-            if (property.prerequisiteOk && !(property.value && property.value.trim().length > 0)) {
+            const hasValue = property.kind == 'RICH_TEXT'
+              ? Utils.hasRichTextContent(property.value)
+              : (property.value != undefined && property.value.trim().length > 0)
+            if (property.prerequisiteOk && !hasValue) {
               valid = false
             }
           }
@@ -656,6 +660,15 @@ export class DataService {
             })
           } else if (property.configured) {
             propValue.value = ''
+          }
+        } else if (property.kind == 'RICH_TEXT') {
+          if (Utils.hasRichTextContent(property.value)) {
+            propValue.value = property.value
+          }
+        } else if (property.kind == 'MULTILINE_TEXT' || property.kind == 'CODE') {
+          // Leading/trailing whitespace (e.g. code indentation) is kept as-is.
+          if (property.value && property.value.trim().length > 0) {
+            propValue.value = property.value
           }
         } else {
           if (property.value && property.value.trim().length > 0) {

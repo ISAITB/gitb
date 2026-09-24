@@ -25,7 +25,7 @@ import models.automation.{ConformanceStatementKeys, CreateSystemRequest, UpdateS
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, HtmlUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
@@ -318,15 +318,15 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
             val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
             if (matchedProvidedParameter.isDefined) {
               // Create or update
-              if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
+              if (parameterDefinition.kind != PropertyKind.SECRET || (parameterDefinition.kind == PropertyKind.SECRET && matchedProvidedParameter.get.value != "")) {
                 // Special case: No update for secret parameters that are defined but not updated.
                 var valueToSet = matchedProvidedParameter.get.value
                 var existingBinaryNotUpdated = false
                 var contentTypeToSet: Option[String] = None
-                if (parameterDefinition.kind == "SECRET") {
+                if (parameterDefinition.kind == PropertyKind.SECRET) {
                   // Encrypt secret value at rest.
                   valueToSet = MimeUtil.encryptString(valueToSet)
-                } else if (parameterDefinition.kind == "BINARY") {
+                } else if (parameterDefinition.kind == PropertyKind.BINARY) {
                   // Store file.
                   if (files.contains(parameterDefinition.id)) {
                     contentTypeToSet = files(parameterDefinition.id).contentType
@@ -334,6 +334,9 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
                   } else {
                     existingBinaryNotUpdated = true
                   }
+                } else if (parameterDefinition.kind == PropertyKind.RICH_TEXT) {
+                  // Sanitise rich text content before storing it.
+                  valueToSet = HtmlUtil.sanitizeMinimalEditorContent(valueToSet)
                 }
                 if (!existingBinaryNotUpdated) {
                   actions += PersistenceSchema.systemParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.system === systemId).delete

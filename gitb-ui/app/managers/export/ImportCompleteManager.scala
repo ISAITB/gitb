@@ -415,13 +415,16 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   private def propertyTypeToKind(propertyType: PropertyType, isDomainParameter: Boolean): String = {
     require(propertyType != null, "Enum value cannot be null")
     propertyType match {
-      case PropertyType.BINARY => "BINARY"
-      case PropertyType.SIMPLE => "SIMPLE"
+      case PropertyType.BINARY => PropertyKind.BINARY
+      case PropertyType.SIMPLE => PropertyKind.SIMPLE
+      case PropertyType.MULTILINE_TEXT => PropertyKind.MULTILINE_TEXT
+      case PropertyType.CODE => PropertyKind.CODE
+      case PropertyType.RICH_TEXT => PropertyKind.RICH_TEXT
       case PropertyType.SECRET =>
         if (isDomainParameter) {
           "HIDDEN"
         } else {
-          "SECRET"
+          PropertyKind.SECRET
         }
       case _ => throw new IllegalArgumentException("Unknown enum value ["+propertyType+"]")
     }

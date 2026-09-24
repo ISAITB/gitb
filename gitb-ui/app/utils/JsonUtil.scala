@@ -1650,7 +1650,8 @@ object JsonUtil {
       (json \ "displayOrder").asOpt[Short],
       (json \ "dependsOn").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "dependsOnValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
-      (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x))
+      (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "kind").asOpt[String]
     )
     if (!ParameterExtractor.validTestVariableName(info.key)) {
       throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")

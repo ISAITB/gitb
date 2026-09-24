@@ -275,6 +275,9 @@
             <xsd:enumeration value="SIMPLE"/>
             <xsd:enumeration value="BINARY"/>
             <xsd:enumeration value="SECRET"/>
+            <xsd:enumeration value="MULTILINE_TEXT"/>
+            <xsd:enumeration value="CODE"/>
+            <xsd:enumeration value="RICH_TEXT"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="CustomLabels">

@@ -18,10 +18,11 @@ package managers
 import exceptions.{AutomationApiException, ErrorCodes}
 import models.Endpoints
 import models.Enums.TriggerDataType
+import models.PropertyKind
 import models.automation.CustomPropertyInfo
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{JsonUtil, RepositoryUtils}
+import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -93,7 +94,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       for {
         parameter <- checkParameterExistence(endpointId, dependsOn.get, expectedToExist = true, parameterIdToIgnore)
         _ <- {
-          if (parameter.get.kind != "SIMPLE") {
+          if (parameter.get.kind != PropertyKind.SIMPLE) {
             throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Property [%s] upon which this property depends on must be of simple type".formatted(dependsOn.get))
           } else {
             DBIO.successful(())
@@ -125,21 +126,22 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       // Create property.
       _ <- {
+        val kind = automationApiHelper.propertyKind(input.kind)
         val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
         createParameter(models.Parameters(0L,
           input.name.getOrElse(input.key),
           input.key,
           input.description.flatten,
           automationApiHelper.propertyUseText(input.required),
-          "SIMPLE",
+          kind,
           !input.editableByUsers.getOrElse(true),
           !input.inTests.getOrElse(false),
           input.hidden.getOrElse(false),
-          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
+          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten) else None,
           input.displayOrder.getOrElse(0),
           dependsOnStatus._1.flatten,
           dependsOnStatus._2.flatten,
-          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten) else None,
           endpointIdToUse
         ))
       }
@@ -160,24 +162,34 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedParameterExistence(actorIds._2, input.dependsOn.flatten, parameter.map(_.id))
       // Proceed with update.
       _ <- {
+        val kind = automationApiHelper.propertyKind(input.kind, parameter.get.kind)
         val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        val allowedValues = if (kind == PropertyKind.SIMPLE) {
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(parameter.get.allowedValues)
+        } else {
+          None
+        }
         updateParameter(
           parameter.get.id,
           input.name.getOrElse(parameter.get.name),
           input.key,
           input.description.getOrElse(parameter.get.desc),
           automationApiHelper.propertyUseText(input.required, parameter.get.use),
-          "SIMPLE",
+          kind,
           !input.editableByUsers.getOrElse(!parameter.get.adminOnly),
           !input.inTests.getOrElse(!parameter.get.notForTests),
           input.hidden.getOrElse(parameter.get.hidden),
-          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(parameter.get.allowedValues),
+          allowedValues,
           dependsOnStatus._1.getOrElse(parameter.get.dependsOn),
           dependsOnStatus._2.getOrElse(parameter.get.dependsOnValue),
-          automationApiHelper.propertyDefaultValue(
-            input.defaultValue.getOrElse(parameter.get.defaultValue),
-            input.allowedValues.getOrElse(parameter.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
-          ),
+          if (kind == PropertyKind.SIMPLE) {
+            automationApiHelper.propertyDefaultValue(
+              input.defaultValue.getOrElse(parameter.get.defaultValue),
+              input.allowedValues.getOrElse(parameter.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
+            )
+          } else {
+            None
+          },
           input.displayOrder.orElse(Some(parameter.get.displayOrder)),
           onSuccessCalls
         )
@@ -231,7 +243,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         .map(x => (x._1._1.endpoint, x._1._1.testKey, x._1._1.kind, x._2.domain)) // Endpoint ID, Parameter key, Parameter kind, Domain ID
         .result.head
       _ <- {
-        if ("SIMPLE".equals(existingParameterData._3)) {
+        if (PropertyKind.SIMPLE.equals(existingParameterData._3)) {
           setParameterPrerequisitesForKey(existingParameterData._1, existingParameterData._2, None)
         } else {
           DBIO.successful(())
@@ -312,7 +324,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         if (!existingParameter._2.equals(testKey)) {
           // Update the dependsOn of other properties.
           setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(testKey))
-        } else if (existingParameter._3.equals("SIMPLE") && !existingParameter._3.equals(kind)) {
+        } else if (existingParameter._3.equals(PropertyKind.SIMPLE) && !existingParameter._3.equals(kind)) {
           // Remove the dependsOn of other properties.
           setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
         } else {
@@ -321,9 +333,14 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       _ <- {
         if (existingParameter._3 != kind) {
-          // Remove previous values.
-          onSuccessCalls += (() => repositoryUtils.deleteStatementParametersFolder(parameterId))
-          PersistenceSchema.configs.filter(_.parameter === parameterId).delete
+          if (PropertyKind.valuesPreservedOnChange(existingParameter._3, kind)) {
+            // Both the previous and new kind are text-based - keep the values, sanitising them if now rich text.
+            sanitiseParameterValuesIfRichText(parameterId, kind)
+          } else {
+            // Remove previous values.
+            onSuccessCalls += (() => repositoryUtils.deleteStatementParametersFolder(parameterId))
+            PersistenceSchema.configs.filter(_.parameter === parameterId).delete
+          }
         } else {
           DBIO.successful(())
         }
@@ -341,6 +358,28 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
+  }
+
+  /**
+   * When an actor endpoint parameter's kind changes between text kinds, the values already recorded for it are
+   * kept as-is - unless the new kind is RICH_TEXT, in which case they are sanitised (they may so far contain raw,
+   * unsanitised text if coming from e.g. a CODE or MULTILINE_TEXT kind).
+   */
+  private def sanitiseParameterValuesIfRichText(parameterId: Long, newKind: String): DBIO[_] = {
+    if (newKind == PropertyKind.RICH_TEXT) {
+      for {
+        existingValues <- PersistenceSchema.configs.filter(_.parameter === parameterId).result
+        _ <- toDBIO(existingValues.map { existingValue =>
+          PersistenceSchema.configs
+            .filter(_.parameter === parameterId)
+            .filter(_.system === existingValue.system)
+            .map(_.value)
+            .update(HtmlUtil.sanitizeMinimalEditorContent(existingValue.value))
+        })
+      } yield ()
+    } else {
+      DBIO.successful(())
+    }
   }
 
   def orderParameters(endpointId: Long, orderedIds: List[Long]): Future[Unit] = {

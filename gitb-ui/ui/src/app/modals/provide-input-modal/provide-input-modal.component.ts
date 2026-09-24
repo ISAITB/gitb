@@ -299,7 +299,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           }
         }
         const hasValue = interaction.inputType == 'RICH_TEXT'
-          ? this.hasRichTextContent(inputData.value)
+          ? Utils.hasRichTextContent(inputData.value)
           : (inputData.value != undefined && inputData.value.length > 0) || inputData.file != undefined
         const inputValid = !interaction.required || hasValue || !this.isVisible(interaction)
         if (!inputValid) {
@@ -369,18 +369,6 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       return undefined
     }
     return Math.max(interaction.size, 100)
-  }
-
-  /**
-   * Whether a rich text value has any actual content once markup and non-breaking spaces are stripped -
-   * used to determine whether a required rich text input was answered (an editor left with only empty
-   * tags should not count as provided).
-   */
-  private hasRichTextContent(value: string|undefined): boolean {
-    if (value == undefined) {
-      return false
-    }
-    return value.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length > 0
   }
 
   protected readonly Constants = Constants;

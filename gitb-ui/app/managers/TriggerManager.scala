@@ -36,7 +36,7 @@ import play.api.Environment
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import utils.{JsonUtil, MimeUtil, RepositoryUtils}
+import utils.{HtmlUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.{ByteArrayOutputStream, StringReader}
 import java.net.URI
@@ -1253,7 +1253,7 @@ class TriggerManager @Inject()(env: Environment,
     if (item.getEncoding != null) {
       encoding = Charset.forName(item.getEncoding)
     }
-    if ("BINARY".equals(parameterType)) {
+    if (PropertyKind.BINARY.equals(parameterType)) {
       if (item.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
         if (MimeUtil.isDataURL(item.getValue)) {
           value = Some("")
@@ -1278,6 +1278,10 @@ class TriggerManager @Inject()(env: Environment,
         value = Some(new String(Base64.getDecoder.decode(item.getValue), encoding))
       } else {
         value = Some(item.getValue)
+      }
+      if (PropertyKind.RICH_TEXT.equals(parameterType)) {
+        // Sanitise rich text content coming back from a trigger service before storing it.
+        value = value.map(HtmlUtil.sanitizeMinimalEditorContent)
       }
     }
     (value.get, contentType)

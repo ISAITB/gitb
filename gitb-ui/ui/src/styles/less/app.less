@@ -20,12 +20,61 @@ body {
 	font-family: @font-family;
 }
 
-input, textarea {
-	&.form-control:read-only {
-		background-color: @readonly-color;
-		&.bg-white {
-			background-color: @white;
+input.form-control:read-only, textarea.form-control:read-only, .readonly-html-value {
+	background-color: @readonly-color;
+	&.bg-white {
+		background-color: @white;
+	}
+}
+
+// A read-only rendering of a RICH_TEXT value (raw sanitised HTML, so it can't be a real <input readonly>/
+// <textarea readonly> as with the other read-only property kinds). Paired with the .form-control class for
+// its border/radius/padding, with the same read-only background as above, and a guaranteed min-height so it
+// still reads as a text-field-sized control when the value is empty.
+.readonly-html-value {
+	min-height: calc(1.5em + 0.75rem + 2px);
+}
+
+/*
+ * Shared styling for the code editor (CodeMirror) and rich text editor (HugeRTE) controls used for
+ * "CODE" and "RICH_TEXT" typed values (interact step inputs, and organisation/system/actor properties).
+ * Include this inside a `::ng-deep { }` block scoped to the control's container.
+ */
+.code-and-rich-text-editor-styles() {
+	.cm-editor {
+		border: 1px solid @gray-button;
+		border-radius: @border-radius;
+		transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+	}
+	.is-invalid {
+		&.focused .cm-editor {
+			border-color: @bs-input-focus-highlight-invalid;
+			box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color-invalid;
 		}
+		.cm-editor {
+			border-color: @bs-input-border-color-invalid;
+		}
+		// Rich text editor (HugeRTE) - the editor's outer container gets this border, mirroring the
+		// code editor's .cm-editor above. The default (non-focused) border needs !important as the
+		// HugeRTE skin styles are otherwise applied after this one - see the .tox-hugerte.tox-edit-focus
+		// override below for the focused state equivalent.
+		.tox-hugerte {
+			border-color: @bs-input-border-color-invalid !important;
+			border-width: 1px;
+			&.tox-edit-focus {
+				box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color-invalid !important;
+			}
+		}
+	}
+	.focused .cm-editor {
+		border-color: @bs-input-focus-highlight;
+		outline: 0;
+		box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
+		clip-path: none !important;
+	}
+	.cm-gutters {
+		border-top-left-radius: @border-radius;
+		border-bottom-left-radius: @border-radius;
 	}
 }
 

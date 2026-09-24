@@ -14,13 +14,14 @@
  */
 
 import { ParameterPresetValue } from "./parameter-preset-value";
+import { PropertyKind } from "./property-kind.type";
 
 export interface ParameterReference {
 
     id: number
     name: string
     key: string
-    kind: 'SIMPLE'|'SECRET'|'BINARY'
+    kind: PropertyKind
     hasPresetValues: boolean
     presetValues?: ParameterPresetValue[]
 

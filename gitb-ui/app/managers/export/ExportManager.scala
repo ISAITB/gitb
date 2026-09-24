@@ -104,12 +104,18 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   private def propertyTypeForExport(modelType: String): PropertyType = {
-    if ("BINARY".equals(modelType)) {
+    if (PropertyKind.BINARY.equals(modelType)) {
       PropertyType.BINARY
-    } else if ("HIDDEN".equals(modelType) || "SECRET".equals(modelType)) {
+    } else if ("HIDDEN".equals(modelType) || PropertyKind.SECRET.equals(modelType)) {
       PropertyType.SECRET
-    } else if ("SIMPLE".equals(modelType)) {
+    } else if (PropertyKind.SIMPLE.equals(modelType)) {
       PropertyType.SIMPLE
+    } else if (PropertyKind.MULTILINE_TEXT.equals(modelType)) {
+      PropertyType.MULTILINE_TEXT
+    } else if (PropertyKind.CODE.equals(modelType)) {
+      PropertyType.CODE
+    } else if (PropertyKind.RICH_TEXT.equals(modelType)) {
+      PropertyType.RICH_TEXT
     } else {
       throw new IllegalStateException("Unknown property type ["+modelType+"]")
     }

@@ -14,6 +14,7 @@
  */
 
 import { ParameterPresetValue } from "./parameter-preset-value";
+import { PropertyKind } from "./property-kind.type";
 
 export interface Parameter {
 
@@ -22,7 +23,7 @@ export interface Parameter {
     testKey: string
     desc?: string
     use: 'R'|'O'
-    kind: 'SIMPLE'|'SECRET'|'BINARY'
+    kind: PropertyKind
     kindLabel?: string
     adminOnly: boolean
     notForTests: boolean

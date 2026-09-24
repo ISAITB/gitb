@@ -22,7 +22,7 @@ import controllers.util.ParameterNames
 import models.automation.TestServiceSearchCriteria
 import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestFlags, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, PropertyKind, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestFlags, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
@@ -640,12 +640,12 @@ object ParameterExtractor {
     val testKey:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_KEY)
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
     val use:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USE)
-    val kind:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND)
+    val kind:String = validatedKind(ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND))
     val endpointId:Long = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ENDPOINT_ID).map(_.toLong).getOrElse(0L)
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
     var hidden = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
-    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES)
+    val allowedValues:Option[String] = allowedValuesForKind(kind, ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES))
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
     if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
@@ -673,14 +673,14 @@ object ParameterExtractor {
     val testKey:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_KEY)
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
     val use:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USE)
-    val kind:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND)
+    val kind:String = validatedKind(ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND))
     val communityId:Long = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
-    val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
+    val inExports:Boolean = (kind == PropertyKind.SIMPLE) && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
     val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_SELFREG).toBoolean
     var hidden: Boolean = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
-    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES)
+    val allowedValues:Option[String] = allowedValuesForKind(kind, ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES))
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
     if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
@@ -699,10 +699,21 @@ object ParameterExtractor {
     models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
   }
 
+  private def validatedKind(kind: String): String = {
+    if (!PropertyKind.isValid(kind)) {
+      throw InvalidRequestException(ErrorCodes.INVALID_PARAM, "Invalid value ["+kind+"] for property kind")
+    }
+    kind
+  }
+
+  private def allowedValuesForKind(kind: String, allowedValues: Option[String]): Option[String] = {
+    if (kind == PropertyKind.SIMPLE) allowedValues else None
+  }
+
   private def determineDefaultParameterValue(defaultValue: Option[String], kind: String, allowedValues: Option[String]): Option[String] = {
     var defaultValueToUse = defaultValue
     if (defaultValueToUse.isDefined) {
-      if (!kind.equals("SIMPLE")) {
+      if (!kind.equals(PropertyKind.SIMPLE)) {
         defaultValueToUse = None
       }
     }
@@ -724,13 +735,13 @@ object ParameterExtractor {
     val testKey:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_KEY)
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
     val use:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USE)
-    val kind:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND)
+    val kind:String = validatedKind(ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND))
     val communityId:Long = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
-    val inExports = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
+    val inExports = (kind == PropertyKind.SIMPLE) && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
     var hidden = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
-    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES)
+    val allowedValues:Option[String] = allowedValuesForKind(kind, ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES))
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
     if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {

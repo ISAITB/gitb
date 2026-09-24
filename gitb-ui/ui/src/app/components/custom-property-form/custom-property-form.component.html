@@ -18,6 +18,8 @@
     <div [ngbCollapse]="tbCollapsed!" [animation]="true">
         @for (property of tbProperties; track $index) {
             @if ((isAdmin || (!property.hidden && (!tbSelfRegistration || property.inSelfRegistration))) && property.prerequisiteOk) {
+                @let renderAsReadonly = isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration));
+                @let showTooltip = (!renderAsReadonly || (property.kind == 'CODE' || property.kind == 'RICH_TEXT' || property.kind == 'MULTILINE_TEXT')) && property.desc;
                 <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" [attr.for]="'prop-'+property.id">
                         @if (property.use == 'R' && tbShowRequiredAsterisks) {
@@ -28,7 +30,7 @@
                     @if (property.kind == 'SIMPLE') {
                         <div class="col-8 col-md-6">
                             @if (property.hasPresetValues) {
-                                @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                                @if (renderAsReadonly) {
                                     <p class="form-control-plaintext">{{ presetValueLabel(property) }}
                                         @if (property.desc) {
                                             <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
@@ -47,7 +49,7 @@
                                     </select>
                                 }
                             } @else {
-                                @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                                @if (renderAsReadonly) {
                                     <p class="form-control-plaintext">{{ property.value }}
                                         @if (property.desc) {
                                             <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
@@ -64,7 +66,7 @@
                         </div>
                     } @else if (property.kind == 'SECRET') {
                         <div class="col-8 col-md-6">
-                            @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                            @if (renderAsReadonly) {
                                 <div class="form-control-plaintext">
                                     {{ property.configured ? '*****' : '' }}
                                     @if (property.desc) {
@@ -107,7 +109,7 @@
                         </div>
                     } @else if (property.kind == 'BINARY') {
                         <div class="col-8 col-md-6">
-                            @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
+                            @if (renderAsReadonly) {
                                 <div>
                                     <p class="form-control-plaintext">
                                         @if (property.value != undefined) {
@@ -139,9 +141,41 @@
                                 </app-file-select>
                             }
                         </div>
+                    } @else if (property.kind == 'MULTILINE_TEXT') {
+                        <div class="col-8 col-md-6">
+                            @if (renderAsReadonly) {
+                                <div class="position-relative">
+                                    <textarea class="form-control" readonly [value]="property.value ?? ''"></textarea>
+                                </div>
+                            } @else {
+                                <textarea [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}"
+                                          [(ngModel)]="property.value" [ngModelOptions]="{standalone: true}"
+                                          class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)"></textarea>
+                            }
+                        </div>
+                    } @else if (property.kind == 'CODE') {
+                        <div class="col-8 col-md-6 custom-property-editor">
+                            @if (renderAsReadonly) {
+                                <div class="position-relative">
+                                    <app-code-editor [name]="'prop-'+property.id" [attr.id]="'prop-'+property.id" [ngModel]="property.value" [ngModelOptions]="{standalone: true}" [options]="{lineNumbers:true, readOnly:true}"></app-code-editor>
+                                </div>
+                            } @else {
+                                <app-code-editor [name]="'prop-'+property.id" [attr.id]="'prop-'+property.id" (focusChange)="codeEditorFocus($event, property.id)" [ngClass]="{'focused': editorFocus[property.id]}" [(ngModel)]="property.value" [ngModelOptions]="{standalone: true}" [options]="{lineNumbers:true}" [invalid]="validation?.get(tbPropertyType+property.id)"></app-code-editor>
+                            }
+                        </div>
+                    } @else if (property.kind == 'RICH_TEXT') {
+                        <div class="col-8 col-md-6 custom-property-editor">
+                            @if (renderAsReadonly) {
+                                <div class="position-relative">
+                                    <div class="form-control readonly-html-value no-margin-on-last-p" [innerHtml]="(property.value ?? '') | sanitizeHtml"></div>
+                                </div>
+                            } @else {
+                                <app-editor [name]="'prop-'+property.id" [attr.id]="'prop-'+property.id" [type]="'minimal'" [(ngModel)]="property.value" [ngModelOptions]="{standalone: true}" [invalid]="validation?.get(tbPropertyType+property.id)"></app-editor>
+                            }
+                        </div>
                     }
-                    @if (!isReadonly && (!property.adminOnly || isAdmin || (tbSelfRegistration && property.inSelfRegistration)) && property.desc) {
-                        <div app-tooltip class="col-auto" [tbTooltip]="property.desc"></div>
+                    @if (showTooltip) {
+                        <div app-tooltip class="col-auto" [tbTooltip]="property.desc!"></div>
                     }
                 </div>
             }

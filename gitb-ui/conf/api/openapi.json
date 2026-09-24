@@ -6058,6 +6058,11 @@
           "defaultValue": {
             "description": "The default value of the property when a new organisation is created.",
             "type": "string"
+          },
+          "kind": {
+            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
+            "type": "string",
+            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT"]
           }
         },
         "required": [
@@ -6128,6 +6133,11 @@
           "defaultValue": {
             "description": "The default value of the property when a new system is created.",
             "type": "string"
+          },
+          "kind": {
+            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
+            "type": "string",
+            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT"]
           }
         },
         "required": [
@@ -6198,6 +6208,11 @@
           "defaultValue": {
             "description": "The default value of the property when a new conformance statement is created.",
             "type": "string"
+          },
+          "kind": {
+            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
+            "type": "string",
+            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT"]
           }
         },
         "required": [

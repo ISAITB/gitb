@@ -17,6 +17,7 @@ import { HttpHeaders, HttpResponse } from "@angular/common/http"
 import { HttpRequestConfig } from "../types/http-request-config.type"
 import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 import {Constants} from './constants';
+import {PropertyKind} from '../types/property-kind.type';
 
 export class Utils {
 
@@ -111,6 +112,34 @@ export class Utils {
           pop.disableTooltip = false
         }, Constants.TOOLTIP_DELAY + 50)
       }
+    }
+
+    /**
+     * The display label for a property/parameter "kind" value, shared across the property definition
+     * lists (community properties, endpoint parameters, trigger filters).
+     */
+    public static propertyKindLabel(kind: PropertyKind|string): string {
+        switch (kind) {
+            case 'SIMPLE': return 'Simple'
+            case 'BINARY': return 'Binary'
+            case 'SECRET': return 'Secret'
+            case 'MULTILINE_TEXT': return 'Multiline text'
+            case 'CODE': return 'Code'
+            case 'RICH_TEXT': return 'Rich text'
+            default: return kind
+        }
+    }
+
+    /**
+     * Whether a rich text value has any actual content once markup and non-breaking spaces are stripped -
+     * used to determine whether a required rich text input/property was answered (an editor left with only
+     * empty tags should not count as provided).
+     */
+    public static hasRichTextContent(value: string|undefined): boolean {
+        if (value == undefined) {
+            return false
+        }
+        return value.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length > 0
     }
 
 }

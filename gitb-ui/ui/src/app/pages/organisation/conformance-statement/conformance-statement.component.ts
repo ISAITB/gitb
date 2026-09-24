@@ -744,12 +744,15 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   private updatePropertyConfiguredStatus(property: CustomProperty) {
-    if (property.kind == "SIMPLE") {
-      property.configured = this.textProvided(property.value)
-    } else if (property.kind == "SECRET") {
+    if (property.kind == "SECRET") {
       property.configured = (property.changeValue == true && this.textProvided(property.value)) || (!property.changeValue && property.configured == true)
-    } else {
+    } else if (property.kind == "BINARY") {
       property.configured = property.configured || property.file != undefined
+    } else if (property.kind == "RICH_TEXT") {
+      property.configured = Utils.hasRichTextContent(property.value)
+    } else {
+      // SIMPLE, MULTILINE_TEXT, CODE - all hold a plain string value.
+      property.configured = this.textProvided(property.value)
     }
   }
 

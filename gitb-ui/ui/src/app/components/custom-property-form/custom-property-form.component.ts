@@ -55,6 +55,7 @@ export class CustomPropertyFormComponent implements OnInit {
   private hasPrerequisites = false
   private propertyMap: Record<string, CustomProperty> = {}
   resetMap: Record<number, EventEmitter<void>> = {}
+  editorFocus: Record<number, boolean> = {}
   private propertiesInvolvedInPrerequisites: string[] = []
   private propertiesInvolvedInPrerequisitesMap: Record<string, boolean> = {}
 
@@ -88,7 +89,7 @@ export class CustomPropertyFormComponent implements OnInit {
     }
     if (this.tbProperties) {
       for (let prop of this.tbProperties) {
-        if (this.tbSetDefaults && this.tbProperties != undefined) {
+        if (this.tbSetDefaults && this.tbProperties != undefined && prop.kind == 'SIMPLE') {
           if (prop.defaultValue != undefined) {
             prop.value = prop.defaultValue
           }
@@ -179,6 +180,10 @@ export class CustomPropertyFormComponent implements OnInit {
     property.file = file
     property.value = "PATH"
     this.checkPrerequisites(property)
+  }
+
+  codeEditorFocus(focused: boolean, propertyId: number) {
+    this.editorFocus[propertyId] = focused
   }
 
   fileName(property: CustomProperty): string {

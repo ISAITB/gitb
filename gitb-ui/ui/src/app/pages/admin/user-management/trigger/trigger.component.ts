@@ -43,6 +43,7 @@ import {TriggerFireExpression} from '../../../../types/trigger-fire-expression';
 import {TriggerFireExpressionModalComponent} from './trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 import {DomainParameterService} from '../../../../services/domain-parameter.service';
 import {ServiceCallResultHandlerService} from '../../../../services/service-call-result-handler.service';
+import {Utils} from 'src/app/common/utils';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {MultiSelectConfig} from '../../../../components/multi-select-filter/multi-select-config';
 import {MultiSelectFilterComponentApi} from '../../../../components/multi-select-filter/multi-select-filter-component-api';
@@ -509,13 +510,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   parameterType(parameter: CustomProperty|DomainParameter|StatementParameterMinimal) {
-    if (parameter.kind == 'SIMPLE') {
-      parameter.kindLabel = 'simple'
-    } else if (parameter.kind == 'BINARY') {
-      parameter.kindLabel = 'binary'
-    } else {
-      parameter.kindLabel = 'secret'
-    }
+    // Domain parameters use "HIDDEN" rather than "SECRET" for the same kind of value.
+    const kind = parameter.kind == 'HIDDEN' ? 'SECRET' : parameter.kind
+    parameter.kindLabel = Utils.propertyKindLabel(kind).toLowerCase()
     return parameter.kindLabel
   }
 
