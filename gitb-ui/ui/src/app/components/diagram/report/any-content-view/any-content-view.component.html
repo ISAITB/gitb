@@ -11,29 +11,36 @@
             @if (withName || withValue) {
                 <div class="any-content-view-container">
                     <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
-                        @if (withName) {
-                            <div class="d-flex" [class.content-name]="withValue" [class.content-value]="!withValue" [class.with-items]="withItems" [class.break-texts]="breakNameText" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
-                                @if (!this.root) {
-                                    <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
-                                }
-                                @if (name) {
-                                    <div>{{ name }}</div>
+                        @if (withItems) {
+                            @if (withName) {
+                                <div class="d-flex content-name with-items" [class.break-texts]="breakNameText" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
+                                    @if (!this.root) {
+                                        <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
+                                    }
+                                    @if (name) {
+                                        <div>{{ name }}</div>
+                                    } @else {
+                                        <div class="not-inline-help-text">Expand to view</div>
+                                    }
+                                </div>
+                            }
+                        } @else {
+                            @if (withName) {
+                                <div class="content-label" [class.break-texts]="breakNameText">{{ name }}</div>
+                            }
+                            @if (withValue) {
+                                @if (showValueInline) {
+                                    @if (escapeValue) {
+                                        <div class="content-value" [class.break-texts]="breakValueText">{{ value }}</div>
+                                    } @else if (value != undefined) {
+                                        <div class="content-value no-margin-on-last-p"
+                                             [class.break-texts]="breakValueText" [innerHtml]="value | sanitizeHtml"></div>
+                                    }
                                 } @else {
-                                    <div class="not-inline-help-text">Expand to view</div>
+                                    <div class="content-value not-inline-help-text">Download or view in editor</div>
                                 }
-                            </div>
-                        }
-                        @if (withValue) {
-                            @if (showValueInline) {
-                                @if (escapeValue) {
-                                    <div class="content-value" [class.with-name]="withName"
-                                         [class.break-texts]="breakValueText">{{ value }}</div>
-                                } @else if (value != undefined) {
-                                    <div class="content-value no-margin-on-last-p" [class.with-name]="withName"
-                                         [class.break-texts]="breakValueText" [innerHtml]="value | sanitizeHtml"></div>
-                                }
-                            } @else if (!withName) {
-                                <div class="content-value not-inline-help-text">Download or view in editor</div>
+                            } @else if (withName) {
+                                <div class="content-value not-inline-help-text">No value</div>
                             }
                         }
                     </div>

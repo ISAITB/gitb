@@ -40,15 +40,19 @@
             opacity: 0.5;
         }
     }
-    & > .content-value {
+    & > .content-label {
         padding-top: 3px;
         padding-bottom: 3px;
-        &.with-items {
-            font-weight: bold;
+        font-size: .85em;
+        line-height: 1.25;
+        opacity: .65;
+        &.break-texts {
+            word-break: break-all;
         }
-        &.with-name {
-            padding-top: 0;
-        }
+    }
+    & > .content-value {
+        padding-top: 0;
+        padding-bottom: 3px;
         &.break-texts {
             word-break: break-all;
         }
@@ -63,6 +67,10 @@
     flex-shrink: 0;
     min-height: 50px;
     margin-left: 10px;
+    .btn-toolbar .btn {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
 }
 .any-content-view-root {
     padding-bottom: 10px;
