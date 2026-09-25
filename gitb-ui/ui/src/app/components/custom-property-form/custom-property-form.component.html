@@ -37,7 +37,7 @@
                         {{ property.name }}:
                     </label>
                     @if (property.kind == 'SIMPLE') {
-                        <div class="col-8 col-md-6">
+                        <div [class]="fieldClass">
                             @if (property.hasPresetValues) {
                                 @if (renderAsReadonly) {
                                     <p class="form-control-plaintext">{{ presetValueLabel(property) }}
@@ -74,7 +74,7 @@
                             }
                         </div>
                     } @else if (property.kind == 'SECRET') {
-                        <div class="col-8 col-md-6">
+                        <div [class]="fieldClass">
                             @if (renderAsReadonly) {
                                 <div class="form-control-plaintext">
                                     {{ property.configured ? '*****' : '' }}
@@ -117,7 +117,7 @@
                             }
                         </div>
                     } @else if (property.kind == 'BINARY') {
-                        <div class="col-8 col-md-6">
+                        <div [class]="fieldClass">
                             @if (renderAsReadonly) {
                                 <div>
                                     <p class="form-control-plaintext">
@@ -151,7 +151,7 @@
                             }
                         </div>
                     } @else if (property.kind == 'MULTILINE_TEXT') {
-                        <div class="col-8 col-md-6">
+                        <div [class]="fieldClass">
                             @if (renderAsReadonly) {
                                 <div class="position-relative">
                                     <textarea class="form-control" readonly [value]="property.value ?? ''"></textarea>
@@ -163,7 +163,7 @@
                             }
                         </div>
                     } @else if (property.kind == 'CODE') {
-                        <div class="col-8 col-md-6 custom-property-editor">
+                        <div [class]="fieldClass + ' custom-property-editor'">
                             @if (renderAsReadonly) {
                                 <div class="position-relative">
                                     <app-code-editor [name]="'prop-'+property.id" [attr.id]="'prop-'+property.id" [ngModel]="property.value" [ngModelOptions]="{standalone: true}" [options]="{lineNumbers:true, readOnly:true}"></app-code-editor>
@@ -173,7 +173,7 @@
                             }
                         </div>
                     } @else if (property.kind == 'RICH_TEXT') {
-                        <div class="col-8 col-md-6 custom-property-editor">
+                        <div [class]="fieldClass + ' custom-property-editor'">
                             @if (renderAsReadonly) {
                                 <div class="position-relative">
                                     <div class="form-control readonly-html-value no-margin-on-last-p" [innerHtml]="(property.value ?? '') | sanitizeHtml"></div>
