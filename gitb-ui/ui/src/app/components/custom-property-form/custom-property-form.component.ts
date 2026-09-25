@@ -46,6 +46,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbSetDefaults = false
   @Input() refresh?: EventEmitter<{props?: CustomProperty[], asterisks: boolean}>
   @Input() validation?: ValidationState
+  @Input() fieldClass? = 'col-8 col-md-6'
   @Output() collapseChange = new EventEmitter<boolean>()
 
   Constants = Constants

@@ -26,7 +26,7 @@
                         {{ property.name }}:
                     </label>
                     @if (property.kind == 'SIMPLE') {
-                        <div class="col-8 col-md-6">
+                        <div [class]="fieldClass">
                             @if (property.hasPresetValues) {
                                 @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
                                     <p class="form-control-plaintext">{{ presetValueLabel(property) }}
@@ -63,7 +63,7 @@
                             }
                         </div>
                     } @else if (property.kind == 'SECRET') {
-                        <div class="col-8 col-md-6">
+                        <div [class]="fieldClass">
                             @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
                                 <div class="form-control-plaintext">
                                     {{ property.configured ? '*****' : '' }}
@@ -106,7 +106,7 @@
                             }
                         </div>
                     } @else if (property.kind == 'BINARY') {
-                        <div class="col-8 col-md-6">
+                        <div [class]="fieldClass">
                             @if (isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration))) {
                                 <div>
                                     <p class="form-control-plaintext">
