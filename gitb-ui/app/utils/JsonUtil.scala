@@ -3571,7 +3571,8 @@ object JsonUtil {
         "specReference" -> (if (testCase.specReference.isDefined) testCase.specReference.get else JsNull),
         "specDescription" -> (if (testCase.specDescription.isDefined) testCase.specDescription.get else JsNull),
         "specLink" -> (if (testCase.specLink.isDefined) testCase.specLink.get else JsNull),
-        "group" -> (if (testCase.group.isDefined) testCase.group.get else JsNull)
+        "group" -> (if (testCase.group.isDefined) testCase.group.get else JsNull),
+        "flagId" -> (if (testCase.flagId.isDefined) testCase.flagId.get else JsNull)
       ))
     }
     json

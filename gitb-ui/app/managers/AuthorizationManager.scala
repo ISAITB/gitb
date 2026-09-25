@@ -748,7 +748,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canExecuteTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean = false): Future[Boolean] = {
-    canManageTestSession(request, sessionId, requireAdmin, requireOwnTestSessionIfNotAdmin = true)
+    canManageTestSession(request, sessionId, requireAdmin, requireOwnTestSessionIfNotAdmin = true).map(_ => true)
   }
 
   def canExecuteTestCase(request: RequestWithAttributes[_], test_id: String): Future[Boolean] = {
@@ -1332,40 +1332,43 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canExportTestSessionData(request: RequestWithAttributes[_], sessionId: String): Future[Boolean] = {
+  def canExportTestSessionData(request: RequestWithAttributes[_], sessionId: String): Future[Option[User]] = {
     canManageTestSession(request, sessionId, requireAdmin = true, requireOwnTestSessionIfNotAdmin = false)
   }
 
-  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean, requireOwnTestSessionIfNotAdmin: Boolean): Future[Boolean] = {
+  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean, requireOwnTestSessionIfNotAdmin: Boolean): Future[Option[User]] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
-        Future.successful(true)
+        Future.successful(Some(userInfo))
       } else if (isCommunityAdmin(userInfo)) {
         // Within community.
         testResultManager.getCommunityIdForTestSession(sessionId).flatMap { result =>
           if (result.isDefined) {
             if (result.get._2.isDefined) {
               // There is a community ID defined. This would mean an executing or completed session.
-              canManageCommunity(request, userInfo, result.get._2.get)
+              canManageCommunity(request, userInfo, result.get._2.get).map {
+                case true => Some(userInfo)
+                case false => None
+              }
             } else {
               /*
                Existing session but without a community ID. This can only come up if the community has been deleted.
                In such a case only the test bed admin should be able to see this.
                */
-              Future.successful(false)
+              Future.successful(None)
             }
           } else {
             /*
             There is no test session recorded for this session ID. This could be because the test session is currently
             being configured.
              */
-            Future.successful(true)
+            Future.successful(Some(userInfo))
           }
         }
       } else {
         // Organisation user.
         if (requireAdmin || userInfo.organization.isEmpty) {
-          Future.successful(false)
+          Future.successful(None)
         } else {
           testResultManager.getOrganisationIdsForTestSession(sessionId).flatMap { result =>
             if (result.isDefined) {
@@ -1374,32 +1377,38 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
               if (organisationIdForSession.isDefined && communityIdForSession.isDefined) {
                 if (userInfo.organization.get.id == organisationIdForSession.get) {
                   // The session belongs to the user's organisation.
-                  Future.successful(true)
+                  Future.successful(Some(userInfo))
                 } else {
                   if (requireOwnTestSessionIfNotAdmin) {
                     // The session must belong to the user's organisation.
-                    Future.successful(false)
+                    Future.successful(None)
                   } else {
                     // The session must belong to the user's community.
-                    organisationUserCanViewCommunityContent(request, userInfo, communityIdForSession.get)
+                    organisationUserCanViewCommunityContent(request, userInfo, communityIdForSession.get).map {
+                      case true => Some(userInfo)
+                      case false => None
+                    }
                   }
                 }
               } else {
                 // This is an obsolete session no longer visible to the user.
-                Future.successful(false)
+                Future.successful(None)
               }
             } else {
               // There is no test session recorded for this session ID. This could be because the test session is currently being configured.
-              Future.successful(true)
+              Future.successful(Some(userInfo))
             }
           }
         }
       }
     }
-    check.map(setAuthResult(request, _, "User cannot manage requested session"))
+    check.map { userInfo =>
+      setAuthResult(request, userInfo.isDefined, "User cannot manage requested session")
+      userInfo
+    }
   }
 
-  def canViewTestResultForSession(request: RequestWithAttributes[_], sessionId: String): Future[Boolean] = {
+  def canViewTestResultForSession(request: RequestWithAttributes[_], sessionId: String): Future[Option[User]] = {
     canManageTestSession(request, sessionId, requireAdmin = false, requireOwnTestSessionIfNotAdmin = false)
   }
 
@@ -1669,7 +1678,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
               Future.successful(false)
             } else {
               val requiresAdmin = currentAdminOnly || newFlag.exists(_.adminOnly)
-              canManageTestSession(request, sessionId, requireAdmin = requiresAdmin, requireOwnTestSessionIfNotAdmin = true)
+              canManageTestSession(request, sessionId, requireAdmin = requiresAdmin, requireOwnTestSessionIfNotAdmin = true).map(_ => true)
             }
           }
         } yield allowed
@@ -2457,6 +2466,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def isAnyAdminType(userInfo: User): Boolean = {
     isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo) || isOrganisationAdmin(userInfo)
+  }
+
+  /** Whether the requesting user is a Test Bed or community administrator - used to pick between the
+   * administrator and organisation-user views of role-dependent report content (e.g. test session flags),
+   * not as an authorization gate (the caller is expected to have already checked access separately). */
+  def isTestBedOrCommunityAdmin(userInfo: Option[User]): Future[Boolean] = {
+    Future.successful(userInfo.exists(u => isTestBedAdmin(u) || isCommunityAdmin(u)))
   }
 
   def canUpdateDomain(request: RequestWithAttributes[_], domainId: Long): Future[Boolean] = {

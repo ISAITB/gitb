@@ -347,8 +347,10 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     val contentType = request.headers.get(Constants.AcceptHeader).getOrElse(Constants.MimeTypeXML)
     val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
     val reportPath = getReportTempFile(suffix)
-    authorizationManager.canViewTestResultForSession(request, session).flatMap { _ =>
-      reportManager.generateTestCaseReport(reportPath, session, contentType, None, ParameterExtractor.extractOptionalUserId(request)).map(sendReportFile)
+    authorizationManager.canViewTestResultForSession(request, session).flatMap { userInfo =>
+      authorizationManager.isTestBedOrCommunityAdmin(userInfo).flatMap { adminView =>
+        reportManager.generateTestCaseReport(reportPath, session, contentType, None, ParameterExtractor.extractOptionalUserId(request), adminView).map(sendReportFile)
+      }
     }.recover {
       case e: Exception =>
         if (Files.exists(reportPath)) {
@@ -1536,11 +1538,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   def exportTestSessionData(): Action[AnyContent] = authorizedAction.async { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SESSION_ID)
     val archiveFolder = Path.of(repositoryUtils.getTempReportFolder().getAbsolutePath, UUID.randomUUID().toString)
-    authorizationManager.canExportTestSessionData(request, session).flatMap { _ =>
+    authorizationManager.canExportTestSessionData(request, session).flatMap { userInfo =>
       Files.createDirectories(archiveFolder)
       val archiveFile = archiveFolder.resolve("test_data.zip")
       val userId = ParameterExtractor.extractUserId(request)
-      reportManager.generateTestSessionDataArchive(archiveFile, session, None, Some(userId)).map { resultingReport =>
+      authorizationManager.isTestBedOrCommunityAdmin(userInfo).flatMap { adminView =>
+        reportManager.generateTestSessionDataArchive(archiveFile, session, None, Some(userId), adminView)
+      }.map { resultingReport =>
         if (resultingReport.isDefined) {
           Ok.sendFile(
             content = resultingReport.get.file.toFile,

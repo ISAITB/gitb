@@ -98,13 +98,13 @@ object ConformanceManager {
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Short]), // Test suite
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]), // Test case
 		(Rep[Option[Long]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]), // Test case group
-		(Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[Timestamp]]) // Result
+		(Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[Timestamp]], Rep[Option[Long]]) // Result
 	)
 	private type ConformanceStatusTuple = (
 		(Long, String, Option[String], Boolean, Option[String], Option[String], Option[String], Short), // Test suite
 		(Long, String, Option[String], Boolean, Boolean, Boolean, Option[String], Short, Option[String], Option[String], Option[String]), // Test case
 		(Option[Long], Option[String], Option[String], Option[String]), // Test case group
-		(String, Option[String], Option[String], Option[Timestamp]) // Result
+		(String, Option[String], Option[String], Option[Timestamp], Option[Long]) // Result
 	)
 	private type ConformanceStatusDbQuery = Query[ConformanceStatusDbTuple, ConformanceStatusTuple, Seq]
 
@@ -387,12 +387,15 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
         .filter(_._1._1._1.systemId === systemId)
         .filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
         .filterOpt(testSuiteId)((q, id) => q._1._1._1.testSuiteId === id)
-        .map(x => (
+        // The flag shown is the session's *current* flag (flags are a live session attribute, not something
+        // captured by the conformance snapshot itself).
+        .joinLeft(PersistenceSchema.testResults).on((q, tr) => q._1._1._1.testSessionId === tr.testSessionId)
+        .map { case (x, testResult) => (
           (x._1._2.id, x._1._2.shortname, x._1._2.description, false, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.order), // Test suite
           (x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, false, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
           (x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
-          (x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testSessionId, x._1._1._1.updateTime) // Result
-        ))
+          (x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testSessionId, x._1._1._1.updateTime, testResult.map(_.flagId).flatten) // Result
+        )}
     } else {
       PersistenceSchema.conformanceResults
         .join(PersistenceSchema.testCases).on(_.testcase === _.id)
@@ -402,12 +405,13 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
         .filter(_._1._1._1.sut === systemId)
         .filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
         .filterOpt(testSuiteId)((q, id) => q._1._1._1.testsuite === id)
-        .map(x => (
+        .joinLeft(PersistenceSchema.testResults).on((q, tr) => q._1._1._1.testsession === tr.testSessionId)
+        .map { case (x, testResult) => (
           (x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.order), // Test suite
           (x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.hasDocumentation, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
           (x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
-          (x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testsession, x._1._1._1.updateTime) // Result
-        ))
+          (x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testsession, x._1._1._1.updateTime, testResult.map(_.flagId).flatten) // Result
+        )}
     }
     query.sortBy(x => (x._1._8, x._1._2, x._2._8)).result.map { results =>
       results.map { r =>
@@ -415,7 +419,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
           testSuiteId = r._1._1, testSuiteName = r._1._2, testSuiteDescription = r._1._3, testSuiteHasDocumentation = r._1._4, testSuiteSpecReference = r._1._5, testSuiteSpecDescription = r._1._6, testSuiteSpecLink = r._1._7,
           testCaseId = r._2._1, testCaseName = r._2._2, testCaseDescription = r._2._3, testCaseHasDocumentation = r._2._4, testCaseSpecReference = r._2._9, testCaseSpecDescription = r._2._10, testCaseSpecLink = r._2._11,
           testCaseGroup = r._3._1.map(TestCaseGroup(_, r._3._2.get, r._3._3, r._3._4, r._1._1)),
-          result = r._4._1, outputMessage = r._4._2, sessionId = r._4._3, sessionTime = r._4._4,
+          result = r._4._1, outputMessage = r._4._2, sessionId = r._4._3, sessionTime = r._4._4, flagId = r._4._5,
           testCaseOptional = r._2._5, testCaseDisabled = r._2._6, testCaseTags = r._2._7
         )
       }
@@ -435,7 +439,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
         testSuiteMap += (item.testSuiteId -> newTestSuite)
         newTestSuite
       }
-      val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, None, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags, item.testCaseSpecReference, item.testCaseSpecDescription, item.testCaseSpecLink, item.testCaseGroup.map(_.id))
+      val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, None, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags, item.testCaseSpecReference, item.testCaseSpecDescription, item.testCaseSpecLink, item.testCaseGroup.map(_.id), item.flagId)
       testSuite.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
       if (item.testCaseGroup.isDefined) {
         testSuite.testCaseGroups.asInstanceOf[mutable.HashSet[TestCaseGroup]].add(item.testCaseGroup.get)

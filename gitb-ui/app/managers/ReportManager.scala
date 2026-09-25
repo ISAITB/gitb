@@ -616,7 +616,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
-  def generateTestSessionDataArchive(archivePath: Path, sessionId: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
+  def generateTestSessionDataArchive(archivePath: Path, sessionId: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long], adminView: Boolean = false): Future[Option[ReportFileInfo]] = {
     for {
       sessionInfo <- resolveTestSessionReportInfo(sessionId, requestedUserId)
       communityId = requestedCommunityId.orElse(sessionInfo._1)
@@ -631,7 +631,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       // signing, no custom stylesheet) - only community terminology/labels are applied when known.
       export <- testCaseReportProducer.generateTestSessionDataExport(sessionId,
         () => if (communityId.isDefined) getReportLabels(communityId.get) else Future.successful(Map.empty[Short, CommunityLabels]),
-        () => reportHelper.createReportSpecs(communityId))
+        () => reportHelper.createReportSpecs(communityId), adminView)
       report <- finaliseTestSessionDataArchive(archivePath, export)
     } yield {
       report.map { path =>
@@ -686,7 +686,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
-  def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
+  def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long], adminView: Boolean = false): Future[Option[ReportFileInfo]] = {
     val extension = if (contentType == Constants.MimeTypePDF) "pdf" else "xml"
     for {
       sessionInfo <- resolveTestSessionReportInfo(sessionId, requestedUserId)
@@ -701,7 +701,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       // Generate the input for the report
       reportInfo <- {
         if (contentType == Constants.MimeTypePDF && reportSettings.exists(x => x.customPdfs && x.customPdfService.isDefined)) {
-          testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(Constants.MimeTypeXML), None, None)
+          testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(Constants.MimeTypeXML), None, None, adminView)
         } else {
           // Create the report.
           val labelProvider = if (communityId.isDefined) {
@@ -717,7 +717,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           } else {
             None
           }
-          testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(contentType), labelProvider, reportSpecProvider)
+          testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(contentType), labelProvider, reportSpecProvider, adminView)
         }
       }
       // Call custom PDF generation service (for PDFs), apply XSLT (for XML reports), sign (for PDF reports) and clean up.
@@ -1059,7 +1059,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           val testCase = new ConformanceTestCase(
             statement.testCaseId.get, statement.testCaseName.get, statement.testCaseDescription, Some(statement.testCaseVersion), None, statement.updateTime, None, false,
             statement.testCaseOptional.get, statement.testCaseDisabled.get, TestResultType.fromValue(statement.result), statement.testCaseTags,
-            statement.testCaseSpecReference, statement.testCaseSpecDescription, statement.testCaseSpecLink, statement.testCaseGroupId
+            statement.testCaseSpecReference, statement.testCaseSpecDescription, statement.testCaseSpecLink, statement.testCaseGroupId, None
           )
           testSuite.get._1.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]] += testCase
           // Record result to counters
@@ -3723,7 +3723,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
          .headOption
       } yield (foundSessionId, communityIdForKey)
     ).flatMap {
-      case (Some(foundSessionId), communityIdForKey) => generateTestSessionDataArchive(archivePath, foundSessionId, communityIdForKey, None)
+      case (Some(foundSessionId), communityIdForKey) => generateTestSessionDataArchive(archivePath, foundSessionId, communityIdForKey, None, adminView = true)
       case (None, _) => Future.successful(None)
     }
   }

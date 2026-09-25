@@ -32,6 +32,7 @@ export interface ConformanceTestCase extends SpecificationReferenceInfo {
   disabled?: boolean;
   tags?: TagData[];
   group?: number;
+  flagId?: number;
 
   parsedTags?: TagData[];
   executionPending?: boolean;

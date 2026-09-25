@@ -48,6 +48,14 @@
                                 <app-tags-display [tags]="testCase.tags"></app-tags-display>
                             </div>
                         }
+                        @if (testCase.flagId != undefined) {
+                            @let flag = flagFor(testCase);
+                            @if (flag) {
+                                <div class="testCaseFlagContainer">
+                                    <i [class]="Constants.BUTTON_ICON.SNAPSHOT" [style.color]="flag.colour" tooltipClass="shortTooltip" [ngbTooltip]="flag.name" [openDelay]="Constants.TOOLTIP_DELAY"></i>
+                                </div>
+                            }
+                        }
                         @if (testCase.updateTime) {
                             <div class="testCaseUpdateTimeContainer">
                                 <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>

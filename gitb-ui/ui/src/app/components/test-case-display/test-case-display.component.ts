@@ -108,6 +108,12 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     this.optionButtons?.forEach((item) => item.documentClick(event))
   }
 
+  /** The test case's current flag, resolved (with the role-appropriate name/colour) from the login-time
+   * cache - `undefined` if the test case has none, or the flag is no longer known. */
+  flagFor(testCase: ConformanceTestCase) {
+    return this.dataService.findTestFlag(this.communityId, testCase.flagId)
+  }
+
   closeOptions(source: ConformanceTestCase) {
     this.optionButtons?.forEach((optionButton) => {
       if (optionButton.getReferenceItem() !== source) {

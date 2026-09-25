@@ -35,5 +35,6 @@ class ConformanceTestCase(
   var specReference: Option[String],
   var specDescription: Option[String],
   var specLink: Option[String],
-  var group: Option[Long]
+  var group: Option[Long],
+  var flagId: Option[Long]
 ) {}

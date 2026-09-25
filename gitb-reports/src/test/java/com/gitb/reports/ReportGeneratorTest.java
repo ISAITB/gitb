@@ -168,6 +168,8 @@ public class ReportGeneratorTest {
         // Comments
         data.setAdminComment(new TestCaseOverview.AdminComment("<p>The test case is set as <strong>failed</strong>.</p>", "06/04/2023 10:21:48", true, true));
         data.setUserComment(new TestCaseOverview.UserComment("<p>Please review.</p>", "06/04/2023 10:21:44"));
+        // Flag
+        data.setFlag(new TestCaseOverview.Flag("Review to accept", "#5bc0de"));
         // Test steps
         data.setSteps(List.of(
                 generator.fromTestStepReportType(getTAR(), "Step 1.1: Define access identifiers", specs),

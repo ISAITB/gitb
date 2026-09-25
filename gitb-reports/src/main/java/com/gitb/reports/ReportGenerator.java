@@ -701,6 +701,7 @@ public class ReportGenerator {
             }
             parameters.put("userComment", testCaseOverview.getUserComment());
             parameters.put("adminComment", testCaseOverview.getAdminComment());
+            parameters.put("flag", testCaseOverview.getFlag());
             writeClasspathReport("reports/TestCaseOverview.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException(e);

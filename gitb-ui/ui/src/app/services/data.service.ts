@@ -348,6 +348,23 @@ export class DataService {
     return this.getApplicableTestFlags(communityId).find(f => f.id == flagId)
   }
 
+  /**
+   * As `getTestFlag`, but for the Test Bed administrator falls back to searching every cached community's
+   * flags (ids are globally unique) if the given community id doesn't resolve one. This covers callers
+   * that may pass a community id that doesn't match the flagged session's actual community - e.g. the
+   * conformance statement screen, which for the Test Bed administrator replaces the statement's community
+   * with an implicit (domain) one when the statement belongs to the default community.
+   */
+  findTestFlag(communityId: number|undefined, flagId: number|undefined): TestFlagForUser|undefined {
+    const flag = this.getTestFlag(communityId, flagId)
+    if (flag != undefined || flagId == undefined || !this.isSystemAdmin) return flag
+    for (const community of this.allCommunityTestFlags ?? []) {
+      const match = community.flags.find(f => f.id == flagId)
+      if (match != undefined) return match
+    }
+    return undefined
+  }
+
   getApplicableTestFlags(communityId?: number): TestFlagForUser[] {
     if (this.isSystemAdmin) {
       if (communityId == undefined || this.allCommunityTestFlags == undefined) return []

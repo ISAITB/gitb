@@ -24,7 +24,7 @@ import com.gitb.tpl._
 import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import managers.TestCaseReportProducer.{ReportGenerationInput, TestSessionData, TestSessionDataExport}
-import models.{CommunityLabels, Constants, SessionFolderInfo, SessionReportPath, TestResult, TestResultComments}
+import models.{CommunityLabels, Constants, SessionFolderInfo, SessionReportPath, TestFlags, TestResult, TestResultComments}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
@@ -46,7 +46,7 @@ import scala.util.Using
 object TestCaseReportProducer {
 
   case class ReportGenerationInput(stepReports: List[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], sessionId: String, keepStepContexts: Boolean)
-  private case class TestSessionData(result: TestResult, presentation: com.gitb.tpl.TestCase, comments: Option[TestResultComments])
+  private case class TestSessionData(result: TestResult, presentation: com.gitb.tpl.TestCase, comments: Option[TestResultComments], flag: Option[TestFlags])
   /**
    * The two report artefacts produced for the test session data export archive (see
    * [[ReportManager.generateTestSessionDataArchive]]), plus the UUID -> user-friendly file name map that
@@ -74,7 +74,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
   private val codec = new URLCodec()
   import dbConfig.profile.api._
 
-  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Future[Map[Short, CommunityLabels]]], reportSpecSupplier: Option[() => ReportSpecs] = None): Future[SessionReportPath] = {
+  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Future[Map[Short, CommunityLabels]]], reportSpecSupplier: Option[() => ReportSpecs] = None, adminView: Boolean = false): Future[SessionReportPath] = {
     for {
       // Load test session folder
       sessionFolderInfo <- {
@@ -92,10 +92,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
         if (sessionData.isDefined) {
           val reportData = contentType match {
             case Some(Constants.MimeTypePDF) => (".report.pdf", (input: ReportGenerationInput) => {
-              generateDetailedTestCaseReportPdf(input, sessionData.get, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
+              generateDetailedTestCaseReportPdf(input, sessionData.get, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply(), adminView)
             })
             case _ => (".report.xml", (input: ReportGenerationInput) => {
-              generateDetailedTestCaseReportXml(input, sessionData.get)
+              generateDetailedTestCaseReportXml(input, sessionData.get, adminView)
             })
           }
           /*
@@ -145,7 +145,8 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
    */
   def generateTestSessionDataExport(sessionId: String,
                                     labelSupplier: () => Future[Map[Short, CommunityLabels]],
-                                    reportSpecSupplier: () => ReportSpecs): Future[TestSessionDataExport] = {
+                                    reportSpecSupplier: () => ReportSpecs,
+                                    adminView: Boolean): Future[TestSessionDataExport] = {
     for {
       sessionFolderInfo <- repositoryUtils.getPathForTestSession(codec.decode(sessionId), isExpected = true)
       sessionData <- loadTestSessionDataForReport(sessionId)
@@ -163,8 +164,8 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
               val xmlInput = pdfInput.copy(exportedReportPath = new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + ".reportData.xml"))
               for {
                 labels <- labelSupplier.apply()
-                pdfReportPath <- generateDetailedTestCaseReportPdf(pdfInput, sessionData.get, Future.successful(labels), reportSpecSupplier.apply())
-                xmlReportPath <- generateDetailedTestCaseReportXml(xmlInput, sessionData.get)
+                pdfReportPath <- generateDetailedTestCaseReportPdf(pdfInput, sessionData.get, Future.successful(labels), reportSpecSupplier.apply(), adminView)
+                xmlReportPath <- generateDetailedTestCaseReportXml(xmlInput, sessionData.get, adminView)
               } yield TestSessionDataExport(Some(xmlReportPath), Some(pdfReportPath), fileNames, inlineFileContents, sessionFolderInfo)
             }
           }
@@ -180,24 +181,35 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
       PersistenceSchema.testResults
         .joinLeft(PersistenceSchema.testResultComments).on(_.testSessionId === _.testSessionId)
         .joinLeft(PersistenceSchema.testResultDefinitions).on(_._1.testSessionId === _.testSessionId)
-        .filter(_._1._1.testSessionId === testSessionId)
+        .joinLeft(PersistenceSchema.testFlags).on(_._1._1.flagId === _.id)
+        .filter(_._1._1._1.testSessionId === testSessionId)
         .result
         .headOption
         .map {
           case Some(x) =>
-            val testCasePresentation = x._2 match {
+            val testCasePresentation = x._1._2 match {
               case Some(presentation) =>
                 XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(presentation.tpl)))
               case None =>
                 throw new IllegalStateException("Test case definition not found for test session")
             }
-            Some(TestSessionData(x._1._1, testCasePresentation, x._1._2))
+            Some(TestSessionData(x._1._1._1, testCasePresentation, x._1._1._2, x._2))
           case None => None
         }
     }
   }
 
-  private def generateDetailedTestCaseReportXml(input: ReportGenerationInput, testData: TestSessionData): Future[Path] = {
+  /** Resolves the flag's name/colour for display, matching the effective values a viewer with the given
+   * role would see (see [[models.TestFlags.effectiveName]]/[[models.TestFlags.effectiveColour]]). */
+  private def resolveFlagDisplay(flag: TestFlags, adminView: Boolean): (String, String) = {
+    if (adminView) {
+      (flag.name, flag.colour)
+    } else {
+      (flag.effectiveName, flag.effectiveColour)
+    }
+  }
+
+  private def generateDetailedTestCaseReportXml(input: ReportGenerationInput, testData: TestSessionData, adminView: Boolean): Future[Path] = {
     val reportPath = Paths.get(input.exportedReportPath.getAbsolutePath)
     for {
       overview <- Future.successful {
@@ -227,6 +239,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
             comment.setForcedResult(testData.comments.get.resultForced.nonEmpty)
             overview.setAdminComment(comment)
           }
+        }
+        if (testData.flag.isDefined) {
+          val (name, _) = resolveFlagDisplay(testData.flag.get, adminView)
+          overview.setFlag(name)
         }
         if (input.testCase.isDefined) {
           overview.setId(input.testCase.get.identifier)
@@ -258,7 +274,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
     } yield reportPath
   }
 
-  private def generateDetailedTestCaseReportPdf(input: ReportGenerationInput, testData: TestSessionData, labels: Future[Map[Short, CommunityLabels]], specs: ReportSpecs): Future[Path] = {
+  private def generateDetailedTestCaseReportPdf(input: ReportGenerationInput, testData: TestSessionData, labels: Future[Map[Short, CommunityLabels]], specs: ReportSpecs, adminView: Boolean): Future[Path] = {
     val reportPath = Paths.get(input.exportedReportPath.getAbsolutePath)
     for {
       // Overview
@@ -311,6 +327,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
               testData.comments.get.userCommentTime.isEmpty || testData.comments.get.userCommentTime.get.before(testData.comments.get.adminCommentTime.get)
             ))
           }
+        }
+        if (testData.flag.isDefined) {
+          val (name, colour) = resolveFlagDisplay(testData.flag.get, adminView)
+          overview.setFlag(new TestCaseOverview.Flag(name, colour))
         }
         if (testResult.testCase.isDefined) {
           overview.setTestName(testResult.testCase.get)
