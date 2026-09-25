@@ -172,6 +172,30 @@ export class CommunityService {
     })
   }
 
+  getPropertyDocumentation(communityId: number, type?: 'organisation'|'system') {
+    let params: any = {}
+    if (type !== undefined) {
+      params.type = type
+    }
+    return this.restService.get<{organisation?: string, system?: string}>({
+      path: ROUTES.controllers.CommunityService.getPropertyDocumentation(communityId).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  updatePropertyDocumentation(communityId: number, type: 'organisation'|'system', documentation: string|undefined) {
+    const data = {
+      type: type,
+      documentation: documentation
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.CommunityService.updatePropertyDocumentation(communityId).url,
+      data: data,
+      authenticate: true
+    })
+  }
+
   createCommunity(shortName: string, fullName: string, email: string|undefined,
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,

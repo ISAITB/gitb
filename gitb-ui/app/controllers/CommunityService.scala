@@ -660,6 +660,31 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
     } yield result
   }
 
+  def getPropertyDocumentation(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
+      val propertyType = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TYPE)
+      communityManager.getPropertyDocumentation(communityId, propertyType).map { case (organisationDoc, systemDoc) =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsPropertyDocumentation(organisationDoc, systemDoc).toString)
+      }
+    }
+  }
+
+  def updatePropertyDocumentation(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      val paramMap = ParameterExtractor.paramMap(request)
+      val propertyType = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TYPE)
+      val documentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeMinimalEditorContent)
+      val update = if (propertyType == "organisation") {
+        communityManager.updateOrganisationPropertyDocumentation(communityId, documentation)
+      } else {
+        communityManager.updateSystemPropertyDocumentation(communityId, documentation)
+      }
+      update.map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
   def getCommunityLabels(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
       communityManager.getCommunityLabels(communityId).map { labels =>

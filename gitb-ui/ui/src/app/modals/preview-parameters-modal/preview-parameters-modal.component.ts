@@ -33,6 +33,7 @@ export class PreviewParametersModalComponent implements OnInit {
   @Input() modalTitle!: string
   @Input() hasRegistrationCase!: boolean
   @Input() propertiesRequiredInRegistration = false
+  @Input() documentation?: string
   mode = 'user'
   parametersForRegistration: CustomProperty[] = []
 

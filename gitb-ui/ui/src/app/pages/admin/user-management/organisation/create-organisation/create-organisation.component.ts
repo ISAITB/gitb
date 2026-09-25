@@ -79,11 +79,13 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
     const landingPages$ = this.landingPageService.getLandingPagesByCommunity(this.communityId)
     const legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
     const errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-    forkJoin([properties$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
+    const documentation$ = this.communityService.getPropertyDocumentation(this.communityId, 'organisation')
+    forkJoin([properties$, landingPages$, legalNotices$, errorTemplates$, documentation$]).subscribe((data) => {
       this.propertyData.properties = data[0]
       this.landingPages = data[1]
       this.legalNotices = data[2]
       this.errorTemplates = data[3]
+      this.propertyData.documentation = data[4].organisation
       this.formDataLoaded = true
       this.updateFormData()
     }).add(() => {

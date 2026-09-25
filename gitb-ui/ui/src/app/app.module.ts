@@ -316,6 +316,7 @@ import { StartRedirectComponent } from './components/start-redirect/start-redire
 import { DomainTagIndicatorComponent } from './components/domain-tag-indicator/domain-tag-indicator.component';
 import { CommunityTagIndicatorComponent } from './components/community-tag-indicator/community-tag-indicator.component';
 import { TestResultCommentsModalComponent } from './modals/test-result-comments-modal/test-result-comments-modal.component';
+import { ConfigurationDocumentationModalComponent } from './modals/configuration-documentation-modal/configuration-documentation-modal.component';
 import { MessagesComponent } from './pages/settings/messages/messages.component';
 import { MessageTableComponent } from './components/message-table/message-table.component';
 import { MessageDetailComponent } from './components/message-detail/message-detail.component';
@@ -545,7 +546,8 @@ import { MessageItemComponent } from './components/message-item/message-item.com
     StartRedirectComponent,
     DomainTagIndicatorComponent,
     CommunityTagIndicatorComponent,
-    TestResultCommentsModalComponent
+    TestResultCommentsModalComponent,
+    ConfigurationDocumentationModalComponent
   ],
     imports: [
         NgxColorPickerComponent,

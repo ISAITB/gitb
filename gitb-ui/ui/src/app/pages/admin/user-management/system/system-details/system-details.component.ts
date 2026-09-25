@@ -27,6 +27,7 @@ import {Constants} from 'src/app/common/constants';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {forkJoin} from 'rxjs';
 import {NavigationTarget} from 'src/app/types/navigation-target';
+import {CommunityService} from 'src/app/services/community.service';
 
 @Component({
     selector: 'app-system-details',
@@ -60,7 +61,8 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
     public readonly routingService: RoutingService,
-    private readonly systemService: SystemService
+    private readonly systemService: SystemService,
+    private readonly communityService: CommunityService
   ) { super() }
 
   ngOnInit(): void {
@@ -84,7 +86,8 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     this.propertyData.owner = this.system.id
     const loadSystem$ = this.systemService.getSystemById(this.systemId)
     const loadProperties$ = this.systemService.getSystemParameterValues(this.system.id)
-    forkJoin([loadSystem$, loadProperties$]).subscribe((data) => {
+    const loadDocumentation$ = this.communityService.getPropertyDocumentation(this.communityId, 'system')
+    forkJoin([loadSystem$, loadProperties$, loadDocumentation$]).subscribe((data) => {
       this.system = data[0]
       if (this.system.owner == this.dataService.vendor?.id) {
         this.routingService.ownSystemBreadcrumbs(this.systemId, this.system.sname!)
@@ -92,6 +95,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
         this.routingService.systemBreadcrumbs(this.communityId, this.organisationId, undefined, this.systemId, this.system.sname!)
       }
       this.propertyData.properties = data[1]
+      this.propertyData.documentation = data[2].system
     }).add(() => {
       this.loaded = true
     })

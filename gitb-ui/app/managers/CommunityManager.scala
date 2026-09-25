@@ -808,6 +808,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- deleteConformanceStatementDocumentationReportSettings(communityId)
       _ <- deleteOrganisationParametersByCommunity(communityId)
       _ <- deleteSystemParametersByCommunity(communityId)
+      _ <- deletePropertyDocumentationByCommunity(communityId)
       _ <- communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls)
       _ <- deleteCommunityKeystoreInternal(communityId)
       _ <- deleteCommunityReportStylesheets(communityId, onSuccessCalls)
@@ -1710,6 +1711,62 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def deleteConformanceStatementDocumentationReportSettings(communityId: Long): DBIO[_] = {
     PersistenceSchema.conformanceStatementDocumentationReportSettings.filter(_.community === communityId).delete
+  }
+
+  def getPropertyDocumentation(communityId: Long, propertyType: Option[String] = None): Future[(Option[String], Option[String])] = {
+    DB.run(for {
+      organisationDoc <- propertyType match {
+        case Some("system") => DBIO.successful(None) // The system-level documentation was specifically requested.
+        case _ => PersistenceSchema.organisationPropertyDocumentation.filter(_.community === communityId).map(_.documentation).result.headOption
+      }
+      systemDoc <- propertyType match {
+        case Some("organisation") => DBIO.successful(None) // The organisation-level documentation was specifically requested.
+        case _ => PersistenceSchema.systemPropertyDocumentation.filter(_.community === communityId).map(_.documentation).result.headOption
+      }
+    } yield (organisationDoc, systemDoc))
+  }
+
+  def updateOrganisationPropertyDocumentation(communityId: Long, documentation: Option[String]): Future[Unit] = {
+    DB.run(upsertOrDeleteOrganisationPropertyDocumentation(communityId, documentation).transactionally).map(_ => ())
+  }
+
+  def updateSystemPropertyDocumentation(communityId: Long, documentation: Option[String]): Future[Unit] = {
+    DB.run(upsertOrDeleteSystemPropertyDocumentation(communityId, documentation).transactionally).map(_ => ())
+  }
+
+  def upsertOrDeleteOrganisationPropertyDocumentation(communityId: Long, documentation: Option[String]): DBIO[_] = {
+    if (documentation.exists(_.nonEmpty)) {
+      for {
+        existingId <- PersistenceSchema.organisationPropertyDocumentation.filter(_.community === communityId).map(_.id).result.headOption
+        _ <- existingId match {
+          case Some(id) => PersistenceSchema.organisationPropertyDocumentation.filter(_.id === id).map(_.documentation).update(documentation.get)
+          case None => PersistenceSchema.organisationPropertyDocumentation += models.OrganisationPropertyDocumentation(0L, communityId, documentation.get)
+        }
+      } yield ()
+    } else {
+      PersistenceSchema.organisationPropertyDocumentation.filter(_.community === communityId).delete
+    }
+  }
+
+  def upsertOrDeleteSystemPropertyDocumentation(communityId: Long, documentation: Option[String]): DBIO[_] = {
+    if (documentation.exists(_.nonEmpty)) {
+      for {
+        existingId <- PersistenceSchema.systemPropertyDocumentation.filter(_.community === communityId).map(_.id).result.headOption
+        _ <- existingId match {
+          case Some(id) => PersistenceSchema.systemPropertyDocumentation.filter(_.id === id).map(_.documentation).update(documentation.get)
+          case None => PersistenceSchema.systemPropertyDocumentation += models.SystemPropertyDocumentation(0L, communityId, documentation.get)
+        }
+      } yield ()
+    } else {
+      PersistenceSchema.systemPropertyDocumentation.filter(_.community === communityId).delete
+    }
+  }
+
+  def deletePropertyDocumentationByCommunity(communityId: Long): DBIO[_] = {
+    for {
+      _ <- PersistenceSchema.organisationPropertyDocumentation.filter(_.community === communityId).delete
+      _ <- PersistenceSchema.systemPropertyDocumentation.filter(_.community === communityId).delete
+    } yield ()
   }
 
   def deleteConformanceOverviewCertificateSettings(communityId: Long): DBIO[_] = {

@@ -22,6 +22,7 @@ import {Counters} from 'src/app/components/test-status-base/counters';
 import {MissingConfigurationAction} from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
 import {MissingConfigurationModalComponent} from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import {CommunityService} from 'src/app/services/community.service';
+import {ActorService} from 'src/app/services/actor.service';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -43,7 +44,7 @@ import {ConformanceTestSuite} from './conformance-test-suite';
 import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
 import {CustomProperty} from 'src/app/types/custom-property.type';
 import {ValidationState} from 'src/app/types/validation-state';
-import {share} from 'rxjs/operators';
+import {share, shareReplay} from 'rxjs/operators';
 import {TestCaseFilterState} from '../../../components/test-case-filter/test-case-filter-state';
 import {TestCaseFilterApi} from '../../../components/test-case-filter/test-case-filter-api';
 import {NavigationControlsConfig} from '../../../components/navigation-controls/navigation-controls-config';
@@ -83,7 +84,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   @ViewChildren("testStatusDisplay") testStatusDisplay?: QueryList<TestStatusBaseApi>
 
   communityId?: number
-  communityIdOfStatement!: number
+  communityIdOfStatement?: number
   snapshotId?: number
   organisationId!: number
   systemId!: number
@@ -185,6 +186,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   systemPropertyVisibility?: ConfigurationPropertyVisibility
   statementPropertyVisibility?: ConfigurationPropertyVisibility
   propertyValidation = new ValidationState()
+  organisationPropertyDocumentation?: string
+  systemPropertyDocumentation?: string
+  statementPropertyDocumentation?: string
 
   resizeObserver!: ResizeObserver
   resultsWrapped = false
@@ -192,6 +196,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   statementExecutionPending = false
 
   conformanceStatementDetailVisibilitySubscription?: Subscription
+  private initialDataLoaded$!: Observable<any>
 
   constructor(
     public readonly dataService: DataService,
@@ -208,6 +213,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     private readonly routingService: RoutingService,
     private readonly reportSupportService: ReportSupportService,
     private readonly communityService: CommunityService,
+    private readonly actorService: ActorService,
     private readonly zone: NgZone
   ) {
     super(router, route)
@@ -249,7 +255,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     this.conformanceStatementDetailVisibilitySubscription = this.dataService.onConformanceStatementDetailVisibilityChange$.subscribe((visible) => {
       this.toggleOverviewVisibility(visible)
     })
-    this.loadInitialData().pipe(
+    this.initialDataLoaded$ = this.loadInitialData()
+    this.initialDataLoaded$.pipe(
       mergeMap(() => {
         const existingDisplayState = this.getDisplayState<TestCaseSearchCriteria>(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, true)
         if (existingDisplayState && existingDisplayState.key == this.stateKey()) {
@@ -344,7 +351,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         this.unfilteredTestCaseCount = statementData.results.count
         this.unfilteredTestSuiteCount = status.testSuiteCount
       }),
-      share()
+      shareReplay(1)
     )
     obs$.subscribe()
     return obs$
@@ -509,29 +516,40 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   loadConfigurations() {
     if (this.loadingConfiguration.status == Constants.STATUS.NONE) {
       this.loadingConfiguration.status = Constants.STATUS.PENDING
-      const systemConfiguration = this.systemService.getSystemParameterValues(this.systemId)
-      const organisationConfiguration = this.communityService.getOrganisationParameterValues(this.organisationId)
-      const statementConfiguration = this.conformanceService.getStatementParameterValues(this.actorId, this.systemId)
-      forkJoin([organisationConfiguration, systemConfiguration, statementConfiguration])
-      .subscribe((data) => {
-        // Organisation properties
-        this.organisationProperties = data[0]
-        // System properties
-        this.systemProperties = data[1]
-        // Statement properties
-        this.statementProperties = data[2]
-        // Determine visibility of properties
-        this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties)
-        this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties)
-        this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
-        // Initialise validation status
-        this.organisationProperties.forEach((p) => this.propertyValidation.set('organisation'+p.id))
-        this.systemProperties.forEach((p) => this.propertyValidation.set('system'+p.id))
-        this.statementProperties.forEach((p) => this.propertyValidation.set('statement'+p.id))
-        // Highlight validation issues
-        this.applyPropertyValidation()
-      }).add(() => {
-        this.loadingConfiguration.status = Constants.STATUS.FINISHED
+      // Wait for the initial statement load to complete (it resolves communityIdOfStatement) before
+      // querying configuration data - this may already be resolved (shareReplay caches it) if the
+      // configuration tab is shown well after the initial page load.
+      this.initialDataLoaded$.subscribe(() => {
+        const systemConfiguration = this.systemService.getSystemParameterValues(this.systemId)
+        const organisationConfiguration = this.communityService.getOrganisationParameterValues(this.organisationId)
+        const statementConfiguration = this.conformanceService.getStatementParameterValues(this.actorId, this.systemId)
+        const propertyDocumentation = this.communityService.getPropertyDocumentation(this.communityIdOfStatement!)
+        const actorPropertyDocumentation = this.actorService.getPropertyDocumentation(this.actorId)
+        forkJoin([organisationConfiguration, systemConfiguration, statementConfiguration, propertyDocumentation, actorPropertyDocumentation])
+        .subscribe((data) => {
+          // Organisation properties
+          this.organisationProperties = data[0]
+          // System properties
+          this.systemProperties = data[1]
+          // Statement properties
+          this.statementProperties = data[2]
+          // Configuration documentation
+          this.organisationPropertyDocumentation = data[3].organisation
+          this.systemPropertyDocumentation = data[3].system
+          this.statementPropertyDocumentation = data[4]
+          // Determine visibility of properties
+          this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties)
+          this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties)
+          this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
+          // Initialise validation status
+          this.organisationProperties.forEach((p) => this.propertyValidation.set('organisation'+p.id))
+          this.systemProperties.forEach((p) => this.propertyValidation.set('system'+p.id))
+          this.statementProperties.forEach((p) => this.propertyValidation.set('statement'+p.id))
+          // Highlight validation issues
+          this.applyPropertyValidation()
+        }).add(() => {
+          this.loadingConfiguration.status = Constants.STATUS.FINISHED
+        })
       })
     }
   }
@@ -799,7 +817,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     if (this.statusCounters) {
       testCaseCount = this.statusCounters.completed + this.statusCounters.failed + this.statusCounters.other
     }
-    this.reportSupportService.handleConformanceStatementReport(this.communityIdOfStatement, this.actorId, this.systemId, this.snapshotId, format, false, testCaseCount)
+    this.reportSupportService.handleConformanceStatementReport(this.communityIdOfStatement!, this.actorId, this.systemId, this.snapshotId, format, false, testCaseCount)
     .subscribe(() => {
       this.exportPending = false
     })

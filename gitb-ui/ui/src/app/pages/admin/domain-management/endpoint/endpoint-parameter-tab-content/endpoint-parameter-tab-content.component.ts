@@ -29,6 +29,8 @@ import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
 import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 import {Utils} from 'src/app/common/utils';
+import {ActorService} from 'src/app/services/actor.service';
+import {ConfigurationDocumentationModalComponent} from 'src/app/modals/configuration-documentation-modal/configuration-documentation-modal.component';
 
 @Component({
     selector: 'app-endpoint-parameter-tab-content',
@@ -42,6 +44,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
   @Input() endpointId?: number
   @Input() parametersLoaded!: EventEmitter<EndpointParameter[]|undefined>
   @Input() manageEndpoints = false
+  @Input() manageDocumentation = false
 
   @Output() createEndpoint = new EventEmitter<any>()
 
@@ -51,6 +54,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
   draggingParameter = false
   parameters: ParameterData[] = []
   parameterValues: ParameterReference[] = []
+  actorPropertyDocumentation?: string
   Constants = Constants
 
   constructor(
@@ -58,6 +62,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
     private readonly parameterService: ParameterService,
     private readonly popupService: PopupService,
     private readonly conformanceService: ConformanceService,
+    private readonly actorService: ActorService,
     public readonly dataService: DataService
   ) {
   }
@@ -65,6 +70,22 @@ export class EndpointParameterTabContentComponent implements OnInit {
   ngOnInit(): void {
     this.parametersLoaded.subscribe((endpointParameters) => {
       this.prepareParameters(endpointParameters)
+    })
+    if (this.manageDocumentation) {
+      this.actorService.getPropertyDocumentation(this.actorId).subscribe((data) => {
+        this.actorPropertyDocumentation = data ? data : undefined
+      })
+    }
+  }
+
+  manageActorDocumentation() {
+    const modal = this.modalService.open(ConfigurationDocumentationModalComponent, { modalDialogClass: 'modal-lg' })
+    const modalInstance = modal.componentInstance as ConfigurationDocumentationModalComponent
+    modalInstance.documentation = this.actorPropertyDocumentation
+    modalInstance.saveFn = (documentation: string) => this.actorService.updatePropertyDocumentation(this.actorId, documentation)
+    modalInstance.deleteFn = () => this.actorService.updatePropertyDocumentation(this.actorId, undefined)
+    modalInstance.documentationUpdate.subscribe((documentation?: string) => {
+      this.actorPropertyDocumentation = documentation
     })
   }
 

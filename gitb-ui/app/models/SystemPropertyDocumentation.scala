@@ -13,14 +13,6 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { CustomProperty } from "src/app/types/custom-property.type";
+package models
 
-export interface OptionalCustomPropertyFormData {
-
-    owner?: number
-    propertyType: 'organisation'|'system'|'statement'
-    properties: CustomProperty[]
-    edit: boolean
-    documentation?: string
-
-}
+case class SystemPropertyDocumentation(id: Long, community: Long, documentation: String)

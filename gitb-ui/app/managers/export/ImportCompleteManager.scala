@@ -1843,7 +1843,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       actorManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Option(data.getReportMetadata), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true,
                         Option(data.getDocumentation),
-                        Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls)
+                        Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls,
+                        propertyDocumentation = Option(data.getEndpointDocumentation))
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1860,7 +1861,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Option(data.getReportMetadata), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true,
                         Some(Option(data.getDocumentation)),
-                        Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls)
+                        Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls,
+                        propertyDocumentation = Some(Option(data.getEndpointDocumentation)))
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -2540,6 +2542,18 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   toModelConformanceStatementDocumentationReportSettings(exportedCommunity.getConformanceStatementDocumentationReportSettings, communityId.get)
                 )
               }
+            } else {
+              DBIO.successful(())
+            }
+          }
+          // Configuration property documentation (organisation and system level)
+          _ <- {
+            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+            if (communityId.isDefined) {
+              for {
+                _ <- communityManager.upsertOrDeleteOrganisationPropertyDocumentation(communityId.get, Option(exportedCommunity.getOrganisationPropertyDocumentation))
+                _ <- communityManager.upsertOrDeleteSystemPropertyDocumentation(communityId.get, Option(exportedCommunity.getSystemPropertyDocumentation))
+              } yield ()
             } else {
               DBIO.successful(())
             }

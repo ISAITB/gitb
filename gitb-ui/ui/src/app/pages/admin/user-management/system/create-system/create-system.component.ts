@@ -24,7 +24,8 @@ import {SystemService} from 'src/app/services/system.service';
 import {System} from 'src/app/types/system';
 import {Constants} from 'src/app/common/constants';
 import {CommunityService} from 'src/app/services/community.service';
-import {UsageTipService} from '../../../../../services/usage-tip.service';
+import {UsageTipService} from 'src/app/services/usage-tip.service';
+import {forkJoin} from 'rxjs';
 
 @Component({
     selector: 'app-create-system',
@@ -69,8 +70,11 @@ export class CreateSystemComponent extends BaseComponent implements OnInit, Afte
       this.routingService.ownOrganisationBreadcrumbs()
     }
     const onlyPublicProperties = !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
-    this.communityService.getSystemParameters(this.communityId, false, onlyPublicProperties).subscribe((data) => {
-      this.propertyData.properties = data
+    const properties$ = this.communityService.getSystemParameters(this.communityId, false, onlyPublicProperties)
+    const documentation$ = this.communityService.getPropertyDocumentation(this.communityId, 'system')
+    forkJoin([properties$, documentation$]).subscribe((data) => {
+      this.propertyData.properties = data[0]
+      this.propertyData.documentation = data[1].system
     }).add(() => {
       this.loaded = true
     })

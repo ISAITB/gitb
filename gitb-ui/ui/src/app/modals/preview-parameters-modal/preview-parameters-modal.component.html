@@ -30,6 +30,7 @@
                     [tbPropertyType]="parameterType"
                     [tbShowFormHeader]="false"
                     [tbSetDefaults]="true"
+                    [tbDocumentation]="documentation"
                     [tbAdmin]="false"></app-custom-property-form>
             } @else if (mode == 'admin') {
                 <app-custom-property-form
@@ -37,6 +38,7 @@
                     [tbPropertyType]="parameterType"
                     [tbShowFormHeader]="false"
                     [tbSetDefaults]="true"
+                    [tbDocumentation]="documentation"
                     [tbAdmin]="true"></app-custom-property-form>
             } @else if (hasRegistrationCase && mode == 'registration') {
                 <app-custom-property-form

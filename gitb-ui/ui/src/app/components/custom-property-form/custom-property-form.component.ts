@@ -45,6 +45,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbExpandable = false
   @Input() tbCollapsed: boolean|undefined
   @Input() tbSetDefaults = false
+  @Input() tbDocumentation?: string
   @Input() refresh?: EventEmitter<{props?: CustomProperty[], asterisks: boolean}>
   @Input() validation?: ValidationState
   @Output() collapseChange = new EventEmitter<boolean>()

@@ -60,4 +60,23 @@ export class ActorService {
     })
   }
 
+  getPropertyDocumentation(actorId: number) {
+    return this.restService.get<string>({
+      path: ROUTES.controllers.ActorService.getPropertyDocumentation(actorId).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
+  updatePropertyDocumentation(actorId: number, documentation: string|undefined) {
+    const data = {
+      documentation: documentation
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ActorService.updatePropertyDocumentation(actorId).url,
+      data: data,
+      authenticate: true
+    })
+  }
+
 }

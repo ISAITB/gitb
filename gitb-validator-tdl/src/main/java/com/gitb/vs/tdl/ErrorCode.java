@@ -178,7 +178,9 @@ public enum ErrorCode {
     EXTERNAL_PARAMETER_REFERENCES_NOT_CHECKED(          "TDL-141", "References are made to domain parameters %s that are expected to be defined in the target Test Bed instance. Ensure these are valid.", INFO),
     INTERACTION_DEPENDENCY_INCOMPLETE(                  "TDL-142", "%s [%s] defines a user interaction element with a [dependsOn] attribute but no [dependsOnValue] attribute (or vice-versa). Both need to be set for the dependency to be considered.", ERROR, true),
     INTERACTION_DEPENDENCY_INVALID_REFERENCE(           "TDL-143", "%s [%s] defines a user interaction element with a [dependsOn] attribute value [%s] that doesn't match the name of a request defined in the same interact step.", ERROR, true),
-    RESULT_NOT_SUPPORTED_ON_LISTEN(                     "TDL-144", "%s [%s] defines a listen step with a 'result' element. This is currently only supported for 'receive' steps.", ERROR, true)
+    RESULT_NOT_SUPPORTED_ON_LISTEN(                     "TDL-144", "%s [%s] defines a listen step with a 'result' element. This is currently only supported for 'receive' steps.", ERROR, true),
+    ACTOR_ENDPOINT_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT("TDL-145", "Actor [%s] defines for its endpoint documentation both a value and a resource import.", WARNING),
+    ACTOR_ENDPOINT_DOCUMENTATION_REFERENCE_INVALID(     "TDL-146", "Actor [%s] defines its endpoint documentation via import [%s] that cannot be resolved.", ERROR)
     ;
 
     private final String code;

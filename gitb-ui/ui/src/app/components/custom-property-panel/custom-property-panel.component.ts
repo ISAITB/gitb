@@ -34,6 +34,7 @@ export class CustomPropertyPanelComponent {
   @Input() validation!: ValidationState
   @Input() topMargin = true
   @Input() readonly = false
+  @Input() documentation?: string
 
   hovering = false
   headerCollapsed = false

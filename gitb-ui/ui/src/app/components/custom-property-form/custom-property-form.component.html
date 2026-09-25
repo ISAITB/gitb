@@ -16,6 +16,15 @@
         </div>
     }
     <div [ngbCollapse]="tbCollapsed!" [animation]="true">
+        @if (tbDocumentation) {
+            <div class="row pt-3">
+                <div class="col-12">
+                    <div class="alert alert-info rounded mb-0">
+                        <div class="no-margin-on-last-p" [innerHtml]="tbDocumentation | sanitizeHtml"></div>
+                    </div>
+                </div>
+            </div>
+        }
         @for (property of tbProperties; track $index) {
             @if ((isAdmin || (!property.hidden && (!tbSelfRegistration || property.inSelfRegistration))) && property.prerequisiteOk) {
                 @let renderAsReadonly = isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration));

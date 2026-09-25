@@ -545,6 +545,13 @@ object JsonUtil {
 		json
 	}
 
+  def jsPropertyDocumentation(organisation: Option[String], system: Option[String]): JsObject = {
+    Json.obj(
+      "organisation" -> (if (organisation.isDefined) organisation.get else JsNull),
+      "system" -> (if (system.isDefined) system.get else JsNull)
+    )
+  }
+
   def jsOrganisationParameters(list: List[OrganisationParameters]): JsArray = {
     var json = Json.arr()
     list.foreach { parameter =>

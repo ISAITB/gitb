@@ -35,6 +35,7 @@ class Actor(_id: Long, _actorId: String, _name: String, _description: Option[Str
 	var endpoints: Option[List[Endpoint]] = _endpoints
 	var specificationId: Option[Long] = _specificationId
 	var apiKey: Option[String] = _apiKey
+	var propertyDocumentation: Option[String] = None
 
 	def this(_case: Actors) = this(_case.id, _case.actorId, _case.name, _case.description, _case.reportMetadata, _case.default, _case.hidden, _case.displayOrder, None, None, None, Some(_case.apiKey))
 

@@ -31,6 +31,16 @@ public class CheckTestSuiteDocumentation extends AbstractCheck {
                     (String path) -> report.addItem(ErrorCode.TEST_SUITE_DOCUMENTATION_REFERENCE_INVALID, getTestSuiteLocation(context), path)
             );
         }
+        if (testSuite != null && testSuite.getActors() != null) {
+            for (var actor: testSuite.getActors().getActor()) {
+                if (actor.getEndpointDocumentation() != null) {
+                    context.validateDocumentation(actor.getEndpointDocumentation(),
+                            (String path, String value) -> report.addItem(ErrorCode.ACTOR_ENDPOINT_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT, getTestSuiteLocation(context), actor.getId()),
+                            (String path) -> report.addItem(ErrorCode.ACTOR_ENDPOINT_DOCUMENTATION_REFERENCE_INVALID, getTestSuiteLocation(context), actor.getId(), path)
+                    );
+                }
+            }
+        }
     }
 
 }

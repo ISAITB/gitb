@@ -33,6 +33,7 @@ import {RoutingService} from 'src/app/services/routing.service';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
 import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 import {Utils} from 'src/app/common/utils';
+import {ConfigurationDocumentationModalComponent} from 'src/app/modals/configuration-documentation-modal/configuration-documentation-modal.component';
 
 @Component({
     selector: 'app-community-properties',
@@ -64,6 +65,8 @@ export class CommunityPropertiesComponent implements OnInit {
   systemPropertiesCollapseFinished = false
   previewOrganisationParametersPending = false
   propertiesRequiredInRegistration: boolean|undefined = undefined
+  organisationPropertyDocumentation?: string
+  systemPropertyDocumentation?: string
 
   Constants = Constants
 
@@ -93,7 +96,34 @@ export class CommunityPropertiesComponent implements OnInit {
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.loadOrganisationParameters()
     this.loadSystemParameters()
+    this.loadPropertyDocumentation()
     this.routingService.communityParametersBreadcrumbs(this.communityId)
+  }
+
+  loadPropertyDocumentation() {
+    this.communityService.getPropertyDocumentation(this.communityId).subscribe((data) => {
+      this.organisationPropertyDocumentation = data.organisation
+      this.systemPropertyDocumentation = data.system
+    })
+  }
+
+  private manageDocumentation(documentation: string|undefined, propertyType: 'organisation'|'system', onUpdate: (documentation?: string) => void) {
+    const modal = this.modalService.open(ConfigurationDocumentationModalComponent,{ modalDialogClass: 'modal-lg' })
+    const modalInstance = modal.componentInstance as ConfigurationDocumentationModalComponent
+    modalInstance.documentation = documentation
+    modalInstance.saveFn = (newDocumentation: string) => this.communityService.updatePropertyDocumentation(this.communityId, propertyType, newDocumentation)
+    modalInstance.deleteFn = () => this.communityService.updatePropertyDocumentation(this.communityId, propertyType, undefined)
+    modalInstance.documentationUpdate.subscribe((newDocumentation?: string) => {
+      onUpdate(newDocumentation)
+    })
+  }
+
+  manageOrganisationDocumentation() {
+    this.manageDocumentation(this.organisationPropertyDocumentation, 'organisation', (doc) => this.organisationPropertyDocumentation = doc)
+  }
+
+  manageSystemDocumentation() {
+    this.manageDocumentation(this.systemPropertyDocumentation, 'system', (doc) => this.systemPropertyDocumentation = doc)
   }
 
   loadOrganisationParameters() {
@@ -140,7 +170,7 @@ export class CommunityPropertiesComponent implements OnInit {
     return references
   }
 
-  previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean, parameterType: 'organisation'|'system') {
+  previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean, parameterType: 'organisation'|'system', documentation?: string) {
     const modal = this.modalService.open(PreviewParametersModalComponent, { size: 'xl' })
     const modalInstance = modal.componentInstance as PreviewParametersModalComponent
     modalInstance.modalTitle = title
@@ -148,6 +178,7 @@ export class CommunityPropertiesComponent implements OnInit {
     modalInstance.hasRegistrationCase = hasRegistrationCase
     modalInstance.parameterType = parameterType
     modalInstance.propertiesRequiredInRegistration = this.propertiesRequiredInRegistration === true
+    modalInstance.documentation = documentation
   }
 
   previewOrganisationParameters() {
@@ -155,17 +186,17 @@ export class CommunityPropertiesComponent implements OnInit {
       this.previewOrganisationParametersPending = true
       this.communityService.getCommunityById(this.communityId, false, false).subscribe((data) => {
         this.propertiesRequiredInRegistration = data.selfRegForceRequiredProperties
-        this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
+        this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation', this.organisationPropertyDocumentation)
       }).add(() => {
         this.previewOrganisationParametersPending = false
       })
     } else {
-      this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
+      this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation', this.organisationPropertyDocumentation)
     }
   }
 
   previewSystemParameters() {
-    this.previewParameters(this.dataService.labelSystem()+" property form preview", this.systemParameters, false, 'system')
+    this.previewParameters(this.dataService.labelSystem()+" property form preview", this.systemParameters, false, 'system', this.systemPropertyDocumentation)
   }
 
   orderOrganisationParameters() {

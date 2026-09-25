@@ -13,6 +13,7 @@
                     <div class="table-title"><app-collapsing-icon [isCollapsed]="organisationPropertiesCollapsed"></app-collapsing-icon>{{dataService.labelOrganisation()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" class="btn btn-secondary" [pending]="previewOrganisationParametersPending" (click)="previewOrganisationParameters();$event.stopPropagation()">Preview</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.DOCUMENTATION" class="btn btn-secondary" (click)="manageOrganisationDocumentation();$event.stopPropagation()">Manage documentation</button>
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="orderOrganisationParametersDisabled" [pending]="orderOrganisationParametersPending" (click)="orderOrganisationParameters();$event.stopPropagation()">Save property order</button>
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addOrganisationParameter();$event.stopPropagation()">Create property</button>
                     </div>
@@ -95,6 +96,7 @@
                     <div class="table-title"><app-collapsing-icon [isCollapsed]="systemPropertiesCollapsed"></app-collapsing-icon>{{dataService.labelSystem()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" class="btn btn-secondary" (click)="previewSystemParameters();$event.stopPropagation()">Preview</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.DOCUMENTATION" class="btn btn-secondary" (click)="manageSystemDocumentation();$event.stopPropagation()">Manage documentation</button>
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="orderSystemParametersDisabled" [pending]="orderSystemParametersPending" (click)="orderSystemParameters();$event.stopPropagation()">Save property order</button>
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addSystemParameter();$event.stopPropagation()">Create property</button>
                     </div>

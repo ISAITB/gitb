@@ -1205,6 +1205,12 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				.map(_._1)
 				.result
 				.map(_.toList)
+			// Lookup the existing property (endpoint) documentation for these actors.
+			existingActorPropertyDocumentation <- PersistenceSchema.actorPropertyDocumentation
+				.filter(_.actor inSet specificationActors.map(_.id))
+				.map(a => (a.actor, a.documentation))
+				.result
+				.map(_.toMap)
 			results <- {
 				val actions = new ListBuffer[DBIO[List[TestSuiteUploadItemResult]]]()
 				val savedActorIds: util.Map[String, Long] = new util.HashMap[String, Long]
@@ -1216,11 +1222,17 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 					val existingActor = lookupActor(actorToSave, specificationActors)
 					var savedActorStringId: String = null
 					if (existingActor.isDefined) {
-						if (!updateActions.updateActors.get || isActorReference(actorToSave) || theSameActor(existingActor.get, actorToSave)) {
+						if (!updateActions.updateActors.get || isActorReference(actorToSave)) {
 							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, specificationId)
 						} else {
-							updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.reportMetadata, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false, None, None, onSuccessCalls))
-							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, specificationId)
+							val sameOtherFields = theSameActor(existingActor.get, actorToSave)
+							val samePropertyDocumentation = existingActorPropertyDocumentation.get(existingActor.get.id) == testSuiteActor.propertyDocumentation
+							if (sameOtherFields && samePropertyDocumentation) {
+								result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, specificationId)
+							} else {
+								updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.reportMetadata, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false, None, None, onSuccessCalls, propertyDocumentation = Some(testSuiteActor.propertyDocumentation)))
+								result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, specificationId)
+							}
 						}
 						savedActorId = DBIO.successful(existingActor.get.id)
 						savedActorStringId = existingActor.get.actorId
@@ -1229,7 +1241,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 							throw new IllegalStateException("Actor reference [" + actorToSave.actorId + "] not found in specification")
 						} else {
 							// New actor.
-							savedActorId = actorManager.createActor(actorToSave, specificationId, checkApiKeyUniqueness = false, None, None, onSuccessCalls)
+							savedActorId = actorManager.createActor(actorToSave, specificationId, checkApiKeyUniqueness = false, None, None, onSuccessCalls, propertyDocumentation = testSuiteActor.propertyDocumentation)
 							savedActorStringId = actorToSave.actorId
 						}
 						result += new TestSuiteUploadItemResult(actorToSave.actorId, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_ADD, specificationId)
@@ -2214,15 +2226,22 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				.map { targetIdentifiers =>
 					currentSpecificationActors.keySet.removedAll(targetIdentifiers.toSet)
 				}
+			// Load the property (endpoint) documentation of the current actors (identifier to documentation).
+			currentSpecificationActorPropertyDocumentation <- PersistenceSchema.actorPropertyDocumentation
+				.filter(_.actor inSet currentSpecificationActors.values.map(_.id))
+				.map(a => (a.actor, a.documentation))
+				.result
+				.map(_.toMap)
 			// Add missing actors to target based on source definitions.
 			_ <- {
 				DBIO.sequence(
 					missingTargetActorIdentifiers.toList.map { missingIdentifier =>
-						val missingActor = currentSpecificationActors(missingIdentifier).copy(
+						val sourceActor = currentSpecificationActors(missingIdentifier)
+						val missingActor = sourceActor.copy(
 							id = 0L,
 							apiKey = CryptoUtil.generateApiKey()
 						)
-						actorManager.createActor(missingActor, targetSpecificationId, checkApiKeyUniqueness = false, None, None, onSuccessCalls)
+						actorManager.createActor(missingActor, targetSpecificationId, checkApiKeyUniqueness = false, None, None, onSuccessCalls, propertyDocumentation = currentSpecificationActorPropertyDocumentation.get(sourceActor.id))
 					}
 				)
 			}

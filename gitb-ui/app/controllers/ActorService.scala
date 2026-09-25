@@ -71,6 +71,28 @@ class ActorService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def getPropertyDocumentation(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewEndpoints(request, actorId).flatMap { _ =>
+      actorManager.getActorPropertyDocumentation(actorId).map { documentation =>
+        if (documentation.isDefined) {
+          ResponseConstructor.constructStringResponse(documentation.get)
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
+  }
+
+  def updatePropertyDocumentation(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateActor(request, actorId).flatMap { _ =>
+      val paramMap = ParameterExtractor.paramMap(request)
+      val documentation = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DOCUMENTATION).map(HtmlUtil.sanitizeMinimalEditorContent)
+      actorManager.updateActorPropertyDocumentationWrapper(actorId, documentation).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
   def getBadgeForStatus(specId: Long, actorId: Long, status: String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecification(request, specId).map { _ =>
       val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.REPORT)

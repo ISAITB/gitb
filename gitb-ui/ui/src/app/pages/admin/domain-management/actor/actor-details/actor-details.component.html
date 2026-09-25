@@ -33,6 +33,7 @@
                                     [actorId]="actorId"
                                     [parametersLoaded]="parametersLoaded"
                                     [manageEndpoints]="true"
+                                    [manageDocumentation]="true"
                                     (createEndpoint)="createEndpoint()"></app-endpoint-parameter-tab-content>
                             } @else if (endpoints.length == 1) {
                                 <app-endpoint-parameter-tab-content
@@ -40,6 +41,7 @@
                                     [endpointId]="endpoints[0].id"
                                     [parametersLoaded]="parametersLoaded"
                                     [manageEndpoints]="true"
+                                    [manageDocumentation]="true"
                                     (createEndpoint)="createEndpoint()"></app-endpoint-parameter-tab-content>
                             } @else {
                                 <div class="tabControls">

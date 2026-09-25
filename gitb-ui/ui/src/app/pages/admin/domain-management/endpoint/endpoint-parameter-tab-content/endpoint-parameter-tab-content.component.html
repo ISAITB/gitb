@@ -1,5 +1,8 @@
 <div class="tabControls">
     <div class="btn-toolbar">
+        @if (manageDocumentation) {
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.DOCUMENTATION" class="btn btn-secondary" (click)="manageActorDocumentation()">Manage documentation</button>
+        }
         <button type="button" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
         @if (manageEndpoints) {
             <div class="btn-group create-group" ngbDropdown>

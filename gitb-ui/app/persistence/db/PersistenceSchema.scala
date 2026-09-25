@@ -70,6 +70,22 @@ object PersistenceSchema {
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
 
+  class OrganisationPropertyDocumentationTable(tag: Tag) extends Table[OrganisationPropertyDocumentation](tag, "organisationpropertydocumentation") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def community = column[Long]("community")
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id, community, documentation) <> (OrganisationPropertyDocumentation.tupled, OrganisationPropertyDocumentation.unapply)
+  }
+  val organisationPropertyDocumentation = TableQuery[OrganisationPropertyDocumentationTable]
+
+  class SystemPropertyDocumentationTable(tag: Tag) extends Table[SystemPropertyDocumentation](tag, "systempropertydocumentation") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def community = column[Long]("community")
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id, community, documentation) <> (SystemPropertyDocumentation.tupled, SystemPropertyDocumentation.unapply)
+  }
+  val systemPropertyDocumentation = TableQuery[SystemPropertyDocumentationTable]
+
   class OrganizationsTable(tag: Tag) extends Table[Organizations](tag, "Organizations") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
@@ -180,6 +196,14 @@ object PersistenceSchema {
     def * = (id, documentation) <> (ActorDocumentation.tupled, ActorDocumentation.unapply)
   }
   val actorDocumentation = TableQuery[ActorDocumentationTable]
+
+  class ActorPropertyDocumentationTable(tag: Tag) extends Table[ActorPropertyDocumentation](tag, "actorpropertydocumentation") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def actor = column[Long]("actor")
+    def documentation = column[String]("documentation", O.SqlType("LONGTEXT"))
+    def * = (id, actor, documentation) <> (ActorPropertyDocumentation.tupled, ActorPropertyDocumentation.unapply)
+  }
+  val actorPropertyDocumentation = TableQuery[ActorPropertyDocumentationTable]
 
   class EndpointsTable(tag: Tag) extends Table[Endpoints](tag, "Endpoints") {
 	  def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)

@@ -511,6 +511,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                   exportedActor.setDescription(actor.description.orNull)
                   exportedActor.setReportMetadata(actor.reportMetadata.orNull)
                   exportedActor.setDocumentation(data.actorDocumentation.flatMap(_.get(actor.id)).orNull)
+                  exportedActor.setEndpointDocumentation(data.actorPropertyDocumentation.flatMap(_.get(actor.id)).orNull)
                   if (actor.default.isDefined) {
                     exportedActor.setDefault(actor.default.get)
                   } else {
@@ -1020,6 +1021,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           () => loadOrganisationProperties(communityId))
         val fSystemProperties = loadIfApplicable(exportSettings.customProperties,
           () => loadSystemProperties(communityId))
+        // Property documentation is always exported (not gated on customProperties) so that a partial-archive
+        // import doesn't end up deleting it (see the community import handling in ImportCompleteManager).
+        val fPropertyDocumentation = communityManager.getPropertyDocumentation(communityId)
         val fLabels = loadIfApplicable(exportSettings.customLabels,
           () => communityManager.getCommunityLabels(communityId))
         val fLandingPages = loadIfApplicable(exportSettings.landingPages,
@@ -1062,6 +1066,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           reportSettings                <- fReportSettings
           organisationProperties        <- fOrganisationProperties
           systemProperties              <- fSystemProperties
+          propertyDocumentation         <- fPropertyDocumentation
           labels                        <- fLabels
           landingPages                  <- fLandingPages
           legalNotices                  <- fLegalNotices
@@ -1090,6 +1095,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           reportSettings                = reportSettings,
           organisationProperties        = organisationProperties,
           systemProperties              = systemProperties,
+          organisationPropertyDocumentation = propertyDocumentation._1,
+          systemPropertyDocumentation   = propertyDocumentation._2,
           labels                        = labels,
           landingPages                  = landingPages,
           legalNotices                  = legalNotices,
@@ -1141,6 +1148,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       () => loadSpecificationDocumentationMap(domainId))
     val fActorDocumentation = loadIfApplicable(exportSettings.specifications && exportSettings.actors,
       () => loadActorDocumentationMap(domainId))
+    val fActorPropertyDocumentation = loadIfApplicable(exportSettings.specifications && exportSettings.actors,
+      () => loadActorPropertyDocumentationMap(domainId))
     for {
       domain                    <- fDomain
       sharedTestSuites          <- fSharedTestSuites
@@ -1157,6 +1166,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       testServices              <- fTestServices
       specificationDocumentation <- fSpecificationDocumentation
       actorDocumentation        <- fActorDocumentation
+      actorPropertyDocumentation <- fActorPropertyDocumentation
     } yield DomainExportData(
       domain                     = Some(domain),
       sharedTestSuites           = sharedTestSuites,
@@ -1172,7 +1182,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       domainParameters           = domainParameters,
       testServices               = testServices,
       specificationDocumentation = specificationDocumentation,
-      actorDocumentation         = actorDocumentation
+      actorDocumentation         = actorDocumentation,
+      actorPropertyDocumentation = actorPropertyDocumentation
     )
   }
 
@@ -1292,6 +1303,16 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         .map(_._1)
         .result
     ).map(_.map(d => d.id -> d.documentation).toMap)
+  }
+
+  private def loadActorPropertyDocumentationMap(domainId: Long): Future[Map[Long, String]] = {
+    DB.run(
+      PersistenceSchema.actorPropertyDocumentation
+        .join(PersistenceSchema.actors).on(_.actor === _.id)
+        .filter(_._2.domain === domainId)
+        .map(_._1)
+        .result
+    ).map(_.map(d => d.actor -> d.documentation).toMap)
   }
 
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): Future[com.gitb.xml.export.Export] = {
@@ -1523,6 +1544,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             }
           }
         }
+        // Configuration property documentation (always included regardless of the customProperties setting).
+        communityData.setOrganisationPropertyDocumentation(data.organisationPropertyDocumentation.orNull)
+        communityData.setSystemPropertyDocumentation(data.systemPropertyDocumentation.orNull)
         // Custom member properties.
         val exportedOrganisationPropertyMap: mutable.Map[Long, OrganisationProperty] = mutable.Map()
         val exportedSystemPropertyMap: mutable.Map[Long, SystemProperty] = mutable.Map()

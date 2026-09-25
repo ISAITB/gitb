@@ -350,6 +350,7 @@
                                             [collapsed]="organisationPropertiesCollapsed"
                                             [validation]="propertyValidation"
                                             [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration"
+                                            [documentation]="organisationPropertyDocumentation"
                                             [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditOrganisationConfiguration"></app-custom-property-panel>
                                     }
                                     @if (systemPropertyVisibility.hasVisibleProperties) {
@@ -361,6 +362,7 @@
                                             [collapsed]="systemPropertiesCollapsed"
                                             [validation]="propertyValidation"
                                             [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || (organisationPropertyVisibility.hasVisibleProperties)"
+                                            [documentation]="systemPropertyDocumentation"
                                             [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditSystemConfiguration"></app-custom-property-panel>
                                     }
                                     @if (statementPropertyVisibility.hasVisibleProperties) {
@@ -372,6 +374,7 @@
                                             [collapsed]="statementPropertiesCollapsed"
                                             [validation]="propertyValidation"
                                             [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || organisationPropertyVisibility.hasVisibleProperties || systemPropertyVisibility.hasVisibleProperties"
+                                            [documentation]="statementPropertyDocumentation"
                                             [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditStatementConfiguration"></app-custom-property-panel>
                                     }
                                 </form>

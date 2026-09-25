@@ -816,6 +816,22 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		actors
 	}
 
+	private def resolveActorEndpointDocumentation(tdlTestSuite: com.gitb.tdl.TestSuite, actors: List[models.Actor], archiveRoot: Path, specification: Option[Long], domain: Long, testSuitePath: Path): Future[List[models.Actor]] = {
+		val tdlActorsById = toActorList(tdlTestSuite.getActors).map(a => a.getId -> a).toMap
+		Future.sequence {
+			actors.map { actor =>
+				tdlActorsById.get(actor.actorId).flatMap(a => Option(a.getEndpointDocumentation)) match {
+					case Some(endpointDocumentation) =>
+						getDocumentation(tdlTestSuite.getId, endpointDocumentation, archiveRoot, specification, domain, testSuitePath).map { resolved =>
+							actor.propertyDocumentation = resolved
+							actor
+						}
+					case None => Future.successful(actor)
+				}
+			}
+		}
+	}
+
 	def getTestSuiteFromZip(domainId :Long, specificationId: Option[Long], file: File, completeParse: Boolean): Future[Option[TestSuite]] = {
 		if (file.exists()) {
 			val zip = FileSystems.newFileSystem(file.toPath)
@@ -880,17 +896,23 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 				}
 				testSuite <- {
 					if (testSuiteCase.isDefined && tdlTestSuiteInfo.isDefined) {
-						val testSuite = new TestSuite(
-							testSuiteCase.get,
-							Some(testSuiteActorInfo(tdlTestSuiteInfo.get.testSuite)),
-							testCaseInfo.testCases,
-							testCaseInfo.testCaseGroups
-						)
-						testSuite.updateApproach = Option(tdlTestSuiteInfo.get.testSuite.getMetadata.getUpdate)
-						testSuite.testCaseUpdateApproach = testCaseInfo.testCaseUpdateApproach
-						Future.successful {
-							Some(testSuite)
-						}
+						for {
+							actorsWithDocumentation <- resolveActorEndpointDocumentation(
+								tdlTestSuiteInfo.get.testSuite, testSuiteActorInfo(tdlTestSuiteInfo.get.testSuite),
+								zipRoot, specificationId, domainId, tdlTestSuiteInfo.get.archivePath
+							)
+							testSuite <- Future.successful {
+								val testSuite = new TestSuite(
+									testSuiteCase.get,
+									Some(actorsWithDocumentation),
+									testCaseInfo.testCases,
+									testCaseInfo.testCaseGroups
+								)
+								testSuite.updateApproach = Option(tdlTestSuiteInfo.get.testSuite.getMetadata.getUpdate)
+								testSuite.testCaseUpdateApproach = testCaseInfo.testCaseUpdateApproach
+								Some(testSuite)
+							}
+						} yield testSuite
 					} else {
 						Future.successful(None)
 					}

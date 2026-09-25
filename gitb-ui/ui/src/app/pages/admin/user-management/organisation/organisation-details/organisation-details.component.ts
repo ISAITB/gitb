@@ -230,7 +230,8 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
       legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
       errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
     }
-    forkJoin([organisation$, properties$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
+    const documentation$ = this.communityService.getPropertyDocumentation(this.communityId, 'organisation')
+    forkJoin([organisation$, properties$, landingPages$, legalNotices$, errorTemplates$, documentation$]).subscribe((data) => {
       this.organisation = data[0]
       if (this.organisation.landingPage == null) this.organisation.landingPage = undefined
       if (this.organisation.errorTemplate == null) this.organisation.errorTemplate = undefined
@@ -247,6 +248,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
       this.landingPages = data[2]
       this.legalNotices = data[3]
       this.errorTemplates = data[4]
+      this.propertyData.documentation = data[5].organisation
       this.formDataLoaded = true
       this.updateFormData()
     }).add(() => {
