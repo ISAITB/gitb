@@ -380,6 +380,18 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "You are not allowed to update this domain through the automation API"))
   }
 
+  def canExportTestSessionDataThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    // Accept the community or master API key - this is an admin-level operation not available to organisation API keys.
+    val check = restApiEnabledAndValidCommunityKeyDefined(request).flatMap { validCommunityKey =>
+      if (validCommunityKey) {
+        Future.successful(true)
+      } else {
+        restApiEnabledAndValidMasterKeyDefined(request)
+      }
+    }
+    check.map(setAuthResult(request, _, "You are not allowed to export test session data through the automation API"))
+  }
+
   def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = restApiEnabledAndValidCommunityKeyDefined(request)
     check.map(setAuthResult(request, _, "You are not allowed to manage test suites through the automation API"))

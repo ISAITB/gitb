@@ -616,10 +616,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
   }
 
-  def generateTestSessionDataArchive(archivePath: Path, sessionId: String, requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
+  def generateTestSessionDataArchive(archivePath: Path, sessionId: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Future[Option[ReportFileInfo]] = {
     for {
       sessionInfo <- resolveTestSessionReportInfo(sessionId, requestedUserId)
-      communityId = sessionInfo._1
+      communityId = requestedCommunityId.orElse(sessionInfo._1)
       reportSettings <- {
         if (communityId.isDefined) {
           getReportSettings(communityId.get, ReportType.TestDataArchive).map(Some(_))
@@ -3704,6 +3704,27 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       } else {
         Future.successful(None)
       }
+    }
+  }
+
+  def processAutomationTestSessionDataRequest(archivePath: Path, apiKey: String, sessionId: String): Future[Option[ReportFileInfo]] = {
+    DB.run(
+      for {
+        communityIdForKey <- PersistenceSchema.communities.filter(_.apiKey === apiKey).map(_.id).result.headOption
+        // A community API key scopes the lookup to that community's sessions. A master API key (the only other
+        // option accepted by canExportTestSessionDataThroughAutomationApi) is not tied to a community and can
+        // therefore see any completed session.
+        foundSessionId <- PersistenceSchema.testResults
+          .filter(_.testSessionId === sessionId)
+          .filter(_.endTime.isDefined)
+          .filterOpt(communityIdForKey)((q, id) => q.communityId === id)
+          .map(_.testSessionId)
+          .result
+         .headOption
+      } yield (foundSessionId, communityIdForKey)
+    ).flatMap {
+      case (Some(foundSessionId), communityIdForKey) => generateTestSessionDataArchive(archivePath, foundSessionId, communityIdForKey, None)
+      case (None, _) => Future.successful(None)
     }
   }
 

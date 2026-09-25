@@ -26,7 +26,8 @@ import org.apache.commons.io.FileUtils
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -100,6 +101,30 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
             onClose = () => FileUtils.deleteQuietly(report.file.toFile)
           ).as(contentType)
         case None => NotFound
+      }
+    })
+  }
+
+  def data(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(request, GetEndpoint("/tests/data/{sessionId}"), () => authorizationManager.canExportTestSessionDataThroughAutomationApi(request), { _ =>
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val archiveFolder = Path.of(repositoryUtils.getTempReportFolder().getAbsolutePath, UUID.randomUUID().toString)
+      Files.createDirectories(archiveFolder)
+      reportManager.processAutomationTestSessionDataRequest(archiveFolder.resolve("test_data.zip"), apiKey, sessionId).map {
+        case Some(report) =>
+          Ok.sendFile(
+            content = report.file.toFile,
+            inline = false,
+            fileName = _ => Some(report.fileName),
+            onClose = () => FileUtils.deleteQuietly(archiveFolder.toFile)
+          ).as("application/zip")
+        case None =>
+          FileUtils.deleteQuietly(archiveFolder.toFile)
+          NotFound
+      }.recover {
+        case e: Exception =>
+          FileUtils.deleteQuietly(archiveFolder.toFile)
+          throw e
       }
     })
   }

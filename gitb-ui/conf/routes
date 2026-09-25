@@ -501,6 +501,7 @@ POST    /api/rest/tests/stop                                     @controllers.re
 GET     /api/rest/tests/status                                   @controllers.rest.TestAutomationService.status()
 POST    /api/rest/tests/status                                   @controllers.rest.TestAutomationService.status()
 GET     /api/rest/tests/report/:sessionId                        @controllers.rest.TestAutomationService.report(sessionId: String)
+GET     /api/rest/tests/data/:sessionId                          @controllers.rest.TestAutomationService.data(sessionId: String)
 POST    /api/rest/testsuite/deploy                               @controllers.rest.TestSuiteAutomationService.deploy()
 POST    /api/rest/testsuite/validate                             @controllers.rest.TestSuiteAutomationService.validate()
 POST    /api/rest/testsuite/undeploy                             @controllers.rest.TestSuiteAutomationService.undeploy()

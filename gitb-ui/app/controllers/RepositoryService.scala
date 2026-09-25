@@ -1540,7 +1540,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       Files.createDirectories(archiveFolder)
       val archiveFile = archiveFolder.resolve("test_data.zip")
       val userId = ParameterExtractor.extractUserId(request)
-      reportManager.generateTestSessionDataArchive(archiveFile, session, Some(userId)).map { resultingReport =>
+      reportManager.generateTestSessionDataArchive(archiveFile, session, None, Some(userId)).map { resultingReport =>
         if (resultingReport.isDefined) {
           Ok.sendFile(
             content = resultingReport.get.file.toFile,

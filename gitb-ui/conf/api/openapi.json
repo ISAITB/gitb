@@ -3721,6 +3721,69 @@
         }
       }
     },
+    "/tests/data/{sessionId}": {
+      "get": {
+        "tags": [
+          "Test sessions"
+        ],
+        "summary": "Retrieve the test data archive of a completed test session.",
+        "description": "Produces a ZIP archive containing the test session's XML and PDF reports along with its related data files.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          },
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "description": "The identifier of the test session for which the test data archive is requested.",
+            "in": "path",
+            "name": "sessionId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test data archive successfully created.",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No completed test session was found matching the provided identifier (when using a community API key, this also applies to a session that exists but belongs to another community)."
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/testsuite/deploy": {
       "post": {
         "tags": [
