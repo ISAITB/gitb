@@ -101,7 +101,7 @@ libraryDependencies ++= Seq(
   "com.nimbusds" % "nimbus-jose-jwt" % "10.10",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
   "com.bucket4j" % "bucket4j_jdk17-core" % "8.20.0",
-  "com.github.ben-manes.caffeine" % "caffeine" % "3.2.4"
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.3.0"
 )
 
 // Deactivate repeatable builds to speed up via parallelization
