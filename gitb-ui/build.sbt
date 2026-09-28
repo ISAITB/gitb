@@ -2,8 +2,9 @@ import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
 val pekkoVersion = "1.7.0"
-val jacksonVersion = "3.2.2"
-val jackson2Version = "2.22.2"
+val jacksonVersion = "3.2.3"
+val jackson2Version = "2.22.3"
+val jackson2ScalaVersion = "2.22.3.1"
 val jacksonAnnotationsVersion = "2.22"
 val cxfVersion = "4.2.3"
 val gitbCommonsVersion = "1.31.0-SNAPSHOT"
@@ -66,7 +67,7 @@ libraryDependencies ++= Seq(
   "tools.jackson.core" % "jackson-core" % jacksonVersion,
   "tools.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationsVersion,
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson2Version,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson2ScalaVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jackson2Version,
   "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
