@@ -75,7 +75,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.neethi" % "neethi" % "3.2.3",
+  "org.apache.neethi" % "neethi" % "3.2.4",
   "org.apache.tika" % "tika-core" % "3.3.2",
   "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
