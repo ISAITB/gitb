@@ -52,7 +52,18 @@ class DemoFilter @Inject() (implicit val mat: Materializer,
          * regardless of the option they picked. Invalidate the demo session (access token + pac4j profile)
          * and let the browser re-request the app page with a clean session.
          */
-        invalidateDemoSession(requestHeader)
+        invalidateSession(requestHeader)
+        Future.successful(Redirect("%sapp".formatted(Configurations.WEB_CONTEXT_ROOT_WITH_SLASH)).withNewSession)
+      } else if (isAppLoadRequest(requestHeader) && loginOptionCookieValue.contains("demo") && isNonDemoSession(requestHeader)) {
+        /*
+         * The user is revisiting the welcome page and selecting the demo option while still holding a session for
+         * a normal account. Unlike other options, for which the existing session is resumed, the demo option must
+         * always result in a demo login. If left as-is the still-valid access token in the Play session would be
+         * picked up by the application on load, reconnecting the user with their own account. Invalidate the
+         * existing session and let the browser re-request the app page, at which point the demo login proceeds
+         * as usual (see below).
+         */
+        invalidateSession(requestHeader)
         Future.successful(Redirect("%sapp".formatted(Configurations.WEB_CONTEXT_ROOT_WITH_SLASH)).withNewSession)
       } else if (loginOptionCookieValue.contains("demo")) {
         /*
@@ -100,13 +111,28 @@ class DemoFilter @Inject() (implicit val mat: Materializer,
     demoViaAccessToken || isDemoProfile(requestHeader)
   }
 
+  /** True if the current session (access token and/or pac4j profile) belongs to an account other than the demo one. */
+  private def isNonDemoSession(requestHeader: RequestHeader): Boolean = {
+    val nonDemoViaAccessToken = requestHeader.session.get(Constants.AccessTokenKey).exists { token =>
+      TokenCache.checkAccessToken(token).exists(_ != Configurations.DEMOS_ACCOUNT)
+    }
+    nonDemoViaAccessToken || isNonDemoProfile(requestHeader)
+  }
+
   private def isDemoProfile(requestHeader: RequestHeader): Boolean = {
     val webContext = new PlayWebContext(requestHeader)
     val profileManager = new ProfileManager(webContext, playSessionStore)
     profileManager.isAuthenticated && profileManager.getProfile.isPresent && profileManager.getProfile.get().getId == Constants.DemoUserProfileIdentifier
   }
 
-  private def invalidateDemoSession(requestHeader: RequestHeader): Unit = {
+  private def isNonDemoProfile(requestHeader: RequestHeader): Boolean = {
+    val webContext = new PlayWebContext(requestHeader)
+    val profileManager = new ProfileManager(webContext, playSessionStore)
+    profileManager.isAuthenticated && profileManager.getProfile.isPresent && profileManager.getProfile.get().getId != Constants.DemoUserProfileIdentifier
+  }
+
+  /** Discard the current session's access token and pac4j profile. */
+  private def invalidateSession(requestHeader: RequestHeader): Unit = {
     requestHeader.session.get(Constants.AccessTokenKey).foreach(TokenCache.deleteOAthToken)
     val webContext = new PlayWebContext(requestHeader)
     val profileManager = new ProfileManager(webContext, playSessionStore)
