@@ -1837,6 +1837,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot logout"))
   }
 
+  def canConnectToServerEvents(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkIsAuthenticated(request)
+  }
+
   def canCheckAnyUserEmail(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).map { userInfo =>
       isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo) || isOrganisationAdmin(userInfo)

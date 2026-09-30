@@ -156,6 +156,21 @@ class UserManager @Inject() (accountManager: AccountManager,
   }
 
   /**
+   * Gets the minimal information needed to track a user's server-sent event channels (see ServerEventManager) - i.e.
+   * without loading the full user and organisation records.
+   */
+  def getUserTrackingInfoById(userId: Long): Future[Option[UserTrackingInfo]] = {
+    DB.run(
+      PersistenceSchema.users
+        .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .filter(_._1.id === userId)
+        .map(x => (x._1.id, x._1.role, x._1.organization, x._2.community))
+        .result
+        .headOption
+    ).map(_.map(UserTrackingInfo.tupled))
+  }
+
+  /**
    * Gets user with specified id in the same organisation as the given user
    */
   def getUserByIdInSameOrganisationAsUser(userId: Long, referenceUserId: Long): Future[Option[User]] = {

@@ -19,7 +19,7 @@ import actors.SessionUpdateActor._
 import actors.events.sessions.TestSessionCompletedEvent
 import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
-import managers.{ReportManager, TestExecutionManager, TestResultManager, TestbedBackendClient}
+import managers.{ReportManager, ServerEventManager, TestExecutionManager, TestResultManager, TestbedBackendClient}
 import models.{TestInteraction, TestStepResultInfo}
 import org.apache.commons.lang3.StringUtils
 import org.apache.pekko.actor.Status.Failure
@@ -67,7 +67,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
                                     testExecutionManager: TestExecutionManager,
                                     reportManager: ReportManager,
                                     testResultManager: TestResultManager,
-                                    webSocketActor: WebSocketActor,
+                                    serverEventManager: ServerEventManager,
                                     testbedBackendClient: TestbedBackendClient)
                                    (implicit ec: ExecutionContext) extends Actor {
 
@@ -158,7 +158,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
           val statusUpdates: List[(String, TestStepResultInfo)] = testResultManager.sessionRemove(session)
           val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, None)
           val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option(outputMessage), statusUpdates).toString
-          webSocketActor.testSessionEnded(session, message)
+          serverEventManager.testSessionEnded(session, message)
           TaskCompleted(Some(SessionCompleted(session)))
         }.recover {
           case e: Exception =>
@@ -174,7 +174,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
                 testResultManager.sessionUpdate(session, logMessage)
               case _ =>
             }
-            webSocketActor.broadcast(session, JacksonUtil.serializeTestStepStatus(testStepStatus), retry = false)
+            serverEventManager.broadcast(session, JacksonUtil.serializeTestStepStatus(testStepStatus), retry = false)
             TaskCompleted(None)
           }
         } else {
@@ -182,7 +182,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
             val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, reportPath)
             val statusUpdates: List[(String, TestStepResultInfo)] = testResultManager.sessionUpdate(session, step, resultInfo)
             val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.empty, statusUpdates).toString
-            webSocketActor.broadcast(session, message)
+            serverEventManager.broadcast(session, message)
             TaskCompleted(None)
           }
         }
@@ -220,14 +220,10 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
           }
           val request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest)
           testResultManager.saveTestInteraction(TestInteraction(interactWithUsersRequest.getTcInstanceid, interactWithUsersRequest.getStepId, interactWithUsersRequest.getInteraction.isAdmin, TimeUtil.getCurrentTimestamp(), request)).flatMap { _ =>
-            if (WebSocketActor.webSockets.contains(session)) {
+            if (serverEventManager.hasTestSessionSubscribers(session)) {
               Future.successful {
-                val actor = interactWithUsersRequest.getInteraction.getWith
-                if (actor == null) { // if actor not specified, send the request to all actors. Let client side handle this.
-                  webSocketActor.broadcast(session, request)
-                } else { //send the request only to the given actor
-                  webSocketActor.push(session, actor, request)
-                }
+                // Send the request to all clients following the session. Let client side handle the actor the request is for.
+                serverEventManager.broadcast(session, request)
                 TaskCompleted(None)
               }
             } else {

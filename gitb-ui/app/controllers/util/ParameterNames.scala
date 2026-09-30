@@ -195,6 +195,7 @@ object ParameterNames {
   val ACTOR_IDS   = "actor_ids"
   val ENDPOINT_ID   = "endpoint_id"
   val TEST_ID    = "test_id"
+  val CHANNEL = "channel"
   val SESSION_ID = "session_id"
   val SESSION_IDS= "session_ids"
   val HAS_COMMENTS = "has_comments"

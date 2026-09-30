@@ -18,7 +18,7 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions._
-import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
+import managers.{AccountManager, AuthenticationManager, AuthorizationManager, ServerEventManager, UserManager}
 import models.{Constants, Enums, Token}
 import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.context.{CallContext, WebContext}
@@ -43,6 +43,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
                                        authorizationManager: AuthorizationManager,
                                        userManager: UserManager,
                                        repositoryUtils: RepositoryUtils,
+                                       serverEventManager: ServerEventManager,
                                        config: org.pac4j.core.config.Config,
                                        playSessionStore: SessionStore)
                                       (implicit ec: ExecutionContext) extends AbstractController(cc) {
@@ -341,6 +342,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
         if(list.length == 2) {
           val accessToken = list(1)
           TokenCache.deleteOAthToken(accessToken)
+          serverEventManager.closeChannelsForToken(accessToken, ServerEventManager.CLOSE_REASON_LOGOUT)
         }
       }
       if (isFullLogout) {

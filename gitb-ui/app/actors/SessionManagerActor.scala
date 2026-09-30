@@ -17,6 +17,7 @@ package actors
 
 import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent, TestSessionConfiguredEvent}
 import com.gitb.tbs.{ConfigurationCompleteRequest, InteractWithUsersRequest, TestStepStatus}
+import managers.ServerEventManager
 import org.apache.pekko.actor.Status.Failure
 import org.apache.pekko.actor.{Actor, ActorContext, ActorRef}
 import org.slf4j.LoggerFactory
@@ -32,7 +33,7 @@ object SessionManagerActor {
 
 }
 
-class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateActor.Factory, sessionLaunchActorFactory: SessionLaunchActor.Factory, webSocketActor: WebSocketActor) extends Actor with InjectedActorSupport {
+class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateActor.Factory, sessionLaunchActorFactory: SessionLaunchActor.Factory, serverEventManager: ServerEventManager) extends Actor with InjectedActorSupport {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionManagerActor])
   private val LAUNCH_ACTOR_PREFIX = "launch"
@@ -66,8 +67,8 @@ class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateAct
 
   private def notifyConfigurationCompleteEvent(event: ConfigurationCompleteRequest): Unit = {
     try {
-      // Notify open web sockets in case this is an interactive session
-      webSocketActor.broadcast(event.getTcInstanceId, JacksonUtil.serializeConfigurationCompleteRequest(event))
+      // Notify open event channels in case this is an interactive session
+      serverEventManager.broadcast(event.getTcInstanceId, JacksonUtil.serializeConfigurationCompleteRequest(event))
       // Publish event in case this is a headless session
       context.system.eventStream.publish(TestSessionConfiguredEvent(event))
     } catch {

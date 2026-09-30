@@ -482,12 +482,6 @@ export class Constants {
 		DELETE: 3
 	}
 
-	public static readonly WEB_SOCKET_COMMAND = {
-		REGISTER: "register",
-		NOTIFY: "notify",
-		PING: "ping"
-	}
-
 	public static readonly TAB = {
 		DOMAIN: {
 			SPECIFICATIONS: 0,

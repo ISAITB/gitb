@@ -49,17 +49,6 @@ export class Utils {
         return headersToUse
     }
 
-    public static webSocketURL(url: string) {
-        const isSecure = window.location.href.toLowerCase().startsWith('https://')
-        if (isSecure && url.startsWith('ws://')) {
-            return 'wss'+url.substring(2)
-        } else if (!isSecure && url.startsWith('wss://')) {
-            return 'ws'+url.substring(3)
-        } else {
-            return url
-        }
-    }
-
     public static uniqueValues<T>(array: T[]): T[] {
       return [...new Set(array)]
     }

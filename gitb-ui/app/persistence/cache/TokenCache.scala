@@ -44,6 +44,23 @@ object TokenCache {
     }
   }
 
+  /**
+   * Check whether the given access token is still valid without extending its idle expiry. This is meant for
+   * background checks (e.g. server-side event channels) that are not the result of user activity.
+   */
+  def isAccessTokenValid(accessToken: String): Boolean = {
+    val act_key = ACCESS_TOKEN_HASH_KEY + HASH_SEPERATOR + accessToken
+    val redisClient = Redis.getClient()
+    try {
+      redisClient.get(act_key).exists { userData =>
+        val userDataParts = userData.split(':')
+        userDataParts.length > 1 && !(sessionMaxAgeMillis > 0 && (System.currentTimeMillis() - userDataParts(1).toLong > sessionMaxAgeMillis))
+      }
+    } finally {
+      Redis.releaseClient(redisClient)
+    }
+  }
+
   def checkAccessToken(accessToken:String): Option[Long] = {
     val act_key =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + accessToken
     val redisClient = Redis.getClient()

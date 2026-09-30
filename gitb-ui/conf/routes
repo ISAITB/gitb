@@ -391,8 +391,10 @@ POST  /api/tests/comment/user/:sessionId      @controllers.TestService.updateTes
 POST  /api/tests/comment/admin/:sessionId     @controllers.TestService.updateTestSessionAdminComment(sessionId: String)
 POST  /api/tests/flag/:sessionId              @controllers.TestService.setTestSessionFlag(sessionId: String)
 
-# WebSocket management API
-GET   /api/ws                                 @controllers.WebSocketService.socket
+# Server-sent events API
+GET     /api/events                                   @controllers.ServerEventService.connect()
+POST    /api/events/session/:sessionId                @controllers.ServerEventService.subscribeToTestSession(sessionId: String)
+DELETE  /api/events/session/:sessionId                @controllers.ServerEventService.unsubscribeFromTestSession(sessionId: String)
 
 # Test suite management API
 DELETE /api/suite/:suite_id/undeploy           @controllers.TestSuiteService.undeployTestSuite(suite_id: Long)
@@ -605,9 +607,10 @@ GET     /api/health/postLoginChecks                              @controllers.He
 GET     /api/health/antivirus                                    @controllers.HealthCheckService.checkAntivirusService()
 GET     /api/health/email                                        @controllers.HealthCheckService.checkEmailService()
 GET     /api/health/tsa                                          @controllers.HealthCheckService.checkTrustedTimestampService()
-GET     /api/health/ws                                           @controllers.HealthCheckService.checkUserInterfaceCommunication
-GET     /api/health/ws/error                                     @controllers.HealthCheckService.checkUserInterfaceCommunicationErrorDetails()
-GET     /api/health/ws/ok                                        @controllers.HealthCheckService.checkUserInterfaceCommunicationSuccessDetails()
+GET     /api/health/sse                                          @controllers.HealthCheckService.checkUserInterfaceCommunication
+GET     /api/health/sse/error                                    @controllers.HealthCheckService.checkUserInterfaceCommunicationErrorDetails()
+GET     /api/health/sse/buffered                                 @controllers.HealthCheckService.checkUserInterfaceCommunicationBufferedDetails()
+GET     /api/health/sse/ok                                       @controllers.HealthCheckService.checkUserInterfaceCommunicationSuccessDetails()
 GET     /api/health/engine                                       @controllers.HealthCheckService.checkTestEngineCommunication()
 GET     /api/health/callbacks                                    @controllers.HealthCheckService.checkTestEngineCallbacks()
 GET     /api/health/serviceCallbacks                             @controllers.HealthCheckService.checkTestServiceCallbacks()

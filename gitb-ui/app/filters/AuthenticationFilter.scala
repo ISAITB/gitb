@@ -171,7 +171,10 @@ class AuthenticationFilter @Inject() (router: Router)
 
   def isAuthenticatedHttpAccessAllowed(request:RequestHeader): Boolean = {
     request.path.startsWith("%sresources/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
-      request.path.startsWith("%sbadgereportpreview/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      request.path.startsWith("%sbadgereportpreview/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      // Server-sent event streams (the browser's EventSource cannot set an authorization header).
+      request.path.equals("%s/events".formatted(API_ROOT)) ||
+      request.path.equals("%s/health/sse".formatted(API_ROOT))
   }
 
   def isPublic(request:RequestHeader):Boolean = {

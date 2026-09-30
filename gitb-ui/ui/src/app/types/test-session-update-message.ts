@@ -18,7 +18,7 @@ import { SUTConfiguration } from "./sutconfiguration";
 import { UserInteraction } from "./user-interaction";
 import { UserInteractionRequest } from "./user-interaction-request";
 
-export interface WebSocketMessage {
+export interface TestSessionUpdateMessage {
 
     tcInstanceId: string
     stepId: string

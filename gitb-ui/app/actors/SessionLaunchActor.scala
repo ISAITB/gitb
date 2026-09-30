@@ -21,7 +21,7 @@ import actors.events.sessions._
 import com.gitb.tpl.TestCase
 import config.Configurations
 import managers.triggers.TriggerHelper
-import managers.{ReportManager, TestbedBackendClient}
+import managers.{ReportManager, ServerEventManager, TestbedBackendClient}
 import org.apache.pekko.actor.Status.Failure
 import org.apache.pekko.actor.{Actor, PoisonPill}
 import org.slf4j.LoggerFactory
@@ -54,7 +54,7 @@ object SessionLaunchActor {
 
 class SessionLaunchActor @Inject() (reportManager: ReportManager,
                                     testbedBackendClient: TestbedBackendClient,
-                                    webSocketActor: WebSocketActor,
+                                    serverEventManager: ServerEventManager,
                                     triggerHelper: TriggerHelper)
                                    (implicit ec: ExecutionContext) extends Actor {
 
@@ -190,7 +190,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
     LOGGER.error("Headless session [{}] for test case [{}] raised an uncaught error while being started", testSessionId.getOrElse("-"), msg.testCaseId, msg.cause)
     state.setFailedTestCase(msg.testCaseId)
     if (testSessionId.isDefined) {
-      webSocketActor.removeActiveTestSession(testSessionId.get)
+      serverEventManager.removeActiveTestSession(testSessionId.get)
     }
     self ! ProcessNextTestSessionEvent()
   }
@@ -253,7 +253,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
 
   private def markSessionAsFailed(testSessionId: String): Unit = {
     state.setFailedTestSession(testSessionId)
-    webSocketActor.removeActiveTestSession(testSessionId)
+    serverEventManager.removeActiveTestSession(testSessionId)
     self ! ProcessNextTestSessionEvent()
   }
 
@@ -262,7 +262,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager,
     val testCaseInputs = state.testCaseInputs(msg.testCaseId)
     val testCaseConfiguration = state.getSessionConfigurationData(onlySimple = false, msg.testCaseId, includeInputs = false)
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Initiated test session [{}] for test case [{}]. {}", msg.assignedTestSession, msg.testCaseId, state.statusText())
-    webSocketActor.registerActiveTestSession(msg.assignedTestSession)
+    serverEventManager.registerActiveTestSession(msg.assignedTestSession)
     // Send the configure request. The response will be returned asynchronously.
     queueTask(() => {
       testbedBackendClient.configure(msg.assignedTestSession, testCaseConfiguration, testCaseInputs).map { _ =>

@@ -29,9 +29,13 @@ import models.Enums.{ReleaseMessageSeverity, ServiceHealthStatusType, TestServic
 import models.health.ReleaseMessage
 import models.{Constants, EmailSettings, ServiceHealthInfo}
 import org.apache.commons.lang3.{StringUtils, Strings}
-import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.slf4j.LoggerFactory
-import play.api.libs.json.{JsValue, Json}
+import play.api.http.HeaderNames.CACHE_CONTROL
+import play.api.http.HttpEntity
+import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import utils.signature.ValidationTimeStamp
@@ -45,12 +49,13 @@ import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.{Objects, UUID}
 import javax.inject.Inject
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Using}
 
 object HealthCheckService {
 
-  case class TestEngineCheckResult(success: Boolean, message: String, error: Option[String] = None) {
+  private case class TestEngineCheckResult(success: Boolean, message: String, error: Option[String] = None) {
 
     def errorToUse(): String = {
       error.flatMap(x => if (StringUtils.isBlank(x)) None else Some(x)).getOrElse("No error to report.")
@@ -58,7 +63,10 @@ object HealthCheckService {
 
   }
 
-  case class ResponseInfo(status: Int, payload: String) {}
+  private case class ResponseInfo(status: Int, payload: String) {}
+
+  // The time for which the server-sent events check keeps its stream open.
+  private val SSE_CHECK_DURATION: FiniteDuration = 3.seconds
   private case class CachedHealthStatus(calculationTime: Option[Instant], status: ServiceHealthStatusType.ServiceHealthStatusType)
 
   object HealthCheckType extends Enumeration(1) {
@@ -322,7 +330,18 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
     authorizationManager.canCheckCoreServiceHealth(request).map { _ =>
       val healthInfo = ServiceHealthInfo(ServiceHealthStatusType.Error,
         "User interface communications are not working correctly.",
-        readClasspathResource("health/ws/error.md").formatted(Configurations.TESTBED_HOME_LINK, Configurations.PUBLIC_CONTEXT_ROOT, Configurations.WEB_CONTEXT_ROOT)
+        readClasspathResource("health/sse/error_unreachable.md").formatted(Configurations.TESTBED_HOME_LINK, Configurations.PUBLIC_CONTEXT_ROOT, Configurations.WEB_CONTEXT_ROOT)
+      )
+      updateHealthStatus(HealthCheckType.UserInterfaceCommunication, healthInfo.status)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsServiceHealthInfo(healthInfo).toString)
+    }
+  }
+
+  def checkUserInterfaceCommunicationBufferedDetails(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCheckCoreServiceHealth(request).map { _ =>
+      val healthInfo = ServiceHealthInfo(ServiceHealthStatusType.Error,
+        "User interface communications are being delayed.",
+        readClasspathResource("health/sse/error_buffered.md")
       )
       updateHealthStatus(HealthCheckType.UserInterfaceCommunication, healthInfo.status)
       ResponseConstructor.constructJsonResponse(JsonUtil.jsServiceHealthInfo(healthInfo).toString)
@@ -333,35 +352,30 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
     authorizationManager.canCheckCoreServiceHealth(request).map { _ =>
       val healthInfo = ServiceHealthInfo(ServiceHealthStatusType.Ok,
         "User interface communications are working correctly.",
-        readClasspathResource("health/ws/ok.md")
+        readClasspathResource("health/sse/ok.md")
       )
       updateHealthStatus(HealthCheckType.UserInterfaceCommunication, healthInfo.status)
       ResponseConstructor.constructJsonResponse(JsonUtil.jsServiceHealthInfo(healthInfo).toString)
     }
   }
 
-  def checkUserInterfaceCommunication: WebSocket = WebSocket.acceptOrResult[JsValue, JsValue] { _ =>
-    Future {
-      Right(
-        Flow[JsValue]
-          .take(1)
-          .map { clientMessage =>
-            if (LOGGER.isDebugEnabled()) {
-              LOGGER.debug("Websocket received: {}", clientMessage)
-            }
-            val parsedMessage = (clientMessage \ "msg").asOpt[String]
-            parsedMessage.map {
-              // Expecting the text "test"
-              case "test" => Json.obj("msg" -> "OK")
-              case _ => Json.obj("msg" -> "NOK")
-            }.getOrElse(Json.obj("msg" -> "NOK"))
-          }
-          .concat(org.apache.pekko.stream.scaladsl.Source.single(Json.obj("msg" -> "Closing...")))
-          .watchTermination() { (_, termination) =>
-            termination.foreach(_ => LOGGER.debug("WebSocket closed"))
-            Flow[JsValue]
-          }
-      )
+  /**
+   * Server-sent events check. A "check" event is sent immediately, followed by a "done" event after a delay while
+   * the stream is kept open. The client considers communications working if the two events are received separately.
+   * If they are received together, a proxy between the server and the client is buffering the response (which would
+   * also delay the events sent during test execution).
+   */
+  def checkUserInterfaceCommunication: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCheckCoreServiceHealth(request).map { _ =>
+      def frame(name: String, data: String): ByteString = ByteString.fromString("event: %s\ndata: %s\n\n".formatted(name, data), StandardCharsets.UTF_8)
+      val source = Source.single(frame("check", "OK"))
+        .concat(Source.single(frame("done", "done")).delay(HealthCheckService.SSE_CHECK_DURATION))
+        .watchTermination() { (_, termination) =>
+          termination.foreach(_ => LOGGER.debug("Server-sent events health check stream closed"))
+          NotUsed
+        }
+      Ok.sendEntity(HttpEntity.Streamed(source, None, Some("text/event-stream")))
+        .withHeaders(CACHE_CONTROL -> "no-cache", "X-Accel-Buffering" -> "no")
     }
   }
 

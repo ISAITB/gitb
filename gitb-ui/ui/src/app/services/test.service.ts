@@ -36,6 +36,26 @@ export class TestService {
     private readonly restService: RestService
   ) { }
 
+  subscribeToSessionUpdates(session: string, channelId: string) {
+    return this.restService.post<void>({
+        path: ROUTES.controllers.ServerEventService.subscribeToTestSession(session).url,
+        params: {
+            channel: channelId
+        },
+        authenticate: true
+    })
+  }
+
+  unsubscribeFromSessionUpdates(session: string, channelId: string) {
+    return this.restService.delete<void>({
+        path: ROUTES.controllers.ServerEventService.unsubscribeFromTestSession(session).url,
+        params: {
+            channel: channelId
+        },
+        authenticate: true
+    })
+  }
+
   stop(session: string) {
     return this.restService.post<void>({
         path: ROUTES.controllers.TestService.stop(session).url,

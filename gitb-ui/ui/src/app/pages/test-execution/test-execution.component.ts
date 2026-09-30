@@ -16,9 +16,8 @@
 import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {Observable, of, Subscription, throwError, timer} from 'rxjs';
+import {Observable, of, Subscription, throwError, timer, TimeoutError} from 'rxjs';
 import {catchError, map, mergeMap, share} from 'rxjs/operators';
-import {WebSocketSubject} from 'rxjs/webSocket';
 import {Constants} from 'src/app/common/constants';
 import {CheckboxOption} from 'src/app/components/checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from 'src/app/components/checkbox-option-panel/checkbox-option-state';
@@ -39,13 +38,13 @@ import {ReportService} from 'src/app/services/report.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {SpecificationService} from 'src/app/services/specification.service';
 import {TestService} from 'src/app/services/test.service';
-import {WebSocketService} from 'src/app/services/web-socket.service';
+import {ServerEventService} from 'src/app/services/server-event.service';
 import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {LogLevel} from 'src/app/types/log-level';
 import {SUTConfiguration} from 'src/app/types/sutconfiguration';
 import {TestInteractionData} from 'src/app/types/test-interaction-data';
 import {UserInteraction} from 'src/app/types/user-interaction';
-import {WebSocketMessage} from 'src/app/types/web-socket-message';
+import {TestSessionUpdateMessage} from 'src/app/types/test-session-update-message';
 import {ConformanceTestCase} from '../organisation/conformance-statement/conformance-test-case';
 import {BaseComponent} from '../base-component.component';
 import {TestCaseDefinitionActors} from '../../types/test-case-definition-actors';
@@ -120,15 +119,16 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   testPreparationStatus: LoadingStatus = {status: Constants.STATUS.NONE}
   simulatedConfigs?: SUTConfiguration[]
   currentSimulatedConfigs?: SUTConfiguration[]
-  messagesToProcess?: WebSocketMessage[]
+  messagesToProcess?: TestSessionUpdateMessage[]
   testEvents: {[key: number]: DiagramEvents} = {}
   columnCount = 4
   currentInteractionStepId?: string
   currentInteractionModal?: NgbModalRef
   testCaseFinishing = false
 
-  private ws?: WebSocketSubject<any>
-  private heartbeat?: Subscription
+  private sessionUpdates?: Subscription
+  private sessionUpdatesSession?: string
+  private sessionUpdatesChannel?: string
   private messageProcessing?: Subscription
   Constants = Constants
 
@@ -157,7 +157,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
     private readonly htmlService: HtmlService,
-    private readonly webSocketService: WebSocketService,
+    private readonly serverEventService: ServerEventService,
     private readonly errorService: ErrorService,
     private readonly routingService: RoutingService,
     private readonly specificationService: SpecificationService
@@ -429,20 +429,46 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       } else {
         this.session = data.value
         this.currentTest!.sessionId = this.session
-        // Create WebSocket
-        this.ws = this.webSocketService.connect(
-          { next: () => { this.onOpen() } },
-          { next: () => { this.onClose() } }
-        )
-        this.ws.subscribe({
+        // Follow the session's updates (via the server event channel) and send the configuration request. We will be notified via the channel when ready.
+        this.followSessionUpdates(this.session).subscribe(() => {
+          this.testService.configure(this.specificationId!, this.session!, this.systemId, this.actorId).subscribe(() => {})
+        })
+      }
+    })
+  }
+
+  private followSessionUpdates(session: string): Observable<void> {
+    // Make sure we have a channel to receive the session's updates over.
+    return this.serverEventService.awaitChannel().pipe(
+      mergeMap((channelId) => {
+        // Listen for updates before subscribing to make sure that none are missed.
+        this.sessionUpdates = this.serverEventService.testSessionUpdates(session).subscribe({
           next: (msg) => this.onMessage(msg),
           error: (error) => this.onError(error),
           complete: () => this.onClose()
         })
-        // Send the configuration request. We will be notified via WS when ready.
-        this.testService.configure(this.specificationId!, this.session, this.systemId, this.actorId).subscribe(() => {})
-      }
-    })
+        this.sessionUpdatesSession = session
+        this.sessionUpdatesChannel = channelId
+        if (this.messageProcessing == undefined) {
+          this.messageProcessing = timer(1, this.updateTick).subscribe(() => {
+            this.processNextMessage()
+          })
+        }
+        return this.testService.subscribeToSessionUpdates(session, channelId)
+      }),
+      catchError((error) => {
+        this.closeSessionUpdates()
+        if (this.currentTest) {
+          this.currentTest.sessionId = ''
+          this.session = undefined
+          this.updateTestCaseStatus(this.currentTest.id, Constants.TEST_CASE_STATUS.STOPPED)
+        }
+        if (error instanceof TimeoutError) {
+          this.errorService.showSimpleErrorMessage('Communication error', 'Unable to establish communication with the Test Bed to follow the test session\'s progress. Please refresh the page and try again.')
+        }
+        return throwError(() => error)
+      })
+    )
   }
 
   private configurationFailed() {
@@ -499,25 +525,6 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     })
   }
 
-  onOpen() {
-    // Register client
-    this.ws!.next({
-      command: Constants.WEB_SOCKET_COMMAND.REGISTER,
-      sessionId: this.session!
-    })
-    // Keep alive heartbeat
-    if (this.heartbeat == undefined) {
-      this.heartbeat = timer(1, 5000).subscribe(() => {
-        this.ws!.next({command: Constants.WEB_SOCKET_COMMAND.PING})
-      })
-    }
-    if (this.messageProcessing == undefined) {
-      this.messageProcessing = timer(1, this.updateTick).subscribe(() => {
-        this.processNextMessage()
-      })
-    }
-  }
-
   onError(msg: any) {
     if (msg != undefined) {
       console.error(JSON.stringify(msg))
@@ -525,11 +532,11 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   onClose() {
-    this.ws = undefined
-    this.closeWebSocket()
+    // The channel was lost or closed (there is nothing to unsubscribe from).
+    this.closeSessionUpdates(false)
   }
 
-  onMessage(response: WebSocketMessage) {
+  onMessage(response: TestSessionUpdateMessage) {
     const stepId = response.stepId
     if (stepId == Constants.LOG_EVENT_TEST_STEP) {
       // Process log messages immediately
@@ -638,7 +645,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }
   }
 
-  private handleInteractions(response: WebSocketMessage) {
+  private handleInteractions(response: TestSessionUpdateMessage) {
     const isInteraction = response.interactions != undefined
     if (isInteraction) {
       // Prompt for an interaction.
@@ -661,7 +668,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }
   }
 
-  processMessage(response: WebSocketMessage) {
+  processMessage(response: TestSessionUpdateMessage) {
     const stepId = response.stepId
     if (response.interactions != undefined) { // interactWithUsers
       this.handleInteractions(response)
@@ -1035,7 +1042,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }
     // Make sure steps still marked as pending or in progress are set as skipped.
     this.setPendingStepsToSkipped()
-    this.closeWebSocket()
+    this.closeSessionUpdates()
     if (forceFinalisation || !this.hasPendingInteractions()) {
       // In case there is an open or pending interaction at test session end, give the user a chance to complete it.
       this.testCaseFinalised()
@@ -1130,7 +1137,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     if (signalStop) {
       this.testService.stop(session).subscribe(() => {
         this.flushPendingMessages()
-        this.closeWebSocket()
+        this.closeSessionUpdates()
         this.session = undefined
         this.testCaseFinished(true)
       })
@@ -1150,15 +1157,11 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       this.stopAll()
     }
     this.popupService.closeAll(true)
-    if (this.heartbeat) {
-      this.heartbeat.unsubscribe()
-      this.heartbeat = undefined
-    }
     if (this.messageProcessing) {
       this.messageProcessing.unsubscribe()
       this.messageProcessing = undefined
     }
-    this.closeWebSocket()
+    this.closeSessionUpdates()
     this.initialiseState()
     this.initialiseTestCases()
   }
@@ -1215,7 +1218,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       this.popupService.closeAll(true)
       this.dataService.clearTestsToExecute()
       if (this.firstTestStarted && !this.allStopped) {
-        this.closeWebSocket()
+        this.closeSessionUpdates()
         if (!this.dataService.configuration.preparingForShutdown) {
           const pendingTests = this.testsToExecute.filter((test) => {
             return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
@@ -1231,23 +1234,30 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
           }
         }
       } else {
-        if (this.ws != undefined && this.session != undefined) {
+        if (this.sessionUpdates != undefined && this.session != undefined) {
           this.stopAll()
         }
       }
       if (this.messageProcessing) this.messageProcessing.unsubscribe()
-      if (this.heartbeat) this.heartbeat.unsubscribe()
     }
   }
 
-  private closeWebSocket() {
-    if (this.heartbeat) {
-      this.heartbeat.unsubscribe()
-      this.heartbeat = undefined
+  private closeSessionUpdates(unsubscribeFromServer: boolean = true) {
+    const session = this.sessionUpdatesSession
+    const channel = this.sessionUpdatesChannel
+    if (this.sessionUpdates) {
+      this.sessionUpdates.unsubscribe()
+      this.sessionUpdates = undefined
     }
-    if (this.ws) {
-      this.ws.complete()
-      this.ws = undefined
+    this.sessionUpdatesSession = undefined
+    this.sessionUpdatesChannel = undefined
+    if (unsubscribeFromServer && session != undefined && channel != undefined) {
+      // This also lets the server know that no one is following the session anymore.
+      try {
+        this.testService.unsubscribeFromSessionUpdates(session, channel).subscribe({ error: () => {} })
+      } catch (e) {
+        // Ignore (e.g. we are no longer authenticated).
+      }
     }
   }
 

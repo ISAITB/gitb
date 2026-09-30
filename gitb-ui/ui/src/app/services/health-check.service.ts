@@ -18,21 +18,21 @@ import {Observable, Subject, timeout} from 'rxjs';
 import {HealthInfo} from '../types/health-info';
 import {RestService} from './rest.service';
 import {ROUTES} from '../common/global';
-import {WebSocketService} from './web-socket.service';
-import {WebSocketSubject} from 'rxjs/webSocket';
+import {DataService} from './data.service';
 import {HealthStatus} from '../types/health-status';
 import {TestServiceBasicInfo} from '../types/test-service-basic-info';
-import {TestServiceWithParameter} from '../types/test-service-with-parameter';
-import {ServiceCallResult} from '../types/service-call-result';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HealthCheckService {
 
+  // The minimum delay (in ms) between the health check's two server-sent events for the response to be considered as streamed.
+  private static readonly MIN_STREAMING_DELAY = 1500
+
   constructor(
     private readonly restService: RestService,
-    private readonly webSocketService: WebSocketService
+    private readonly dataService: DataService
   ) { }
 
   getTestServicesForHealthCheck(domainId: number|undefined): Observable<TestServiceBasicInfo[]> {
@@ -125,52 +125,55 @@ export class HealthCheckService {
     })
   }
 
+  checkUserInterfaceCommunicationBufferedDetails(): Observable<HealthInfo> {
+    return this.restService.get<HealthInfo>({
+      path: ROUTES.controllers.HealthCheckService.checkUserInterfaceCommunicationBufferedDetails().url,
+      authenticate: true,
+    })
+  }
+
   checkUserInterfaceCommunication(): Observable<HealthInfo> {
     try {
-      const finished$ = new Subject<HealthInfo>();
-      let socket: WebSocketSubject<any>|undefined
-      /* The following configuration can be used to test this for errors:
-            const testData = {
-              webSocketURL: () => "ws://localhost:9001/api/health/ws",
-              url: "api/health/ws"
-            }
-            socket = this.webSocketService.prepareWebSocket(testData,
-       */
-      socket = this.webSocketService.prepareWebSocket(ROUTES.controllers.HealthCheckService.checkUserInterfaceCommunication(),
-        { next: () => {} },
-        { next: () => {} }
-      )
-      socket.subscribe({
-        next: (response: any) => {
-          let healthStatus$: Observable<HealthInfo>
-          if (response?.msg == "OK") {
-            healthStatus$ = this.checkUserInterfaceCommunicationSuccessDetails()
-          } else {
-            healthStatus$ = this.checkUserInterfaceCommunicationErrorDetails()
-          }
+      const finished$ = new Subject<HealthInfo>()
+      let finished = false
+      let checkTime: number|undefined
+      const eventSource = new EventSource(this.dataService.completePath(ROUTES.controllers.HealthCheckService.checkUserInterfaceCommunication().url))
+      const finish = (healthStatus$: Observable<HealthInfo>) => {
+        if (!finished) {
+          finished = true
+          eventSource.close()
           healthStatus$.subscribe((msg) => {
             finished$.next(msg)
             finished$.complete()
           })
-        },
-        error: () => {
-          this.checkUserInterfaceCommunicationErrorDetails().subscribe((msg) => {
-            finished$.next(msg)
-            finished$.complete()
-          })
-        },
-        complete: () => {
-          // Do nothing
+        }
+      }
+      /*
+       * The server sends a "check" event immediately and a "done" event a few seconds later, keeping the stream open in between.
+       * If the events arrive with a delay between them the communication is working. If they arrive together, an intermediate
+       * component (e.g. a reverse proxy) is buffering the response, which would also delay the updates of running test sessions.
+       * Any error (or the lack of a response) is considered a failure.
+       */
+      eventSource.addEventListener('check', () => {
+        checkTime = Date.now()
+      })
+      eventSource.addEventListener('done', () => {
+        if (checkTime != undefined && (Date.now() - checkTime) >= HealthCheckService.MIN_STREAMING_DELAY) {
+          finish(this.checkUserInterfaceCommunicationSuccessDetails())
+        } else {
+          finish(this.checkUserInterfaceCommunicationBufferedDetails())
         }
       })
-      /*
-       * We send a "test" text and expect to get a response of OK (anything else is considered a failure.
-       * There is no need to close the socket (the server closes it immediately after sending a response)
-       */
-      socket.next({ msg: "test" })
+      eventSource.onerror = () => {
+        finish(this.checkUserInterfaceCommunicationErrorDetails())
+      }
       return finished$.pipe(
         // Give the operation 10 seconds, otherwise complete with an error (retrieved from backend)
-        timeout({each: 10000, with: () => this.checkUserInterfaceCommunicationErrorDetails()})
+        timeout({each: 10000, with: () => {
+          finished = true
+          eventSource.close()
+          return this.checkUserInterfaceCommunicationErrorDetails()
+        }})
       );
     } catch (error) {
       return this.checkUserInterfaceCommunicationErrorDetails()

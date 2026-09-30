@@ -26,6 +26,7 @@ import {PopupService} from './popup.service';
 import {catchError, map} from 'rxjs/operators';
 import {LoginResultOk} from '../types/login-result-ok';
 import {AuthenticationStatus} from '../types/authentication-status';
+import {ServerEventService} from './server-event.service';
 
 @Injectable({
   providedIn: 'root'
@@ -52,7 +53,8 @@ export class AuthProviderService {
       private readonly httpClient: HttpClient,
       private readonly dataService: DataService,
       private readonly routingService: RoutingService,
-      private readonly popupService: PopupService
+      private readonly popupService: PopupService,
+      private readonly serverEventService: ServerEventService
     ) {
     // Handle login event
     this.onLogin$.subscribe((info) => {
@@ -156,9 +158,12 @@ export class AuthProviderService {
 		this.authenticatedSubject.next(AuthenticationStatus.AuthenticatedWithAccessToken)
 		this.logoutSignalled = false
     this.accessToken = accessToken
+    // Open the channel over which the server pushes events (authenticated via the session cookie).
+    this.serverEventService.connect()
   }
 
 	private deAuthenticate() {
+    this.serverEventService.disconnect()
 		this.authenticatedSubject.next(AuthenticationStatus.NotChecked)
     this.recoverAuth$ = undefined
 		this.logoutOngoing = false
