@@ -15,7 +15,6 @@
 
 package managers
 
-import config.Configurations
 import exceptions.UnauthorizedAccessException
 import models.Enums.UserRole
 import models.UserTrackingInfo
@@ -28,10 +27,12 @@ import org.apache.pekko.util.ByteString
 import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache
 import play.api.libs.json.{JsObject, Json}
+import utils.JsonUtil
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.{Inject, Singleton}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
@@ -105,6 +106,7 @@ object ServerEventManager {
 @Singleton
 class ServerEventManager @Inject() (actorSystem: ActorSystem,
                                     userManager: UserManager,
+                                    legalNoticeManager: LegalNoticeManager,
                                     testbedClient: TestbedBackendClient)
                                    (implicit ec: ExecutionContext, mat: Materializer) {
 
@@ -116,6 +118,8 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
   private val testSessionChannels = TrieMap[String, Set[String]]() // [test session ID -> channel IDs]
   private val activeTestSessions = TrieMap[String, Boolean]()
   private val bindingCounter = new AtomicLong(0) // Distinguishes the successive connections of one channel.
+  // The last configuration snapshot broadcast to clients, used to avoid re-sending identical values (see publishConfiguration).
+  private val lastPublishedConfiguration = new AtomicReference[JsObject]()
 
   private val maintenanceTask = actorSystem.scheduler.scheduleWithFixedDelay(MAINTENANCE_INTERVAL, MAINTENANCE_INTERVAL)(() => performMaintenance())
 
@@ -143,11 +147,11 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
    * @return The stream of raw SSE data to return to the client.
    */
   def openChannel(userId: Long, accessToken: String, lastEventId: Option[String]): Future[Source[ByteString, NotUsed]] = {
-    userManager.getUserTrackingInfoById(userId).map { user =>
+    userManager.getUserTrackingInfoById(userId).zip(currentConfiguration()).map { case (user, configuration) =>
       if (user.isEmpty) {
         throw UnauthorizedAccessException("User not found")
       }
-      bindChannel(user.get, accessToken, lastEventId)
+      bindChannel(user.get, accessToken, lastEventId, configuration)
     }
   }
 
@@ -163,15 +167,16 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
   }
 
   /**
-   * The configuration values sent to clients when a channel is (re)established, so that they can catch up on
-   * changes that may have occurred while disconnected (e.g. across a server restart). This is currently limited to
-   * the shutdown preparation flag; extend it here as further configuration values need to be kept in sync this way.
+   * The full application configuration, as sent to clients both when a channel is (re)established - so that they can
+   * catch up on changes that may have occurred while disconnected (e.g. across a server restart) - and whenever a
+   * configuration value changes (see publishConfiguration). This mirrors what is served over the regular
+   * (pre-authentication) configuration endpoint (see AccountService.getConfiguration / JsonUtil.serializeConfigurationProperties).
    */
-  private def currentConfiguration(): JsObject = {
-    Json.obj("preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN)
+  private def currentConfiguration(): Future[JsObject] = {
+    legalNoticeManager.hasTestBedDefaultLegalNotice().map(JsonUtil.serializeConfigurationProperties)
   }
 
-  private def bindChannel(user: UserTrackingInfo, accessToken: String, lastEventId: Option[String]): Source[ByteString, NotUsed] = {
+  private def bindChannel(user: UserTrackingInfo, accessToken: String, lastEventId: Option[String], configuration: JsObject): Source[ByteString, NotUsed] = {
     val (queue, source) = Source.queue[String](QUEUE_SIZE, OverflowStrategy.dropHead).preMaterialize()
     val bindingId = bindingCounter.incrementAndGet()
     // Try to resume an existing channel (only if it is the user's own and no events were lost).
@@ -185,7 +190,7 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
             channel.queue = Some(queue)
             channel.bindingId = bindingId
             channel.disconnectedSince = None
-            offer(queue, formatEvent(None, EVENT_CONNECTED, Json.obj("channelId" -> channel.id, "resumed" -> true, "configuration" -> currentConfiguration()).toString(), Some(RETRY_INTERVAL_MS)))
+            offer(queue, formatEvent(None, EVENT_CONNECTED, Json.obj("channelId" -> channel.id, "resumed" -> true, "configuration" -> configuration).toString(), Some(RETRY_INTERVAL_MS)))
             channel.replayBuffer.filter(_._1 > lastSeq).foreach(event => offer(queue, event._2))
             Some(channel)
           } else {
@@ -204,7 +209,7 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
       newChannel.bindingId = bindingId
       channels.put(newChannel.id, newChannel)
       // The connected event is sent with sequence 0 so that a reconnection before any other event still resumes the channel.
-      offer(queue, formatEvent(Some(s"${newChannel.id}:0"), EVENT_CONNECTED, Json.obj("channelId" -> newChannel.id, "resumed" -> false, "configuration" -> currentConfiguration()).toString(), Some(RETRY_INTERVAL_MS)))
+      offer(queue, formatEvent(Some(s"${newChannel.id}:0"), EVENT_CONNECTED, Json.obj("channelId" -> newChannel.id, "resumed" -> false, "configuration" -> configuration).toString(), Some(RETRY_INTERVAL_MS)))
       newChannel
     }
     if (logger.isDebugEnabled) logger.debug("Server event channel [{}] bound for user [{}] (resumed: {})", channel.id, user.id, resumed.isDefined)
@@ -377,11 +382,25 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
   }
 
   /**
-   * Push updated configuration values (a partial configuration object, using the same keys as [[currentConfiguration]])
-   * to all connected channels.
+   * Recompute the current application configuration and, if it differs from what was last broadcast, push the full
+   * snapshot to all connected channels. Called after any change to a configuration value reported by
+   * [[currentConfiguration]] (e.g. system settings, the startup wizard, or the Test Bed default legal notice).
+   *
+   * The full configuration is always sent (rather than a partial update) so that callers do not need to know which
+   * keys they affected, and clients only need one code path to apply it (see DataService.updateConfiguration in the
+   * Angular app). This data is not sensitive - it is the same configuration returned to unauthenticated users by
+   * AccountService.getConfiguration - so broadcasting it to all channels is safe.
    */
-  def sendConfigurationUpdate(update: JsObject): Int = {
-    sendToAll(EVENT_CONFIGURATION, update.toString())
+  def publishConfiguration(): Future[Unit] = {
+    currentConfiguration().map { configuration =>
+      val previous = lastPublishedConfiguration.getAndSet(configuration)
+      if (previous == null || previous != configuration) {
+        sendToAll(EVENT_CONFIGURATION, configuration.toString())
+        ()
+      }
+    }.recover {
+      case e: Exception => logger.warn("Unable to publish updated configuration to server event channels", e)
+    }
   }
 
   /*

@@ -262,14 +262,23 @@ export class DataService {
 
   setConfiguration(config: AppConfigurationProperties) {
     this.configuration = config
+    this.applyAcceptedEmailAttachmentTypes()
+    this.configurationLoaded = true
+  }
+
+  /**
+   * (Re)computes the lookup map of allowed email attachment types from the current configuration's comma-separated
+   * list (see e.g. ContactSupportComponent). Called both after loading the initial configuration and after a live
+   * update to it (see updateConfiguration) that changes the allowed types.
+   */
+  private applyAcceptedEmailAttachmentTypes() {
     this.acceptedEmailAttachmentTypes = {}
-    if (config.emailAttachmentsAllowedTypes) {
-      let acceptedTypes = config.emailAttachmentsAllowedTypes.split(',')
+    if (this.configuration.emailAttachmentsAllowedTypes) {
+      const acceptedTypes = this.configuration.emailAttachmentsAllowedTypes.split(',')
       for (let acceptedType of acceptedTypes) {
         this.acceptedEmailAttachmentTypes[acceptedType] = true
       }
     }
-    this.configurationLoaded = true
   }
 
   getRoleDescription(full: boolean, account?: UserAccount): string {
@@ -2131,16 +2140,46 @@ export class DataService {
   }
 
   /**
-   * Apply a partial configuration update pushed by the server over the SSE channel (see ServerEventService), e.g. to
-   * pick up a change made by another user, or to catch up after a reconnect (which may follow a server restart).
+   * Apply a configuration update pushed by the server over the SSE channel (see ServerEventService), e.g. to pick up
+   * a change made by another user (or by another one of this user's own tabs), or to catch up after a reconnect -
+   * which may replay the full configuration, e.g. across a server restart (see ServerEventManager on the server
+   * side, which always sends the complete configuration rather than a partial one).
    *
-   * Only the keys actually present in the update are considered, and only those whose value changed trigger their
-   * associated reaction. New configuration keys that need to be kept in sync this way should be added here.
+   * Every key present in the update is compared to the current value (arrays compared by content) and, if different,
+   * applied directly onto the existing (mutated, not replaced) configuration object, so that every consumer of
+   * `dataService.configuration` - whether reading it directly/through a template binding, or via a component field
+   * captured once at load time, which will pick up the change on its next navigation - reflects it.
+   *
+   * A handful of keys additionally require a side effect beyond the plain assignment - these are triggered once
+   * below, only when the key's value actually changed.
    */
   updateConfiguration(update: Partial<AppConfigurationProperties>) {
-    if (update.preparingForShutdown != undefined && update.preparingForShutdown != this.configuration.preparingForShutdown) {
-      this.togglePrepareForShutdown(update.preparingForShutdown)
+    let emailAttachmentTypesChanged = false
+    let preparingForShutdownChanged = false
+    for (const key of Object.keys(update) as (keyof AppConfigurationProperties)[]) {
+      if (this.applyConfigurationValueIfChanged(update, key)) {
+        if (key == 'emailAttachmentsAllowedTypes') emailAttachmentTypesChanged = true
+        if (key == 'preparingForShutdown') preparingForShutdownChanged = true
+      }
     }
+    if (emailAttachmentTypesChanged) {
+      this.applyAcceptedEmailAttachmentTypes()
+    }
+    if (preparingForShutdownChanged) {
+      this.togglePrepareForShutdown(this.configuration.preparingForShutdown)
+    }
+  }
+
+  private applyConfigurationValueIfChanged<K extends keyof AppConfigurationProperties>(update: Partial<AppConfigurationProperties>, key: K): boolean {
+    const newValue = update[key] as AppConfigurationProperties[K]
+    const currentValue = this.configuration[key]
+    const changed = Array.isArray(newValue) || Array.isArray(currentValue)
+      ? JSON.stringify(newValue) != JSON.stringify(currentValue)
+      : newValue != currentValue
+    if (changed) {
+      this.configuration[key] = newValue
+    }
+    return changed
   }
 
   serializeTags(tags: TagData[]|undefined): string | undefined {

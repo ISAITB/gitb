@@ -15,6 +15,8 @@
 
 package managers
 
+import org.apache.commons.lang3.StringUtils
+
 import javax.inject.{Inject, Singleton}
 import models._
 import persistence.db.PersistenceSchema
@@ -223,6 +225,49 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
           globalDefaultLegalNotice = Some(defaultLegalNotice)
         }
         defaultLegalNotice
+      }
+    }
+  }
+
+  /**
+   * As [[hasTestBedDefaultLegalNotice]], but read from the in-memory cache alone (globalDefaultLegalNotice), never
+   * touching the DB - `None` if the cache has not yet been populated (e.g. never queried since the last invalidation).
+   */
+  private def cachedTestBedDefaultLegalNoticeStatus(): Option[Boolean] = {
+    globalDefaultLegalNotice.map(_.exists(notice => StringUtils.isNotBlank(notice.content)))
+  }
+
+  /**
+   * Whether the Test Bed has a default legal notice with non-blank content, as reported to clients as part of the
+   * application configuration (see JsonUtil.serializeConfigurationProperties). Served from the in-memory cache
+   * whenever possible (see cachedTestBedDefaultLegalNoticeStatus) rather than a DB lookup on every call.
+   */
+  def hasTestBedDefaultLegalNotice(): Future[Boolean] = {
+    cachedTestBedDefaultLegalNoticeStatus() match {
+      case Some(status) => Future.successful(status)
+      case None => getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map(_.exists(notice => StringUtils.isNotBlank(notice.content)))
+    }
+  }
+
+  /**
+   * Runs the given legal notice mutation and reports, alongside its result, whether it changed the Test Bed's
+   * default legal notice status as reported in the application configuration (see hasTestBedDefaultLegalNotice).
+   *
+   * Callers (see LegalNoticeService) use this to only push a configuration update over the SSE channel (see
+   * ServerEventManager.publishConfiguration) when it is actually needed. Most legal notice mutations concern a
+   * specific (non-Test-Bed-wide) community and never invalidate the cache checked here, so the before/after
+   * comparison costs no DB query in that case; only a mutation that does invalidate it (i.e. one affecting the Test
+   * Bed's default community - see create/update/deleteLegalNoticeInternal) pays for the single DB query needed to
+   * repopulate the cache and compare.
+   *
+   * `action` is passed by name so that the "before" status is always read prior to the mutation running.
+   */
+  def detectingTestBedDefaultLegalNoticeChange[T](action: => Future[T]): Future[(T, Boolean)] = {
+    hasTestBedDefaultLegalNotice().flatMap { before =>
+      action.flatMap { result =>
+        hasTestBedDefaultLegalNotice().map { after =>
+          (result, before != after)
+        }
       }
     }
   }

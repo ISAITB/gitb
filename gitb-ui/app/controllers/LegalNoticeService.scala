@@ -17,7 +17,7 @@ package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
-import managers.{AuthorizationManager, LegalNoticeManager}
+import managers.{AuthorizationManager, LegalNoticeManager, ServerEventManager}
 import models.Constants
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.{HtmlUtil, JsonUtil}
@@ -28,7 +28,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction,
                                     cc: ControllerComponents,
                                     legalNoticeManager: LegalNoticeManager,
-                                    authorizationManager: AuthorizationManager)
+                                    authorizationManager: AuthorizationManager,
+                                    serverEventManager: ServerEventManager)
                                    (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   /**
@@ -62,7 +63,8 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageLegalNotices(request, legalNotice.community).flatMap { _ =>
       legalNoticeManager.checkUniqueName(legalNotice.name, legalNotice.community).flatMap { uniqueName =>
         if (uniqueName) {
-          legalNoticeManager.createLegalNotice(legalNotice).map { _ =>
+          legalNoticeManager.detectingTestBedDefaultLegalNoticeChange(legalNoticeManager.createLegalNotice(legalNotice)).map { case (_, changed) =>
+            if (changed) serverEventManager.publishConfiguration()
             ResponseConstructor.constructEmptyResponse
           }
         } else {
@@ -98,7 +100,8 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction,
       val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
       legalNoticeManager.checkUniqueName(noticeId, name, communityId).flatMap { uniqueName =>
         if (uniqueName) {
-          legalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId).map { _ =>
+          legalNoticeManager.detectingTestBedDefaultLegalNoticeChange(legalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId)).map { case (_, changed) =>
+            if (changed) serverEventManager.publishConfiguration()
             ResponseConstructor.constructEmptyResponse
           }
         } else {
@@ -115,7 +118,8 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction,
    */
   def deleteLegalNotice(noticeId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageLegalNotice(request, noticeId).flatMap { _ =>
-      legalNoticeManager.deleteLegalNotice(noticeId).map { _ =>
+      legalNoticeManager.detectingTestBedDefaultLegalNoticeChange(legalNoticeManager.deleteLegalNotice(noticeId)).map { case (_, changed) =>
+        if (changed) serverEventManager.publishConfiguration()
         ResponseConstructor.constructEmptyResponse
       }
     }

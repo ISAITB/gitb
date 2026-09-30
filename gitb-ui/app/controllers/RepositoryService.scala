@@ -62,7 +62,8 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
                                    importPreviewManager: ImportPreviewManager,
                                    importCompleteManager: ImportCompleteManager,
                                    repositoryUtils: RepositoryUtils,
-                                   systemConfigurationManager: SystemConfigurationManager)
+                                   systemConfigurationManager: SystemConfigurationManager,
+                                   serverEventManager: ServerEventManager)
                                   (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
 	private final val logger = LoggerFactory.getLogger(classOf[RepositoryService])
@@ -1490,7 +1491,10 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   def confirmSystemSettingsImport: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSystemSettings(request).flatMap { _ =>
       confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-        importCompleteManager.completeSystemSettingsImport(export.getSettings, importSettings, importItems, canManageSettings = true, Some(ParameterExtractor.extractUserId(request)))
+        importCompleteManager.completeSystemSettingsImport(export.getSettings, importSettings, importItems, canManageSettings = true, Some(ParameterExtractor.extractUserId(request))).map { result =>
+          serverEventManager.publishConfiguration()
+          result
+        }
       })
     }
   }

@@ -80,6 +80,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
       }
       if (proceed) {
         systemConfigurationManager.updateSystemParameters(configsToUse).map { resultToReport =>
+          serverEventManager.publishConfiguration()
           ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemConfigurations(resultToReport).toString)
         }
       } else {
@@ -102,6 +103,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
           }
         }
         systemConfigurationManager.updateSystemParameter(name, value).map { resultToReport =>
+          serverEventManager.publishConfiguration()
           if (resultToReport.isDefined) {
             ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemConfiguration(resultToReport.get).toString)
           } else {
@@ -280,6 +282,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
       val updates = ParameterExtractor.requiredBodyParameter(request, ParameterNames.UPDATES).toBoolean
       val api = ParameterExtractor.requiredBodyParameter(request, ParameterNames.API).toBoolean
       startupWizardManager.completeStartupWizard(samples, updates, api).map { _ =>
+        serverEventManager.publishConfiguration()
         ResponseConstructor.constructEmptyResponse
       }
     }
@@ -289,7 +292,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
     authorizationManager.canManageSystemSettings(request).map { _ =>
       val enable = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.ENABLE).getOrElse(false)
       Configurations.PREPARE_FOR_SHUTDOWN = enable
-      serverEventManager.sendConfigurationUpdate(Json.obj("preparingForShutdown" -> enable))
+      serverEventManager.publishConfiguration()
       ResponseConstructor.constructEmptyResponse
     }
   }

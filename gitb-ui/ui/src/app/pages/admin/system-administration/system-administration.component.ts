@@ -1351,7 +1351,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           this.reportSettingsStatus.collapsed = true
           this.popupService.success('Updated report and display settings.')
           // Apply the date formats immediately for the Test Bed administrator making the change, rather than
-          // waiting for the next initial connection (see DataService.emptyAppConfiguration/setConfiguration).
+          // waiting for the server to push the update back over the SSE channel (see DataService.updateConfiguration).
           if (this.reportSettings.dateFormats?.date != undefined && this.reportSettings.dateFormats?.dateTime != undefined) {
             this.dataService.configuration.dateFormat = this.reportSettings.dateFormats.date
             this.dataService.configuration.dateTimeFormat = this.reportSettings.dateFormats.dateTime

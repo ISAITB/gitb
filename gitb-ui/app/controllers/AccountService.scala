@@ -19,10 +19,8 @@ import config.Configurations
 import controllers.util._
 import exceptions.{ErrorCodes, InvalidRequestException}
 import managers._
-import models.Constants
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.StringUtils
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
@@ -243,8 +241,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
 
   def getConfiguration: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewConfiguration(request).flatMap { _ =>
-      legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map { legalNotice =>
-        val hasDefaultLegalNotice = legalNotice.exists(notice => StringUtils.isNotBlank(notice.content))
+      legalNoticeManager.hasTestBedDefaultLegalNotice().map { hasDefaultLegalNotice =>
         val json = JsonUtil.serializeConfigurationProperties(hasDefaultLegalNotice)
         ResponseConstructor.constructJsonResponse(json.toString())
       }

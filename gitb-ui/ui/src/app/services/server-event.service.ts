@@ -27,9 +27,11 @@ import {DataService} from './data.service';
  * The browser automatically reconnects a dropped connection, resuming the same channel (without losing events)
  * if the server still holds it. If this is not possible, a new channel is created and a reset is signalled.
  *
- * The server also pushes configuration changes (e.g. shutdown preparation mode being toggled) as they occur, and
- * includes the current configuration values in the 'connected' event so that a (re)connecting client catches up on
- * anything it may have missed (e.g. across a server restart). These are applied directly to DataService.
+ * The server also pushes the full application configuration (e.g. after a system setting, the startup wizard, or the
+ * Test Bed default legal notice changes) as it changes, and includes the same full configuration in the 'connected'
+ * event so that a (re)connecting client catches up on anything it may have missed (e.g. across a server restart).
+ * These are applied directly to DataService (see DataService.updateConfiguration), which only reacts to the keys
+ * that actually changed.
  *
  * Note that this service must not depend on services that require the user's authentication (e.g. RestService)
  * as it is used by the AuthProviderService.
