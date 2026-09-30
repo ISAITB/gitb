@@ -18,7 +18,7 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
-import managers.{AuthorizationManager, StartupWizardManager, SystemConfigurationManager}
+import managers.{AuthorizationManager, ServerEventManager, StartupWizardManager, SystemConfigurationManager}
 import models.Constants
 import org.apache.commons.io.FileUtils
 import play.api.libs.json.{JsBoolean, Json}
@@ -34,7 +34,8 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
                                            systemConfigurationManager: SystemConfigurationManager,
                                            startupWizardManager: StartupWizardManager,
                                            environment: play.api.Environment,
-                                           authorizationManager: AuthorizationManager)
+                                           authorizationManager: AuthorizationManager,
+                                           serverEventManager: ServerEventManager)
                                           (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   def testEmailSettings(): Action[AnyContent] = authorizedAction.async { request =>
@@ -288,6 +289,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
     authorizationManager.canManageSystemSettings(request).map { _ =>
       val enable = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.ENABLE).getOrElse(false)
       Configurations.PREPARE_FOR_SHUTDOWN = enable
+      serverEventManager.sendConfigurationUpdate(Json.obj("preparingForShutdown" -> enable))
       ResponseConstructor.constructEmptyResponse
     }
   }

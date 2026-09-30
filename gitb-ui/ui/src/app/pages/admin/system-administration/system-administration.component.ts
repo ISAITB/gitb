@@ -13,7 +13,7 @@
 * the specific language governing permissions and limitations under the Licence.
 */
 
-import {Component, EventEmitter, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {UserService} from 'src/app/services/user.service';
@@ -35,7 +35,7 @@ import {OrganisationService} from 'src/app/services/organisation.service';
 import {Organisation} from 'src/app/types/organisation.type';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConfigStatus} from './config-status';
-import {finalize, forkJoin, map, mergeMap, Observable, of, switchMap, tap} from 'rxjs';
+import {finalize, forkJoin, map, mergeMap, Observable, of, Subscription, switchMap, tap} from 'rxjs';
 import {Theme} from 'src/app/types/theme';
 import {EmailSettings} from 'src/app/types/email-settings';
 import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
@@ -78,7 +78,7 @@ import {ConfigurationEntryComponentApi} from './configuration-entry/configuratio
     changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
-export class SystemAdministrationComponent extends BaseTabbedComponent implements OnInit {
+export class SystemAdministrationComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   @ViewChild("adminsTable") adminsTable?: TableApi
   @ViewChild("landingPagesTable") landingPagesTable?: TableApi
@@ -282,6 +282,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   // Resources
   resourceActions!: ResourceActions
   prepareForShutdown = false
+  preparingForShutdownSubscription?: Subscription
 
   constructor(
     route: ActivatedRoute,
@@ -319,8 +320,16 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
   }
 
+  ngOnDestroy(): void {
+    this.preparingForShutdownSubscription?.unsubscribe()
+  }
+
   ngOnInit(): void {
     this.prepareForShutdown = this.dataService.configuration.preparingForShutdown
+    // Keep the switch in sync if the mode is toggled from elsewhere (another admin, or another tab of this one).
+    this.preparingForShutdownSubscription = this.dataService.onPreparingForShutdown$.subscribe(() => {
+      this.prepareForShutdown = this.dataService.configuration.preparingForShutdown
+    })
     this.adminColumns.push({ field: 'name', title: 'Name' })
     if (this.dataService.configuration.ssoEnabled) {
       this.adminColumns.push({ field: 'email', title: 'Email' })

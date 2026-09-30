@@ -2130,6 +2130,19 @@ export class DataService {
     this.preparingForShutdownSource.next(this.configuration.preparingForShutdown)
   }
 
+  /**
+   * Apply a partial configuration update pushed by the server over the SSE channel (see ServerEventService), e.g. to
+   * pick up a change made by another user, or to catch up after a reconnect (which may follow a server restart).
+   *
+   * Only the keys actually present in the update are considered, and only those whose value changed trigger their
+   * associated reaction. New configuration keys that need to be kept in sync this way should be added here.
+   */
+  updateConfiguration(update: Partial<AppConfigurationProperties>) {
+    if (update.preparingForShutdown != undefined && update.preparingForShutdown != this.configuration.preparingForShutdown) {
+      this.togglePrepareForShutdown(update.preparingForShutdown)
+    }
+  }
+
   serializeTags(tags: TagData[]|undefined): string | undefined {
     if (tags && tags.length > 0) {
       const cleanTags = tags.map(tag => {

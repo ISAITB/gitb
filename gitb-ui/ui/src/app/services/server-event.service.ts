@@ -27,6 +27,10 @@ import {DataService} from './data.service';
  * The browser automatically reconnects a dropped connection, resuming the same channel (without losing events)
  * if the server still holds it. If this is not possible, a new channel is created and a reset is signalled.
  *
+ * The server also pushes configuration changes (e.g. shutdown preparation mode being toggled) as they occur, and
+ * includes the current configuration values in the 'connected' event so that a (re)connecting client catches up on
+ * anything it may have missed (e.g. across a server restart). These are applied directly to DataService.
+ *
  * Note that this service must not depend on services that require the user's authentication (e.g. RestService)
  * as it is used by the AuthProviderService.
  */
@@ -77,7 +81,8 @@ export class ServerEventService {
     eventSource.addEventListener('connected', (event: MessageEvent) => {
       this.lastActivity = Date.now()
       this.reconnectAttempts = 0
-      const channelId = JSON.parse(event.data).channelId as string
+      const payload = JSON.parse(event.data)
+      const channelId = payload.channelId as string
       if (this.currentChannelId != undefined && this.currentChannelId != channelId) {
         // The previous channel could not be resumed. Anything relying on it is lost.
         this.channelIdSubject.next(undefined)
@@ -87,10 +92,17 @@ export class ServerEventService {
         this.currentChannelId = channelId
         this.channelIdSubject.next(channelId)
       }
+      if (payload.configuration != undefined) {
+        this.dataService.updateConfiguration(payload.configuration)
+      }
     })
     eventSource.addEventListener('session', (event: MessageEvent) => {
       this.lastActivity = Date.now()
       this.sessionMessageSubject.next(JSON.parse(event.data))
+    })
+    eventSource.addEventListener('configuration', (event: MessageEvent) => {
+      this.lastActivity = Date.now()
+      this.dataService.updateConfiguration(JSON.parse(event.data))
     })
     eventSource.addEventListener('closed', () => {
       // The server closed the channel (e.g. logout or expiry). Do not attempt to reconnect.

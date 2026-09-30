@@ -15,6 +15,7 @@
 
 package managers
 
+import config.Configurations
 import exceptions.UnauthorizedAccessException
 import models.Enums.UserRole
 import models.UserTrackingInfo
@@ -26,7 +27,7 @@ import org.apache.pekko.stream.{Materializer, OverflowStrategy}
 import org.apache.pekko.util.ByteString
 import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID
@@ -44,6 +45,7 @@ object ServerEventManager {
   private val EVENT_CLOSED = "closed"
   private val EVENT_SESSION = "session"
   private val EVENT_HEARTBEAT = "heartbeat"
+  private val EVENT_CONFIGURATION = "configuration"
 
   // Reasons for which a channel is closed by the server.
   val CLOSE_REASON_LOGOUT = "logout"
@@ -160,6 +162,15 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
     }
   }
 
+  /**
+   * The configuration values sent to clients when a channel is (re)established, so that they can catch up on
+   * changes that may have occurred while disconnected (e.g. across a server restart). This is currently limited to
+   * the shutdown preparation flag; extend it here as further configuration values need to be kept in sync this way.
+   */
+  private def currentConfiguration(): JsObject = {
+    Json.obj("preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN)
+  }
+
   private def bindChannel(user: UserTrackingInfo, accessToken: String, lastEventId: Option[String]): Source[ByteString, NotUsed] = {
     val (queue, source) = Source.queue[String](QUEUE_SIZE, OverflowStrategy.dropHead).preMaterialize()
     val bindingId = bindingCounter.incrementAndGet()
@@ -174,7 +185,7 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
             channel.queue = Some(queue)
             channel.bindingId = bindingId
             channel.disconnectedSince = None
-            offer(queue, formatEvent(None, EVENT_CONNECTED, Json.obj("channelId" -> channel.id, "resumed" -> true).toString(), Some(RETRY_INTERVAL_MS)))
+            offer(queue, formatEvent(None, EVENT_CONNECTED, Json.obj("channelId" -> channel.id, "resumed" -> true, "configuration" -> currentConfiguration()).toString(), Some(RETRY_INTERVAL_MS)))
             channel.replayBuffer.filter(_._1 > lastSeq).foreach(event => offer(queue, event._2))
             Some(channel)
           } else {
@@ -193,7 +204,7 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
       newChannel.bindingId = bindingId
       channels.put(newChannel.id, newChannel)
       // The connected event is sent with sequence 0 so that a reconnection before any other event still resumes the channel.
-      offer(queue, formatEvent(Some(s"${newChannel.id}:0"), EVENT_CONNECTED, Json.obj("channelId" -> newChannel.id, "resumed" -> false).toString(), Some(RETRY_INTERVAL_MS)))
+      offer(queue, formatEvent(Some(s"${newChannel.id}:0"), EVENT_CONNECTED, Json.obj("channelId" -> newChannel.id, "resumed" -> false, "configuration" -> currentConfiguration()).toString(), Some(RETRY_INTERVAL_MS)))
       newChannel
     }
     if (logger.isDebugEnabled) logger.debug("Server event channel [{}] bound for user [{}] (resumed: {})", channel.id, user.id, resumed.isDefined)
@@ -363,6 +374,14 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
 
   def sendToAll(name: String, data: String): Int = {
     send((_, _, _, _) => true, name, data)
+  }
+
+  /**
+   * Push updated configuration values (a partial configuration object, using the same keys as [[currentConfiguration]])
+   * to all connected channels.
+   */
+  def sendConfigurationUpdate(update: JsObject): Int = {
+    sendToAll(EVENT_CONFIGURATION, update.toString())
   }
 
   /*
