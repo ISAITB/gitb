@@ -32,6 +32,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Constants} from '../../common/constants';
 import {NavigationTarget} from 'src/app/types/navigation-target';
 import {MessageComposeService} from '../../services/message-compose.service';
+import {ServerEventService} from '../../services/server-event.service';
 
 @Component({
     selector: 'app-index',
@@ -53,6 +54,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   bannerSubscription?: Subscription
   preparingForShutdownSubscription?: Subscription
   closedNotificationsSubscription?: Subscription
+  newMessageSubscription?: Subscription
   userPassedLogin = false
   prepareForShutdownNotificationId: string|null = null
 
@@ -67,7 +69,8 @@ export class IndexComponent implements OnInit, OnDestroy {
     private readonly popupService: PopupService,
     private readonly healthCheckService: HealthCheckService,
     private readonly messageService: MessageService,
-    private readonly messageComposeService: MessageComposeService
+    private readonly messageComposeService: MessageComposeService,
+    private readonly serverEventService: ServerEventService
   ) {}
 
   ngOnInit(): void {
@@ -94,6 +97,9 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.preparingForShutdownSubscription = this.dataService.onPreparingForShutdown$.subscribe(() => {
       this.handlePrepareForShutdown()
     })
+    this.newMessageSubscription = this.serverEventService.newMessage$.subscribe((message) => {
+      this.handleNewMessage(message.subject)
+    })
     this.closedNotificationsSubscription = this.popupService.closedNotifications$.subscribe((notificationId) => {
       if (notificationId != null && this.prepareForShutdownNotificationId != null && notificationId === this.prepareForShutdownNotificationId) {
         // Needed so that if we trigger an error elsewhere that requires the notification to be displayed, we will not ignore it.
@@ -119,7 +125,18 @@ export class IndexComponent implements OnInit, OnDestroy {
     if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
     if (this.preparingForShutdownSubscription) this.preparingForShutdownSubscription.unsubscribe()
     if (this.closedNotificationsSubscription) this.closedNotificationsSubscription.unsubscribe()
+    if (this.newMessageSubscription) this.newMessageSubscription.unsubscribe()
   }
+
+  private handleNewMessage(subject?: string): void {
+    // My messages is unavailable to the demo account (see handlePostUserLoad).
+    if (this.dataService.isDemoAccount()) return
+    this.popupService.infoWithSubtitle('New message received.', subject?.length ? subject : undefined)
+    // Also raised if the user is on "My messages" as the displayed messages are not refreshed automatically
+    // (the badge is cleared once they are reloaded - see MessagesComponent.load).
+    this.dataService.updateMenuItemStatus(MenuItem.myMessages, MenuItemStatus.Info)
+  }
+
 
   handlePostUserLoad(): void {
     // Lifted out of the (former) isSystemAdmin-only guard - the menuItemStatusMap is written for every

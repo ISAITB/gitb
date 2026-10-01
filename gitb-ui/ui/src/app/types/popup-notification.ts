@@ -18,6 +18,7 @@ export interface PopupNotification {
   id: string;
   type: 'error'|'warning'|'success'|'info';
   message: string;
+  subtitle?: string;
   persistent: boolean;
 
 }

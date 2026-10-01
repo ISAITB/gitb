@@ -251,18 +251,20 @@ class MessageManager @Inject() (dbConfigProvider: DatabaseConfigProvider, actorS
    * Fans out a MessageUnreadStatus row for every user of every recipient organisation of `messageId`,
    * except `excludeUserId` (the sender).
    */
-  def createUnreadStatusRows(messageId: Long, excludeUserId: Long): Future[Unit] = {
+  def createUnreadStatusRows(messageId: Long, excludeUserId: Long): Future[(Option[String], Set[Long])] = {
     DB.run(
-      PersistenceSchema.messageRecipients.filter(_.messageId === messageId).map(r => (r.id, r.recipientId)).result.flatMap { recipientRows =>
-        insertUnreadStatusRows(recipientRows, excludeUserId)
-      }
+      for {
+        subject <- PersistenceSchema.messages.filter(_.id === messageId).map(_.subject).result.headOption.map(_.flatten)
+        recipientRows <- PersistenceSchema.messageRecipients.filter(_.messageId === messageId).map(r => (r.id, r.recipientId)).result
+        userIds <- insertUnreadStatusRows(recipientRows, excludeUserId)
+      } yield (subject, userIds)
     )
   }
 
-  private def insertUnreadStatusRows(recipientRows: Seq[(Long, Option[Long])], excludeUserId: Long): DBIO[Unit] = {
+  private def insertUnreadStatusRows(recipientRows: Seq[(Long, Option[Long])], excludeUserId: Long): DBIO[Set[Long]] = {
     val recipientOrgIds = recipientRows.flatMap(_._2).toSet
     if (recipientOrgIds.isEmpty) {
-      DBIO.successful(())
+      DBIO.successful(Set.empty[Long])
     } else {
       for {
         recipientUsers <- PersistenceSchema.users
@@ -285,7 +287,7 @@ class MessageManager @Inject() (dbConfigProvider: DatabaseConfigProvider, actorS
           Logger.debug("Sent message to {} user(s) in {} organisation(s)", unreadRows.size, recipientOrgIds.size)
           if (unreadRows.isEmpty) DBIO.successful(()) else PersistenceSchema.messageUnreadStatus ++= unreadRows
         }
-      } yield ()
+      } yield recipientUsers.map(_._1).filter(_ != excludeUserId).toSet
     }
   }
 

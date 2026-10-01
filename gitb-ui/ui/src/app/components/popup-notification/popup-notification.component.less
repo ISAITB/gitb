@@ -35,8 +35,23 @@
     .icon {
         font-size: large;
         margin-right: 16px;
+        // Center the icon in the notification and keep it from shifting (or shrinking) with the message height.
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
         .foreground-icon {
             color: @white;
+        }
+    }
+    .message {
+        flex: 1;
+        min-width: 0;
+        .notification-subtitle {
+            font-size: 9pt;
+            opacity: 0.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
     &.success {

@@ -48,7 +48,15 @@ export class PopupService {
     return this.add(message, 'info', persistent)
   }
 
-  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean): string|null {
+  /**
+   * Info notification with a title and a (less prominent) subtitle line. Unlike plain notifications, both
+   * texts are rendered as text (not HTML), so they can safely include user-provided content.
+   */
+  infoWithSubtitle(title: string, subtitle?: string, persistent?: boolean): string|null {
+    return this.add(title, 'info', persistent, subtitle)
+  }
+
+  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean, subtitle?: string): string|null {
     if (message !== undefined) {
       if (!message.endsWith(".")) {
         message = message + "."
@@ -57,6 +65,7 @@ export class PopupService {
         id: crypto.randomUUID(),
         type: type,
         message: message,
+        subtitle: subtitle,
         persistent: persistent === true
       }
       const list = this.notificationsSubject.value;

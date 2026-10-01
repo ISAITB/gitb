@@ -22,7 +22,14 @@
             }
         </span>
     </div>
-    <div class="message" [innerHTML]="notification.message"></div>
+    @if (notification.subtitle != undefined) {
+        <div class="message">
+            <div>{{ notification.message }}</div>
+            <div class="notification-subtitle">{{ notification.subtitle }}</div>
+        </div>
+    } @else {
+        <div class="message" [innerHTML]="notification.message"></div>
+    }
     <div class="close">
         <span><i [class]="Constants.BUTTON_ICON.CANCEL"></i></span>
     </div>

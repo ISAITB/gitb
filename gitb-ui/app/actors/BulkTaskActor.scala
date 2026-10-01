@@ -18,9 +18,10 @@ package actors
 import actors.BulkTaskActor.{TaskComplete, logger}
 import actors.events.messaging.CreateMessageUnreadStatus
 import actors.events.obsolete.{DeleteAllObsoleteSessions, DeleteObsoleteSessionsForCommunity, DeleteObsoleteSessionsForOrganisation}
-import managers.{MessageManager, TestResultManager}
+import managers.{MessageManager, ServerEventManager, TestResultManager}
 import org.apache.pekko.actor.{Actor, Stash}
 import org.slf4j.LoggerFactory
+import play.api.libs.json.Json
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,7 +36,7 @@ object BulkTaskActor {
 /*
  * Actor that executes bulk tasks one at a time.
  */
-class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageManager: MessageManager) extends Actor with Stash {
+class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageManager: MessageManager, serverEventManager: ServerEventManager) extends Actor with Stash {
 
   implicit private val ec: ExecutionContext = context.dispatcher
 
@@ -86,7 +87,11 @@ class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageMana
   }
 
   private def handleCreateMessageUnreadStatus(msg: CreateMessageUnreadStatus): Future[Unit] = {
-    messageManager.createUnreadStatusRows(msg.messageId, msg.excludeUserId)
+    messageManager.createUnreadStatusRows(msg.messageId, msg.excludeUserId).map { case (subject, userIds) =>
+      // Notify connected recipients now that their unread rows exist.
+      val data = subject.map(s => Json.obj("subject" -> s)).getOrElse(Json.obj()).toString()
+      userIds.foreach(serverEventManager.sendToUser(_, "message", data))
+    }
   }
 
 }

@@ -502,6 +502,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
       this.updateMinTableHeightAndRefresh()
     }
     if (!this.sentView) {
+      this.dataService.updateMenuItemStatus(MenuItem.myMessages, MenuItemStatus.None)
       this.messageService.getReceivedMessages(page, limit, this.filterText, this.showRead, this.showUnread, this.showImportant, dateAfter, dateBefore, this.sortColumn, this.sortOrder, this.peerFilterTargets)
         .subscribe((result) => {
           this.messages = result.data.map((m) => this.toReceivedRow(m))

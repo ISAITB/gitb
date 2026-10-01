@@ -60,6 +60,13 @@ export class ServerEventService {
   private readonly channelResetSubject = new Subject<void>()
   private readonly sessionMessageSubject = new Subject<{ session: string, message: TestSessionUpdateMessage }>()
 
+  private readonly newMessageSubject = new Subject<{ subject?: string }>()
+
+  /**
+   * Emits when a new internal message has been received by the user (carrying the message's subject, if any).
+   */
+  public readonly newMessage$ = this.newMessageSubject.asObservable()
+
   /**
    * The ID of the currently established channel (undefined if there is no channel).
    */
@@ -120,6 +127,10 @@ export class ServerEventService {
       this.lastActivity = Date.now()
       const payload = JSON.parse(event.data)
       this.dataService.updateCachedTestFlagsForCommunity(payload.communityId, payload.testFlags)
+    })
+    eventSource.addEventListener('message', (event: MessageEvent) => {
+      this.lastActivity = Date.now()
+      this.newMessageSubject.next(JSON.parse(event.data))
     })
     eventSource.addEventListener('closed', () => {
       // The server closed the channel (e.g. logout or expiry). Do not attempt to reconnect.
