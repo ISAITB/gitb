@@ -125,8 +125,16 @@ class TestFlagManager @Inject()(dbConfigProvider: DatabaseConfigProvider)
     q.update((testFlag.name, testFlag.description, testFlag.colour, testFlag.publicName, testFlag.publicColour, testFlag.adminOnly)).map(_ => ())
   }
 
-  def deleteTestFlag(testFlagId: Long): Future[Unit] = {
-    DB.run(deleteTestFlagInternal(testFlagId).transactionally)
+  /**
+   * @return The ID of the community the deleted flag belonged to.
+   */
+  def deleteTestFlag(testFlagId: Long): Future[Long] = {
+    DB.run(
+      (for {
+        communityId <- PersistenceSchema.testFlags.filter(_.id === testFlagId).map(_.community).result.head
+        _ <- deleteTestFlagInternal(testFlagId)
+      } yield communityId).transactionally
+    )
   }
 
   private[managers] def deleteTestFlagInternal(testFlagId: Long): DBIO[Unit] = {

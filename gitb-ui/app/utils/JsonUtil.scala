@@ -907,6 +907,21 @@ object JsonUtil {
     json
   }
 
+  /**
+   * The properties of the non-admin view of a community (see jsCommunity) that differ between the community's
+   * previous and updated state, to be pushed to connected users (see ServerEventManager.publishCommunityUpdate).
+   * If the community's domain changed the new domain (or null) is also included.
+   */
+  def jsCommunityChanges(previous: Communities, updated: Communities, updatedDomain: Option[Domain]): JsObject = {
+    val before = jsCommunity(previous, includeAdminInfo = false)
+    val after = jsCommunity(updated, includeAdminInfo = false)
+    var changes = JsObject(after.fields.filter { case (key, value) => !before.fields.contains((key, value)) })
+    if (previous.domain != updated.domain) {
+      changes = changes ++ Json.obj("domain" -> updatedDomain.map(jsDomain(_, withApiKeys = false, withTags = false)).getOrElse[JsValue](JsNull))
+    }
+    changes
+  }
+
   def jsCommunityInfoForLogin(communityInfo: CommunityInfoForLogin): JsObject = {
     var json = serializeCommunity(communityInfo.community, Some(communityInfo.labels), includeAdminInfo = false)
     if (communityInfo.statementDocumentationReportEnabled) {

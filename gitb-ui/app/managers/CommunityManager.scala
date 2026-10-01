@@ -26,6 +26,7 @@ import models.automation._
 import org.apache.commons.lang3.StringUtils
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.JsObject
 import utils.{CryptoUtil, HtmlUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.util
@@ -732,7 +733,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean, allowObsoleteSessionDeletion: Boolean,
                       allowAdminSenderNames: Boolean, allowOrganisationSenderNames: Boolean,
                       domainId: Option[Long], selfRegDefaultOrganisation: Option[Long], userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean,
-                      tags: Option[String]): Future[Unit] = {
+                      tags: Option[String]): Future[JsObject] = {
 
     val onSuccess = ListBuffer[() => _]()
     val dbAction = for {
@@ -771,8 +772,40 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           DBIO.successful(())
         }
       }
-    } yield ()
-    DB.run(dbActionFinalisation(Some(onSuccess), None, dbAction).transactionally).map(_ => ())
+      // The changes to the community's information visible to its users, to be pushed to them.
+      changes <- {
+        val updated = community.get.copy(
+          shortname = if (shortName.nonEmpty) shortName else community.get.shortname,
+          fullname = if (fullName.nonEmpty) fullName else community.get.fullname,
+          allowCertificateDownload = allowCertificateDownload,
+          allowStatementManagement = allowStatementManagement,
+          allowSystemManagement = allowSystemManagement,
+          allowPostTestOrganisationUpdates = allowPostTestOrganisationUpdates,
+          allowPostTestSystemUpdates = allowPostTestSystemUpdates,
+          allowPostTestStatementUpdates = allowPostTestStatementUpdates,
+          allowAutomationApi = if (Configurations.AUTOMATION_API_ENABLED) allowAutomationApi.getOrElse(community.get.allowAutomationApi) else community.get.allowAutomationApi,
+          allowCommunityView = allowCommunityView,
+          allowUserManagement = allowUserManagement,
+          allowXmlReports = allowXmlReports,
+          allowObsoleteSessionDeletion = allowObsoleteSessionDeletion,
+          allowAdminSenderNames = allowAdminSenderNames,
+          allowOrganisationSenderNames = allowOrganisationSenderNames,
+          selfRegAllowOrganisationTokens = if (Configurations.REGISTRATION_ENABLED) selfRegAllowOrganisationTokens else community.get.selfRegAllowOrganisationTokens,
+          selfRegAllowOrganisationTokenManagement = if (Configurations.REGISTRATION_ENABLED) selfRegAllowOrganisationTokens && selfRegAllowOrganisationTokenManagement else community.get.selfRegAllowOrganisationTokenManagement,
+          domain = domainId
+        )
+        for {
+          domain <- {
+            if (domainId.isDefined && domainId != community.get.domain) {
+              PersistenceSchema.domains.filter(_.id === domainId.get).result.headOption
+            } else {
+              DBIO.successful(None)
+            }
+          }
+        } yield JsonUtil.jsCommunityChanges(community.get, updated, domain)
+      }
+    } yield changes
+    DB.run(dbActionFinalisation(Some(onSuccess), None, dbAction).transactionally)
   }
 
   /**

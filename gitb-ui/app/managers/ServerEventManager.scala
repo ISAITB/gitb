@@ -17,7 +17,7 @@ package managers
 
 import exceptions.UnauthorizedAccessException
 import models.Enums.UserRole
-import models.UserTrackingInfo
+import models.{CommunityLabels, TestFlags, UserTrackingInfo}
 import org.apache.pekko.{Done, NotUsed}
 import org.apache.pekko.actor.{ActorSystem, CoordinatedShutdown}
 import org.apache.pekko.pattern.after
@@ -47,6 +47,9 @@ object ServerEventManager {
   private val EVENT_SESSION = "session"
   private val EVENT_HEARTBEAT = "heartbeat"
   private val EVENT_CONFIGURATION = "configuration"
+  private val EVENT_COMMUNITY = "community"
+  private val EVENT_COMMUNITY_LABELS = "communityLabels"
+  private val EVENT_TEST_FLAGS = "testFlags"
 
   // Reasons for which a channel is closed by the server.
   val CLOSE_REASON_LOGOUT = "logout"
@@ -401,6 +404,38 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
     }.recover {
       case e: Exception => logger.warn("Unable to publish updated configuration to server event channels", e)
     }
+  }
+
+  /**
+   * Push a partial update of a community's configuration to that community's channels. The update is built by the caller
+   * from the data it already holds and contains only the properties that changed. Nothing is sent if the update is empty.
+   */
+  def publishCommunityUpdate(communityId: Long, update: JsObject): Unit = {
+    if (update.fields.nonEmpty) {
+      sendToCommunity(communityId, EVENT_COMMUNITY, (update ++ Json.obj("id" -> communityId)).toString())
+    }
+  }
+
+  /**
+   * Push a community's complete set of custom labels (as just saved) to that community's channels.
+   */
+  def publishCommunityLabels(communityId: Long, labels: List[CommunityLabels]): Unit = {
+    sendToCommunity(communityId, EVENT_COMMUNITY_LABELS, Json.obj("communityId" -> communityId, "labels" -> JsonUtil.jsCommunityLabels(labels)).toString())
+  }
+
+  /**
+   * Push the given community's (current, ordered) test flags to its channels, as two role-appropriate views (see
+   * JsonUtil.jsTestFlagForUser): community administrators - and Test Bed administrators, who maintain a
+   * cross-community cache (see DataService.allCommunityTestFlags) - get each flag's raw name/colour; every other
+   * community member gets the effective (public-or-fallback) one. Called after any change to a community's test
+   * flags (see TestFlagService), with the flags reloaded as their ordering depends on the database.
+   */
+  def publishCommunityTestFlags(communityId: Long, flags: List[TestFlags]): Unit = {
+    val adminJson = Json.obj("communityId" -> communityId, "testFlags" -> JsonUtil.jsTestFlagsForUser(flags, isAdmin = true)).toString()
+    val publicJson = Json.obj("communityId" -> communityId, "testFlags" -> JsonUtil.jsTestFlagsForUser(flags, isAdmin = false)).toString()
+    sendToCommunity(communityId, EVENT_TEST_FLAGS, adminJson, roles = Set(UserRole.CommunityAdmin.id.toShort))
+    sendToTestBedAdministrators(EVENT_TEST_FLAGS, adminJson)
+    sendToCommunity(communityId, EVENT_TEST_FLAGS, publicJson, roles = Set(UserRole.VendorAdmin.id.toShort, UserRole.VendorUser.id.toShort, UserRole.DomainUser.id.toShort))
   }
 
   /*

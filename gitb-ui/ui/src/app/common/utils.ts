@@ -131,4 +131,24 @@ export class Utils {
         return value.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length > 0
     }
 
+    /**
+     * Applies a partial update onto a target object in place (mutated, not replaced), one key at a time, and
+     * returns the keys whose value actually changed (arrays compared by content).
+     */
+    public static applyChangedKeys<T, K extends keyof T = keyof T>(target: T, update: Partial<T>): K[] {
+        const changedKeys: K[] = []
+        for (const key of Object.keys(update) as K[]) {
+            const newValue = update[key] as T[K]
+            const currentValue = target[key]
+            const changed = Array.isArray(newValue) || Array.isArray(currentValue)
+                ? JSON.stringify(newValue) != JSON.stringify(currentValue)
+                : newValue != currentValue
+            if (changed) {
+                target[key] = newValue
+                changedKeys.push(key)
+            }
+        }
+        return changedKeys
+    }
+
 }

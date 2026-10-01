@@ -33,6 +33,7 @@ import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
+import play.api.libs.json.Json
 import play.api.mvc._
 import utils._
 
@@ -1004,7 +1005,10 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   def updateConformanceStatementDocumentationReportSettings(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     handleUpdateCertificateSettings(communityId, request, (reportSettings, stylesheet, jsSettings) => {
       val settings = JsonUtil.parseJsConformanceStatementDocumentationReportSettings(jsSettings, communityId)
-      reportManager.updateConformanceStatementDocumentationReportSettings(settings, reportSettings, stylesheet)
+      reportManager.updateConformanceStatementDocumentationReportSettings(settings, reportSettings, stylesheet).map { result =>
+        serverEventManager.publishCommunityUpdate(communityId, Json.obj("statementDocumentationReportEnabled" -> settings.enabled))
+        result
+      }
     })
   }
 

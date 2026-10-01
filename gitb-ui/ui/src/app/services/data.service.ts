@@ -2154,32 +2154,37 @@ export class DataService {
    * below, only when the key's value actually changed.
    */
   updateConfiguration(update: Partial<AppConfigurationProperties>) {
-    let emailAttachmentTypesChanged = false
-    let preparingForShutdownChanged = false
-    for (const key of Object.keys(update) as (keyof AppConfigurationProperties)[]) {
-      if (this.applyConfigurationValueIfChanged(update, key)) {
-        if (key == 'emailAttachmentsAllowedTypes') emailAttachmentTypesChanged = true
-        if (key == 'preparingForShutdown') preparingForShutdownChanged = true
-      }
-    }
-    if (emailAttachmentTypesChanged) {
+    const changedKeys = Utils.applyChangedKeys(this.configuration, update)
+    if (changedKeys.includes('emailAttachmentsAllowedTypes')) {
       this.applyAcceptedEmailAttachmentTypes()
     }
-    if (preparingForShutdownChanged) {
+    if (changedKeys.includes('preparingForShutdown')) {
       this.togglePrepareForShutdown(this.configuration.preparingForShutdown)
     }
   }
 
-  private applyConfigurationValueIfChanged<K extends keyof AppConfigurationProperties>(update: Partial<AppConfigurationProperties>, key: K): boolean {
-    const newValue = update[key] as AppConfigurationProperties[K]
-    const currentValue = this.configuration[key]
-    const changed = Array.isArray(newValue) || Array.isArray(currentValue)
-      ? JSON.stringify(newValue) != JSON.stringify(currentValue)
-      : newValue != currentValue
-    if (changed) {
-      this.configuration[key] = newValue
+  /**
+   * As updateConfiguration, but for a partial update of a single community's live configuration pushed.
+   * Only the properties present in the update are applied.
+   */
+  updateCommunityConfiguration(update: Partial<Community> & {id: number}) {
+    if (this.community?.id != update.id) {
+      return
     }
-    return changed
+    const changedKeys = Utils.applyChangedKeys(this.community, update)
+    if (changedKeys.includes('allowCommunityView')) {
+      this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && this.community.allowCommunityView
+    }
+  }
+
+  /**
+   * Applies the custom labels of a community. A no-op if the labels are not for the community currently cached on
+   * this session.
+   */
+  updateCommunityLabels(communityId: number, labels: TypedLabelConfig[]) {
+    if (this.community?.id == communityId) {
+      this.setupLabels(labels)
+    }
   }
 
   serializeTags(tags: TagData[]|undefined): string | undefined {

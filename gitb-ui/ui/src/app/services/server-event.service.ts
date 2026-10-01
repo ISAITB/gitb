@@ -27,11 +27,12 @@ import {DataService} from './data.service';
  * The browser automatically reconnects a dropped connection, resuming the same channel (without losing events)
  * if the server still holds it. If this is not possible, a new channel is created and a reset is signalled.
  *
- * The server also pushes the full application configuration (e.g. after a system setting, the startup wizard, or the
- * Test Bed default legal notice changes) as it changes, and includes the same full configuration in the 'connected'
+ * The server also pushes the full application configuration as it changes, and includes the same full configuration in the 'connected'
  * event so that a (re)connecting client catches up on anything it may have missed (e.g. across a server restart).
- * These are applied directly to DataService (see DataService.updateConfiguration), which only reacts to the keys
- * that actually changed.
+ *
+ * Changes made by a community administrator are pushed to the community's users as targeted updates, carrying only
+ * what changed. Unlike the application configuration these are not repeated on (re)connection, so a change made while a client was
+ * disconnected (and its channel could not be resumed) is only seen on the next login or page load.
  *
  * Note that this service must not depend on services that require the user's authentication (e.g. RestService)
  * as it is used by the AuthProviderService.
@@ -105,6 +106,20 @@ export class ServerEventService {
     eventSource.addEventListener('configuration', (event: MessageEvent) => {
       this.lastActivity = Date.now()
       this.dataService.updateConfiguration(JSON.parse(event.data))
+    })
+    eventSource.addEventListener('community', (event: MessageEvent) => {
+      this.lastActivity = Date.now()
+      this.dataService.updateCommunityConfiguration(JSON.parse(event.data))
+    })
+    eventSource.addEventListener('communityLabels', (event: MessageEvent) => {
+      this.lastActivity = Date.now()
+      const payload = JSON.parse(event.data)
+      this.dataService.updateCommunityLabels(payload.communityId, payload.labels)
+    })
+    eventSource.addEventListener('testFlags', (event: MessageEvent) => {
+      this.lastActivity = Date.now()
+      const payload = JSON.parse(event.data)
+      this.dataService.updateCachedTestFlagsForCommunity(payload.communityId, payload.testFlags)
     })
     eventSource.addEventListener('closed', () => {
       // The server closed the channel (e.g. logout or expiry). Do not attempt to reconnect.

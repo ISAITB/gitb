@@ -20,7 +20,7 @@ import controllers.CommunityService.SelfRegistrationInfo
 import controllers.util.ParameterExtractor.{optionalLongBodyParameter, requiredBodyParameter}
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
-import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager, TestFlagManager}
+import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager, ServerEventManager, TestFlagManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models._
 import org.apache.commons.io.FileUtils
@@ -70,7 +70,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
                                   organisationManager: OrganizationManager,
                                   testFlagManager: TestFlagManager,
                                   authorizationManager: AuthorizationManager,
-                                  authenticationManager: AuthenticationManager)
+                                  authenticationManager: AuthenticationManager,
+                                  serverEventManager: ServerEventManager)
                                  (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
@@ -220,7 +221,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports, allowObsoleteSessionDeletion,
         allowAdminSenderNames, allowOrganisationSenderNames,
         domainId, selfRegDefaultOrganisation, Some(ParameterExtractor.extractUserPreferenceDefaults(request)), forceUserPreferences, tags
-      ).map { _ =>
+      ).map { changes =>
+        serverEventManager.publishCommunityUpdate(communityId, changes)
         ResponseConstructor.constructEmptyResponse
       }
     }
@@ -697,6 +699,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
       val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, ParameterNames.VALUES))
       communityManager.setCommunityLabels(communityId, labels).map { _ =>
+        serverEventManager.publishCommunityLabels(communityId, labels)
         ResponseConstructor.constructEmptyResponse
       }
     }
