@@ -1354,6 +1354,90 @@ object JsonUtil {
     (sessionIds, withLogs, withReports)
   }
 
+  def parseJsTestSessionSearchRequest(jsonConfig: JsValue): TestSessionSearchRequest = {
+    def stringList(name: String): Option[List[String]] = {
+      (jsonConfig \ name).toOption.filter(_ != JsNull).map { value =>
+        value.asOpt[JsArray].getOrElse(throw AutomationApiException(ErrorCodes.INVALID_REQUEST, s"Property '$name' must be provided as an array of values")).value.map {
+          case JsString(text) => text
+          case _ => throw AutomationApiException(ErrorCodes.INVALID_REQUEST, s"Property '$name' must be provided as an array of text values")
+        }.toList
+      }.filter(_.nonEmpty)
+    }
+    def booleanValue(name: String): Option[Boolean] = {
+      (jsonConfig \ name).toOption.filter(_ != JsNull).map { value =>
+        value.asOpt[Boolean].getOrElse(throw AutomationApiException(ErrorCodes.INVALID_REQUEST, s"Property '$name' must be a boolean"))
+      }
+    }
+    def dateValue(name: String): Option[java.time.LocalDate] = {
+      (jsonConfig \ name).toOption.filter(_ != JsNull).map { value =>
+        try {
+          java.time.LocalDate.parse(value.as[String])
+        } catch {
+          case _: Exception => throw AutomationApiException(ErrorCodes.INVALID_REQUEST, s"Property '$name' must be a date in the format yyyy-MM-dd")
+        }
+      }
+    }
+    def intValue(name: String, default: Int, min: Int, max: Int): Int = {
+      (jsonConfig \ name).toOption.filter(_ != JsNull).map { value =>
+        val number = value.asOpt[Int].getOrElse(throw AutomationApiException(ErrorCodes.INVALID_REQUEST, s"Property '$name' must be a whole number"))
+        if (number < min || number > max) {
+          throw AutomationApiException(ErrorCodes.INVALID_REQUEST, s"Property '$name' must be between $min and $max")
+        }
+        number
+      }.getOrElse(default)
+    }
+    val results = stringList("result").map(_.map(_.toUpperCase))
+    results.foreach { values =>
+      val invalid = values.filterNot(x => x == "SUCCESS" || x == "FAILURE" || x == "UNDEFINED")
+      if (invalid.nonEmpty) {
+        throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Property 'result' can only include the values SUCCESS, FAILURE and UNDEFINED")
+      }
+    }
+    val from = dateValue("startTimeFrom")
+    val to = dateValue("startTimeTo")
+    if (from.isDefined && to.isDefined && from.get.isAfter(to.get)) {
+      throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Property 'startTimeFrom' cannot be after 'startTimeTo'")
+    }
+    TestSessionSearchRequest(
+      domains = stringList("domain"),
+      groups = stringList("group"),
+      specifications = stringList("specification"),
+      actors = stringList("actor"),
+      testSuites = stringList("testSuite"),
+      testCases = stringList("testCase"),
+      communities = stringList("community"),
+      organisations = stringList("organisation"),
+      systems = stringList("system"),
+      results = results,
+      startTimeFrom = from,
+      startTimeTo = to,
+      withComment = booleanValue("withComment"),
+      withFlag = booleanValue("withFlag"),
+      flags = stringList("flag"),
+      active = booleanValue("active"),
+      offset = intValue("offset", 0, 0, Int.MaxValue),
+      limit = intValue("limit", 100, 0, 1000),
+      includeTotal = booleanValue("includeTotal").getOrElse(false)
+    )
+  }
+
+  def jsTestSessionSearchResult(result: TestSessionSearchResult): JsObject = {
+    var json = Json.obj(
+      "results" -> JsArray(result.sessions.map { item =>
+        Json.obj(
+          "session" -> item.sessionId,
+          "startTime" -> TimeUtil.serializeTimestamp(item.startTime),
+          "active" -> item.active,
+        )
+      }),
+      "hasMore" -> result.hasMore
+    )
+    if (result.total.isDefined) {
+      json = json + ("total" -> JsNumber(result.total.get))
+    }
+    json
+  }
+
   def parseJsTestSessionLaunchRequest(jsonConfig: JsValue, organisationKey: String): TestSessionLaunchRequest = {
     val system = (jsonConfig \ "system").asOpt[String]
     val actor = (jsonConfig \ "actor").asOpt[String]

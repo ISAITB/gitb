@@ -83,25 +83,43 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents,
   }
 
   protected def processAsJson(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, authorisationFn: () => Future[_], processFn: JsValue => Future[Result]): Future[Result] = {
+    processAsJsonWithAuth[Any](request, signature, authorisationFn, (_, json) => processFn(json))
+  }
+
+  /**
+   * Same as processAsJson but passing the result of the authorisation check (e.g. information resolved while
+   * authorising) to the processing function. If emptyBodyAsJsonObject is set a completely missing body is processed as
+   * an empty JSON object ("{}"), otherwise it is considered invalid.
+   */
+  protected def processAsJsonWithAuth[A](request: RequestWithAttributes[AnyContent], signature: EndpointSignature, authorisationFn: () => Future[A], processFn: (A, JsValue) => Future[Result], emptyBodyAsJsonObject: Boolean = false): Future[Result] = {
     (for {
-      _ <- authorisationFn.apply()
+      authResult <- authorisationFn.apply()
       rateResult <- checkRateLimit(request, signature)
       result <- {
         rateResult match {
           case Some(errorResponse) => Future.successful(errorResponse)
           case None =>
-            val json = bodyToJson(request)
+            val json = bodyToJson(request).orElse(if (emptyBodyAsJsonObject && isBodyMissing(request)) Some(Json.obj()) else None)
             if (json.isEmpty) {
               Future.successful {
                 ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
               }
             } else {
-              processFn(json.get)
+              processFn(authResult, json.get)
             }
         }
       }
     } yield result).recover {
       handleException(_)
+    }
+  }
+
+  private def isBodyMissing(request: Request[AnyContent]): Boolean = {
+    request.body match {
+      case AnyContentAsEmpty => true
+      case AnyContentAsText(text) => text.isBlank
+      case AnyContentAsRaw(raw) => raw.size == 0
+      case _ => false
     }
   }
 

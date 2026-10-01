@@ -20,8 +20,9 @@ import controllers.rest.BaseAutomationService._
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.{AutomationApiException, ErrorCodes}
 import managers.ratelimit.RateLimitManager
-import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}
+import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager, TestResultManager}
 import models.Constants
+import models.automation.ApiKeyScope
 import org.apache.commons.io.FileUtils
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
@@ -39,7 +40,8 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                        authorizationManager: AuthorizationManager,
                                        systemManager: SystemManager,
                                        rateLimitManager: RateLimitManager,
-                                       testExecutionManager: TestExecutionManager)
+                                       testExecutionManager: TestExecutionManager,
+                                       testResultManager: TestResultManager)
                                       (implicit ec: ExecutionContext) extends BaseAutomationService(cc, rateLimitManager) {
 
   def start: Action[AnyContent] = authorizedAction.async { request =>
@@ -86,6 +88,15 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
         ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionStatusInfo(statusItems).toString())
       }
     })
+  }
+
+  def search: Action[AnyContent] = authorizedAction.async { request =>
+    processAsJsonWithAuth[ApiKeyScope](request, PostEndpoint("/tests/search"), () => authorizationManager.canSearchTestSessionsThroughAutomationApi(request), { (scope, body) =>
+      val criteria = JsonUtil.parseJsTestSessionSearchRequest(body)
+      testResultManager.searchTestSessionsViaApi(scope, criteria).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionSearchResult(result).toString())
+      }
+    }, emptyBodyAsJsonObject = true)
   }
 
   def report(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>

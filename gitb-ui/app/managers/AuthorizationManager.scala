@@ -22,6 +22,7 @@ import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
 import models.Enums.{MessageTargetType, SelfRegistrationType, UserRole}
 import models._
+import models.automation.ApiKeyScope
 import org.pac4j.core.context.WebContext
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
@@ -57,7 +58,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      domainManager: DomainManager,
                                      messageManager: MessageManager,
                                      repositoryUtils: RepositoryUtils,
-                                     profileResolver: ProfileResolver)
+                                     profileResolver: ProfileResolver,
+                                     automationApiHelper: AutomationApiHelper)
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
@@ -179,6 +181,23 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       Future.successful(false)
     }
     check.map(setAuthResult(request, _, "You are not allowed to manage test sessions through the automation API"))
+  }
+
+  /**
+   * Accepts the organisation, community or master API key. The scope enforced by the matched key is returned for use
+   * in the search.
+   */
+  def canSearchTestSessionsThroughAutomationApi(request: RequestWithAttributes[_]): Future[ApiKeyScope] = {
+    val apiKey = ParameterExtractor.extractApiKeyHeader(request)
+    val check = if (Configurations.AUTOMATION_API_ENABLED && apiKey.isDefined) {
+      DB.run(automationApiHelper.resolveApiKeyScope(apiKey.get))
+    } else {
+      Future.successful(None)
+    }
+    check.map { scope =>
+      setAuthResult(request, scope.isDefined, "You are not allowed to search test sessions through the automation API")
+      scope.get
+    }
   }
 
   def canManageConfigurationThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {

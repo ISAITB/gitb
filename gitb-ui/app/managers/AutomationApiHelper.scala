@@ -16,8 +16,8 @@
 package managers
 
 import exceptions.{AutomationApiException, ErrorCodes}
-import models.PropertyKind
-import models.automation.{CustomPropertyInfo, KeyValueRequired, OrganisationIdsForApi, StatementIds}
+import models.{Constants, PropertyKind}
+import models.automation.{ApiKeyScope, CommunityApiKeyScope, CustomPropertyInfo, KeyValueRequired, MasterApiKeyScope, OrganisationApiKeyScope, OrganisationIdsForApi, StatementIds}
 import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -175,6 +175,33 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
         }
       }
     } yield statementIds
+  }
+
+  /**
+   * Determine the scope enforced by the provided API key, which can be the master API key, a community API key or an
+   * organisation API key (the latter only if its community allows the REST API). If the key is unknown (or an
+   * organisation's community doesn't allow the REST API) no scope is returned.
+   */
+  def resolveApiKeyScope(apiKey: String): DBIO[Option[ApiKeyScope]] = {
+    for {
+      masterKey <- PersistenceSchema.systemConfigurations.filter(_.name === Constants.RestApiAdminKey).map(_.parameter).result.headOption.map(_.flatten)
+      scope <- {
+        val lookup: DBIO[Option[ApiKeyScope]] = if (masterKey.contains(apiKey)) {
+          DBIO.successful(Some(MasterApiKeyScope))
+        } else {
+          PersistenceSchema.communities.filter(_.apiKey === apiKey).map(x => (x.id, x.domain)).result.headOption.flatMap {
+            case Some((communityId, domainId)) => DBIO.successful(Some(CommunityApiKeyScope(communityId, domainId)))
+            case None =>
+              loadOrganisationDataForAutomationProcessing(apiKey).map { organisationData =>
+                organisationData
+                  .filter(_.apiEnabled)
+                  .map(x => OrganisationApiKeyScope(x.organisationId, x.communityId, x.domainId))
+              }
+          }
+        }
+        lookup
+      }
+    } yield scope
   }
 
   def getCommunityIdsByCommunityApiKey(communityApiKey: String): DBIO[(Long, Option[Long])] = {

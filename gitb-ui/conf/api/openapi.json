@@ -3608,6 +3608,68 @@
         }
       }
     },
+    "/tests/search": {
+      "post": {
+        "tags": [
+          "Test sessions"
+        ],
+        "summary": "Search for test sessions.",
+        "description": "Searches test sessions, returning their identifiers, active status and start time (latest first). The scope of the search depends on the API key used: an organisation API key limits it to the organisation's sessions, a community API key to the community's sessions, and the master API key applies no restriction. Organisation API keys cannot use the 'organisation' or 'community' criteria and community API keys cannot use the 'community' criterion (a 403 is returned). Use a 'limit' of 0 with 'includeTotal' set to true to only retrieve a count.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          },
+          {
+            "CommunityApiKeyAuth": []
+          },
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The search criteria and paging options. If no body is provided this is treated as an empty JSON object (i.e. no criteria).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionSearchRequest"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "Search successfully completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSearchResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Call rate limit threshold exceeded for this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/tests/stop": {
       "post": {
         "tags": [
@@ -4381,6 +4443,162 @@
         },
         "required": [
           "sessions"
+        ],
+        "additionalProperties": false
+      },
+      "SessionSearchRequest": {
+        "description": "Criteria to search test sessions. All criteria are optional. Multiple values within an array criterion are matched with 'OR' semantics, whereas different criteria are combined with 'AND' semantics. Values that do not match a known record (or one within the scope of the API key used) match no sessions.",
+        "type": "object",
+        "properties": {
+          "domain": {
+            "description": "The API key(s) of domains to match.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "group": {
+            "description": "The API key(s) of specification groups to match.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "specification": {
+            "description": "The API key(s) of specifications to match.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "actor": {
+            "description": "The API key(s) of actors to match.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "testSuite": {
+            "description": "The identifier(s) of test suites to match.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "testCase": {
+            "description": "The identifier(s) of test cases to match.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "community": {
+            "description": "The API key(s) of communities to match. Only supported when using the master API key (otherwise a 403 is returned).",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "organisation": {
+            "description": "The API key(s) of organisations to match. Not supported when using an organisation API key (a 403 is returned).",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "system": {
+            "description": "The API key(s) of systems to match.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "result": {
+            "description": "The result(s) to match.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["SUCCESS", "FAILURE", "UNDEFINED"]
+            }
+          },
+          "startTimeFrom": {
+            "description": "Match sessions started on or after this day (yyyy-MM-dd, interpreted in the Test Bed's time zone).",
+            "type": "string",
+            "format": "date"
+          },
+          "startTimeTo": {
+            "description": "Match sessions started on or before this day (yyyy-MM-dd, interpreted in the Test Bed's time zone). The whole day is included.",
+            "type": "string",
+            "format": "date"
+          },
+          "withComment": {
+            "description": "If true match sessions with a comment, if false sessions without. If not provided comments are not considered.",
+            "type": "boolean"
+          },
+          "withFlag": {
+            "description": "If true match sessions with a flag, if false sessions without. If not provided flags are not considered. If used together with 'flag', 'false' matches sessions having one of the named flags or no flag at all.",
+            "type": "boolean"
+          },
+          "flag": {
+            "description": "The name(s) of flags to match (case insensitive). When using an organisation API key the public flag names are considered, otherwise the flags' base names.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "active": {
+            "description": "If true match active (ongoing) sessions, if false completed ones. If not provided both are matched.",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "The number of matching records to skip before returning results.",
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "limit": {
+            "description": "The maximum number of results to return. Use 0 together with 'includeTotal' to only retrieve a count.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 100
+          },
+          "includeTotal": {
+            "description": "Whether the total number of matches should also be returned. Leave unset when not needed as this adds processing overhead.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "SessionSearchResponse": {
+        "description": "Response for the test session search operation.",
+        "type": "object",
+        "properties": {
+          "results": {
+            "description": "The matched test sessions, ordered by start time with the latest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionSearchResult"
+            }
+          },
+          "hasMore": {
+            "description": "Whether more matches exist beyond those returned.",
+            "type": "boolean"
+          },
+          "total": {
+            "description": "The total number of matches (only included if requested).",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "results",
+          "hasMore"
+        ],
+        "additionalProperties": false
+      },
+      "SessionSearchResult": {
+        "description": "A test session matched by a search.",
+        "type": "object",
+        "properties": {
+          "session": {
+            "description": "The test session identifier.",
+            "type": "string"
+          },
+          "startTime": {
+            "description": "The session's start time.",
+            "type": "string",
+            "format": "date-time"
+          },
+          "active": {
+            "description": "Whether the session is still active (not yet completed).",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "session",
+          "startTime",
+          "active"
         ],
         "additionalProperties": false
       },
