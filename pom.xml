@@ -43,8 +43,9 @@
         <version.bouncycastle>1.86</version.bouncycastle>
         <version.helgerSchematron>9.2.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.2.3</version.cxf> <!-- When upgrading ensure that the neethi version is up to date. -->
+        <version.cxf>4.2.3</version.cxf> <!-- When upgrading ensure that the neethi and xmlschema-core versions are up to date. -->
         <version.neethi>3.2.4</version.neethi>
+        <version.xmlSchemaCore>2.3.3</version.xmlSchemaCore>
         <version.commonsCodec>1.22.1</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.22.0</version.commonsIo>
@@ -461,6 +462,11 @@
                 <groupId>org.apache.neethi</groupId>
                 <artifactId>neethi</artifactId>
                 <version>${version.neethi}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.ws.xmlschema</groupId>
+                <artifactId>xmlschema-core</artifactId>
+                <version>${version.xmlSchemaCore}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
