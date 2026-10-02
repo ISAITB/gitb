@@ -28,11 +28,9 @@ import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
 import com.helger.schematron.ISchematronResource;
 import com.helger.schematron.api.xslt.AbstractSchematronXSLTBasedResource;
-import com.helger.schematron.pure.SchematronResourcePure;
-import com.helger.schematron.svrl.SVRLMarshaller;
+import com.helger.schematron.pure.SchematronResourcePureXPath;
 import com.helger.schematron.svrl.jaxb.SchematronOutputType;
 import com.helger.schematron.xslt.SchematronResourceXSLT;
-import org.w3c.dom.Document;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
@@ -89,9 +87,11 @@ public class SchematronValidator extends AbstractValidator {
         SchematronType validationType = determineSchematronType(inputs, sch);
         ISchematronResource schematron;
         boolean convertXPathExpressions = false;
-        Document resultDocument;
+        SchematronOutputType schematronOutput;
         // Only set (and only ever closed) for the pure engine - see below.
         TempFileSchematronResource pureResource = null;
+        // Only set for XSLT-based Schematron.
+        SchematronResolver uriResolver = null;
         try {
             if (validationType == SchematronType.SCH) {
                 /*
@@ -103,14 +103,19 @@ public class SchematronValidator extends AbstractValidator {
                  * schema's own rules unregistered.
                  */
                 pureResource = new TempFileSchematronResource(sch.toString(), sch.getImportPath());
-                schematron = new SchematronResourcePure(pureResource);
-                ((SchematronResourcePure) schematron).setErrorHandler(new PureSchematronErrorHandler());
+                schematron = SchematronResourcePureXPath.builder(pureResource)
+                        .errorHandler(new PureSchematronErrorHandler())
+                        .useCache(false)
+                        .build();
                 convertXPathExpressions = true;
             } else {
-                schematron = new SchematronResourceXSLT(new StringResource(sch.toString(), sch.getImportPath()));
-                ((SchematronResourceXSLT) schematron).setURIResolver(new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(inputs), sch.getImportPath()));
+                uriResolver = new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(inputs), sch.getImportPath());
+                schematron = SchematronResourceXSLT.builder(new StringResource(sch.toString(), sch.getImportPath()))
+                        .uriResolver(uriResolver)
+                        .validateSVRL(false)
+                        .useCache(false)
+                        .build();
             }
-            schematron.setUseCache(false);
             // Carry out validation.
             boolean isXsltBased = schematron instanceof AbstractSchematronXSLTBasedResource<?>;
             Source source;
@@ -132,8 +137,9 @@ public class SchematronValidator extends AbstractValidator {
                 source = new DOMSource(inputProvider.getLineNumberedDocument());
             }
             try {
-                resultDocument = schematron.applySchematronValidation(source);
+                schematronOutput = schematron.applySchematronValidationToSVRL(source);
             } catch (TransformerException e) {
+                failIfReferenceRejected(uriResolver, e);
                 if (isXsltBased) {
                     // The Schematron rules' own validity is checked internally by applySchematronValidation and
                     // surfaces as a null result (handled below), not an exception - so reaching here means the
@@ -142,7 +148,8 @@ public class SchematronValidator extends AbstractValidator {
                 }
                 throw new GITBEngineInternalError("Invalid schematron file.", e);
             } catch (Exception e) {
-                if (schematron instanceof SchematronResourcePure pureSchematron
+                failIfReferenceRejected(uriResolver, e);
+                if (schematron instanceof SchematronResourcePureXPath pureSchematron
                         && pureSchematron.getErrorHandler() instanceof PureSchematronErrorHandler errorHandler
                         && errorHandler.isDueToExternalFunctionCall()) {
                     boolean isFromXmlValidator = inputs.containsKey(FROM_XML_VALIDATOR_ARGUMENT_NAME);
@@ -156,15 +163,15 @@ public class SchematronValidator extends AbstractValidator {
                 pureResource.close();
             }
         }
-        if (resultDocument == null) {
+        if (schematronOutput == null) {
+            // The Schematron processing reports invalid rules as a null result, hiding the cause of the problem.
+            failIfReferenceRejected(uriResolver, null);
             throw new GITBEngineInternalError("Invalid schematron file.");
         }
-        SVRLMarshaller marshaller = new SVRLMarshaller(false);
-        SchematronOutputType svrlOutput = marshaller.read(resultDocument);
         // Produce validation report.
         SchematronReportHandler handler = new SchematronReportHandler(
                 inputProvider.getContentAsString(),
-                (showSchematron == null || showSchematron.getValue())?sch:null, inputProvider::getLineNumberedDocument, svrlOutput,
+                (showSchematron == null || showSchematron.getValue())?sch:null, inputProvider::getLineNumberedDocument, schematronOutput,
                 convertXPathExpressions,
                 (showTests != null && showTests.getValue()),
                 (showPaths != null && showPaths.getValue())
@@ -174,6 +181,18 @@ public class SchematronValidator extends AbstractValidator {
             sortReport(report, false);
         }
         return report;
+    }
+
+    /**
+     * Fail with a specific message if the Schematron's processing was affected by a reference that was rejected.
+     *
+     * @param uriResolver The resolver used (may be null).
+     * @param cause The original error (may be null).
+     */
+    private void failIfReferenceRejected(SchematronResolver uriResolver, Exception cause) {
+        if (uriResolver != null && uriResolver.getRejectionMessage() != null) {
+            throw new GITBEngineInternalError(uriResolver.getRejectionMessage(), cause);
+        }
     }
 
     private SchematronType determineSchematronType(Map<String, DataType> inputs, SchemaType schematron) {

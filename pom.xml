@@ -41,7 +41,7 @@
         <version.springBoot>4.1.1</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
         <tomcat.version>11.0.25</tomcat.version>
         <version.bouncycastle>1.86</version.bouncycastle>
-        <version.helgerSchematron>9.2.0</version.helgerSchematron>
+        <version.helgerSchematron>10.2.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.2.3</version.cxf> <!-- When upgrading ensure that the neethi and xmlschema-core versions are up to date. -->
         <version.neethi>3.2.4</version.neethi>
@@ -73,7 +73,7 @@
         <version.pekko>1.7.0</version.pekko>
         <version.rgxgen>3.1</version.rgxgen>
         <version.saajImpl>3.0.6</version.saajImpl>
-        <version.helgerCommons>12.3.2</version.helgerCommons>
+        <version.helgerCommons>12.5.0</version.helgerCommons>
         <version.dnsJava>3.6.5</version.dnsJava>
         <version.commonsFileUpload>1.6.0</version.commonsFileUpload>
         <version.commonsCollections>4.6.0</version.commonsCollections>

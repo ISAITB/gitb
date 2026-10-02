@@ -179,27 +179,24 @@ public class SchematronReportHandler extends AbstractReportHandler {
         var reports = new ArrayList<JAXBElement<TestAssertionReportType>>();
 
         for (T message : svrlMessages) {
-            var error = new BAR();
-            error.setDescription(message.getText());
+            var reportItem = new BAR();
+            reportItem.setDescription(message.getText());
             LocationInfo locationInfo = getLocationInfo(message.getLocation());
             if (showPaths) {
-                error.setLocation("%s:%s:0|%s".formatted(XML_ITEM_NAME, locationInfo.lineNumber(), locationInfo.path()));
+                reportItem.setLocation("%s:%s:0|%s".formatted(XML_ITEM_NAME, locationInfo.lineNumber(), locationInfo.path()));
             } else {
-                error.setLocation("%s:%s:0".formatted(XML_ITEM_NAME, locationInfo.lineNumber()));
+                reportItem.setLocation("%s:%s:0".formatted(XML_ITEM_NAME, locationInfo.lineNumber()));
             }
             if (showTests) {
-                error.setTest(message.getTest());
+                reportItem.setTest(message.getTest());
             }
             JAXBElement<TestAssertionReportType> element;
-            int level = message.getFlag().getNumericLevel();
-            if (level == EErrorLevel.SUCCESS.getNumericLevel()) {
-                element = this.objectFactory.createTestAssertionGroupReportsTypeInfo(error);
-            } else if (level == EErrorLevel.INFO.getNumericLevel()) {
-                element = this.objectFactory.createTestAssertionGroupReportsTypeInfo(error);
-            } else if (level == EErrorLevel.WARN.getNumericLevel()) {
-                element = this.objectFactory.createTestAssertionGroupReportsTypeWarning(error);
-            } else { // ERROR, FATAL_ERROR
-                element = this.objectFactory.createTestAssertionGroupReportsTypeError(error);
+            if (message.getFlag().isLE(EErrorLevel.INFO)) {
+                element = this.objectFactory.createTestAssertionGroupReportsTypeInfo(reportItem);
+            } else if (message.getFlag().isLE(EErrorLevel.WARN)) {
+                element = this.objectFactory.createTestAssertionGroupReportsTypeWarning(reportItem);
+            } else {
+                element = this.objectFactory.createTestAssertionGroupReportsTypeError(reportItem);
             }
             reports.add(element);
         }
