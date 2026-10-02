@@ -16,10 +16,10 @@
 package com.gitb.engine.validation.handlers.schematron;
 
 import com.gitb.engine.ModuleManager;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 
 import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
@@ -37,6 +37,7 @@ public class SchematronResolver implements URIResolver {
     private final String resource;
     private final String testSuiteId;
     private final String testCaseId;
+    private String rejectedReference;
 
     public SchematronResolver(String testSuiteId, String testCaseId, String path) {
         this.testSuiteId = testSuiteId;
@@ -44,8 +45,39 @@ public class SchematronResolver implements URIResolver {
         this.resource = path;
     }
 
+    /**
+     * Get the message to report in case a reference was rejected during resolution. Rejections can otherwise be
+     * hidden by the Schematron processing (e.g. reported as a generic invalid Schematron file).
+     *
+     * @return The message, or null if no reference was rejected.
+     */
+    public String getRejectionMessage() {
+        if (rejectedReference == null) {
+            return null;
+        }
+        return "Loading of referenced resource [%s] was blocked.".formatted(rejectedReference);
+    }
+
+    /**
+     * Check whether the provided reference starts with a URI scheme (i.e. has a colon before any slash), meaning
+     * that it cannot be a relative path within the test suite.
+     *
+     * @param href The reference to check.
+     * @return The check result.
+     */
+    private static boolean hasUriScheme(String href) {
+        int colonIndex = href.indexOf(':');
+        int slashIndex = href.indexOf('/');
+        return colonIndex >= 0 && (slashIndex < 0 || colonIndex < slashIndex);
+    }
+
     @Override
     public Source resolve(String href, String baseURI) {
+        if (href != null && hasUriScheme(href)) {
+            // Not a path within the test suite (e.g. a remote URL).
+            rejectedReference = href;
+            throw new GITBEngineInternalError(getRejectionMessage());
+        }
         ModuleManager moduleManager = ModuleManager.getInstance();
         ITestCaseRepository repository = moduleManager.getTestCaseRepository();
         String parentFolder;
