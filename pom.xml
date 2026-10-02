@@ -86,7 +86,7 @@
         <!-- Ensure the libthrift version matches the one used within Jena. -->
         <version.libthrift>0.24.0</version.libthrift>
         <version.topbraid>1.5.0</version.topbraid>
-        <version.json-schema-validator>3.0.7</version.json-schema-validator>
+        <version.json-schema-validator>3.0.8</version.json-schema-validator>
         <version.jayway>3.0.0</version.jayway>
         <version.jackson>3.2.3</version.jackson>
         <version.jackson2>2.22.3</version.jackson2> <!-- Used for libraries that have not upgraded to Jackson 3 (the package is different so no conflicts) -->
