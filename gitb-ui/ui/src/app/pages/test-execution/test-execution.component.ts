@@ -83,6 +83,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   started = false
   nextWaitingToStart = false
+  nextWaitingToLoad = false
   stopped = false
   allStopped = false
   firstTestStarted = false
@@ -231,6 +232,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   private initialiseState() {
     this.started = false
     this.nextWaitingToStart = false
+    this.nextWaitingToLoad = false
     this.stopped = false
     this.allStopped = false
     this.firstTestStarted = false
@@ -341,12 +343,15 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   stopAll() {
+    // If paused after a finished test there is no running session to stop (and its result must be preserved).
+    const pausedAfterTest = this.nextWaitingToLoad
+    this.nextWaitingToLoad = false
     this.allStopped = true
     this.nextWaitingToStart = false
     this.stopped = true
     this.started = false
     this.reload = true
-    if (this.session != undefined) {
+    if (this.session != undefined && !pausedAfterTest) {
       this.stop(this.session, true)
     }
   }
@@ -1063,9 +1068,14 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     this.interactionsToIgnore = {}
     this.testCaseFinishing = false
     if (!this.allStopped && this.currentTestIndex + 1 < this.testsToExecute.length) {
-      timer(1000).subscribe(() => {
-        this.prepareNextTest(this.startAutomatically)
-      })
+      if (this.startAutomatically) {
+        timer(1000).subscribe(() => {
+          this.prepareNextTest(true)
+        })
+      } else {
+        // Stay on the finished test to allow its results to be reviewed until the user chooses to continue.
+        this.nextWaitingToLoad = true
+      }
     } else {
       this.allStopped = true
       this.reload = true
@@ -1125,6 +1135,11 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
           }
         })
       })
+  }
+
+  next() {
+    this.nextWaitingToLoad = false
+    this.prepareNextTest(this.startAutomatically)
   }
 
   stop(session: string, force?: boolean) {

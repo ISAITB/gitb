@@ -29,7 +29,11 @@
                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.STOP" class="btn btn-secondary" [disable]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
                         }
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [disable]="!firstTestStarted" (click)="reinitialise()">Reset</button>
-                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.PLAY" class="btn btn-primary" [disable]="!nextWaitingToStart" (click)="start(session!)">Start</button>
+                        @if (nextWaitingToLoad) {
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEXT" class="btn btn-primary" (click)="next()">Next</button>
+                        } @else {
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.PLAY" class="btn btn-primary" [disable]="!nextWaitingToStart" (click)="start(session!)">Start</button>
+                        }
                     </div>
                 }
             </div>
