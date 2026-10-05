@@ -55,6 +55,8 @@ class ValidationHandlersTest extends BaseIntegrationTest {
                 "val-xml-schematron-xslt-lines",
                 "val-xml-schematron-default-ns",
                 "val-xml-schematron-multiple",
+                "val-xml-schematron-include-remote",
+                "val-xml-schematron-include-artifact",
                 "val-json-valid",
                 "val-json-invalid",
                 "val-xmlmatch-match",
@@ -206,6 +208,29 @@ class ValidationHandlersTest extends BaseIntegrationTest {
         assertEquals(List.of("xml:6:0", "xml:6:0", "xml:9:0"), locations);
         assertTrue(locations.stream().noneMatch(location -> location.contains(":0:0")),
                 "No finding should have fallen back to line 0: " + locations);
+    }
+
+    @Test
+    void xmlSchematronPureRemoteIncludeIsBlocked() throws Exception {
+        // The remote resource is available, so a non-blocked include would be fetched (and counted).
+        stubTestResource("/remote\\.sch", "tdl/val/schematron-include/remote.sch");
+        TestRunResult result = run("val-xml-schematron-include-remote", null,
+                List.of(stringInput("remoteUrl", "http://localhost:" + wireMockPort() + "/remote.sch")));
+        assertFailed(result);
+        assertTrue(result.logMessages().stream().anyMatch(message -> message.contains("Loading of referenced resource") && message.contains("/remote.sch") && message.contains("was blocked")),
+                "Expected a message on the blocked reference in: " + result.logMessages());
+        assertEquals(0, requestCount("/remote.sch"), "The remote include must not be requested");
+    }
+
+    @Test
+    void xmlSchematronPureIncludesTestSuiteArtifact() throws Exception {
+        stubTestResource("/resources/val-xml-schematron-include-artifact/.*main\\.sch", "tdl/val/schematron-include/main.sch");
+        stubTestResource("/resources/val-xml-schematron-include-artifact/.*rules\\.sch", "tdl/val/schematron-include/rules.sch");
+        TestRunResult result = run("val-xml-schematron-include-artifact");
+        assertFailed(result);
+        List<BAR> findings = reportFindings(result);
+        assertEquals(1, findings.size());
+        assertEquals("Invoice must have a total element (from included rules)", findings.getFirst().getDescription());
     }
 
     /**

@@ -27,7 +27,7 @@ import java.nio.file.Path;
 /**
  * An {@code IReadableResource} for Schematron content, backed by a genuine, short-lived temporary file rather
  * than held purely in memory (unlike {@link StringResource}) - needed specifically for
- * {@link com.helger.schematron.pure.SchematronResourcePure} (the "pure" Schematron engine).
+ * {@link com.helger.schematron.pure.SchematronResourcePureXPath} (the "pure" Schematron engine).
  * <p/>
  * Instances must be {@linkplain #close() closed} once validation has completed, to remove the backing temporary
  * file.

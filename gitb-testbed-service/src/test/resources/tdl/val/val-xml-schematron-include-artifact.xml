@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-xml-schematron-include-artifact" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator pure Schematron includes a test suite artifact</name>
+        <version>1.0</version>
+    </metadata>
+    <imports>
+        <artifact type="schema" encoding="UTF-8" name="mainSch">schematron/main.sch</artifact>
+    </imports>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<invoice><currency>EUR</currency></invoice>']]></assign>
+        <assign to="schList" append="true">$mainSch</assign>
+        <verify handler="XmlValidator" desc="Included rules from the test suite are applied">
+            <input name="xml">$xmlDoc</input>
+            <input name="schematron">$schList</input>
+        </verify>
+    </steps>
+</testcase>

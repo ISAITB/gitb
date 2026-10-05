@@ -26,11 +26,18 @@ import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
+import com.helger.io.resource.IReadableResource;
+import com.helger.schematron.CSchematron;
+import com.helger.schematron.ISchematronErrorHandler;
 import com.helger.schematron.ISchematronResource;
+import com.helger.schematron.SchematronHelper;
 import com.helger.schematron.api.xslt.AbstractSchematronXSLTBasedResource;
 import com.helger.schematron.pure.SchematronResourcePureXPath;
 import com.helger.schematron.svrl.jaxb.SchematronOutputType;
 import com.helger.schematron.xslt.SchematronResourceXSLT;
+import com.helger.xml.microdom.IMicroDocument;
+import com.helger.xml.microdom.serialize.MicroWriter;
+import com.helger.xml.serialize.read.SAXReaderSettings;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
@@ -90,8 +97,9 @@ public class SchematronValidator extends AbstractValidator {
         SchematronOutputType schematronOutput;
         // Only set (and only ever closed) for the pure engine - see below.
         TempFileSchematronResource pureResource = null;
-        // Only set for XSLT-based Schematron.
-        SchematronResolver uriResolver = null;
+        TempFileSchematronResource resolvedPureResource = null;
+        // Serves the test suite's artifacts referenced by the Schematron, rejecting anything else (e.g. remote URLs).
+        SchematronResolver uriResolver = new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(inputs), sch.getImportPath());
         try {
             if (validationType == SchematronType.SCH) {
                 /*
@@ -103,13 +111,19 @@ public class SchematronValidator extends AbstractValidator {
                  * schema's own rules unregistered.
                  */
                 pureResource = new TempFileSchematronResource(sch.toString(), sch.getImportPath());
-                schematron = SchematronResourcePureXPath.builder(pureResource)
-                        .errorHandler(new PureSchematronErrorHandler())
+                /*
+                 * The pure implementation resolves includes itself without any means to restrict them. We therefore
+                 * resolve them first, using our own resolver, and provide the resulting Schematron (without
+                 * includes) to the pure implementation.
+                 */
+                var errorHandler = new PureSchematronErrorHandler();
+                resolvedPureResource = new TempFileSchematronResource(resolveIncludes(pureResource, uriResolver, errorHandler), sch.getImportPath());
+                schematron = SchematronResourcePureXPath.builder(resolvedPureResource)
+                        .errorHandler(errorHandler)
                         .useCache(false)
                         .build();
                 convertXPathExpressions = true;
             } else {
-                uriResolver = new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(inputs), sch.getImportPath());
                 schematron = SchematronResourceXSLT.builder(new StringResource(sch.toString(), sch.getImportPath()))
                         .uriResolver(uriResolver)
                         .validateSVRL(false)
@@ -162,6 +176,9 @@ public class SchematronValidator extends AbstractValidator {
             if (pureResource != null) {
                 pureResource.close();
             }
+            if (resolvedPureResource != null) {
+                resolvedPureResource.close();
+            }
         }
         if (schematronOutput == null) {
             // The Schematron processing reports invalid rules as a null result, hiding the cause of the problem.
@@ -181,6 +198,23 @@ public class SchematronValidator extends AbstractValidator {
             sortReport(report, false);
         }
         return report;
+    }
+
+    /**
+     * Resolve the includes of "pure" Schematron rules, using the provided resolver to check and serve them.
+     *
+     * @param resource The Schematron rules.
+     * @param uriResolver The resolver to use for the includes.
+     * @param errorHandler The error handler.
+     * @return The Schematron rules with all includes resolved.
+     */
+    private String resolveIncludes(IReadableResource resource, SchematronResolver uriResolver, ISchematronErrorHandler errorHandler) {
+        IMicroDocument document = SchematronHelper.getWithResolvedSchematronIncludes(resource, new SAXReaderSettings(), errorHandler, uriResolver, CSchematron.DEFAULT_ALLOW_DEPRECATED_NAMESPACES);
+        if (document == null || document.getDocumentElement() == null) {
+            failIfReferenceRejected(uriResolver, null);
+            throw new GITBEngineInternalError("Invalid schematron file.");
+        }
+        return MicroWriter.getNodeAsString(document);
     }
 
     /**

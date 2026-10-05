@@ -52,6 +52,37 @@ public abstract class BaseIntegrationTest {
         return WIRE_MOCK.stubFor(mappingBuilder);
     }
 
+    /**
+     * Stub a test suite resource (artifact) lookup, as served by the test resource repository.
+     *
+     * @param pathRegex Regular expression matching the request path (the artifact's path is URL-encoded in it).
+     * @param classpathResource The classpath resource to respond with.
+     */
+    protected static void stubTestResource(String pathRegex, String classpathResource) {
+        try (InputStream is = BaseIntegrationTest.class.getClassLoader()
+                .getResourceAsStream(classpathResource)) {
+            if (is == null) {
+                throw new IllegalArgumentException("Classpath resource not found: " + classpathResource);
+            }
+            WIRE_MOCK.stubFor(get(urlPathMatching(pathRegex))
+                    .willReturn(aResponse()
+                            .withHeader("Content-Type", "application/xml; charset=UTF-8")
+                            .withBody(new String(is.readAllBytes(), StandardCharsets.UTF_8))));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read resource: " + classpathResource, e);
+        }
+    }
+
+    /**
+     * Count the requests received for the provided path (to check whether a call was made).
+     *
+     * @param path The exact request path.
+     * @return The number of requests received.
+     */
+    protected static int requestCount(String path) {
+        return WIRE_MOCK.countRequestsMatching(getRequestedFor(urlPathEqualTo(path)).build()).getCount();
+    }
+
     protected static void stubTdl(String testCaseId, String classpathResource) {
         try (InputStream is = BaseIntegrationTest.class.getClassLoader()
                 .getResourceAsStream(classpathResource)) {
