@@ -491,6 +491,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		new File(getRepositoryPath(), "tmp")
 	}
 
+	/**
+	 * Create a new empty file in the application's temp folder (never the OS temp folder). Callers are responsible for
+	 * deleting the file once it is no longer needed.
+	 */
+	def createTempFile(prefix: String, suffix: Option[String] = None): Path = {
+		val tempFolder = getTempFolder().toPath
+		Files.createDirectories(tempFolder)
+		Files.createTempFile(tempFolder, prefix, suffix.orNull)
+	}
+
 	def getTempReportFolder(): File = {
 		new File(getTempFolder(), "reports")
 	}

@@ -980,19 +980,13 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewConformanceCertificateSettings(request, communityId).flatMap { _ =>
       communityManager.getCommunityKeystore(communityId, decryptKeys = false).map { keystoreInfo =>
         if (keystoreInfo.isDefined) {
-          val tempFile = Files.createTempFile("itb", "store")
-          try {
-            Files.write(tempFile, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(keystoreInfo.get.keystoreFile)))
+          // Serve the keystore directly from memory to avoid writing it to the file system.
+          val keystoreBytes = try {
+            Base64.decodeBase64(MimeUtil.getBase64FromDataURL(keystoreInfo.get.keystoreFile))
           } catch {
-            case e:Exception =>
-              FileUtils.deleteQuietly(tempFile.toFile)
-              throw new IllegalStateException("Unable to generate keystore file", e)
+            case e:Exception => throw new IllegalStateException("Unable to generate keystore file", e)
           }
-          Ok.sendFile(
-            content = tempFile.toFile,
-            inline = false,
-            onClose = () => { FileUtils.deleteQuietly(tempFile.toFile) }
-          )
+          Ok(keystoreBytes).as("application/octet-stream").withHeaders("Content-Disposition" ->"attachment; filename=\"keystore\"")
         } else {
           ResponseConstructor.constructEmptyResponse
         }

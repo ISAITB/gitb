@@ -43,16 +43,17 @@ class TempFileSchematronResource extends FileSystemResource implements AutoClose
      * @param content The Schematron content to write to the backing temporary file.
      * @param logicalPath The schema's own logical path (e.g. its test-suite-relative import path), reported by
      *   {@link #getPath()}/{@link #getResourceID()} instead of the temporary file's own path.
+     * @param tempFolder The (test session's) folder in which to create the backing temporary file.
      */
-    TempFileSchematronResource(String content, String logicalPath) {
-        super(createTempFile(content));
+    TempFileSchematronResource(String content, String logicalPath, Path tempFolder) {
+        super(createTempFile(content, tempFolder));
         this.logicalPath = logicalPath;
         this.tempFile = getAsFile().toPath();
     }
 
-    private static File createTempFile(String content) {
+    private static File createTempFile(String content, Path tempFolder) {
         try {
-            Path tempFile = Files.createTempFile("schematron", ".sch");
+            Path tempFile = Files.createTempFile(tempFolder, "schematron", ".sch");
             Files.writeString(tempFile, content, StandardCharsets.UTF_8);
             return tempFile.toFile();
         } catch (IOException e) {
@@ -72,8 +73,8 @@ class TempFileSchematronResource extends FileSystemResource implements AutoClose
 
     /**
      * Delete the backing temporary file. Best-effort: a failure to delete is not worth failing validation over,
-     * so it is silently ignored (the file is created under the JVM's standard temporary directory, which is
-     * cleaned up by the OS regardless).
+     * so it is silently ignored (the file is created under the test session's temporary folder, which is
+     * deleted when the session completes).
      */
     @Override
     public void close() {

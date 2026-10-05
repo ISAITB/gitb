@@ -17,6 +17,7 @@ package com.gitb.engine.validation.handlers.xml;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
@@ -98,6 +99,7 @@ public class XmlValidator extends AbstractValidator {
                 putIfNotNull(map, SchematronValidator.SHOW_SCHEMATRON_ARGUMENT_NAME, showArtefacts);
                 putIfNotNull(map, SchematronValidator.SHOW_TESTS_ARGUMENT_NAME, showTests);
                 putIfNotNull(map, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, showPaths);
+                putIfNotNull(map, HandlerUtils.SESSION_INPUT, inputs.get(HandlerUtils.SESSION_INPUT));
                 map.put(SchematronValidator.FROM_XML_VALIDATOR_ARGUMENT_NAME,new BooleanType(true));
                 schematronReports.add((TAR)schematronValidator.validate(configurations, map, inputProvider));
             }
