@@ -16,6 +16,7 @@
 package com.gitb.engine.validation.handlers.schematron;
 
 import com.gitb.core.Configuration;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.common.XmlInputProvider;
@@ -26,6 +27,7 @@ import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
+import com.gitb.types.StringType;
 import com.helger.io.resource.IReadableResource;
 import com.helger.schematron.CSchematron;
 import com.helger.schematron.ISchematronErrorHandler;
@@ -110,14 +112,16 @@ public class SchematronValidator extends AbstractValidator {
                  * ReadableResourceSAXInputSource) - and that lazy path was found to silently leave a real-world
                  * schema's own rules unregistered.
                  */
-                pureResource = new TempFileSchematronResource(sch.toString(), sch.getImportPath());
+                var sessionId = getAndConvert(inputs, HandlerUtils.SESSION_INPUT, DataType.STRING_DATA_TYPE, StringType.class).getValue();
+                var tempFolder = getScope(sessionId).getContext().getTempFolder();
+                pureResource = new TempFileSchematronResource(sch.toString(), sch.getImportPath(), tempFolder);
                 /*
                  * The pure implementation resolves includes itself without any means to restrict them. We therefore
                  * resolve them first, using our own resolver, and provide the resulting Schematron (without
                  * includes) to the pure implementation.
                  */
                 var errorHandler = new PureSchematronErrorHandler();
-                resolvedPureResource = new TempFileSchematronResource(resolveIncludes(pureResource, uriResolver, errorHandler), sch.getImportPath());
+                resolvedPureResource = new TempFileSchematronResource(resolveIncludes(pureResource, uriResolver, errorHandler), sch.getImportPath(), tempFolder);
                 schematron = SchematronResourcePureXPath.builder(resolvedPureResource)
                         .errorHandler(errorHandler)
                         .useCache(false)

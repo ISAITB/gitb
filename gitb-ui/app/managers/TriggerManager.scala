@@ -1308,7 +1308,7 @@ class TriggerManager @Inject()(env: Environment,
             if (paramReference.isDefined) {
               onSuccess += (() => repositoryUtils.deleteOrganisationPropertyFile(paramReference.get._1, organisation))
               val paramData = getParameterValue(item, paramReference.get._2, bytes => {
-                onSuccess += (() => repositoryUtils.setOrganisationPropertyFile(paramReference.get._1, organisation, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+                onSuccess += (() => repositoryUtils.setOrganisationPropertyFile(paramReference.get._1, organisation, Files.write(repositoryUtils.createTempFile("itb", Some("trigger")), bytes).toFile))
               })
               dbActions += PersistenceSchema.organisationParameterValues.filter(_.organisation === organisation).filter(_.parameter === paramReference.get._1).delete
               dbActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(organisation, paramReference.get._1, paramData._1, paramData._2))
@@ -1341,7 +1341,7 @@ class TriggerManager @Inject()(env: Environment,
             if (paramReference.isDefined) {
               onSuccess += (() => repositoryUtils.deleteSystemPropertyFile(paramReference.get._1, system))
               val paramData = getParameterValue(item, paramReference.get._2, bytes => {
-                onSuccess += (() => repositoryUtils.setSystemPropertyFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+                onSuccess += (() => repositoryUtils.setSystemPropertyFile(paramReference.get._1, system, Files.write(repositoryUtils.createTempFile("itb", Some("trigger")), bytes).toFile))
               })
               dbActions += PersistenceSchema.systemParameterValues.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
               dbActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(system, paramReference.get._1, paramData._1, paramData._2))
@@ -1375,7 +1375,7 @@ class TriggerManager @Inject()(env: Environment,
             if (paramReference.isDefined) {
               onSuccess += (() => repositoryUtils.deleteStatementParameterFile(paramReference.get._1, system))
               val paramData = getParameterValue(item, paramReference.get._2, bytes => {
-                onSuccess += (() => repositoryUtils.setStatementParameterFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+                onSuccess += (() => repositoryUtils.setStatementParameterFile(paramReference.get._1, system, Files.write(repositoryUtils.createTempFile("itb", Some("trigger")), bytes).toFile))
               })
               dbActions += PersistenceSchema.configs.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
               dbActions += (PersistenceSchema.configs += Configs(system, paramReference.get._1, paramReference.get._3, paramData._1, paramData._2))

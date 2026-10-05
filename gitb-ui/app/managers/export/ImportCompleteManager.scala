@@ -3516,11 +3516,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def dataUrlToTempFile(dataUrl: String, suffix: Option[String] = None): File = {
-    Files.write(Files.createTempFile("itb", suffix.orNull), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
+    Files.write(repositoryUtils.createTempFile("itb", suffix), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
   }
 
   private def stringToTempFile(content: String, suffix: Option[String] = None): File = {
-    Files.writeString(Files.createTempFile("itb", suffix.orNull), content).toFile
+    Files.writeString(repositoryUtils.createTempFile("itb", suffix), content).toFile
   }
 
   private def parameterFileMetadata(ctx: ImportContext, parameterType: PropertyType, isDomainParameter: Boolean, parameterValue: String): (String, Option[String], Option[File]) = {

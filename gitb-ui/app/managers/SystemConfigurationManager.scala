@@ -24,7 +24,7 @@ import models.Enums.UserRole
 import models._
 import models.health.SoftwareVersionCheckSettings
 import models.theme.{Theme, ThemeFiles}
-import org.apache.commons.io.FilenameUtils
+import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.{StringUtils, Strings}
 import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import org.slf4j.{Logger, LoggerFactory}
@@ -830,6 +830,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private def saveThemeResourceFile(providedFile: Option[NamedFile], savedThemeId: Long, savedPath: String, referenceId: Option[Long], referencePath: Option[String], onSuccessCalls: mutable.ListBuffer[() => _]): Unit = {
     if (providedFile.isDefined) {
       onSuccessCalls += (() => repositoryUtils.saveThemeResource(savedThemeId, savedPath, providedFile.get.file))
+      // The provided file is a throwaway temp file that has been copied - delete it.
+      onSuccessCalls += (() => FileUtils.deleteQuietly(providedFile.get.file))
     } else if (referenceId.isDefined && referencePath.isDefined && !isBuiltInThemeResource(savedPath)) {
       val referencedFile = repositoryUtils.getThemeResource(referenceId.get, referencePath.get)
       onSuccessCalls += (() => repositoryUtils.saveThemeResource(savedThemeId, savedPath, referencedFile.get))
@@ -956,6 +958,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private def updateThemeResource(themeId: Long, existingResourcePath: String, newResourcePath: String, newResourceFile: Option[NamedFile], onSuccessCalls: mutable.ListBuffer[() => _]) = {
     if (newResourceFile.isDefined) {
       onSuccessCalls += (() => repositoryUtils.saveThemeResource(themeId, newResourcePath, newResourceFile.get.file))
+      onSuccessCalls += (() => FileUtils.deleteQuietly(newResourceFile.get.file))
       onSuccessCalls += (() => repositoryUtils.deleteThemeResource(themeId, existingResourcePath))
     }
   }

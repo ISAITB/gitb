@@ -207,14 +207,15 @@ public class TestCaseContext {
 				this.logLevelToSignal = com.gitb.core.LogLevel.fromValue(testCase.getSteps().getLogLevel());
 			}
 		}
-		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
-			// Initialise storage folder
-			try {
-				dataFolder = Path.of(TestEngineConfiguration.TEMP_STORAGE_LOCATION, sessionId);
-				Files.createDirectories(dataFolder);
-			} catch (IOException e) {
-				throw new IllegalStateException("Unable to create session data storage folder", e);
-			}
+		/*
+		 * Initialise storage folder. This is always created as it is used also for session files beyond the storage of
+		 * large values (managed via TestEngineConfiguration.TEMP_STORAGE_ENABLED).
+		 */
+		try {
+			dataFolder = Path.of(TestEngineConfiguration.TEMP_STORAGE_LOCATION, sessionId);
+			Files.createDirectories(dataFolder);
+		} catch (IOException e) {
+			throw new IllegalStateException("Unable to create session data storage folder", e);
 		}
         addStepStatus();
         processVariables();
@@ -247,6 +248,23 @@ public class TestCaseContext {
     public boolean isRequiresPersistentReports() {
         return requiresPersistentReports;
     }
+
+	/**
+	 * Get the folder to use for throwaway temporary files (as opposed to the session data that needs to be preserved).
+	 * Files created here should be deleted as soon as they are no longer needed, with the folder itself being deleted
+	 * when the session completes.
+	 *
+	 * @return The (existing) folder path.
+	 */
+	public Path getTempFolder() {
+		var tempFolder = dataFolder.resolve("tmp");
+		try {
+			Files.createDirectories(tempFolder);
+		} catch (IOException e) {
+			throw new IllegalStateException("Unable to create session temporary folder", e);
+		}
+		return tempFolder;
+	}
 
     public Path getDataFolder() {
 		return dataFolder;
