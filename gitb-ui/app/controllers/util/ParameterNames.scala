@@ -331,6 +331,7 @@ object ParameterNames {
   val PUBLIC_NAME = "publicName"
   val PUBLIC_COLOUR = "publicColour"
   val FLAG_ID = "flag_id"
+  val HAS_CONFORMANCE_PRIORITY = "has_conformance_priority"
   val FLAG_IDS = "flag_ids"
   val INCLUDE_UNFLAGGED = "include_unflagged"
 

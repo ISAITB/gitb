@@ -52,7 +52,9 @@
                             @let flag = flagFor(testCase);
                             @if (flag) {
                                 <div class="testCaseFlagContainer">
-                                    <i [class]="Constants.BUTTON_ICON.SNAPSHOT" [style.color]="flag.colour" tooltipClass="shortTooltip" [ngbTooltip]="flag.name" [openDelay]="Constants.TOOLTIP_DELAY"></i>
+                                    <span tooltipClass="shortTooltip" [ngbTooltip]="flag.name" [openDelay]="Constants.TOOLTIP_DELAY">
+                                        <i [class]="Constants.BUTTON_ICON.FLAG" [style.color]="flag.colour"></i>
+                                    </span>
                                 </div>
                             }
                         }

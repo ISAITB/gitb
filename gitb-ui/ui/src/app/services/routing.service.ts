@@ -196,21 +196,22 @@ export class RoutingService {
     return this.navigate(this.linkToTestBedAdmin(adminId))
   }
 
-  linkToTestHistory(organisationId: number, sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number): NavigationTarget {
-    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined) {
+  linkToTestHistory(organisationId: number, sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number, sessionIdToExpand?: string): NavigationTarget {
+    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined || sessionIdToExpand != undefined) {
       return { commands: ['organisation', 'tests', organisationId], extras: {
         queryParams: this.createMultipleQueryParams([
           { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, value: sessionIdToShow },
           { name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemToShow },
-          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow }
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_TO_EXPAND, value: sessionIdToExpand }
         ])
       }}
     } else {
       return { commands: ['organisation', 'tests', organisationId] }
     }
   }
-  toTestHistory(organisationId: number, sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number) {
-    return this.navigate(this.linkToTestHistory(organisationId, sessionIdToShow, systemToShow, testCaseToShow))
+  toTestHistory(organisationId: number, sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number, sessionIdToExpand?: string) {
+    return this.navigate(this.linkToTestHistory(organisationId, sessionIdToShow, systemToShow, testCaseToShow, sessionIdToExpand))
   }
 
   linkToCreateConformanceStatement(organisationId: number, systemId: number, communityId?: number): NavigationTarget {
@@ -713,21 +714,22 @@ export class RoutingService {
     return this.navigate(this.linkToOrganisationUser(communityId, organisationId, userId))
   }
 
-  linkToSessionDashboard(sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number): NavigationTarget {
-    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined) {
+  linkToSessionDashboard(sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number, sessionIdToExpand?: string): NavigationTarget {
+    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined || sessionIdToExpand != undefined) {
       return { commands: ['admin', 'sessions'], extras: {
         queryParams: this.createMultipleQueryParams([
           { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, value: sessionIdToShow },
           { name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemToShow },
-          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow }
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_TO_EXPAND, value: sessionIdToExpand }
         ])
       }}
     } else {
       return { commands: ['admin', 'sessions'] }
     }
   }
-  toSessionDashboard(sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number) {
-    return this.navigate(this.linkToSessionDashboard(sessionIdToShow, systemToShow, testCaseToShow))
+  toSessionDashboard(sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number, sessionIdToExpand?: string) {
+    return this.navigate(this.linkToSessionDashboard(sessionIdToShow, systemToShow, testCaseToShow, sessionIdToExpand))
   }
 
   linkToCommunitySessionDashboard(): NavigationTarget {

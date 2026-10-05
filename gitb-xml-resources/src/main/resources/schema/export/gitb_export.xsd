@@ -347,6 +347,7 @@
                     <xsd:element name="publicColour" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="adminOnly" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="hasConformancePriority" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="displayOrder" type="xsd:int"/>
             </xsd:extension>
         </xsd:complexContent>

@@ -1790,6 +1790,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedTestFlag.setPublicName(testFlag.publicName.orNull)
               exportedTestFlag.setPublicColour(testFlag.publicColour.orNull)
               exportedTestFlag.setAdminOnly(testFlag.adminOnly)
+              exportedTestFlag.setHasConformancePriority(testFlag.hasConformancePriority)
               exportedTestFlag.setDisplayOrder(testFlag.displayOrder.toInt)
               communityData.getTestFlags.getTestFlag.add(exportedTestFlag)
             }

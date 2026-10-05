@@ -280,18 +280,33 @@
                                             <th><div class="cell-content">Flag</div></th>
                                             <th><div class="cell-content">Description</div></th>
                                             <th class="th-min centered"></th>
+                                            <th class="th-min centered"></th>
                                             <th class="th-min"></th>
                                         </tr>
                                     </thead>
                                     <tbody cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropTestFlag($event)" [class.dragging]="dragOngoingTestFlags">
                                         @for (flag of testFlags; track flag.id) {
                                             <tr class="drag-table-row" cdkDrag (cdkDragStarted)="dragOngoingTestFlags = true" (cdkDragEnded)="dragOngoingTestFlags = false" cdkDragPreviewContainer="parent">
-                                                <td class="drag-preview"><div class="cell-content d-flex align-items-center gap-2"><i [class]="Constants.BUTTON_ICON.SNAPSHOT" [style.color]="flag.flagDisplay.colour"></i><span>{{flag.flagDisplay.name}}</span></div></td>
+                                                <td class="drag-preview">
+                                                    <div class="cell-content d-flex align-items-center gap-2">
+                                                        <span><i [class]="Constants.BUTTON_ICON.FLAG" [style.color]="flag.flagDisplay.colour"></i></span>
+                                                        <span>{{flag.flagDisplay.name}}</span>
+                                                    </div>
+                                                </td>
                                                 <td><div class="cell-content">{{flag.description}}</div></td>
                                                 <td class="th-min centered">
                                                     <div class="cell-content">
-                                                        @if (flag.adminOnly) {
+                                                        @if (flag.hasConformancePriority) {
                                                             <div class="ms-4 me-2">
+                                                                <i [class]="Constants.BUTTON_ICON.CONFORMANCE_STATEMENT" ngbTooltip="Flag that prioritises test sessions for conformance calculation." tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"></i>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="th-min centered">
+                                                    <div class="cell-content">
+                                                        @if (flag.adminOnly) {
+                                                            <div class="me-2">
                                                                 <i [class]="Constants.BUTTON_ICON.USER_ADMIN" ngbTooltip="Flag that can only be set by administrators." tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"></i>
                                                             </div>
                                                         }

@@ -64,16 +64,18 @@
 
 <ng-template #cellContent let-item let-col="col">
     @if (col.iconFn) {
-        <span class="d-flex align-items-center gap-2">
-        @if (col.iconTooltipFn != undefined) {
-            <i [ngClass]="col.iconFn!(item.data)" [style.color]="col.iconColourFn ? col.iconColourFn!(item.data) : null" tooltipClass="shortTooltip" [ngbTooltip]="col.iconTooltipFn!(item.data)"></i>
-        } @else {
-            <i [ngClass]="col.iconFn!(item.data)" [style.color]="col.iconColourFn ? col.iconColourFn!(item.data) : null"></i>
-        }
+        <div class="d-flex align-items-center gap-2">
+            <span>
+            @if (col.iconTooltipFn != undefined) {
+                <i [ngClass]="col.iconFn!(item.data)" [style.color]="col.iconColourFn ? col.iconColourFn!(item.data) : null" tooltipClass="shortTooltip" [ngbTooltip]="col.iconTooltipFn!(item.data)"></i>
+            } @else {
+                <i [ngClass]="col.iconFn!(item.data)" [style.color]="col.iconColourFn ? col.iconColourFn!(item.data) : null"></i>
+            }
+            </span>
         @if (col.iconLabelFn) {
             <span>{{col.iconLabelFn!(item.data)}}</span>
         }
-        </span>
+        </div>
     } @else {
         @if (item.boolean) {
             @if (item.isHiddenFlag) {

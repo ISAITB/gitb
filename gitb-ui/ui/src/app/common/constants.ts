@@ -552,6 +552,7 @@ export class Constants {
 
 	public static readonly NAVIGATION_QUERY_PARAM = {
 		TEST_SESSION_ID: 'session',
+		TEST_SESSION_TO_EXPAND: 'expand',
 		SPECIFICATION_GROUP_ID: 'group',
 		VIEW_PROPERTIES: 'viewProperties',
     COMMUNITY_ID: 'community',

@@ -88,8 +88,8 @@ export class CreateEditTestFlagModalComponent extends BaseComponent implements O
       this.pending = true
       this.savePending = true
       const call = this.testFlagToUse.id != undefined ?
-        this.testFlagService.updateTestFlag(this.testFlagToUse.id, this.testFlagToUse.name!, this.testFlagToUse.description, this.testFlagToUse.colour!, publicName, publicColour, this.testFlagToUse.adminOnly ?? false, this.communityId) :
-        this.testFlagService.createTestFlag(this.testFlagToUse.name!, this.testFlagToUse.description, this.testFlagToUse.colour!, publicName, publicColour, this.testFlagToUse.adminOnly ?? false, this.communityId)
+        this.testFlagService.updateTestFlag(this.testFlagToUse.id, this.testFlagToUse.name!, this.testFlagToUse.description, this.testFlagToUse.colour!, publicName, publicColour, this.testFlagToUse.adminOnly ?? false, this.testFlagToUse.hasConformancePriority ?? false, this.communityId) :
+        this.testFlagService.createTestFlag(this.testFlagToUse.name!, this.testFlagToUse.description, this.testFlagToUse.colour!, publicName, publicColour, this.testFlagToUse.adminOnly ?? false, this.testFlagToUse.hasConformancePriority ?? false, this.communityId)
       call.subscribe((data) => {
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)

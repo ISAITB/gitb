@@ -261,7 +261,7 @@ export class SessionColumnsService {
         // BaseSessionDashboardComponent.applyCompletedDataToTestSession).
         return {
           field: 'flagDisplay', title: 'Flag', headerClass: 'th-min centered', cellClass: 'td-min centered',
-          iconFn: (data?: {colour: string, name: string}) => data ? Constants.BUTTON_ICON.SNAPSHOT : '',
+          iconFn: (data?: {colour: string, name: string}) => data ? Constants.BUTTON_ICON.FLAG : '',
           iconColourFn: (data?: {colour: string, name: string}) => data?.colour ?? '',
           iconTooltipFn: (data?: {colour: string, name: string}) => data?.name ?? ''
         }

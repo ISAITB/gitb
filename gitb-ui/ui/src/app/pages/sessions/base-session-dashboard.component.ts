@@ -104,6 +104,8 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
   completedSessionsCollapsedFinished = false
   sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   sessionIdToShow?: string
+  /** A hint for the session to expand (it does not restrict the search, and nothing is expanded if the session is not displayed). */
+  sessionIdToExpand?: string
   systemIdToShow?: number
   testCaseIdToShow?: number
   activeSortOrder = "asc"
@@ -181,7 +183,9 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
       if (systemIdValue != undefined) {
         this.systemIdToShow = Number(systemIdValue)
       }
-      this.expandFirstSession = this.sessionIdToShow != undefined || (this.systemIdToShow != undefined && this.testCaseIdToShow != undefined)
+      this.sessionIdToExpand = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_TO_EXPAND) ?? undefined
+      // Without a session hint, the first result of a system/test case deep link is expanded.
+      this.expandFirstSession = this.sessionIdToShow != undefined || (this.sessionIdToExpand == undefined && this.systemIdToShow != undefined && this.testCaseIdToShow != undefined)
     }
     this.activeTestsColumns = this.getActiveTestsColumns()
     this.completedTestsColumns = this.getCompletedTestsColumns()
@@ -495,13 +499,14 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
     result.testSuiteId = testResult.testSuite?.id
     result.testCaseId = testResult.test?.id
-    if (this.expandFirstSession || (this.restoredExpandSessionId != undefined && result.session === this.restoredExpandSessionId)) {
+    if (this.expandFirstSession || (this.restoredExpandSessionId != undefined && result.session === this.restoredExpandSessionId) || (this.sessionIdToExpand != undefined && result.session === this.sessionIdToExpand)) {
       // We have been asked to open a session (either the first result of a query-param deep link, or
       // the session that was expanded when the user last left this page). Defer the expansion until
       // the diagram has loaded (shows a spinner on the row and then animates open), matching a
       // user-initiated expansion. Keep it once.
       this.expandFirstSession = false
       this.restoredExpandSessionId = undefined
+      this.sessionIdToExpand = undefined
       result.expansionPending = true
       this.sessionIdToShow = undefined
       this.testCaseIdToShow = undefined

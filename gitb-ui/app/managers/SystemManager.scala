@@ -620,10 +620,14 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
           if (allTestCaseIds.isEmpty) {
             DBIO.successful(Seq.empty)
           } else {
+            // Only completed sessions are considered, with those having a conformance priority flag taking precedence over later ones.
             PersistenceSchema.testResults
-              .filter(_.sutId === systemId)
-              .filter(_.testCaseId inSet allTestCaseIds)
-              .sortBy(_.endTime.desc)
+              .joinLeft(PersistenceSchema.testFlags).on(_.flagId === _.id)
+              .filter(_._1.sutId === systemId)
+              .filter(_._1.testCaseId inSet allTestCaseIds)
+              .filter(_._1.endTime.isDefined)
+              .sortBy(x => (x._2.map(_.hasConformancePriority).getOrElse(false).desc, x._1.endTime.desc))
+              .map(_._1)
               .result
           }
         }
@@ -774,10 +778,14 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         if (conformanceInfo.isEmpty) {
           DBIO.successful(Map.empty[Long, ExistingResult])
         } else {
+          // Only completed sessions are considered, with those having a conformance priority flag taking precedence over later ones.
           PersistenceSchema.testResults
-            .filter(_.sutId === system)
-            .filter(_.testCaseId inSet conformanceInfo.map(_.testCaseId))
-            .sortBy(_.endTime.desc)
+            .joinLeft(PersistenceSchema.testFlags).on(_.flagId === _.id)
+            .filter(_._1.sutId === system)
+            .filter(_._1.testCaseId inSet conformanceInfo.map(_.testCaseId))
+            .filter(_._1.endTime.isDefined)
+            .sortBy(x => (x._2.map(_.hasConformancePriority).getOrElse(false).desc, x._1.endTime.desc))
+            .map(_._1)
             .result
             .map(createExistingResultMap)
         }

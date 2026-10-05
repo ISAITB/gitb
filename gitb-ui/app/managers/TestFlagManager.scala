@@ -121,8 +121,8 @@ class TestFlagManager @Inject()(dbConfigProvider: DatabaseConfigProvider)
   }
 
   private[managers] def updateTestFlagInternal(testFlag: TestFlags): DBIO[Unit] = {
-    val q = for { t <- PersistenceSchema.testFlags if t.id === testFlag.id } yield (t.name, t.description, t.colour, t.publicName, t.publicColour, t.adminOnly)
-    q.update((testFlag.name, testFlag.description, testFlag.colour, testFlag.publicName, testFlag.publicColour, testFlag.adminOnly)).map(_ => ())
+    val q = for { t <- PersistenceSchema.testFlags if t.id === testFlag.id } yield (t.name, t.description, t.colour, t.publicName, t.publicColour, t.adminOnly, t.hasConformancePriority)
+    q.update((testFlag.name, testFlag.description, testFlag.colour, testFlag.publicName, testFlag.publicColour, testFlag.adminOnly, testFlag.hasConformancePriority)).map(_ => ())
   }
 
   /**

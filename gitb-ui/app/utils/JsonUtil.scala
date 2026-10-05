@@ -3014,6 +3014,7 @@ object JsonUtil {
       "publicName" -> (if (testFlag.publicName.isDefined) testFlag.publicName.get else JsNull),
       "publicColour" -> (if (testFlag.publicColour.isDefined) testFlag.publicColour.get else JsNull),
       "adminOnly" -> testFlag.adminOnly,
+      "hasConformancePriority" -> testFlag.hasConformancePriority,
       "displayOrder" -> testFlag.displayOrder,
       "community" -> testFlag.community
     )

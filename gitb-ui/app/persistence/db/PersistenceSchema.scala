@@ -772,9 +772,10 @@ object PersistenceSchema {
     def publicName = column[Option[String]]("public_name")
     def publicColour = column[Option[String]]("public_colour")
     def adminOnly = column[Boolean]("admin_only")
+    def hasConformancePriority = column[Boolean]("has_conformance_priority")
     def displayOrder = column[Short]("display_order")
     def community = column[Long]("community")
-    def * = (id, name, description, colour, publicName, publicColour, adminOnly, displayOrder, community) <> (TestFlags.tupled, TestFlags.unapply)
+    def * = (id, name, description, colour, publicName, publicColour, adminOnly, hasConformancePriority, displayOrder, community) <> (TestFlags.tupled, TestFlags.unapply)
   }
   val testFlags = TableQuery[TestFlagsTable]
   val insertTestFlags = testFlags returning testFlags.map(_.id)

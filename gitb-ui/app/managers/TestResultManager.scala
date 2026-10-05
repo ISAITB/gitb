@@ -46,6 +46,9 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
+/** A conformance statement result that was re-linked to a different test session. */
+case class ConformanceLinkChange(communityId: Option[Long], systemId: Long, sessionId: String, result: String)
+
 object TestResultManager {
 
   private val logger = LoggerFactory.getLogger(classOf[TestResultManager])
@@ -174,10 +177,111 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     )
   }
 
-  def setTestSessionFlag(sessionId: String, flagId: Option[Long]): Future[Unit] = {
+  /**
+   * Sets (or clears) the flag of a test session, updating also the conformance statement result for the session's
+   * system and test case:
+   * <ul>
+   *   <li>If the new flag has conformance priority, the session replaces the statement's session unless the latter is
+   *   also priority-flagged and completed later.</li>
+   *   <li>Otherwise, if the statement is linked to this session, the latest priority-flagged (or else the latest) session is considered.</li>
+   * </ul>
+   *
+   * @return The conformance statement links that changed (for the firing of triggers by the caller).
+   */
+  def setTestSessionFlag(sessionId: String, flagId: Option[Long]): Future[Seq[ConformanceLinkChange]] = {
     DB.run(
-      PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.flagId).update(flagId).map(_ => ())
+      (for {
+        session <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
+        newHasPriority <- flagHasConformancePriority(flagId)
+        _ <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.flagId).update(flagId)
+        changes <- {
+          session match {
+            case Some(s) if s.systemId.isDefined && s.testCaseId.isDefined =>
+              updateConformanceResultForFlaggedSession(s, newHasPriority)
+            case _ => DBIO.successful(Seq.empty[ConformanceLinkChange])
+          }
+        }
+      } yield changes).transactionally
     )
+  }
+
+  private def updateConformanceResultForFlaggedSession(session: TestResult, newHasPriority: Boolean): DBIO[Seq[ConformanceLinkChange]] = {
+    val systemId = session.systemId.get
+    val testCaseId = session.testCaseId.get
+    for {
+      linkedSessionId <- PersistenceSchema.conformanceResults
+        .filter(_.sut === systemId)
+        .filter(_.testcase === testCaseId)
+        .map(_.testsession)
+        .result
+        .headOption
+        .map(_.flatten)
+      sessionToLink <- {
+        if (linkedSessionId.contains(session.sessionId)) {
+          if (newHasPriority) {
+            DBIO.successful(None)
+          } else {
+            // The linked session lost its priority.
+            latestConsideredSession(systemId, testCaseId, None).map(_.filter(_.sessionId != session.sessionId))
+          }
+        } else if (newHasPriority) {
+          linkedSessionId match {
+            case Some(linkedId) =>
+              // Keep the linked session if it is priority-flagged and completed later.
+              PersistenceSchema.testResults
+                .join(PersistenceSchema.testFlags).on(_.flagId === _.id)
+                .filter(_._1.testSessionId === linkedId)
+                .filter(_._2.hasConformancePriority === true)
+                .map(_._1.endTime)
+                .result
+                .headOption
+                .map { linkedPriorityEndTime =>
+                  val linkedCompletedLater = linkedPriorityEndTime.exists(_.exists(linkedEnd => session.endTime.forall(sessionEnd => linkedEnd.after(sessionEnd))))
+                  if (linkedCompletedLater) None else Some(session)
+                }
+            case None => DBIO.successful(Some(session))
+          }
+        } else {
+          DBIO.successful(None)
+        }
+      }
+      changes <- {
+        sessionToLink match {
+          case Some(toLink) =>
+            PersistenceSchema.conformanceResults
+              .filter(_.sut === systemId)
+              .filter(_.testcase === testCaseId)
+              .map(c => (c.testsession, c.result, c.outputMessage, c.updateTime))
+              .update((Some(toLink.sessionId), toLink.result, toLink.outputMessage, Some(toLink.endTime.getOrElse(toLink.startTime))))
+              .map(_ => Seq(ConformanceLinkChange(toLink.communityId, systemId, toLink.sessionId, toLink.result)))
+          case None => DBIO.successful(Seq.empty[ConformanceLinkChange])
+        }
+      }
+    } yield changes
+  }
+
+  private def flagHasConformancePriority(flagId: Option[Long]): DBIO[Boolean] = {
+    flagId match {
+      case Some(id) => PersistenceSchema.testFlags.filter(_.id === id).map(_.hasConformancePriority).result.headOption.map(_.getOrElse(false))
+      case None => DBIO.successful(false)
+    }
+  }
+
+  /**
+   * The session to consider for a conformance statement's test case result: the latest completed session that has a flag
+   * with conformance priority or, if none exists, the latest completed session.
+   */
+  private[managers] def latestConsideredSession(systemId: Long, testCaseId: Long, excludeSessionId: Option[String]): DBIO[Option[TestResult]] = {
+    PersistenceSchema.testResults
+      .joinLeft(PersistenceSchema.testFlags).on(_.flagId === _.id)
+      .filter(_._1.sutId === systemId)
+      .filter(_._1.testCaseId === testCaseId)
+      .filter(_._1.endTime.isDefined)
+      .filterOpt(excludeSessionId)((q, id) => q._1.testSessionId =!= id)
+      .sortBy(x => (x._2.map(_.hasConformancePriority).getOrElse(false).desc, x._1.endTime.desc))
+      .map(_._1)
+      .result
+      .headOption
   }
 
   private def getTestResultForSession(sessionId: String): DBIO[Option[(TestResult, String)]] = {
@@ -333,14 +437,8 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
             latestTestSession <- {
               if (testSession.systemId.isDefined && testSession.testCaseId.isDefined) {
                 // It only makes sense to update conformance statement results if the test session had its system and test case links intact.
-                PersistenceSchema.testResults
-                  .filter(_.sutId === testSession.systemId.get)
-                  .filter(_.testCaseId === testSession.testCaseId)
-                  .filter(_.testSessionId =!= testSession.sessionId)
-                  .filter(_.endTime.isDefined)
-                  .sortBy(_.endTime.desc)
-                  .result
-                  .headOption
+                // The session to consider is the latest one with a conformance priority flag or, if none exists, the latest one.
+                latestConsideredSession(testSession.systemId.get, testSession.testCaseId.get, Some(testSession.sessionId))
               } else {
                 DBIO.successful(None)
               }

@@ -47,7 +47,7 @@ export class TestFlagService {
     })
   }
 
-  createTestFlag(name: string, description: string|undefined, colour: string, publicName: string|undefined, publicColour: string|undefined, adminOnly: boolean, communityId: number) {
+  createTestFlag(name: string, description: string|undefined, colour: string, publicName: string|undefined, publicColour: string|undefined, adminOnly: boolean, hasConformancePriority: boolean, communityId: number) {
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.TestFlagService.createTestFlag().url,
       authenticate: true,
@@ -58,12 +58,13 @@ export class TestFlagService {
         publicName: publicName,
         publicColour: publicColour,
         admin_only: adminOnly,
+        has_conformance_priority: hasConformancePriority,
         community_id: communityId
       }
     })
   }
 
-  updateTestFlag(testFlagId: number, name: string, description: string|undefined, colour: string, publicName: string|undefined, publicColour: string|undefined, adminOnly: boolean, communityId: number) {
+  updateTestFlag(testFlagId: number, name: string, description: string|undefined, colour: string, publicName: string|undefined, publicColour: string|undefined, adminOnly: boolean, hasConformancePriority: boolean, communityId: number) {
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.TestFlagService.updateTestFlag(testFlagId).url,
       authenticate: true,
@@ -74,6 +75,7 @@ export class TestFlagService {
         publicName: publicName,
         publicColour: publicColour,
         admin_only: adminOnly,
+        has_conformance_priority: hasConformancePriority,
         community_id: communityId
       }
     })

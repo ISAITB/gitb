@@ -43,6 +43,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
                              actorSystem: ActorSystem,
                              testResultManager: TestResultManager,
                              testExecutionManager: TestExecutionManager,
+                             conformanceManager: ConformanceManager,
                              triggerHelper: TriggerHelper)
                             (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
@@ -384,8 +385,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   def setTestSessionFlag(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
     val flagId = ParameterExtractor.optionalBodyParameter(request, ParameterNames.FLAG_ID).map(_.toLong)
     authorizationManager.canSetTestSessionFlag(request, sessionId, flagId).flatMap { _ =>
-      testResultManager.setTestSessionFlag(sessionId, flagId).map { _ =>
-        ResponseConstructor.constructEmptyResponse
+      testResultManager.setTestSessionFlag(sessionId, flagId).flatMap { changes =>
+        // Conformance statement results may have been re-linked to a different session.
+        conformanceManager.fireConformanceStatementCompletionTriggersForChanges(changes).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
       }
     }
   }

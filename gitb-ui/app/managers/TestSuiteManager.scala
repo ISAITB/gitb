@@ -1566,7 +1566,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 											implementingSystems.asScala.foreach { implementingSystem: Long =>
 												// Check to see if there are existing test sessions for this test case.
 												action = action andThen (for {
-													previousResult <- PersistenceSchema.testResults.filter(_.sutId === implementingSystem).filter(_.testCaseId === testCaseId).sortBy(_.endTime.desc).result.headOption
+													previousResult <- testResultManager.latestConsideredSession(implementingSystem, testCaseId, None)
 													_ <- {
 														if (previousResult.isDefined) {
 															PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, newTestCaseActor, testSuiteId, testCaseId, previousResult.get.result, previousResult.get.outputMessage, Some(previousResult.get.sessionId), Some(previousResult.get.endTime.getOrElse(previousResult.get.startTime)))

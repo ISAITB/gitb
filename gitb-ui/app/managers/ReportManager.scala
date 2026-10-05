@@ -168,10 +168,17 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
         // Insert TPL definition.
         _ <- PersistenceSchema.testResultDefinitions += TestResultDefinition(sessionId, presentation)
-        // Update also the conformance results for the system
+        // Update also the conformance results for the system (unless they are linked to a session with a conformance priority flag)
+        resultIdsToUpdate <- PersistenceSchema.conformanceResults
+          .joinLeft(PersistenceSchema.testResults).on(_.testsession === _.testSessionId)
+          .joinLeft(PersistenceSchema.testFlags).on((q, flag) => q._2.map(_.flagId).flatten === flag.id)
+          .filter(_._1._1.sut === systemId)
+          .filter(_._1._1.testcase === testCaseId)
+          .filterNot(_._2.map(_.hasConformancePriority).getOrElse(false))
+          .map(_._1._1.id)
+          .result
         _ <- PersistenceSchema.conformanceResults
-          .filter(_.sut === systemId)
-          .filter(_.testcase === testCaseId)
+          .filter(_.id inSet resultIdsToUpdate)
           .map(c => (c.testsession, c.result, c.outputMessage, c.updateTime))
           .update(Some(sessionId), initialStatus, None, Some(startTime))
       } yield ()).transactionally

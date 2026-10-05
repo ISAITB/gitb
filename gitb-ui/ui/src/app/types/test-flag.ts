@@ -23,6 +23,7 @@ export interface TestFlag {
     publicName?: string
     publicColour?: string
     adminOnly: boolean
+    hasConformancePriority?: boolean
     displayOrder: number
     community: number
 

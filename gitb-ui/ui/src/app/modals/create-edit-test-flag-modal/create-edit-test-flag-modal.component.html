@@ -31,13 +31,27 @@
             <div app-tooltip class="col-auto" tbTooltip="A text clarifying the purpose of this flag to administrators. Not shown to organisation users."></div>
         </div>
         <div class="row pt-3">
-            <div class="col-8 offset-3 d-flex gap-4">
+            <div class="col-8 offset-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="hasConformancePriority" name="hasConformancePriority" [(ngModel)]="testFlagToUse.hasConformancePriority">
+                    <label class="form-check-label" for="hasConformancePriority">Has conformance status priority
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Test sessions assigned with this flag have priority when calculating the status of conformance statements. In case multiple test sessions have such flags assigned (this specific flag or others with the same setting), the latest flagged test session is considered."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-3">
+            <div class="col-8 offset-3">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="adminOnly" name="adminOnly" [(ngModel)]="testFlagToUse.adminOnly">
                     <label class="form-check-label" for="adminOnly">Restricted to administrators
                         <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="If checked, this flag can only be set, changed or cleared by Test Bed and community administrators - it will not be offered to organisation users."></div>
                     </label>
                 </div>
+            </div>
+        </div>
+        <div class="row pt-3">
+            <div class="col-8 offset-3">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="samePresentationForUsers" name="samePresentationForUsers" [ngModel]="samePresentationForUsers" (ngModelChange)="toggleSamePresentationForUsers()">
                     <label class="form-check-label" for="samePresentationForUsers">Same public display

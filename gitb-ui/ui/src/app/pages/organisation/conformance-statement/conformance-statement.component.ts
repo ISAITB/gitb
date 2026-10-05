@@ -847,9 +847,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
 
   viewSessionsTarget = (testCase: ConformanceTestCase): NavigationTarget => {
     if (this.organisationId == this.dataService.vendor?.id) {
-      return this.routingService.linkToTestHistory(this.organisationId, undefined, this.systemId, testCase.id)
+      return this.routingService.linkToTestHistory(this.organisationId, undefined, this.systemId, testCase.id, testCase.sessionId)
     } else {
-      return this.routingService.linkToSessionDashboard(undefined, this.systemId, testCase.id)
+      return this.routingService.linkToSessionDashboard(undefined, this.systemId, testCase.id, testCase.sessionId)
     }
   }
 

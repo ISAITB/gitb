@@ -848,7 +848,7 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
     if (isAdminView) {
       for (const flag of flags) {
         this.flagGroupMap[flag.id] = [flag.id]
-        options.push({ id: flag.id, label: flag.name, icon: Constants.BUTTON_ICON.SNAPSHOT, iconColour: flag.colour })
+        options.push({ id: flag.id, label: flag.name, icon: Constants.BUTTON_ICON.FLAG, iconColour: flag.colour })
       }
     } else {
       // Group flags resolving to the same (name, colour) presentation under one representative entry.
@@ -862,7 +862,7 @@ export class TestFilterComponent implements OnInit, AfterViewInit {
       for (const group of groupsByPresentation.values()) {
         const representative = group[0]
         this.flagGroupMap[representative.id] = group.map(f => f.id)
-        options.push({ id: representative.id, label: representative.name, icon: Constants.BUTTON_ICON.SNAPSHOT, iconColour: representative.colour })
+        options.push({ id: representative.id, label: representative.name, icon: Constants.BUTTON_ICON.FLAG, iconColour: representative.colour })
       }
     }
     options.push({ id: TestFilterComponent.UNFLAGGED_ID, label: 'Unflagged', icon: Constants.BUTTON_ICON.UNFLAGGED })

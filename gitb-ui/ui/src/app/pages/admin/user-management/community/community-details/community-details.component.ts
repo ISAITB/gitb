@@ -126,9 +126,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   testFlagColumns: TableColumnDefinition[] = [
-    { field: 'flagDisplay', title: 'Flag', iconFn: () => Constants.BUTTON_ICON.SNAPSHOT, iconColourFn: (d: {colour: string, name: string}) => d.colour, iconLabelFn: (d: {colour: string, name: string}) => d.name },
+    { field: 'flagDisplay', title: 'Flag', iconFn: () => Constants.BUTTON_ICON.FLAG, iconColourFn: (d: {colour: string, name: string}) => d.colour, iconLabelFn: (d: {colour: string, name: string}) => d.name },
     { field: 'description', title: 'Description' },
-    { field: 'adminOnly', title: '', headerClass: 'th-min centered', cellClass: 'td-min centered td-padded-icon', atEnd: true, iconFn: this.iconForTestFlagPermission, iconTooltipFn: this.tooltipForTestFlagPermission }
+    { field: 'hasConformancePriority', title: '', headerClass: 'th-min centered', cellClass: 'td-min centered td-padded-icon', atEnd: true, iconFn: this.iconForTestFlagPriority, iconTooltipFn: this.tooltipForTestFlagPriority },
+    { field: 'adminOnly', title: '', headerClass: 'th-min centered', cellClass: 'td-min centered td-padded-icon-follow', atEnd: true, iconFn: this.iconForTestFlagPermission, iconTooltipFn: this.tooltipForTestFlagPermission }
   ]
   testFlagsRefreshRows = new EventEmitter<void>()
   domains: Domain[] = []
@@ -578,6 +579,14 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       flag.flagDisplay.name = info.name
     }
     this.testFlagsRefreshRows.emit()
+  }
+
+  private iconForTestFlagPriority(hasConformancePriority: boolean): string {
+    return hasConformancePriority ? Constants.BUTTON_ICON.CONFORMANCE_STATEMENT : ''
+  }
+
+  private tooltipForTestFlagPriority(hasConformancePriority: boolean): string {
+    return hasConformancePriority ? 'Flag that prioritises test sessions for conformance calculation.' : ''
   }
 
   private iconForTestFlagPermission(adminOnly: boolean): string {

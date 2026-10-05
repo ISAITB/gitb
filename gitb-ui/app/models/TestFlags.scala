@@ -15,7 +15,7 @@
 
 package models
 
-case class TestFlags(id: Long, name: String, description: Option[String], colour: String, publicName: Option[String], publicColour: Option[String], adminOnly: Boolean, displayOrder: Short, community: Long) {
+case class TestFlags(id: Long, name: String, description: Option[String], colour: String, publicName: Option[String], publicColour: Option[String], adminOnly: Boolean, hasConformancePriority: Boolean, displayOrder: Short, community: Long) {
 
   /** The name shown to organisation users - falls back to the internal name when no public override is set. */
   def effectiveName: String = publicName.getOrElse(name)

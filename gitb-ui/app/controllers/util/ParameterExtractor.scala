@@ -800,9 +800,10 @@ object ParameterExtractor {
     val publicName = optionalBodyParameter(request, ParameterNames.PUBLIC_NAME)
     val publicColour = optionalBodyParameter(request, ParameterNames.PUBLIC_COLOUR)
     val adminOnly = requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
+    val hasConformancePriority = optionalBodyParameter(request, ParameterNames.HAS_CONFORMANCE_PRIORITY).exists(_.toBoolean)
     val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     // displayOrder is ignored on create (auto-assigned as the next value) and untouched on update.
-    TestFlags(testFlagId.getOrElse(0L), name, description, colour, publicName, publicColour, adminOnly, 0.toShort, communityId)
+    TestFlags(testFlagId.getOrElse(0L), name, description, colour, publicName, publicColour, adminOnly, hasConformancePriority, 0.toShort, communityId)
   }
 
   def extractTriggerInfo(request:Request[AnyContent], triggerId: Option[Long]): Trigger = {

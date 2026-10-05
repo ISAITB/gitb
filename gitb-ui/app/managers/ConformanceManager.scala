@@ -332,6 +332,18 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
     }
   }
 
+	/**
+	 * Fires the conformance statement completion triggers for conformance results that were re-linked to a successful session.
+	 */
+	def fireConformanceStatementCompletionTriggersForChanges(changes: Seq[ConformanceLinkChange]): Future[Unit] = {
+		Future.sequence(
+			changes
+				.filter(x => x.communityId.isDefined && x.result == "SUCCESS")
+				.distinctBy(_.sessionId)
+				.map(x => fireConformanceStatementCompletionTriggers(x.communityId.get, x.systemId, x.sessionId))
+		).map(_ => ())
+	}
+
 	def getCompletedConformanceStatementsForTestSession(systemId: Long, sessionId: String): Future[Option[Long]] = { // Actor ID considered as completed.
 		DB.run(
 			for {

@@ -879,7 +879,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def toModelTestFlag(modelTestFlagId: Option[Long], data: com.gitb.xml.export.TestFlag, communityId: Long): models.TestFlags = {
     models.TestFlags(modelTestFlagId.getOrElse(0L), data.getName, Option(data.getDescription), data.getColour,
-      Option(data.getPublicName), Option(data.getPublicColour), data.isAdminOnly, data.getDisplayOrder.toShort, communityId)
+      Option(data.getPublicName), Option(data.getPublicColour), data.isAdminOnly, data.isHasConformancePriority,data.getDisplayOrder.toShort, communityId)
   }
 
   private def toModelSystemAdministrator(data: com.gitb.xml.export.SystemAdministrator, userId: Option[Long], organisationId: Long, importSettings: ImportSettings): models.Users = {
