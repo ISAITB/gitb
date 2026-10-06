@@ -341,20 +341,24 @@
     .test-case-prescription-level > img {
         width: 16px;
     }
+    .test-suite-first-line {
+        display: table;
+        width: 100%;
+    }
     .test-suite-name {
-        display: inline-block;
+        display: table-cell;
+        vertical-align: top;
         font-weight: bold;
     }
     .test-suite-description {
-        display: inline-block;
-        border-left: 1px solid #7c7c7c;
-        padding-left: 10px;
-        margin-left: 10px;
-        margin-right: 20px;
+        display: block;
+        margin-top: 5px;
     }
     .test-suite-status {
-        display: inline;
-        float: right;
+        display: table-cell;
+        width: 1px;
+        vertical-align: top;
+        padding-left: 10px;
         padding-right: 11px;
     }
     .test-case-status.icon img, .test-suite-status.icon img {
@@ -474,10 +478,6 @@
     }
     .test-case-tag:last-child {
         margin-right: 0px;
-    }
-    .test-suite-header-texts {
-        display: inline-block;
-        width: 95%;
     }
     .test-suites td {
         vertical-align: top;

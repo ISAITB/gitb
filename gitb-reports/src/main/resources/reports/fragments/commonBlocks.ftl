@@ -110,19 +110,15 @@
                 <#assign tsIndex = testSuite?counter>
                 <div class="test-suite-container">
                     <div class="test-suite-header">
-                        <div class="test-suite-header-texts">
-                            <table>
-                                <tr>
-                                    <td><div class="test-suite-name"><div>${escape(testSuite.testSuiteName)}</div></div></td>
-                                    <#if testSuite.testSuiteDescription??>
-                                        <td><div class="test-suite-description"><div>${escape(testSuite.testSuiteDescription)}</div></div></td>
-                                    </#if>
-                                </tr>
-                            </table>
+                        <div class="test-suite-first-line"><#t>
+                            <div class="test-suite-name">${escape(testSuite.testSuiteName)}</div><#t>
+                            <div class="test-suite-status icon"><#t>
+                                <img src="classpath:reports/images/icon-${testSuite.overallStatus}.svg"/><#t>
+                            </div><#t>
                         </div>
-                        <div class="test-suite-status icon value-inline">
-                            <img src="classpath:reports/images/icon-${testSuite.overallStatus}.svg"/>
-                        </div>
+                        <#if testSuite.testSuiteDescription?has_content>
+                            <div class="test-suite-description">${escape(testSuite.testSuiteDescription)}</div>
+                        </#if>
                     </div>
                     <div class="test-suite-content">
                         <#list testSuite.testCases as testCase>
