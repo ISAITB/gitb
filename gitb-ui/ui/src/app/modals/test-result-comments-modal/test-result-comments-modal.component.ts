@@ -158,7 +158,7 @@ export class TestResultCommentsModalComponent extends BaseComponent implements O
       } else {
         message = "Are you sure you want to change the test session's result?";
       }
-      proceed$ = this.confirmationDialogService.confirmed("Confirm result change", message, "Change result", "Cancel");
+      proceed$ = this.confirmationDialogService.confirmed("Confirm result change", message, "Change", "Cancel");
     } else {
       proceed$ = of(true);
     }

@@ -4,6 +4,16 @@
 </div>
 <div class="modal-body py-4">
     {{bodyText}}
+    @if (optionText) {
+        <form>
+            <div class="option-separator mt-4 pt-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmationOption" name="confirmationOption" [(ngModel)]="optionChecked">
+                    <label class="form-check-label" for="confirmationOption">{{optionText}}</label>
+                </div>
+            </div>
+        </form>
+    }
 </div>
 <div class="modal-footer">
     <div class="btn-toolbar">
@@ -13,6 +23,6 @@
         @if (middleButtonText) {
             <button [labelIcon]="middleButtonIcon" class="btn btn-secondary" type="button" (click)="middle()">{{middleButtonText}}</button>
         }
-        <button [labelIcon]="actionButtonIcon" [ngClass]="actionClass" type="button" (click)="ok()">{{actionButtonText}}</button>
+        <button [labelIcon]="actionButtonIcon" [ngClass]="currentActionClass()" type="button" (click)="ok()">{{actionButtonText}}</button>
     </div>
 </div>

@@ -721,7 +721,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   private confirmUserPreferenceUpdateIfNeeded(): Observable<boolean> {
     if (this.userPreferencesChanged()) {
-      return this.confirmationDialogService.confirm("User preferences update", "You have changed the default user preferences. Besides applying for new users, should these also override existing users' preferences?", "Override existing preferences", "Apply only for new users", Constants.BUTTON_ICON.RESET, Constants.BUTTON_ICON.SAVE, false, true).asObservable()
+      return this.confirmationDialogService.confirmedWithOption("User preferences update", "You have changed the default user preferences. These will apply for new users but may also override existing preferences.", "Override existing preferences", "Save", "Cancel", Constants.BUTTON_ICON.SAVE, Constants.BUTTON_ICON.CANCEL, false, true)
     } else {
       return of(false)
     }

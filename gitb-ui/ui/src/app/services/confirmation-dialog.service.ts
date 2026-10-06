@@ -91,6 +91,34 @@ export class ConfirmationDialogService {
     return result
   }
 
+  /** Confirmation with an additional optional choice rendered as a checkbox. Emits only on confirmation, with the
+   * checkbox state. If optionDangerous is true the action button is rendered as dangerous while the option is ticked. */
+  confirmedWithOption(headerText: string, bodyText: string, optionText: string, actionButtonText: string, closeButtonText: string, actionButtonIcon?: string, closeButtonIcon?: string, optionChecked = false, optionDangerous = false): Observable<boolean> {
+    const result = new ReplaySubject<boolean>(1)
+    const modal = this.modalService.open(ConfirmationComponent)
+    const modalInstance = modal.componentInstance as ConfirmationComponent
+    modalInstance.headerText = headerText
+    modalInstance.bodyText = bodyText
+    modalInstance.optionText = optionText
+    modalInstance.optionChecked = optionChecked
+    modalInstance.optionDangerous = optionDangerous
+    modalInstance.actionButtonText = actionButtonText
+    modalInstance.closeButtonText = closeButtonText
+    modalInstance.actionButtonIcon = actionButtonIcon
+    modalInstance.closeButtonIcon = closeButtonIcon
+    modalInstance.sameStyles = false
+    modalInstance.oneButton = false
+    modal.result.then((choice: boolean) => {
+      if (choice) {
+        result.next(modalInstance.optionChecked)
+      }
+      result.complete()
+    }).catch(() => {
+      result.complete()
+    })
+    return result
+  }
+
   /** A three-way variant (e.g. "Cancel" / "Discard draft" / "Resume draft") for the rare cases where a
    * plain confirm/cancel pair isn't enough. Button order in the footer is close, middle, action (left to
    * right) - the action button is the rightmost/primary one. */

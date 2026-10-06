@@ -970,7 +970,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   saveAccountRetentionPeriod() {
     if (this.accountRetentionPeriodEnabled && this.accountRetentionPeriodValue != undefined) {
-      this.confirmationDialogService.confirmedDangerous("Delete inactive accounts", "Inactive user accounts based on the configured retention period will be immediately deleted. Are you sure you want to proceed?", "Enable retention period and delete accounts", "Cancel", Constants.BUTTON_ICON.DELETE)
+      this.confirmationDialogService.confirmedDangerous("Delete inactive accounts", "Enabling the retention period will immediately delete inactive user accounts. Are you sure you want to proceed?", "Enable", "Cancel", Constants.BUTTON_ICON.DELETE)
       .subscribe(() => {
         this.accountRetentionPeriodStatus.pending = true
         this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD, this.accountRetentionPeriodValue!.toString())

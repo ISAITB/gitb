@@ -20,7 +20,7 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 @Component({
     selector: 'app-confirmation',
     templateUrl: './confirmation.component.html',
-    styles: [],
+    styleUrls: ['./confirmation.component.less'],
     changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
@@ -37,6 +37,9 @@ export class ConfirmationComponent implements OnInit {
   @Input() sameStyles? = true
   @Input() oneButton = false
   @Input() actionClass = 'btn btn-secondary'
+  @Input() optionText?: string
+  @Input() optionChecked = false
+  @Input() optionDangerous = false
 
   constructor(public readonly modalRef: NgbActiveModal) { }
 
@@ -59,6 +62,13 @@ export class ConfirmationComponent implements OnInit {
 
   middle() {
     this.modalRef.close('middle')
+  }
+
+  currentActionClass(): string {
+    if (this.optionDangerous && this.optionChecked) {
+      return 'btn btn-danger'
+    }
+    return this.actionClass
   }
 
   cancelClass(): string {

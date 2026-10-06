@@ -124,8 +124,8 @@ export class MessageComposeService {
   private replaceDraftIfNeeded(startFresh: () => void) {
     if (this.minimised && this.hasNonDefaultState()) {
       this.confirmationDialogService.confirmThreeWay(
-        'Replace draft message', 'A message is currently being drafted. How should this be handled?',
-        'Resume draft', 'Discard draft', 'Cancel',
+        'Replace draft message', 'You already have a message draft in progress. Do you want to resume it or discard it and start a new message?',
+        'Resume', 'Discard', 'Cancel',
         Constants.BUTTON_ICON.MESSAGE_NEW, Constants.BUTTON_ICON.DELETE, Constants.BUTTON_ICON.CANCEL
       ).subscribe((choice) => {
         if (choice == 'action') {

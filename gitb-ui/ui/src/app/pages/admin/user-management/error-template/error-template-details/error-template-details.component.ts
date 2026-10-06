@@ -94,7 +94,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   updateErrorTemplate(copy: boolean) {
     if (!this.saveDisabled()) {
       if (!this.isDefault && this.template.default) {
-        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No", Constants.BUTTON_ICON.SAVE)
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Update", "Cancel", Constants.BUTTON_ICON.SAVE)
           .subscribe(() => {
             this.doUpdate(copy)
           })
