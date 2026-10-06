@@ -30,6 +30,7 @@ public class ConformanceOverview {
     private Boolean includeMessage = Boolean.FALSE;
     private Boolean includeTestStatus = Boolean.TRUE;
     private Boolean includePageNumbers = Boolean.TRUE;
+    private Boolean includeOptionalTests = Boolean.FALSE;
     private Boolean includeConformanceItems = Boolean.TRUE;
     private String message;
     private String labelDomain;
@@ -310,4 +311,11 @@ public class ConformanceOverview {
         return resultText.toString();
     }
 
+    public Boolean getIncludeOptionalTests() {
+        return includeOptionalTests;
+    }
+
+    public void setIncludeOptionalTests(Boolean includeOptionalTests) {
+        this.includeOptionalTests = includeOptionalTests;
+    }
 }

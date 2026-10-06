@@ -44,6 +44,7 @@ export class ConformanceStatementReportFormComponent extends CommunityXmlReportF
     return {
       baseIdValue: "conformanceStatementReport",
       previewFileNamePdf: "conformance_report.pdf",
+      supportsOptionalTests: true,
       previewFileNameXml: "conformance_report.xml",
       previewTitleXml: "Conformance statement report preview",
       reportType: this.Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_REPORT,

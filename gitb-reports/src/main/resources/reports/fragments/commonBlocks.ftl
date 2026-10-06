@@ -13,7 +13,7 @@
     </div></#list></div>
 </#macro>
 <#macro specificationInfo reference="" description="" link=""><#if reference != ""><span class="spec-reference"><#if link != ""><a href="${link}"></#if>${escape(reference)}<#if link != ""></a></#if></span><#elseif link != ""><a href="${link}">Link</a></#if><#if description != ""><#if reference != "" || link != ""><span class="inline-text-separator">|</span></#if><span class="spec-description">${escape(description)}</#if></#macro>
-<#macro statementOverview data labelDomain labelSpecification labelSpecificationGroup labelSpecificationInGroup labelActor labelOrganisation labelSystem includeTestStatus organisation system reportDate>
+<#macro statementOverview data labelDomain labelSpecification labelSpecificationGroup labelSpecificationInGroup labelActor labelOrganisation labelSystem includeTestStatus organisation system reportDate includeOptionalTests=false>
     <div class="section details">
         <div class="section-title">
             <div>Overview</div>
@@ -83,14 +83,33 @@
                 <div class="column right">
                     <#if includeTestStatus>
                         <table>
-                            <tr>
-                                <td class="cell-label">Test results:</td>
-                                <td class="cell-value">${data.testStatus}</td>
-                            </tr>
-                            <tr>
-                                <td class="cell-label">Result ratio:</td>
-                                <td class="cell-value">${coverageBlock(data.completedTests, data.failedTests, data.undefinedTests, 350)}</td>
-                            </tr>
+                            <#if includeOptionalTests && data.hasIgnoredTests()>
+                                <tr>
+                                    <td class="cell-label">Required tests:</td>
+                                    <td class="cell-value">${data.requiredTestStatus}</td>
+                                </tr>
+                                <tr>
+                                    <td class="cell-label"></td>
+                                    <td class="cell-value">${coverageBlock(data.completedTests, data.failedTests, data.undefinedTests, 350)}</td>
+                                </tr>
+                                <tr>
+                                    <td class="cell-label">Optional tests:</td>
+                                    <td class="cell-value">${data.optionalTestStatus}</td>
+                                </tr>
+                                <tr>
+                                    <td class="cell-label"></td>
+                                    <td class="cell-value">${coverageBlock(data.completedTestsIgnored, data.failedTestsIgnored, data.undefinedTestsIgnored, 350)}</td>
+                                </tr>
+                            <#else>
+                                <tr>
+                                    <td class="cell-label">Test results:</td>
+                                    <td class="cell-value">${data.testStatus}</td>
+                                </tr>
+                                <tr>
+                                    <td class="cell-label">Result ratio:</td>
+                                    <td class="cell-value">${coverageBlock(data.completedTests, data.failedTests, data.undefinedTests, 350)}</td>
+                                </tr>
+                            </#if>
                         </table>
                     </#if>
                 </div>

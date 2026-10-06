@@ -44,6 +44,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
   idValueCustomPdf!: string
   idValueCustomPdfWithCustomXml!: string
   idValueCustomiseFileName!: string
+  idValueOptionalTests!: string
 
   useStylesheet = false
 
@@ -68,6 +69,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
     this.idValueStylesheet = this.config.baseIdValue + 'UseStylesheet'
     this.idValueCustomPdfWithCustomXml = this.config.baseIdValue + 'UseCustomOdfWithCustomXml'
     this.idValueCustomiseFileName = this.config.baseIdValue + 'CustomiseFileName'
+    this.idValueOptionalTests = this.config.baseIdValue + 'IncludeOptionalTests'
   }
 
   loadData(): Observable<any> {

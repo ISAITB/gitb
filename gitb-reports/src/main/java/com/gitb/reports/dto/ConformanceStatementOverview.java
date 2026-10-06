@@ -26,6 +26,7 @@ public class ConformanceStatementOverview extends ConformanceStatementData {
     private Boolean includeMessage = Boolean.FALSE;
     private Boolean includeTestStatus = Boolean.TRUE;
     private Boolean includePageNumbers = Boolean.TRUE;
+    private Boolean includeOptionalTests = Boolean.FALSE;
     private String message;
     private String labelDomain;
     private String labelSpecificationGroup;
@@ -169,5 +170,13 @@ public class ConformanceStatementOverview extends ConformanceStatementData {
 
     public void setLabelSpecificationGroup(String labelSpecificationGroup) {
         this.labelSpecificationGroup = labelSpecificationGroup;
+    }
+
+    public Boolean getIncludeOptionalTests() {
+        return includeOptionalTests;
+    }
+
+    public void setIncludeOptionalTests(Boolean includeOptionalTests) {
+        this.includeOptionalTests = includeOptionalTests;
     }
 }

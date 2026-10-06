@@ -100,6 +100,7 @@
         <xsd:attribute name="signPdfs" type="xsd:boolean" default="false"/>
         <xsd:attribute name="customPdfs" type="xsd:boolean" default="false"/>
         <xsd:attribute name="customPdfsWithCustomXml" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="includeOptionalTests" type="xsd:boolean" default="false"/>
     </xsd:complexType>
     <xsd:simpleType name="ReportType">
         <xsd:restriction base="xsd:string">
@@ -125,6 +126,7 @@
         <xsd:attribute name="addDetails" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addResultOverview" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addTestCases" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addOptionalTests" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addMessage" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addPageNumbers" type="xsd:boolean" default="true"/>
@@ -139,6 +141,7 @@
         <xsd:attribute name="addResultOverview" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addStatementList" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addStatementDetails" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addOptionalTests" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addMessage" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addPageNumbers" type="xsd:boolean" default="true"/>

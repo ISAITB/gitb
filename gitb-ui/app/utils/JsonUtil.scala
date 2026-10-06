@@ -2344,7 +2344,8 @@ object JsonUtil {
       (jsonConfig \ "includeSignature").as[Boolean],
       (jsonConfig \ "includePageNumbers").as[Boolean],
       certificateMessage,
-      communityId
+      communityId,
+      (jsonConfig \ "includeOptionalTests").asOpt[Boolean].getOrElse(false)
     )
   }
 
@@ -2383,7 +2384,8 @@ object JsonUtil {
         (jsonConfig \ "enableDomainLevel").asOpt[Boolean].getOrElse(false),
         (jsonConfig \ "enableGroupLevel").asOpt[Boolean].getOrElse(false),
         (jsonConfig \ "enableSpecificationLevel").asOpt[Boolean].getOrElse(false),
-        communityId
+        communityId,
+        (jsonConfig \ "includeOptionalTests").asOpt[Boolean].getOrElse(false)
       ),
       (jsonConfig \ "messages").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue => parseJsConformanceOverviewCertificateMessage(jsValue, communityId)}.toList
     )
@@ -3357,6 +3359,7 @@ object JsonUtil {
     "signPdfs" -> settings.signPdfs,
     "customPdfs" -> settings.customPdfs,
     "customPdfsWithCustomXml" -> settings.customPdfsWithCustomXml,
+    "includeOptionalTests" -> settings.includeOptionalTests,
     "defaultFileNameExpression" -> ReportNameResolver.effectiveDefault(settings.reportType)
     )
     if (settings.customPdfService.isDefined) {
@@ -3874,6 +3877,7 @@ object JsonUtil {
       "includeDetails" -> settings.includeDetails,
       "includeSignature" -> settings.includeSignature,
       "includePageNumbers" -> settings.includePageNumbers,
+      "includeOptionalTests" -> settings.includeOptionalTests,
       "community" -> settings.community
     )
   }
@@ -3927,6 +3931,7 @@ object JsonUtil {
       "enableDomainLevel" -> data.settings.enableDomainLevel,
       "enableGroupLevel" -> data.settings.enableGroupLevel,
       "enableSpecificationLevel" -> data.settings.enableSpecificationLevel,
+      "includeOptionalTests" -> data.settings.includeOptionalTests,
       "community" -> data.settings.community
     )
     if (data.messages.nonEmpty) {

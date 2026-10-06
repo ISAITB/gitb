@@ -30,13 +30,14 @@ case class ConformanceOverviewCertificate(
     enableDomainLevel: Boolean,
     enableGroupLevel: Boolean,
     enableSpecificationLevel: Boolean,
-    community:Long
+    community:Long,
+    includeOptionalTests: Boolean = false
 ) {
 
   def toConformanceCertificateInfo(message: Option[ConformanceOverviewCertificateMessage], keystore: Option[CommunityKeystore]): ConformanceCertificateInfo = {
     ConformanceCertificateInfo(
       title, includeTitle, includeMessage, includeStatementStatus, includeStatements, includeStatementDetails, includeDetails, includeSignature, includePageNumbers,
-      message.map(_.message), keystore, community
+      message.map(_.message), keystore, community, includeOptionalTests
     )
   }
 

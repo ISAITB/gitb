@@ -26,17 +26,18 @@ case class ConformanceCertificate(
    includeSignature:Boolean,
    includePageNumbers:Boolean,
    message: Option[String],
-   community:Long
+   community:Long,
+   includeOptionalTests:Boolean = false
 ) {
 
   def withMessage(message: String): ConformanceCertificate = {
-    ConformanceCertificate(id, title, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, includePageNumbers, message = Some(message), community)
+    ConformanceCertificate(id, title, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, includePageNumbers, message = Some(message), community, includeOptionalTests)
   }
 
   def toConformanceCertificateInfo(keystore: Option[CommunityKeystore]): ConformanceCertificateInfo = {
     ConformanceCertificateInfo(
       title, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeItemDetails = false, includeDetails, includeSignature, includePageNumbers,
-      message, keystore, community
+      message, keystore, community, includeOptionalTests
     )
   }
 

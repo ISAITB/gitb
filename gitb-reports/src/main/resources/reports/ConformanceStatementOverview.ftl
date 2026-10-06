@@ -17,7 +17,7 @@
             </div>
         </#if>
         <#if data.includeDetails?? && data.includeDetails>
-            <@common.statementOverview data=data labelDomain=data.labelDomain labelSpecification=data.labelSpecification labelSpecificationGroup=data.labelSpecificationGroup labelSpecificationInGroup=data.labelSpecificationInGroup labelActor=data.labelActor labelOrganisation=data.labelOrganisation labelSystem=data.labelSystem includeTestStatus=data.includeTestStatus organisation=data.organisation system=data.system reportDate=data.reportDate/>
+            <@common.statementOverview data=data labelDomain=data.labelDomain labelSpecification=data.labelSpecification labelSpecificationGroup=data.labelSpecificationGroup labelSpecificationInGroup=data.labelSpecificationInGroup labelActor=data.labelActor labelOrganisation=data.labelOrganisation labelSystem=data.labelSystem includeTestStatus=data.includeTestStatus organisation=data.organisation system=data.system reportDate=data.reportDate includeOptionalTests=data.includeOptionalTests/>
         </#if>
         <#if data.testSuites??>
             <@common.statementTestCases data=data includeTestCaseReports=data.includeTestCases/>

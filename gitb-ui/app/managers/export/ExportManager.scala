@@ -958,6 +958,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedSetting.setSignPdfs(setting.signPdfs)
     exportedSetting.setCustomPdfs(setting.customPdfs)
     exportedSetting.setCustomPdfsWithCustomXml(setting.customPdfsWithCustomXml)
+    exportedSetting.setIncludeOptionalTests(setting.includeOptionalTests)
     exportedSetting.setCustomPdfService(setting.customPdfService.orNull)
     exportedSetting.setFileNameExpression(setting.fileNameExpression.orNull)
     exportedSetting
@@ -1424,6 +1425,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             communityData.getConformanceCertificateSettings.setAddDetails(certificateSettings.get.includeDetails)
             communityData.getConformanceCertificateSettings.setAddMessage(certificateSettings.get.includeMessage)
             communityData.getConformanceCertificateSettings.setAddTestCases(certificateSettings.get.includeTestCases)
+            communityData.getConformanceCertificateSettings.setAddOptionalTests(certificateSettings.get.includeOptionalTests)
             communityData.getConformanceCertificateSettings.setAddResultOverview(certificateSettings.get.includeTestStatus)
             communityData.getConformanceCertificateSettings.setAddSignature(certificateSettings.get.includeSignature)
             communityData.getConformanceCertificateSettings.setAddPageNumbers(certificateSettings.get.includePageNumbers)
@@ -1439,6 +1441,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             communityData.getConformanceOverviewCertificateSettings.setAddMessage(certificateOverviewSettings.get.settings.includeMessage)
             communityData.getConformanceOverviewCertificateSettings.setAddStatementList(certificateOverviewSettings.get.settings.includeStatements)
             communityData.getConformanceOverviewCertificateSettings.setAddStatementDetails(certificateOverviewSettings.get.settings.includeStatementDetails)
+            communityData.getConformanceOverviewCertificateSettings.setAddOptionalTests(certificateOverviewSettings.get.settings.includeOptionalTests)
             communityData.getConformanceOverviewCertificateSettings.setAddResultOverview(certificateOverviewSettings.get.settings.includeStatementStatus)
             communityData.getConformanceOverviewCertificateSettings.setAddSignature(certificateOverviewSettings.get.settings.includeSignature)
             communityData.getConformanceOverviewCertificateSettings.setAddPageNumbers(certificateOverviewSettings.get.settings.includePageNumbers)

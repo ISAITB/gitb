@@ -19,6 +19,7 @@ export interface CommunityReportSettings {
     signPdfs: boolean
     customPdfs: boolean
     customPdfsWithCustomXml: boolean
+    includeOptionalTests: boolean
     customPdfService?: string
     // The community-specific naming expression override for the report's file name (undefined if not customised).
     fileNameExpression?: string

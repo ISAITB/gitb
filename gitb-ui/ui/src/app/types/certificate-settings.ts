@@ -24,6 +24,7 @@ export interface CertificateSettings {
     includeDetails: boolean
     includeSignature: boolean
     includePageNumbers: boolean
+    includeOptionalTests: boolean
     community: number
 
 }

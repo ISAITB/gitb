@@ -516,7 +516,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       0L, Option(exportedSettings.getTitle), exportedSettings.isAddTitle, exportedSettings.isAddMessage, exportedSettings.isAddResultOverview,
       exportedSettings.isAddStatementList, exportedSettings.isAddStatementDetails, exportedSettings.isAddDetails, exportedSettings.isAddSignature,
       exportedSettings.isAddPageNumbers, exportedSettings.isEnableAggregateLevel, exportedSettings.isEnableDomainLevel,
-      exportedSettings.isEnableSpecificationGroupLevel, exportedSettings.isEnableSpecificationLevel, communityId
+      exportedSettings.isEnableSpecificationGroupLevel, exportedSettings.isEnableSpecificationLevel, communityId, exportedSettings.isAddOptionalTests
     )
     val messages = new ListBuffer[models.ConformanceOverviewCertificateMessage]
     if (exportedSettings.getMessages != null) {
@@ -707,7 +707,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelReportSetting(data: com.gitb.xml.export.CommunityReportSetting, communityId: Long): models.CommunityReportSettings = {
-    models.CommunityReportSettings(toModelReportType(data.getReportType).id.toShort, data.isSignPdfs, data.isCustomPdfs, data.isCustomPdfsWithCustomXml, Option(data.getCustomPdfService), Option(data.getFileNameExpression), communityId)
+    models.CommunityReportSettings(toModelReportType(data.getReportType).id.toShort, data.isSignPdfs, data.isCustomPdfs, data.isCustomPdfsWithCustomXml, Option(data.getCustomPdfService), Option(data.getFileNameExpression), communityId, data.isIncludeOptionalTests)
   }
 
   private def toModelTestServiceType(data: com.gitb.xml.export.TestServiceType): models.Enums.TestServiceType.TestServiceType = {
@@ -2494,7 +2494,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
                       exportedCommunity.getConformanceCertificateSettings.isAddTestCases, exportedCommunity.getConformanceCertificateSettings.isAddDetails,
                       exportedCommunity.getConformanceCertificateSettings.isAddSignature, exportedCommunity.getConformanceCertificateSettings.isAddPageNumbers,
-                      Option(exportedCommunity.getConformanceCertificateSettings.getMessage), communityId.get
+                      Option(exportedCommunity.getConformanceCertificateSettings.getMessage), communityId.get, exportedCommunity.getConformanceCertificateSettings.isAddOptionalTests
                     )
                   )
                   _ <- {

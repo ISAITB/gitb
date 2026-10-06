@@ -587,7 +587,8 @@ object PersistenceSchema {
     def customPdfService  = column[Option[String]]("custom_pdf_service")
     def fileNameExpression = column[Option[String]]("file_name_expression")
     def community = column[Long]("community")
-    def * = (reportType, signPdfs, customPdfs, customPdfsWithCustomXml, customPdfService, fileNameExpression, community) <> (CommunityReportSettings.tupled, CommunityReportSettings.unapply)
+    def includeOptionalTests = column[Boolean]("include_optional_tests")
+    def * = (reportType, signPdfs, customPdfs, customPdfsWithCustomXml, customPdfService, fileNameExpression, community, includeOptionalTests) <> (CommunityReportSettings.tupled, CommunityReportSettings.unapply)
   }
   val communityReportSettings = TableQuery[CommunityReportSettingsTable]
 
@@ -603,7 +604,8 @@ object PersistenceSchema {
     def includeSignature = column[Boolean]("include_signature")
     def includePageNumbers = column[Boolean]("include_page_numbers")
     def community = column[Long]("community")
-    def * = (id, title, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, includePageNumbers, message, community) <> (ConformanceCertificate.tupled, ConformanceCertificate.unapply)
+    def includeOptionalTests = column[Boolean]("include_optional_tests")
+    def * = (id, title, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, includePageNumbers, message, community, includeOptionalTests) <> (ConformanceCertificate.tupled, ConformanceCertificate.unapply)
   }
   val conformanceCertificates = TableQuery[ConformanceCertificatesTable]
   val insertConformanceCertificate = conformanceCertificates returning conformanceCertificates.map(_.id)
@@ -636,7 +638,8 @@ object PersistenceSchema {
     def enableGroupLevel = column[Boolean]("enable_group")
     def enableSpecificationLevel = column[Boolean]("enable_specification")
     def community = column[Long]("community")
-    def * = (id :: title :: includeTitle :: includeMessage :: includeStatementStatus :: includeStatements :: includeStatementDetails :: includeDetails :: includeSignature :: includePageNumbers :: enableAllLevel :: enableDomainLevel :: enableGroupLevel :: enableSpecificationLevel :: community :: HNil).mapTo[ConformanceOverviewCertificate]
+    def includeOptionalTests = column[Boolean]("include_optional_tests")
+    def * = (id :: title :: includeTitle :: includeMessage :: includeStatementStatus :: includeStatements :: includeStatementDetails :: includeDetails :: includeSignature :: includePageNumbers :: enableAllLevel :: enableDomainLevel :: enableGroupLevel :: enableSpecificationLevel :: community :: includeOptionalTests :: HNil).mapTo[ConformanceOverviewCertificate]
   }
   val conformanceOverviewCertificates = TableQuery[ConformanceOverviewCertificatesTable]
   val insertConformanceOverviewCertificate = conformanceOverviewCertificates returning conformanceOverviewCertificates.map(_.id)

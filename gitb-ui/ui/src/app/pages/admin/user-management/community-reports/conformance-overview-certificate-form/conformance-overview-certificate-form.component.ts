@@ -137,6 +137,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
       includeTestCases: this.settings!.includeTestCases == true,
       includeTestCaseDetails: this.settings!.includeTestCaseDetails == true,
       includeTestStatus: this.settings!.includeTestStatus == true,
+      includeOptionalTests: this.settings!.includeOptionalTests == true,
       enableAllLevel: this.settings!.enableAllLevel == true,
       enableDomainLevel: this.settings!.enableDomainLevel == true && this.communityDomainId == undefined,
       enableGroupLevel: this.settings!.enableGroupLevel == true,

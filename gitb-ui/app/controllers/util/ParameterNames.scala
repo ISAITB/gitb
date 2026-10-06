@@ -31,6 +31,7 @@ object ParameterNames {
   val ENABLE = "enable"
   val USE_STYLE_SHEET = "useStylesheet"
   val SIGN_PDF_REPORTS = "signPdfReports"
+  val INCLUDE_OPTIONAL_TESTS = "includeOptionalTests"
   val USE_CUSTOM_PDF_REPORTS = "useCustomPdfReports"
   val USE_CUSTOM_PDFS_WITH_CUSTOM_XML = "useCustomPdfReportsWithCustomXml"
   val CUSTOM_PDF_SERVICE = "customPdfService"

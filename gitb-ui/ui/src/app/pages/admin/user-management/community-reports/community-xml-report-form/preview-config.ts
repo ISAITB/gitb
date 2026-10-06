@@ -23,5 +23,6 @@ export interface PreviewConfig {
     previewTitleXml: string
     previewFileNameXml: string
     previewFileNamePdf: string
+    supportsOptionalTests?: boolean
 
 }

@@ -291,6 +291,7 @@ public class ReportGeneratorTest {
         data.setIncludeMessage(true);
         data.setIncludeConformanceItems(true);
         data.setIncludeTestCases(true);
+        data.setIncludeOptionalTests(true);
 
         data.setMessage("<b>This is your report</b>");
         data.setLabelOrganisation("Organisation");
@@ -317,6 +318,8 @@ public class ReportGeneratorTest {
         spec1_1.getData().setCompletedTests(245);
         spec1_1.getData().setFailedTests(0);
         spec1_1.getData().setUndefinedTests(0);
+        spec1_1.getData().setCompletedTestsIgnored(10);
+        spec1_1.getData().setFailedTestsIgnored(2);
         spec1_1.getData().setOverallStatus("SUCCESS");
         spec1_1.getData().setLastUpdated("12/02/2024 12:30:21");
         spec1_1.getData().setTestSuites(List.of(
@@ -431,6 +434,10 @@ public class ReportGeneratorTest {
         data.setCompletedTests(245);
         data.setFailedTests(105);
         data.setUndefinedTests(30);
+        data.setCompletedTestsIgnored(12);
+        data.setFailedTestsIgnored(3);
+        data.setUndefinedTestsIgnored(2);
+        data.setIncludeOptionalTests(true);
 
         try (var outputStream = Files.newOutputStream(Path.of(tempDirectory.toString(), "ConformanceStatementOverview.pdf"))) {
             generator.writeConformanceStatementOverviewReport(data, outputStream, specs);

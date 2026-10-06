@@ -356,6 +356,7 @@ export class ReportService {
       signPdfReports: settings.signPdfs,
       useCustomPdfReports: settings.customPdfs,
       useCustomPdfReportsWithCustomXml: settings.customPdfsWithCustomXml,
+      includeOptionalTests: settings.includeOptionalTests,
     }
     if (settings.customPdfService != undefined) {
       data.customPdfService = settings.customPdfService
@@ -627,7 +628,8 @@ export class ReportService {
         includeTestCaseDetails: settings.includeTestCaseDetails == true,
         includeDetails: settings.includeDetails == true,
         includeSignature: settings.includeSignature == true,
-        includePageNumbers: settings.includePageNumbers == true
+        includePageNumbers: settings.includePageNumbers == true,
+        includeOptionalTests: settings.includeOptionalTests == true
       }
       if (settingsData.includeMessage) {
         settingsData.messages = settings.messages
@@ -679,7 +681,8 @@ export class ReportService {
         includeTestCases: settings.includeTestCases == true,
         includeDetails: settings.includeDetails == true,
         includeSignature: settings.includeSignature == true,
-        includePageNumbers: settings.includePageNumbers == true
+        includePageNumbers: settings.includePageNumbers == true,
+        includeOptionalTests: settings.includeOptionalTests == true
       }
       if (settingsData.includeMessage) {
         settingsData.message = settings.message

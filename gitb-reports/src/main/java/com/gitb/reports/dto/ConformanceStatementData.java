@@ -243,19 +243,35 @@ public class ConformanceStatementData {
     }
 
     public String getTestStatus() {
+        return formatTestStatus(completedTests, failedTests, undefinedTests, "required tests");
+    }
+
+    public String getRequiredTestStatus() {
+        return formatTestStatus(completedTests, failedTests, undefinedTests, "tests");
+    }
+
+    public String getOptionalTestStatus() {
+        return formatTestStatus(completedTestsIgnored, failedTestsIgnored, undefinedTestsIgnored, "tests");
+    }
+
+    public boolean hasIgnoredTests() {
+        return completedTestsIgnored + failedTestsIgnored + undefinedTestsIgnored > 0;
+    }
+
+    private static String formatTestStatus(int completed, int failed, int undefined, String testsLabel) {
         var resultText = new StringBuilder();
-        var totalTests = completedTests + failedTests + undefinedTests;
-        resultText.append(completedTests).append(" of ").append(totalTests).append(" required tests passed");
-        if (totalTests > completedTests) {
+        var total = completed + failed + undefined;
+        resultText.append(completed).append(" of ").append(total).append(' ').append(testsLabel).append(" passed");
+        if (total > completed) {
             resultText.append(" (");
-            if (failedTests > 0) {
-                resultText.append(failedTests).append(" failed");
-                if (undefinedTests > 0) {
+            if (failed > 0) {
+                resultText.append(failed).append(" failed");
+                if (undefined > 0) {
                     resultText.append(", ");
                 }
             }
-            if (undefinedTests > 0) {
-                resultText.append(undefinedTests).append(" incomplete");
+            if (undefined > 0) {
+                resultText.append(undefined).append(" incomplete");
             }
             resultText.append(")");
         }

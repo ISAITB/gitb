@@ -895,7 +895,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           }
           labels.map(Future.successful).getOrElse(getReportLabels(communityId)).flatMap { labelsToUse =>
             generateCoreConformanceReport(reportPath, addTestCases = false, title, addDetails = certificateSettings.get.includeDetails, addTestCaseResults = certificateSettings.get.includeItems, addTestStatus = certificateSettings.get.includeItemStatus,
-              addMessage = certificateSettings.get.includeMessage, addPageNumbers = certificateSettings.get.includePageNumbers, certificateSettings.get.message,
+              addMessage = certificateSettings.get.includeMessage, addPageNumbers = certificateSettings.get.includePageNumbers, addOptionalTests = certificateSettings.get.includeOptionalTests, certificateSettings.get.message,
               conformanceInfo, labelsToUse, communityId, snapshotId, isDemo, displayActor
             ).map { _ =>
               reportPath
@@ -1720,9 +1720,13 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             overview.setIncludeTestCases(certificateSettings.get.includeItemDetails)
             overview.setIncludePageNumbers(certificateSettings.get.includePageNumbers)
             overview.setIncludeTestStatus(certificateSettings.get.includeItemStatus)
+            overview.setIncludeOptionalTests(certificateSettings.get.includeOptionalTests)
             if (includeCustomMessage && customMessage.isDefined) {
               overview.setMessage(customMessage.get)
             }
+          }
+          if (certificateSettings.isEmpty) {
+            overview.setIncludeOptionalTests(reportSettings.includeOptionalTests)
           }
           overview.setConformanceItems(conformanceData.conformanceItems)
           overview.setOverallStatus(conformanceData.overallResult)
@@ -2804,7 +2808,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
                 FileUtils.deleteQuietly(tempXmlReport.toFile)
               }
             } else {
-              generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, None, conformanceInfo, labels, communityId, None, isDemo = true, displayActor)
+              generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, addOptionalTests = reportSettings.includeOptionalTests, None, conformanceInfo, labels, communityId, None, isDemo = true, displayActor)
             }
           }
           // Sign report if needed.
@@ -2850,7 +2854,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             FileUtils.deleteQuietly(xmlReportPath.toFile)
           }
         } else {
-          generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, message, conformanceInfo, labels, communityId, snapshotId, isDemo = false, displayActor)
+          generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, addOptionalTests = reportSettings.includeOptionalTests, message, conformanceInfo, labels, communityId, snapshotId, isDemo = false, displayActor)
         }
       }
       // Sign report if needed.
@@ -2858,7 +2862,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     } yield ReportFileInfo(report, resolveReportFileName(ReportType.ConformanceStatementReport, reportSettings.fileNameExpression, statementReportNameContext(conformanceData, displayActor), "pdf"))
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, addPageNumbers: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long], isDemo: Boolean, displayActor: Boolean): Future[Path] = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, addPageNumbers: Boolean, addOptionalTests: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long], isDemo: Boolean, displayActor: Boolean): Future[Path] = {
     val conformanceData = conformanceInfo.head
     val reportDate = Calendar.getInstance().getTime
     val specs = reportHelper.createReportSpecs(Some(communityId))
@@ -3085,6 +3089,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         overview.setFailedTestsIgnored(failedTestsIgnored)
         overview.setUndefinedTestsIgnored(undefinedTestsIgnored)
         overview.setIncludeTestStatus(addTestStatus)
+        overview.setIncludeOptionalTests(addOptionalTests)
         overview.setReportDate(TimeUtil.formatDateTime(reportDate))
         Future.successful(overview)
       }
@@ -3585,8 +3590,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           PersistenceSchema.communityReportSettings
             .filter(_.community === reportSettings.community)
             .filter(_.reportType === reportSettings.reportType)
-            .map(x => (x.signPdfs, x.customPdfs, x.customPdfsWithCustomXml, x.customPdfService, x.fileNameExpression))
-            .update((reportSettings.signPdfs, reportSettings.customPdfs, reportSettings.customPdfsWithCustomXml, reportSettings.customPdfService, reportSettings.fileNameExpression))
+            .map(x => (x.signPdfs, x.customPdfs, x.customPdfsWithCustomXml, x.customPdfService, x.fileNameExpression, x.includeOptionalTests))
+            .update((reportSettings.signPdfs, reportSettings.customPdfs, reportSettings.customPdfsWithCustomXml, reportSettings.customPdfService, reportSettings.fileNameExpression, reportSettings.includeOptionalTests))
         } else {
           // Create
           PersistenceSchema.communityReportSettings += reportSettings
@@ -3642,8 +3647,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         } else {
           // Update settings
           PersistenceSchema.conformanceCertificates.filter(_.id === existingId)
-            .map(x => (x.title, x.message, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeTestCases, x.includeTestStatus))
-            .update((data.title, data.message, data.includePageNumbers, data.includeTitle, data.includeDetails, data.includeMessage, data.includeSignature, data.includeTestCases, data.includeTestStatus))
+            .map(x => (x.title, x.message, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeTestCases, x.includeTestStatus, x.includeOptionalTests))
+            .update((data.title, data.message, data.includePageNumbers, data.includeTitle, data.includeDetails, data.includeMessage, data.includeSignature, data.includeTestCases, data.includeTestStatus, data.includeOptionalTests))
         }
       }
     } yield ()
@@ -3659,8 +3664,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         } else {
           // Update settings
           PersistenceSchema.conformanceOverviewCertificates.filter(_.id === existingId)
-            .map(x => (x.title, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeStatements, x.includeStatementDetails, x.includeStatementStatus, x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
-            .update((data.settings.title, data.settings.includePageNumbers, data.settings.includeTitle, data.settings.includeDetails, data.settings.includeMessage, data.settings.includeSignature, data.settings.includeStatements, data.settings.includeStatementDetails, data.settings.includeStatementStatus, data.settings.enableAllLevel, data.settings.enableDomainLevel, data.settings.enableGroupLevel, data.settings.enableSpecificationLevel))
+            .map(x => (x.title, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeStatements, x.includeStatementDetails, x.includeStatementStatus, x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel, x.includeOptionalTests))
+            .update((data.settings.title, data.settings.includePageNumbers, data.settings.includeTitle, data.settings.includeDetails, data.settings.includeMessage, data.settings.includeSignature, data.settings.includeStatements, data.settings.includeStatementDetails, data.settings.includeStatementStatus, data.settings.enableAllLevel, data.settings.enableDomainLevel, data.settings.enableGroupLevel, data.settings.enableSpecificationLevel, data.settings.includeOptionalTests))
         }
       }
       _ <- {

@@ -27,11 +27,12 @@ case class ConformanceCertificateInfo(
     includePageNumbers:Boolean,
     message: Option[String],
     keystore: Option[CommunityKeystore],
-    community:Long
+    community:Long,
+    includeOptionalTests: Boolean = false
   ) {
 
   def withKeystore(keystore: CommunityKeystore): ConformanceCertificateInfo = {
-    ConformanceCertificateInfo(title, includeTitle, includeMessage, includeItemStatus, includeItems, includeItemDetails, includeDetails, includeSignature, includePageNumbers, message, Some(keystore), community)
+    ConformanceCertificateInfo(title, includeTitle, includeMessage, includeItemStatus, includeItems, includeItemDetails, includeDetails, includeSignature, includePageNumbers, message, Some(keystore), community, includeOptionalTests)
   }
 
 }

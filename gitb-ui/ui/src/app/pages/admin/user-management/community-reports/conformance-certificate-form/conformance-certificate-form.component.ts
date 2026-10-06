@@ -98,6 +98,7 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
       includeSignature: this.settings!.includeSignature == true,
       includeTestCases: this.settings!.includeTestCases == true,
       includeTestStatus: this.settings!.includeTestStatus == true,
+      includeOptionalTests: this.settings!.includeOptionalTests == true,
       community: this.communityId
     }
     if (this.settings!.includeMessage) {

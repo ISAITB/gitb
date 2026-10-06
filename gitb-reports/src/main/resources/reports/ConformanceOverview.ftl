@@ -219,7 +219,7 @@
                         <@common.subTitle text="Conformance Statement Report #"+index link="conformance-items"/>
                     </div>
                     <#if statement??>
-                        <@common.statementOverview data=statement labelDomain=data.labelDomain labelSpecification=data.labelSpecification labelSpecificationGroup=data.labelSpecificationGroup labelSpecificationInGroup=data.labelSpecificationInGroup labelActor=data.labelActor labelOrganisation=data.labelOrganisation labelSystem=data.labelSystem includeTestStatus=true organisation=data.organisation system=data.system  reportDate=""/>
+                        <@common.statementOverview data=statement labelDomain=data.labelDomain labelSpecification=data.labelSpecification labelSpecificationGroup=data.labelSpecificationGroup labelSpecificationInGroup=data.labelSpecificationInGroup labelActor=data.labelActor labelOrganisation=data.labelOrganisation labelSystem=data.labelSystem includeTestStatus=true organisation=data.organisation system=data.system  reportDate="" includeOptionalTests=data.includeOptionalTests/>
                         <#if statement.testSuites??>
                             <@common.statementTestCases data=statement includeTestCaseReports=false/>
                         </#if>
