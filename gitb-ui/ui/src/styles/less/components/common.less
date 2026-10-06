@@ -28,6 +28,8 @@ textarea {
     display: flex;
     flex-wrap: wrap;
     column-gap: 40px;
+    // Spacing between the columns when they stack (options within a column use top padding).
+    row-gap: 0.5rem;
 
     .checkbox-column {
         flex: 0 1 auto;
@@ -38,10 +40,6 @@ textarea {
         // without any breakpoint guessing.
         .form-check-label {
             white-space: nowrap;
-        }
-
-        > .form-check:last-child {
-            padding-bottom: 0;
         }
     }
 }
