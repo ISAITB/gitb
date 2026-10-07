@@ -29,6 +29,7 @@ import {Domain} from 'src/app/types/domain';
 import {DomainParameter} from 'src/app/types/domain-parameter';
 import {Specification} from 'src/app/types/specification';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TableColumns} from 'src/app/common/table-columns';
 import {saveAs} from 'file-saver';
 import {TestSuite} from 'src/app/types/test-suite';
 import {BaseTabbedComponent} from 'src/app/pages/base-tabbed-component';
@@ -38,27 +39,27 @@ import {DomainSpecification} from 'src/app/types/domain-specification';
 import {SpecificationGroup} from 'src/app/types/specification-group';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {TableApi} from '../../../../../components/table/table-api';
-import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
-import {DomainParameterService} from '../../../../../services/domain-parameter.service';
+import {TableApi} from 'src/app/components/table/table-api';
+import {PagingEvent} from 'src/app/components/paging-controls/paging-event';
+import {DomainParameterService} from 'src/app/services/domain-parameter.service';
 import {TestServiceRow} from './test-service-row';
-import {TestServiceWithParameter} from '../../../../../types/test-service-with-parameter';
+import {TestServiceWithParameter} from 'src/app/types/test-service-with-parameter';
 import {
   CreateEditTestServiceModalComponent
-} from '../../../../../modals/create-edit-test-service-modal/create-edit-test-service-modal.component';
-import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
-import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
-import {TestService} from '../../../../../types/test-service';
-import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
-import {PagingPlacement} from '../../../../../components/paging-controls/paging-placement';
+} from 'src/app/modals/create-edit-test-service-modal/create-edit-test-service-modal.component';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
+import {TestService} from 'src/app/types/test-service';
+import {PagingControlsApi} from 'src/app/components/paging-controls/paging-controls-api';
+import {PagingPlacement} from 'src/app/components/paging-controls/paging-placement';
 import {
   DomainSpecificationDisplayComponentApi
-} from '../../../../../components/domain-specification-display/domain-specification-display-component-api';
+} from 'src/app/components/domain-specification-display/domain-specification-display-component-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
-import {UsageTipService} from '../../../../../services/usage-tip.service';
-import {TagData} from '../../../../../types/tag-data';
-import {DisplayState} from '../../../../../types/display-state';
-import {NavigationTarget} from '../../../../../types/navigation-target';
+import {UsageTipService} from 'src/app/services/usage-tip.service';
+import {TagData} from 'src/app/types/tag-data';
+import {DisplayState} from 'src/app/types/display-state';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 
 /** Persisted search/paging state for the Specifications and Shared test suites tabs - restored when
  * returning here (e.g. via Back from a specification's/test suite's detail page). */
@@ -118,7 +119,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     { field: 'name', title: 'ID' },
     { field: 'endpoint', title: 'Endpoint address' },
     { field: 'description', title: 'Description' },
-    { field: 'serviceType', title: 'Service type' }
+    TableColumns.valuePill('serviceType', 'Service type', (type: string) => type ? { text: type } : undefined)
   ]
   savePending = false
   deletePending = false
@@ -358,7 +359,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         }
         this.hasTestServices = this.domainParameters.find(p => p.isTestService) != undefined
         if (this.hasTestServices) {
-          this.domainParameterColumnCount = 5
+          this.domainParameterColumnCount = 4
         } else {
           this.domainParameterColumnCount = 4
         }

@@ -34,7 +34,8 @@ export class TableComponent extends BaseTableComponent implements OnInit {
   constructor() { super() }
 
   ngOnInit(): void {
-    this.columnCount = this.columns!.length
+    // All marker columns share a single cell.
+    this.columnCount = this.columns!.filter(c => !c.marker).length + (this.columns!.some(c => c.marker) ? 1 : 0)
     if (this.expandableRowProperty != undefined) {
       this.columnCount += 1
     }
@@ -45,7 +46,9 @@ export class TableComponent extends BaseTableComponent implements OnInit {
       this.columnCount += 1
     }
     for (let column of this.columns!) {
-      if (column.headerClass == undefined) {
+      if (column.marker) {
+        column.headerClass = 'th-min centered'
+      } else if (column.headerClass == undefined) {
         column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
       }
     }

@@ -13,11 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-i.standalone-icon {
-    font-size: large;
-    margin-left:10px;
-    margin-right:10px;
-}
-div {
-    height: 17px;
+.marker-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    // Give the tooltip anchor the full icon height (fa-lg collapses the line box) and centre the glyph vertically.
+    height: 1.5rem;
+    line-height: 1;
+    min-width: 30px;
+    i {
+        line-height: 1;
+        vertical-align: baseline;
+    }
 }

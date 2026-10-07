@@ -31,14 +31,15 @@ import {Actor} from 'src/app/types/actor';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {Specification} from 'src/app/types/specification';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TableColumns} from 'src/app/common/table-columns';
 import {TestSuite} from 'src/app/types/test-suite';
-import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
-import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
-import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
-import {TableApi} from '../../../../../components/table/table-api';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {PagingEvent} from 'src/app/components/paging-controls/paging-event';
+import {TableApi} from 'src/app/components/table/table-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
-import {DisplayState} from '../../../../../types/display-state';
-import {NavigationTarget} from '../../../../../types/navigation-target';
+import {DisplayState} from 'src/app/types/display-state';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 
 /** Persisted search/paging state for the Test suites tab - restored when returning here (e.g. via
  * Back from a test suite's detail page). */
@@ -77,14 +78,14 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     { field: 'sname', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'version', title: 'Version' },
-    { field: 'shared', title: 'Shared', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('shared', Constants.BUTTON_ICON.SHARED, 'Shared test suite')
   ]
   actorTableColumns: TableColumnDefinition[] = [
     { field: 'actorId', title: 'ID' },
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' },
-    { field: 'hidden', title: '', atEnd: true, isHiddenFlag: true, headerClass: 'th-min centered' }
+    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default actor'),
+    TableColumns.flag('hidden', Constants.BUTTON_ICON.HIDE, 'Hidden')
   ]
   savePending = false
   deletePending = false

@@ -21,6 +21,7 @@ import {DataService} from 'src/app/services/data.service';
 import {User} from 'src/app/types/user.type';
 import {RoutingService} from 'src/app/services/routing.service';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TableColumns} from 'src/app/common/table-columns';
 import {LandingPage} from 'src/app/types/landing-page';
 import {LegalNotice} from 'src/app/types/legal-notice';
 import {ErrorTemplate} from 'src/app/types/error-template';
@@ -40,35 +41,35 @@ import {Theme} from 'src/app/types/theme';
 import {EmailSettings} from 'src/app/types/email-settings';
 import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import {SystemConfiguration} from 'src/app/types/system-configuration';
-import {ResourceActions} from '../../../components/resource-management-tab/resource-actions';
-import {FileData} from '../../../types/file-data.type';
-import {CommunityResourceService} from '../../../services/community-resource.service';
-import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
-import {UserBasic} from '../../../types/user-basic.type';
-import {FilterUpdate} from '../../../components/test-filter/filter-update';
-import {SslProtocol} from '../../../types/ssl-protocol';
-import {MimeType} from '../../../types/mime-type';
-import {NavigationTarget} from '../../../types/navigation-target';
+import {ResourceActions} from 'src/app/components/resource-management-tab/resource-actions';
+import {FileData} from 'src/app/types/file-data.type';
+import {CommunityResourceService} from 'src/app/services/community-resource.service';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {UserBasic} from 'src/app/types/user-basic.type';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
+import {SslProtocol} from 'src/app/types/ssl-protocol';
+import {MimeType} from 'src/app/types/mime-type';
+import {NavigationTarget} from 'src/app/types/navigation-target';
 import {BaseTabbedComponent} from '../../base-tabbed-component';
-import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
-import {TestServiceCallbackSettings} from '../../../types/test-service-callback-settings';
-import {ValidationState} from '../../../types/validation-state';
-import {UsageTipsConfiguration} from '../../../types/usage-tips-configuration';
+import {SoftwareVersionCheckSettings} from 'src/app/types/software-version-check-settings';
+import {TestServiceCallbackSettings} from 'src/app/types/test-service-callback-settings';
+import {ValidationState} from 'src/app/types/validation-state';
+import {UsageTipsConfiguration} from 'src/app/types/usage-tips-configuration';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
-import {PagingEvent} from '../../../components/paging-controls/paging-event';
-import {TableApi} from '../../../components/table/table-api';
-import {ResourceState} from '../../../components/resource-management-tab/resource-state';
-import {SessionTimeoutConfiguration} from '../../../types/session-timeout-configuration';
-import {RestApiRateLimits} from '../../../types/rest-api-rate-limits';
-import {RestApiEndpointDescriptionWithId} from '../../../types/rest-api-endpoint-description-with-id';
-import {RestApiEndpointLimit} from '../../../types/rest-api-endpoint-limit';
-import {RestApiEndpointBasic} from '../../../types/rest-api-endpoint-basic';
-import {ReportSettings} from '../../../types/report-settings';
-import {REPORT_TYPE_INFOS} from '../../../types/report-type-info';
-import {TimeZoneInfo} from '../../../types/time-zone-info';
-import {WelcomeTexts} from '../../../types/welcome-texts';
-import {ConfigurationValue} from '../../../types/configuration-value';
-import {WELCOME_TEXT_INFOS} from '../../../types/welcome-text-info';
+import {PagingEvent} from 'src/app/components/paging-controls/paging-event';
+import {TableApi} from 'src/app/components/table/table-api';
+import {ResourceState} from 'src/app/components/resource-management-tab/resource-state';
+import {SessionTimeoutConfiguration} from 'src/app/types/session-timeout-configuration';
+import {RestApiRateLimits} from 'src/app/types/rest-api-rate-limits';
+import {RestApiEndpointDescriptionWithId} from 'src/app/types/rest-api-endpoint-description-with-id';
+import {RestApiEndpointLimit} from 'src/app/types/rest-api-endpoint-limit';
+import {RestApiEndpointBasic} from 'src/app/types/rest-api-endpoint-basic';
+import {ReportSettings} from 'src/app/types/report-settings';
+import {REPORT_TYPE_INFOS} from 'src/app/types/report-type-info';
+import {TimeZoneInfo} from 'src/app/types/time-zone-info';
+import {WelcomeTexts} from 'src/app/types/welcome-texts';
+import {ConfigurationValue} from 'src/app/types/configuration-value';
+import {WELCOME_TEXT_INFOS} from 'src/app/types/welcome-text-info';
 import {ConfigurationEntryComponentApi} from './configuration-entry/configuration-entry-component-api';
 
 @Component({
@@ -100,22 +101,22 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   landingPagesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default landing page')
   ]
   legalNoticesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default legal notice')
   ]
   errorTemplatesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default error template')
   ]
   themeColumns: TableColumnDefinition[] = [
     { field: 'key', title: 'Key' },
     { field: 'description', title: 'Description' },
-    { field: 'active', title: 'Active', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('active', Constants.BUTTON_ICON.ACTIVE, 'Active theme')
   ]
 
   admins: User[] = []
@@ -336,7 +337,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     } else {
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
-    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
+    this.adminColumns.push(TableColumns.userStatus())
     this.resourceActions = this.createResourceActions()
     // Load system configuration values.
     this.systemConfigurationService.getConfigurationValues().subscribe((data) => {

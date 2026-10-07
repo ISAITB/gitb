@@ -163,10 +163,7 @@
                                         <th><div class="cell-content">Name</div></th>
                                         <th><div class="cell-content">Value</div></th>
                                         <th><div class="cell-content">Description</div></th>
-                                        <th class="th-min centered"><div class="cell-content">In tests</div></th>
-                                        @if (hasTestServices) {
-                                            <th></th>
-                                        }
+                                        <th class="th-min"></th>
                                     </tr>
                                 </thead>
                                 <tbody [class.disable-events]="parametersRefreshing">
@@ -189,18 +186,16 @@
                                                         <td><div class="cell-content">{{parameter.valueToShow}}</div></td>
                                                     }
                                                     <td><div class="cell-content">{{parameter.description}}</div></td>
-                                                    <td class="td-min centered">
-                                                        <div class="cell-content"><span class="d-flex"><i class="fa-solid" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div>
-                                                    </td>
-                                                    @if (hasTestServices) {
-                                                        <td class="td-min centered">
-                                                            @if (parameter.isTestService) {
-                                                                <div class="cell-content">
-                                                                    <div class="ms-4 me-2" ngbTooltip="Corresponds to a registered test service" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
-                                                                </div>
+                                                    <td class="td-min td-padded-icon">
+                                                        <div class="cell-content marker-cell">
+                                                            @if (!parameter.inTests) {
+                                                                <app-marker-icon [icon]="Constants.BUTTON_ICON.NOT_IN_TESTS" tooltip="Not used in tests"></app-marker-icon>
                                                             }
-                                                        </td>
-                                                    }
+                                                            @if (parameter.isTestService) {
+                                                                <app-marker-icon [icon]="Constants.BUTTON_ICON.CUSTOM_TEST_SERVICES" tooltip="Corresponds to a registered test service"></app-marker-icon>
+                                                            }
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             }
                                         }

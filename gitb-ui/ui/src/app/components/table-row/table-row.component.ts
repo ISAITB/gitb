@@ -113,7 +113,7 @@ export class TableRowComponent implements OnInit, OnChanges, TableRowApi {
       let columnDataItem: TableColumnData = {
         data: this.data[column.field],
         boolean: typeof this.data[column.field] === 'boolean',
-        isHiddenFlag: column.isHiddenFlag,
+        marker: column.marker,
         class: ''
       }
       if (column.cellClass != undefined) {
@@ -129,7 +129,7 @@ export class TableRowComponent implements OnInit, OnChanges, TableRowApi {
       if (columnDataItem.class == undefined) {
         columnDataItem.class = 'tb-'+column.title.toLowerCase().replace(' ', '-')
       }
-      if (column.atEnd) {
+      if (column.marker) {
         this.columnDataItemsAtRight.push(columnDataItem)
       } else {
         this.columnDataItemsAtLeft.push(columnDataItem)

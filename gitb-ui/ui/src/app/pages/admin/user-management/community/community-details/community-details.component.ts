@@ -38,24 +38,25 @@ import {LandingPage} from 'src/app/types/landing-page';
 import {LegalNotice} from 'src/app/types/legal-notice';
 import {Organisation} from 'src/app/types/organisation.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TableColumns} from 'src/app/common/table-columns';
 import {Trigger} from 'src/app/types/trigger';
 import {TestFlag} from 'src/app/types/test-flag';
 import {User} from 'src/app/types/user.type';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
 import {concatMap, EMPTY, Observable, of} from 'rxjs';
-import {ResourceActions} from '../../../../../components/resource-management-tab/resource-actions';
-import {FileData} from '../../../../../types/file-data.type';
-import {CommunityResourceService} from '../../../../../services/community-resource.service';
-import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
-import {TableApi} from '../../../../../components/table/table-api';
+import {ResourceActions} from 'src/app/components/resource-management-tab/resource-actions';
+import {FileData} from 'src/app/types/file-data.type';
+import {CommunityResourceService} from 'src/app/services/community-resource.service';
+import {PagingEvent} from 'src/app/components/paging-controls/paging-event';
+import {TableApi} from 'src/app/components/table/table-api';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
-import {ResourceState} from '../../../../../components/resource-management-tab/resource-state';
-import {UserPreferences} from '../../../../../types/user-preferences';
-import {TagData} from '../../../../../types/tag-data';
-import {DisplayState} from '../../../../../types/display-state';
-import {NavigationTarget} from '../../../../../types/navigation-target';
-import {CreateEditTestFlagModalComponent} from '../../../../../modals/create-edit-test-flag-modal/create-edit-test-flag-modal.component';
+import {ResourceState} from 'src/app/components/resource-management-tab/resource-state';
+import {UserPreferences} from 'src/app/types/user-preferences';
+import {TagData} from 'src/app/types/tag-data';
+import {DisplayState} from 'src/app/types/display-state';
+import {NavigationTarget} from 'src/app/types/navigation-target';
+import {CreateEditTestFlagModalComponent} from 'src/app/modals/create-edit-test-flag-modal/create-edit-test-flag-modal.component';
 
 /** Persisted search/sort/paging state for the Organisations tab - restored when returning here
  * (e.g. via Back from an organisation's detail page) so the list looks the same as when left. */
@@ -106,30 +107,30 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   landingPagesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default landing page')
   ]
   legalNoticesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default legal notice')
   ]
   errorTemplatesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default error template')
   ]
   triggerColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'eventTypeLabel', title: 'Event type' },
-    { field: 'active', title: 'Active', headerClass: 'th-min centered', cellClass: 'td-min centered' },
-    { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.valuePill('eventTypeLabel', 'Event type', (label: string) => label ? { text: label } : undefined),
+    TableColumns.flag('active', Constants.BUTTON_ICON.ACTIVE, 'Active webhook'),
+    { field: 'statusText', title: '', iconFn: (result?: string) => this.dataService.iconForTestResult(result, true), iconTooltipFn: this.tooltipForTriggerResult, marker: true }
   ]
   testFlagColumns: TableColumnDefinition[] = [
     { field: 'flagDisplay', title: 'Flag', iconFn: () => Constants.BUTTON_ICON.FLAG, iconColourFn: (d: {colour: string, name: string}) => d.colour, iconLabelFn: (d: {colour: string, name: string}) => d.name },
     { field: 'description', title: 'Description' },
-    { field: 'hasConformancePriority', title: '', headerClass: 'th-min centered', cellClass: 'td-min centered td-padded-icon', atEnd: true, iconFn: this.iconForTestFlagPriority, iconTooltipFn: this.tooltipForTestFlagPriority },
-    { field: 'adminOnly', title: '', headerClass: 'th-min centered', cellClass: 'td-min centered td-padded-icon-follow', atEnd: true, iconFn: this.iconForTestFlagPermission, iconTooltipFn: this.tooltipForTestFlagPermission }
+    { field: 'hasConformancePriority', title: '', marker: true, iconFn: this.iconForTestFlagPriority, iconTooltipFn: this.tooltipForTestFlagPriority },
+    { field: 'adminOnly', title: '', marker: true, iconFn: this.iconForTestFlagPermission, iconTooltipFn: this.tooltipForTestFlagPermission }
   ]
   testFlagsRefreshRows = new EventEmitter<void>()
   domains: Domain[] = []
@@ -248,7 +249,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     } else {
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
-    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
+    this.adminColumns.push(TableColumns.userStatus())
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }

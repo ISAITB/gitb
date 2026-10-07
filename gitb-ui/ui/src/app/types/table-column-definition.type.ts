@@ -27,8 +27,9 @@ export interface TableColumnDefinition {
     cellClass?: string,
     sortable?: boolean,
     order?: 'asc'|'desc'|null
-    atEnd?: boolean
-    isHiddenFlag?: boolean
+    /** Header-less flag/value column rendered at the right of the row (before the row buttons), see app-marker-icon and app-value-pill. */
+    marker?: boolean
+    pillFn?: (columnData: any) => {text: string, variant?: 'neutral'|'info'|'success'|'warning'|'danger', tooltip?: string}|undefined
     tag?: boolean
     tagIcon?: string
     tagTooltip?: string

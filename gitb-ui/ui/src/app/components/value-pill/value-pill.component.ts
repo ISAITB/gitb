@@ -13,20 +13,28 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ChangeDetectionStrategy} from '@angular/core';
-import {Constants} from 'src/app/common/constants';
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import {Constants} from '../../common/constants';
 
+export type ValuePillVariant = 'neutral'|'info'|'success'|'warning'|'danger'
+
+/**
+ * A light pill to present a value from a preset list (service type, user status, role, ...) in header-less
+ * table columns.
+ */
 @Component({
-    selector: 'app-hidden-icon',
-    templateUrl: './hidden-icon.component.html',
-    styleUrls: ['./hidden-icon.component.less'],
-    changeDetection: ChangeDetectionStrategy.Eager,
-    standalone: false
+  selector: 'app-value-pill',
+  standalone: false,
+  templateUrl: './value-pill.component.html',
+  styleUrl: './value-pill.component.less',
+  changeDetection: ChangeDetectionStrategy.Eager
 })
-export class HiddenIconComponent {
+export class ValuePillComponent {
 
-  Constants = Constants
+  @Input() text!: string
+  @Input() variant: ValuePillVariant = 'neutral'
+  @Input() tooltip?: string
 
-  constructor() { }
+  protected readonly Constants = Constants
 
 }

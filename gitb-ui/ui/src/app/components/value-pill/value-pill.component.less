@@ -1,0 +1,51 @@
+/*
+ * Copyright (C) 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+@import '../../../styles/less/_common.less';
+
+.value-pill {
+    display: inline-block;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    line-height: 1.4;
+    padding: 1px 8px;
+    border-radius: 20px;
+    border: 1px solid @gray-medium;
+    background: @gray-light-1;
+    color: @gray-dark;
+    &.info {
+        background: @blue-info-background;
+        border-color: @blue-info-border;
+        color: @blue-info-text;
+    }
+    &.success {
+        background: @green-success-background;
+        border-color: @green-success-border;
+        color: @green-success-text;
+    }
+    &.warning {
+        background: @orange-warning-background;
+        border-color: @orange-warning-border;
+        color: @orange-warning-text;
+    }
+    &.danger {
+        background: @red-error-background;
+        border-color: @red-error-border;
+        color: @red-error-text;
+    }
+}

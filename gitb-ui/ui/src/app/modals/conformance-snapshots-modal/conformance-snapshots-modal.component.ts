@@ -23,6 +23,7 @@ import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TableColumns} from '../../common/table-columns';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
@@ -43,7 +44,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   snapshotColumns: TableColumnDefinition[] = [
     { field: 'labelToDisplay', title: 'Label' },
     { field: 'snapshotTime', title: 'Snapshot time', headerClass: 'th-min centered', cellClass: 'td-min centered', order:'desc', tag: true, tagIcon: Constants.BUTTON_ICON.TIME },
-    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min centered', cellClass: 'td-min centered' }
+    TableColumns.flag('hidden', Constants.BUTTON_ICON.HIDE, 'Hidden')
   ]
   snapshotsStatus = {status: Constants.STATUS.NONE}
   snapshotToEdit?: Partial<ConformanceSnapshot>

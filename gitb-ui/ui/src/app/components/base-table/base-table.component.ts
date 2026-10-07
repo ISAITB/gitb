@@ -89,7 +89,7 @@ export abstract class BaseTableComponent extends BaseComponent {
 
   splitColumns() {
     for (let column of this.columns) {
-      if (column.atEnd) {
+      if (column.marker) {
         this.columnsRight.push(column)
       } else {
         this.columnsLeft.push(column)

@@ -25,22 +25,15 @@
                                 <tr>
                                     <th><div class="cell-content">Label</div></th>
                                     <th><div class="cell-content">Key</div></th>
-                                    <th><div class="cell-content">Type</div></th>
-                                    <th class="th-min"><div class="cell-content">Required</div></th>
-                                    <th class="th-min"><div class="cell-content">Editable</div></th>
-                                    <th class="th-min"><div class="cell-content">In tests</div></th>
-                                    <th class="th-min"><div class="cell-content">In exports</div></th>
-                                    <th class="th-min"><div class="cell-content">Hidden</div></th>
-                                    @if (dataService.configuration.registrationEnabled) {
-                                        <th class="th-min"><div class="cell-content">In registration</div></th>
-                                    }
+                                    <th class="th-min"><div class="cell-content">Type</div></th>
+                                    <th class="th-min"></th>
                                     <th class="th-min"></th>
                                 </tr>
                             </thead>
                             <tbody class="organisationParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropOrganisationParameter($event)">
                                 @if (organisationParameterStatus.status != Constants.STATUS.FINISHED) {
                                     <tr>
-                                        <td colspan="10" class="td-data-loading">
+                                        <td colspan="5" class="td-data-loading">
                                             <div class="cell-content">
                                                 <app-pending-block></app-pending-block>
                                             </div>
@@ -48,7 +41,7 @@
                                     </tr>
                                 } @else if (organisationParameters.length == 0) {
                                     <tr>
-                                        <td colspan="10" class="td-no-data">
+                                        <td colspan="5" class="td-no-data">
                                             <div class="cell-content">
                                                 <span>No properties found</span>
                                             </div>
@@ -67,15 +60,8 @@
                                         >
                                             <td class="drag-preview"><div class="cell-content">{{parameter.name}}</div></td>
                                             <td><div class="cell-content">{{parameter.testKey}}</div></td>
-                                            <td><div class="cell-content">{{kindLabel(parameter)}}</div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-                                            @if (dataService.configuration.registrationEnabled) {
-                                                <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.inSelfRegistration, 'fa-times': !parameter.inSelfRegistration}"></i></span></div></td>
-                                            }
+                                            <td class="td-min"><div class="cell-content"><app-value-pill [text]="kindLabel(parameter)"></app-value-pill></div></td>
+                                            <td class="td-min td-padded-icon"><div class="cell-content marker-cell">@if (parameter.use == 'R') {<app-marker-icon [icon]="Constants.BUTTON_ICON.REQUIRED" tooltip="Required"></app-marker-icon>}@if (parameter.adminOnly) {<app-marker-icon [icon]="Constants.BUTTON_ICON.USER_ADMIN" tooltip="Editable by administrators only"></app-marker-icon>}@if (parameter.notForTests) {<app-marker-icon [icon]="Constants.BUTTON_ICON.NOT_IN_TESTS" tooltip="Not used in tests"></app-marker-icon>}@if (parameter.inExports) {<app-marker-icon [icon]="Constants.BUTTON_ICON.IN_EXPORTS" tooltip="Included in exports"></app-marker-icon>}@if (parameter.hidden) {<app-marker-icon [icon]="Constants.BUTTON_ICON.HIDE" tooltip="Hidden"></app-marker-icon>}@if (dataService.configuration.registrationEnabled) {@if (parameter.inSelfRegistration) {<app-marker-icon [icon]="Constants.BUTTON_ICON.SELF_REGISTRATION" tooltip="Included in self-registration"></app-marker-icon>}}</div></td>
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (organisationParameters.length > 1) {
                                                     <div class="cell-content">
@@ -108,19 +94,15 @@
                                 <tr>
                                     <th><div class="cell-content">Label</div></th>
                                     <th><div class="cell-content">Key</div></th>
-                                    <th><div class="cell-content">Type</div></th>
-                                    <th class="th-min"><div class="cell-content">Required</div></th>
-                                    <th class="th-min"><div class="cell-content">Editable</div></th>
-                                    <th class="th-min"><div class="cell-content">In tests</div></th>
-                                    <th class="th-min"><div class="cell-content">In exports</div></th>
-                                    <th class="th-min"><div class="cell-content">Hidden</div></th>
+                                    <th class="th-min"><div class="cell-content">Type</div></th>
+                                    <th class="th-min"></th>
                                     <th class="th-min"></th>
                                 </tr>
                             </thead>
                             <tbody class="systemParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSystemParameter($event)">
                                 @if (systemParameterStatus.status != Constants.STATUS.FINISHED) {
                                     <tr>
-                                        <td colspan="10" class="td-data-loading">
+                                        <td colspan="5" class="td-data-loading">
                                             <div class="cell-content">
                                                 <app-pending-block></app-pending-block>
                                             </div>
@@ -128,7 +110,7 @@
                                     </tr>
                                 } @else if (systemParameters.length == 0) {
                                     <tr>
-                                        <td colspan="10" class="td-no-data">
+                                        <td colspan="5" class="td-no-data">
                                             <div class="cell-content">
                                                 <span>No properties found</span>
                                             </div>
@@ -147,12 +129,8 @@
                                         >
                                             <td class="drag-preview"><div class="cell-content">{{parameter.name}}</div></td>
                                             <td><div class="cell-content">{{parameter.testKey}}</div></td>
-                                            <td><div class="cell-content">{{kindLabel(parameter)}}</div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
-                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
+                                            <td class="td-min"><div class="cell-content"><app-value-pill [text]="kindLabel(parameter)"></app-value-pill></div></td>
+                                            <td class="td-min td-padded-icon"><div class="cell-content marker-cell">@if (parameter.use == 'R') {<app-marker-icon [icon]="Constants.BUTTON_ICON.REQUIRED" tooltip="Required"></app-marker-icon>}@if (parameter.adminOnly) {<app-marker-icon [icon]="Constants.BUTTON_ICON.USER_ADMIN" tooltip="Editable by administrators only"></app-marker-icon>}@if (parameter.notForTests) {<app-marker-icon [icon]="Constants.BUTTON_ICON.NOT_IN_TESTS" tooltip="Not used in tests"></app-marker-icon>}@if (parameter.inExports) {<app-marker-icon [icon]="Constants.BUTTON_ICON.IN_EXPORTS" tooltip="Included in exports"></app-marker-icon>}@if (parameter.hidden) {<app-marker-icon [icon]="Constants.BUTTON_ICON.HIDE" tooltip="Hidden"></app-marker-icon>}</div></td>
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (systemParameters.length > 1) {
                                                     <div class="cell-content">

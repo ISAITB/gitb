@@ -20,6 +20,19 @@
     @let col = columns[i];
     <ng-template [ngTemplateOutlet]="columnCell" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-template>
 }
+@if (columnDataItemsAtRight.length > 0) {
+    <td class="td-min td-padded-icon">
+        @if (target) {
+            <a class="cell-content marker-cell plain-link" [navTarget]="target" (click)="cellClicked($event);$event.stopPropagation()">
+                <ng-container [ngTemplateOutlet]="markerContent"></ng-container>
+            </a>
+        } @else {
+            <div class="cell-content marker-cell">
+                <ng-container [ngTemplateOutlet]="markerContent"></ng-container>
+            </div>
+        }
+    </td>
+}
 @if (showOptions) {
     <td class="td-min centered">
         <div class="cell-content">
@@ -57,13 +70,24 @@
         </div>
     </td>
 }
-@for (item of columnDataItemsAtRight; track i; let i = $index) {
-    @let col = columns[columnDataItemsAtLeft.length + i];
-    <ng-template [ngTemplateOutlet]="columnCell" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-template>
-}
 
+<ng-template #markerContent>
+    @for (item of columnDataItemsAtRight; track i; let i = $index) {
+        @let col = columns[columnDataItemsAtLeft.length + i];
+        <ng-template [ngTemplateOutlet]="cellContent" [ngTemplateOutletContext]="{$implicit: item, col: col}"></ng-template>
+    }
+</ng-template>
 <ng-template #cellContent let-item let-col="col">
-    @if (col.iconFn) {
+    @if (col.marker && col.iconFn) {
+        @if (col.iconFn!(item.data)) {
+            <app-marker-icon [icon]="col.iconFn!(item.data)" [colour]="col.iconColourFn ? col.iconColourFn!(item.data) : undefined" [tooltip]="col.iconTooltipFn ? col.iconTooltipFn!(item.data) : undefined"></app-marker-icon>
+        }
+    } @else if (col.pillFn) {
+        @let pill = col.pillFn!(item.data);
+        @if (pill) {
+            <app-value-pill [text]="pill.text" [variant]="pill.variant ?? 'neutral'" [tooltip]="pill.tooltip"></app-value-pill>
+        }
+    } @else if (col.iconFn) {
         <div class="d-flex align-items-center gap-2">
             <span>
             @if (col.iconTooltipFn != undefined) {
@@ -77,15 +101,7 @@
         }
         </div>
     } @else {
-        @if (item.boolean) {
-            @if (item.isHiddenFlag) {
-                @if (item.data) {
-                    <app-hidden-icon></app-hidden-icon>
-                }
-            } @else {
-                <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
-            }
-        } @else if (item.data != undefined && col.tag === true) {
+        @if (item.data != undefined && col.tag === true) {
             <app-tag [label]="col.tagIcon" [icon]="true" [tooltipText]="col.tagTooltip" [value]="item.data" [inTable]="true"></app-tag>
         } @else if (item.data != undefined && col.tagData === true) {
             <app-tags-display [tags]="item.data"></app-tags-display>

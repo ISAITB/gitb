@@ -89,8 +89,8 @@
         }
         @if (parameter.adminOnly) {
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="hidden" name="hidden" [(ngModel)]="parameter.hidden" [ngModelOptions]="{standalone: true}">
-                <label class="form-check-label" for="hidden">Hidden</label>
+                <input class="form-check-input" type="checkbox" id="notVisible" name="hidden" [(ngModel)]="parameter.hidden" [ngModelOptions]="{standalone: true}">
+                <label class="form-check-label" for="notVisible">Hidden</label>
             </div>
         }
         @if (!hideInRegistration && !parameter.hidden) {

@@ -279,8 +279,7 @@
                                         <tr>
                                             <th><div class="cell-content">Flag</div></th>
                                             <th><div class="cell-content">Description</div></th>
-                                            <th class="th-min centered"></th>
-                                            <th class="th-min centered"></th>
+                                            <th class="th-min"></th>
                                             <th class="th-min"></th>
                                         </tr>
                                     </thead>
@@ -294,21 +293,13 @@
                                                     </div>
                                                 </td>
                                                 <td><div class="cell-content">{{flag.description}}</div></td>
-                                                <td class="th-min centered">
-                                                    <div class="cell-content">
+                                                <td class="td-min td-padded-icon">
+                                                    <div class="cell-content marker-cell">
                                                         @if (flag.hasConformancePriority) {
-                                                            <div class="ms-4 me-2">
-                                                                <i [class]="Constants.BUTTON_ICON.CONFORMANCE_STATEMENT" ngbTooltip="Flag that prioritises test sessions for conformance calculation." tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"></i>
-                                                            </div>
+                                                            <app-marker-icon [icon]="Constants.BUTTON_ICON.CONFORMANCE_STATEMENT" tooltip="Flag that prioritises test sessions for conformance calculation."></app-marker-icon>
                                                         }
-                                                    </div>
-                                                </td>
-                                                <td class="th-min centered">
-                                                    <div class="cell-content">
                                                         @if (flag.adminOnly) {
-                                                            <div class="me-2">
-                                                                <i [class]="Constants.BUTTON_ICON.USER_ADMIN" ngbTooltip="Flag that can only be set by administrators." tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"></i>
-                                                            </div>
+                                                            <app-marker-icon [icon]="Constants.BUTTON_ICON.USER_ADMIN" tooltip="Flag that can only be set by administrators."></app-marker-icon>
                                                         }
                                                     </div>
                                                 </td>

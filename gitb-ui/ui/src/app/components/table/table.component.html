@@ -25,18 +25,11 @@
                         </div>
                     </th>
                 }
+                @if (columnsRight.length > 0) {
+                    <th class="th-min"></th>
+                }
                 @if (actionVisible || operationsVisible || exportVisible) {
                     <th class="th-min centered"></th>
-                }
-                @for (column of columnsRight; track $index) {
-                    <th [ngClass]="classForColumn(column)" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
-                        <div class="cell-content">
-                            {{column.title}}
-                            @if (column.order != undefined) {
-                                <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
-                            }
-                        </div>
-                    </th>
                 }
             </tr>
         </thead>

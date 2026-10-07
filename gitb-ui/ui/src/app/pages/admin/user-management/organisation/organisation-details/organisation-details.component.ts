@@ -24,6 +24,7 @@ import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {UserService} from 'src/app/services/user.service';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TableColumns} from 'src/app/common/table-columns';
 import {User} from 'src/app/types/user.type';
 import {OrganisationFormData} from '../organisation-form/organisation-form-data';
 import {SystemService} from 'src/app/services/system.service';
@@ -41,9 +42,9 @@ import {ErrorTemplateService} from 'src/app/services/error-template.service';
 import {NavigationTarget} from 'src/app/types/navigation-target';
 import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
-import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
-import {TableApi} from '../../../../../components/table/table-api';
-import {ApiKeyInfoState} from '../../../../../components/api-key-info/api-key-info-state';
+import {PagingEvent} from 'src/app/components/paging-controls/paging-event';
+import {TableApi} from 'src/app/components/table/table-api';
+import {ApiKeyInfoState} from 'src/app/components/api-key-info/api-key-info-state';
 
 @Component({
     selector: 'app-organisation-details',
@@ -211,9 +212,9 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     } else {
       this.userColumns.push({ field: 'email', title: 'Username' })
     }
-    this.userColumns.push({ field: 'roleText', title: 'Role' })
+    this.userColumns.push(TableColumns.userRole())
     if (this.showUserStatus()) {
-      this.userColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
+      this.userColumns.push(TableColumns.userStatus())
     }
     this.propertyData.owner = this.organisation.id
     this.apiInfoVisible = this.isApiInfoVisible()

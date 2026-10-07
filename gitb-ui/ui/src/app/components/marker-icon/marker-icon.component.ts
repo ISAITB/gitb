@@ -13,11 +13,26 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface TableColumnData {
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import {Constants} from '../../common/constants';
 
-    data: any,
-    boolean: boolean,
-    marker?: boolean,
-    class: string,
+/**
+ * A row marker for a flag, shown in header-less table columns. Always rendered large (fa-lg) with a tooltip
+ * attached to the body so that it is never clipped by the table container.
+ */
+@Component({
+  selector: 'app-marker-icon',
+  standalone: false,
+  templateUrl: './marker-icon.component.html',
+  styleUrl: './marker-icon.component.less',
+  changeDetection: ChangeDetectionStrategy.Eager
+})
+export class MarkerIconComponent {
+
+  @Input() icon!: string
+  @Input() tooltip?: string
+  @Input() colour?: string
+
+  protected readonly Constants = Constants
 
 }

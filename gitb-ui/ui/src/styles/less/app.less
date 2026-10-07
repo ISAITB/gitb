@@ -329,16 +329,10 @@ a.scroll-to-top.visible {
         &.padding-right-large {
             padding-right: 40px;
         }
+        // Cell holding all the flag markers (and pills) of a row.
         &.td-padded-icon {
             .cell-content {
                 margin-left: 1.5rem;
-                margin-right: 0.5rem;
-            }
-        }
-        // For an icon column directly following a td-padded-icon column (the large left margin is applied only once).
-        &.td-padded-icon-follow {
-            .cell-content {
-                margin-left: 0;
                 margin-right: 0.5rem;
             }
         }
@@ -353,6 +347,10 @@ a.scroll-to-top.visible {
     }
     .td-data-loading {
         background: @white;
+    }
+    .cell-content.marker-cell {
+        justify-content: flex-end;
+        gap: 0.75rem;
     }
     .cell-content {
         min-height: 32px;

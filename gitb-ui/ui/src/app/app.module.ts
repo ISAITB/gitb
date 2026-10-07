@@ -180,7 +180,8 @@ import {
 import {
   SpecificationGroupDetailsComponent
 } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
-import {HiddenIconComponent} from './components/hidden-icon/hidden-icon.component';
+import {MarkerIconComponent} from './components/marker-icon/marker-icon.component';
+import {ValuePillComponent} from './components/value-pill/value-pill.component';
 import {
   ConformanceStatementItemDisplayComponent
 } from './components/conformance-statement-item-display/conformance-statement-item-display.component';
@@ -458,7 +459,8 @@ import { MessageItemComponent } from './components/message-item/message-item.com
     CreateSpecificationGroupComponent,
     SpecificationGroupFormComponent,
     SpecificationGroupDetailsComponent,
-    HiddenIconComponent,
+    MarkerIconComponent,
+    ValuePillComponent,
     ConformanceStatementItemDisplayComponent,
     ConformanceStatementItemsDisplayComponent,
     CollapsingIconComponent,

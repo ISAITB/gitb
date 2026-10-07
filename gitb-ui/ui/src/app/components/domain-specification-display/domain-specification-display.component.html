@@ -7,7 +7,7 @@
         }
         <div class="right-container">
             @if (spec.hidden) {
-                <div class="spec-hidden drag-hide"><app-hidden-icon></app-hidden-icon></div>
+                <div class="spec-hidden drag-hide"><app-marker-icon [icon]="Constants.BUTTON_ICON.HIDE" tooltip="Hidden"></app-marker-icon></div>
             }
             @if (!dragEnabled && groups.length > 0) {
                 <div class="btn-toolbar">
