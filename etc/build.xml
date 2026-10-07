@@ -107,6 +107,9 @@
         <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c npm install"/>
         </exec>
+        <exec executable="npm" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="install"/>
+        </exec>
         <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c npm run sbom"/>
         </exec>
