@@ -11,7 +11,8 @@
     "licence-report": "license-report --only=prod --output=markdown --fields=licenseType --fields=name --fields=installedVersion --fields=link",
     "licence-report-save": "npm run licence-report > ./dist/THIRD_PARTY_LICENCES.md",
     "licence-check": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT;Apache-2.0 --summary",
-    "licence-check-linux": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT\\;Apache-2.0 --summary"
+    "licence-check-linux": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT\\;Apache-2.0 --summary",
+    "sbom": "cyclonedx-npm --omit dev --mc-type application --spec-version 1.6 --output-reproducible --output-format JSON --output-file ./dist/gitb-ui-frontend.bom.json"
   },
   "private": true,
   "dependencies": {
@@ -45,6 +46,7 @@
     "@angular-devkit/build-angular": "^21.2.26",
     "@angular/cli": "^21.2.26",
     "@angular/compiler-cli": "^21.2.25",
+    "@cyclonedx/cyclonedx-npm": "^6.0.1",
     "@types/file-saver": "^2.0.7",
     "@types/jasmine": "^5.1.5",
     "@types/node": "^20.12.7",

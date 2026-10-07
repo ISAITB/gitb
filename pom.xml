@@ -35,6 +35,7 @@
         <version.plugin.versionsMavenPlugin>2.21.0</version.plugin.versionsMavenPlugin>
         <version.plugin.mavenSitePlugin>3.22.0</version.plugin.mavenSitePlugin>
         <version.plugin.projectInfoReports>3.9.0</version.plugin.projectInfoReports>
+        <version.plugin.cycloneDxPlugin>2.9.3</version.plugin.cycloneDxPlugin>
         <!-- Dependency versions -->
         <version.gitbTypes>1.30.1</version.gitbTypes>
         <version.springBoot>4.1.1</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
@@ -290,6 +291,38 @@
                             </configuration>
                         </execution>
                         <execution>
+                            <!-- Generate the aggregate SBOM (builds and aggregates all components) -->
+                            <id>sbom</id>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <ant antfile="etc/build.xml" dir=".">
+                                        <target name="sbom"/>
+                                    </ant>
+                                </target>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!--
+                                Aggregate the SBOM assuming all components have already been built and their
+                                individual SBOMs already generated separately (e.g. by independent per-module
+                                builds/CI jobs) - only copies them into place and merges them.
+                            -->
+                            <id>sbom-aggregate</id>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <ant antfile="etc/build.xml" dir=".">
+                                        <target name="sbom-aggregate"/>
+                                    </ant>
+                                </target>
+                            </configuration>
+                        </execution>
+                        <execution>
                             <!-- Check and conditionally install Xerces JARs -->
                             <id>check-and-install-xerces-jars</id>
                             <phase>validate</phase>
@@ -325,6 +358,41 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.cyclonedx</groupId>
+                    <artifactId>cyclonedx-maven-plugin</artifactId>
+                    <version>${version.plugin.cycloneDxPlugin}</version>
+                    <configuration>
+                        <projectType>application</projectType>
+                        <schemaVersion>1.6</schemaVersion>
+                        <outputFormat>json</outputFormat>
+                        <includeBomSerialNumber>false</includeBomSerialNumber>
+                        <includeTestScope>false</includeTestScope>
+                        <includeProvidedScope>true</includeProvidedScope>
+                        <!--
+                            Most gitb-srv modules intentionally skip `mvn deploy` (maven-deploy-plugin
+                            <skip>true</skip>, since they're only ever consumed via the reactor/local
+                            repo, never published). The plugin's default skipNotDeployed=true would
+                            otherwise silently drop those modules (and their dependencies, e.g. Spring
+                            Boot, CXF) from the aggregate BOM.
+                        -->
+                        <skipNotDeployed>false</skipNotDeployed>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>none</phase>
+                            <!--
+                                Run manually with `mvn cyclonedx:makeAggregateBom` to generate the gitb-srv SBOM alone.
+                                To build and aggregate the SBOM for all ITB components issue: `mvn antrun:run@sbom -pl .`
+                                If gitb-srv, gitb-ui and the gitb-ui frontend have already been built separately and
+                                their individual SBOMs already generated, only the final aggregation/publishing step
+                                can be run instead with: `mvn antrun:run@sbom-aggregate -pl .`
+                                Both require the CycloneDX CLI (cyclonedx-cli) to be available on the PATH to merge the
+                                per-component SBOMs (gitb-srv, gitb-ui, gitb-ui frontend) into a single ITB SBOM.
+                            -->
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -335,6 +403,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

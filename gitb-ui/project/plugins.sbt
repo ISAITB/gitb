@@ -24,3 +24,6 @@ addDependencyTreePlugin
 
 // Run "sbt dumpLicenseReport" or "sbt licenseCheck".
 addSbtPlugin("com.github.sbt" % "sbt-license-report" % "1.9.0")
+
+// Run manually with "sbt makeBom".
+addSbtPlugin("com.github.sbt" % "sbt-sbom" % "0.6.0")
