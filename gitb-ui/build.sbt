@@ -5,7 +5,7 @@ val pekkoVersion = "1.7.1"
 val jacksonVersion = "3.2.3"
 val jackson2Version = "2.22.3"
 val jacksonAnnotationsVersion = "2.22"
-val cxfVersion = "4.2.3"
+val cxfVersion = "4.2.3" // Should match neethi and xmlschema-core versions (specifically set to replace CXF transitive versions).
 val gitbCommonsVersion = "1.30.0"
 val gitbTypesVersion = "1.30.0"
 val bouncyCastleVersion = "1.86"
@@ -76,6 +76,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
   "org.apache.neethi" % "neethi" % "3.2.4",
+  "org.apache.ws.xmlschema" % "xmlschema-core" % "2.3.3",
   "org.apache.tika" % "tika-core" % "3.3.2",
   "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
