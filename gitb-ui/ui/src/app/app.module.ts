@@ -156,6 +156,7 @@ import {
   SimulatedConfigurationDisplayModalComponent
 } from './components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 import {SessionLogModalComponent} from './components/session-log-modal/session-log-modal.component';
+import {SessionLogViewerComponent} from './components/session-log-viewer/session-log-viewer.component';
 import {BaseCodeEditorModalComponent} from './components/base-code-editor-modal/base-code-editor-modal.component';
 import {MultiSelectFilterComponent} from './components/multi-select-filter/multi-select-filter.component';
 import {TestStatusIconsComponent} from './components/test-status-icons/test-status-icons.component';
@@ -447,6 +448,7 @@ import { MessageItemComponent } from './components/message-item/message-item.com
     ApiKeyInfoComponent,
     SimulatedConfigurationDisplayModalComponent,
     SessionLogModalComponent,
+    SessionLogViewerComponent,
     BaseCodeEditorModalComponent,
     MultiSelectFilterComponent,
     TestStatusIconsComponent,

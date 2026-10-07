@@ -65,6 +65,10 @@ import { AfterViewInit, Component, ElementRef, HostListener, Input, NgZone, OnCh
 export class SplitViewComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
 
   @Input() enabled = false
+  /** Gives the primary pane the standard light gray background (default: none, i.e. the host's white). */
+  @Input() topShaded = false
+  /** Gives the secondary pane the standard light gray background (default: none). */
+  @Input() bottomShaded = false
 
   /** Floor for the primary pane's height - e.g. a table's header plus one row, so dragging up never hides all its rows. */
   @Input() minPrimaryHeight = 100
@@ -109,6 +113,46 @@ export class SplitViewComponent implements OnInit, AfterViewInit, OnChanges, OnD
   // Below this, two heights are treated as the same value - guards the "clamp did not bite" comparison
   // in recalculate() against sub-pixel measurement noise never settling into equality.
   private static readonly HEIGHT_EPSILON = 0.5
+
+  /**
+   * Document-relative Y that a split view's secondary pane should stop at, for a page whose split view is
+   * embedded in a card that is the page's last element. Hosts bind this (via a stable arrow function) to
+   * [bottomBoundary]. Accounts for the card's bottom chrome, the .page-root margin and for the footer
+   * being pushed below the fold by a taller sidebar.
+   *
+   * @param pageEl The page's root element (inside .page-root).
+   * @param cardEl The card hosting the split view.
+   * @param cardBodyEl The card's body, if the split view sits within one (its bottom padding is accounted for).
+   */
+  static pageContentBottom(pageEl: HTMLElement|undefined, cardEl: HTMLElement|null|undefined, cardBodyEl?: HTMLElement|null): number {
+    if (!pageEl) return window.innerHeight
+    // The card body's own bottom padding (below its last child) plus the card's own border - not just
+    // the padding, which alone left the card a few pixels past the footer's top edge.
+    const cardBottomChrome = (cardBodyEl ? (Number.parseFloat(getComputedStyle(cardBodyEl).paddingBottom) || 0) : 0)
+      + (cardEl ? (Number.parseFloat(getComputedStyle(cardEl).borderBottomWidth) || 0) : 0)
+    // .page-root (IndexComponent's own wrapper around the routed page, see index.component.less) carries
+    // its own margin-bottom below our card - easy to miss since it's outside the host entirely. Not
+    // sticky itself, so its own document-relative top is stable regardless of scroll position.
+    const pageRootEl = pageEl.closest('.page-root') as HTMLElement | null
+    const pageRootBottomMargin = pageRootEl ? (Number.parseFloat(getComputedStyle(pageRootEl).marginBottom) || 0) : 0
+    const pageRootDocTop = pageRootEl ? (pageRootEl.getBoundingClientRect().top + window.scrollY) : 0
+    // .page.index is a flex column (header-bar / .child / .footer-bar, see app.less) with .child set to
+    // flex:1 - so while page-root's content is shorter than the space available to .child, the footer sits
+    // at the viewport bottom. But .page-menu (the left sidebar) can be taller than the viewport by itself,
+    // in which case the footer is pushed below the fold. Taking the max of the two possible positions
+    // (rather than measuring the footer's own current rect, which depends on the panes being sized here)
+    // gives the desired footer position independent of the split view itself.
+    const footerEl = document.querySelector('.footer-bar') as HTMLElement | null
+    const footerHeight = footerEl ? footerEl.getBoundingClientRect().height : 0
+    // .page-menu is position:sticky, so offsetHeight (a layout size, not a position) is used.
+    const pageMenuEl = pageRootEl?.querySelector('.page-menu') as HTMLElement | null
+    const menuHeight = pageMenuEl ? pageMenuEl.offsetHeight : 0
+    const desiredFooterTop = Math.max(window.innerHeight - footerHeight, pageRootDocTop + menuHeight + pageRootBottomMargin)
+    // The card is what determines page-root's true height once sized to reach desiredFooterTop, so room is
+    // left for pageRootBottomMargin on top of the card's own bottom chrome (once for page-root itself, once
+    // for the gap from page-root's border-box to .child's).
+    return desiredFooterTop - cardBottomChrome - pageRootBottomMargin
+  }
 
   constructor(
     private readonly eRef: ElementRef,
@@ -249,11 +293,14 @@ export class SplitViewComponent implements OnInit, AfterViewInit, OnChanges, OnD
     const maxPrimaryHeight = naturalPrimaryHeight + SplitViewComponent.PRIMARY_HEIGHT_TRAILING_GAP
     const minPrimaryHeight = Math.max(this.minPrimaryHeight, 0)
     const delta = event.clientY - this.dragStartY
-    const newPrimaryHeight = this.clampHeight(this.dragStartPrimaryHeight + delta, minPrimaryHeight, maxPrimaryHeight)
     // The two heights' sum is kept constant through the drag (the divider only redistributes space
-    // between the panes, it does not change how much space is available) - a floor on the secondary
-    // side only kicks in if the available budget itself is too small for it, matching recalculate().
+    // between the panes, it does not change how much space is available).
     const totalHeight = this.primaryHeight + this.secondaryHeight
+    // The primary pane may also never take more than would leave the secondary below its own floor -
+    // without this ceiling the secondary pane would stay at its floor while the primary kept growing, i.e.
+    // the pair's sum (and so the page) would grow instead of the drag simply stopping. Matches recalculate().
+    const upperBound = Math.max(minPrimaryHeight, Math.min(maxPrimaryHeight, totalHeight - this.minSecondaryHeight))
+    const newPrimaryHeight = this.clampHeight(this.dragStartPrimaryHeight + delta, minPrimaryHeight, upperBound)
     this.zone.run(() => {
       this.primaryHeight = newPrimaryHeight
       this.secondaryHeight = Math.max(totalHeight - newPrimaryHeight, this.minSecondaryHeight)

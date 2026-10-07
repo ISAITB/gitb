@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
+import {Component, ElementRef, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {Observable, of, Subscription, throwError, timer, TimeoutError} from 'rxjs';
@@ -24,7 +24,7 @@ import {CheckboxOptionState} from 'src/app/components/checkbox-option-panel/chec
 import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
 import {StepReport} from 'src/app/components/diagram/report/step-report';
 import {StepData} from 'src/app/components/diagram/step-data';
-import {SessionLogModalComponent} from 'src/app/components/session-log-modal/session-log-modal.component';
+import {SplitViewComponent} from 'src/app/components/split-view/split-view.component';
 import {
   SimulatedConfigurationDisplayModalComponent
 } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
@@ -108,7 +108,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   unreadLogMessages: {[key: number]: boolean} = {}
   unreadLogErrors: {[key: number]: boolean} = {}
   unreadLogWarnings: {[key: number]: boolean} = {}
-  testCaseWithOpenLogView?: number
+  logPanelTestId?: number
+  logPanelFollow = true
   testCaseOperationPending: {[key: number]: boolean} = {}
   testCaseCommentsPending: {[key: number]: boolean} = {}
   testCaseFlagId: {[key: number]: number|undefined} = {}
@@ -146,6 +147,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     ]
   ]
   @ViewChild("testOptionsControl") testOptionsControl?: CheckBoxOptionPanelComponentApi
+  @ViewChild("splitView") splitView?: SplitViewComponent
+  @ViewChild("testExecutionPage") testExecutionPage?: ElementRef
   @ViewChildren("outputMessageDisplayComponent") outputMessageDisplayComponents?: QueryList<OutputMessageDisplayApi>
   @ViewChildren("sessionFlagControl") sessionFlagControls?: QueryList<CheckBoxOptionPanelComponentApi>
 
@@ -393,6 +396,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.CONFIGURING)
       this.testCaseExpanded[this.currentTest.id] = true
       this.testCaseVisible[this.currentTest.id] = true
+      if (this.logPanelTestId != undefined && this.logPanelFollow) {
+        this.showLogPanelFor(this.currentTest.id)
+      }
       this.stopped = false
       if (previousTestId != undefined) {
         this.testCaseExpanded[previousTestId] = false
@@ -581,7 +587,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   private processLogMessage(logMessage: string) {
     this.logMessages[this.currentTest!.id].push(logMessage)
     this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
-    if (this.currentTest!.id != this.testCaseWithOpenLogView) {
+    if (this.currentTest!.id != this.logPanelTestId) {
       const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
       if (messageLevel == LogLevel.ERROR) {
         this.unreadLogErrors[this.currentTest!.id] = true
@@ -1168,6 +1174,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   reinitialise() {
+    // The log panel (if open) follows the first test of the new run once it is prepared.
+    this.logPanelFollow = true
     if (!this.allStopped) {
       this.stopAll()
     }
@@ -1202,17 +1210,44 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   viewLog(test: ConformanceTestCase) {
-    this.testCaseWithOpenLogView = test.id
-    this.unreadLogMessages[test.id] = false
-    this.unreadLogErrors[test.id] = false
-    this.unreadLogWarnings[test.id] = false
-    const modalRef = this.modalService.open(SessionLogModalComponent, { size: 'lg'})
-    const modalInstance = modalRef.componentInstance as SessionLogModalComponent
-    modalInstance.messages = this.logMessages[test.id].slice() // Use slice to make a copy of the log messages.
-    modalInstance.messageEmitter = this.logMessageEventEmitters[test.id]
-    modalRef.hidden.subscribe(() => {
-      this.testCaseWithOpenLogView = undefined
-    })
+    // Following only makes sense when looking at the test currently being executed.
+    this.logPanelFollow = this.currentTest?.id == test.id
+    this.showLogPanelFor(test.id)
+  }
+
+  private showLogPanelFor(testId: number) {
+    const wasOpen = this.logPanelTestId != undefined
+    this.logPanelTestId = testId
+    this.unreadLogMessages[testId] = false
+    this.unreadLogErrors[testId] = false
+    this.unreadLogWarnings[testId] = false
+    if (!wasOpen) {
+      this.splitView?.refresh()
+    }
+  }
+
+  closeLogPanel() {
+    this.logPanelTestId = undefined
+    this.logPanelFollow = true
+    this.splitView?.refresh()
+  }
+
+  onLogFollowChange(follow: boolean) {
+    this.logPanelFollow = follow
+    if (follow && this.currentTest != undefined) {
+      this.showLogPanelFor(this.currentTest.id)
+    }
+  }
+
+  logContextLabel(): string {
+    const test = this.testsToExecute.find((t) => t.id == this.logPanelTestId)
+    if (test == undefined) return ''
+    return test.sname
+  }
+
+  contentBottomProvider = () => {
+    const pageEl: HTMLElement|undefined = this.testExecutionPage?.nativeElement
+    return SplitViewComponent.pageContentBottom(pageEl, pageEl?.querySelector('.card'))
   }
 
   alertTypeForStatus(status: number) {

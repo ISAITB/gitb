@@ -1,0 +1,71 @@
+<div class="log-viewer" [class.panel-layout]="layout == 'panel'">
+    <div class="editor" [class.editor-normal]="layout == 'modal'" [class.editor-fill]="layout == 'panel'">
+        @if (editorOptions) {
+            <app-code-editor #codeEditor [(ngModel)]="content" [options]="editorOptions" (loaded)="onEditorLoaded()"></app-code-editor>
+        }
+    </div>
+    <div class="view-option-container" [class.panel-bar]="layout == 'panel'">
+        @if (layout == 'panel' && contextLabel) {
+            <div class="context-label" [title]="contextLabel">{{contextLabel}}</div>
+        }
+        <!-- In the modal layout the two wrappers below are display:contents (no effect). In the panel layout they
+             make each section wrap individually, with separators drawn per section and clipped when a section
+             starts a line - see the .less. -->
+        <div class="bar-controls">
+            <div class="bar-controls-inner">
+                @if (messageEmitter != undefined) {
+                    @if (layout == 'panel') {
+                        <div class="bar-section">
+                            <div class="view-options">
+                                <div class="btn input-switch">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" [id]="'logTail'+instanceId" [ngModel]="tail" (ngModelChange)="tailUpdated($event)" [name]="'logTail'+instanceId">
+                                        <label class="form-check-label" [for]="'logTail'+instanceId">Follow latest</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    } @else {
+                        <div class="col-auto view-options">
+                            <div class="col-auto">
+                                <span class="fw-bold mx-3">Follow latest</span>
+                            </div>
+                            <div class="col-auto">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" [ngModel]="tail" (ngModelChange)="tailUpdated($event)" [name]="'displayType'+instanceId" [id]="'displayTypeTail'+instanceId" [value]="true">
+                                    <label class="form-check-label" [for]="'displayTypeTail'+instanceId">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" [ngModel]="tail" (ngModelChange)="tailUpdated($event)" [name]="'displayType'+instanceId" [id]="'displayTypeNoTail'+instanceId" [value]="false">
+                                    <label class="form-check-label" [for]="'displayTypeNoTail'+instanceId">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                <div class="bar-section">
+                    <div class="col-auto view-options">
+                        <div class="btn-group" role="group" aria-label="Log level">
+                            @for (option of [{label: 'Debug', level: LogLevel.DEBUG, icon: Constants.BUTTON_ICON.SEVERITY_DEBUG}, {label: 'Info', level: LogLevel.INFO, icon: Constants.BUTTON_ICON.SEVERITY_INFO}, {label: 'Warning', level: LogLevel.WARN, icon: Constants.BUTTON_ICON.SEVERITY_WARNING}, {label: 'Error', level: LogLevel.ERROR, icon: Constants.BUTTON_ICON.SEVERITY_ERROR}]; track option.level) {
+                                <input type="radio" class="btn-check" [(ngModel)]="minimumLogLevel" [name]="'logLevel'+instanceId" [id]="'logLevel'+option.label+instanceId" [value]="option.level" (change)="applyMinimumLogLevel()">
+                                <label class="btn" [ngClass]="{ 'btn-outline-primary': option.level == minimumLogLevel, 'btn-outline-secondary': option.level != minimumLogLevel }" [for]="'logLevel'+option.label+instanceId">
+                                    <span class="mini-tab"><i [class]="option.icon"></i></span>
+                                    {{option.label}}
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (layout == 'panel') {
+                    <div class="bar-section">
+                        <div class="panel-actions btn-toolbar">
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" class="btn btn-secondary" (click)="copyToClipboard()">Copy to clipboard</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.DOWNLOAD" class="btn btn-secondary" (click)="download()">Download</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="closed.emit()">Close</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

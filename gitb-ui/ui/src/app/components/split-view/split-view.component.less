@@ -4,6 +4,10 @@
     display: block;
 }
 
+.split-view-primary.shaded, .split-view-secondary.shaded {
+    background-color: @gray-light-1;
+}
+
 .split-view-primary {
     overflow-y: auto;
 }
@@ -39,6 +43,11 @@
         height: 6px;
     }
     .split-view-divider-bottom {
+        &.shaded {
+            // Continues the shaded secondary pane; the gap to its content is then the pane's own padding (10px).
+            background-color: @gray-light-1;
+            height: 10px;
+        }
         // 16px, not the primary pane's own trailing gap (12px, PRIMARY_HEIGHT_TRAILING_GAP in the .ts) -
         // that gap is deliberately smaller since it's measured from the table's actual last row rather
         // than being visible whitespace of its own; this one is the visible space between the divider and

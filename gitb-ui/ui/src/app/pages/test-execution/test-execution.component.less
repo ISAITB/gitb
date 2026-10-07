@@ -176,3 +176,16 @@ div.progress-icon {
     justify-content: center;
     align-items: center;
 }
+
+// Log panel (secondary pane of app-split-view): fills the reserved height, with the viewer's editor
+// stretching to take whatever the control bar leaves.
+.log-panel-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 0 10px 10px 10px;
+    min-height: 0;
+    app-session-log-viewer {
+        flex: 1;
+    }
+}

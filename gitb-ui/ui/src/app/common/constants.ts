@@ -143,6 +143,7 @@ export class Constants {
     SEVERITY_ERROR: 'fa-solid fa-times-circle',
     SEVERITY_INFO: 'fa-solid fa-info-circle',
     SEVERITY_WARNING: 'fa-solid fa-warning',
+    SEVERITY_DEBUG: 'fa-solid fa-bug',
     SELECT: 'fa-regular fa-square-check',
     SELF_REGISTRATION: 'fa-solid fa-user-plus',
     SHARED: 'fa-solid fa-share-nodes',

@@ -2,54 +2,8 @@
 	<div class="modal-title">Test session log</div>
 </div>
 <div class="modal-body">
-	<div class="editor editor-normal">
-		@if (editorOptions) {
-			<app-code-editor #codeEditor [(ngModel)]="content" [options]="editorOptions"></app-code-editor>
-		}
-	</div>
-    <div class="view-option-container">
-        <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
-        @if (messageEmitter != undefined) {
-            <div class="col-auto view-options">
-                <div class="col-auto">
-                    <span class="fw-bold mx-3">Follow latest</span>
-                </div>
-                <div class="col-auto">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" [(ngModel)]="tail" name="displayType" id="displayTypeTail" [value]="true">
-                        <label class="form-check-label" for="displayTypeTail">Yes</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" [(ngModel)]="tail" name="displayType" id="displayTypeNoTail" [value]="false">
-                        <label class="form-check-label" for="displayTypeNoTail">No</label>
-                    </div>
-                </div>
-            </div>
-        }
-        <div class="col-auto view-options">
-            <div class="col-auto">
-                <span class="fw-bold mx-3">Log level</span>
-            </div>
-            <div class="col-auto">
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" [(ngModel)]="minimumLogLevel" name="logLevel" id="logLevelDebug" [value]="LogLevel.DEBUG" (change)="applyMinimumLogLevel()">
-                    <label class="form-check-label" for="logLevelDebug">Debug</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" [(ngModel)]="minimumLogLevel" name="logLevel" id="logLevelInfo" [value]="LogLevel.INFO" (change)="applyMinimumLogLevel()">
-                    <label class="form-check-label" for="logLevelInfo">Info</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" [(ngModel)]="minimumLogLevel" name="logLevel" id="logLevelWarn" [value]="LogLevel.WARN" (change)="applyMinimumLogLevel()">
-                    <label class="form-check-label" for="logLevelWarn">Warning</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" [(ngModel)]="minimumLogLevel" name="logLevel" id="logLevelError" [value]="LogLevel.ERROR" (change)="applyMinimumLogLevel()">
-                    <label class="form-check-label" for="logLevelError">Error</label>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
+    <app-session-log-viewer #viewer layout="modal" [messages]="messages" [messageEmitter]="messageEmitter" [(tail)]="tail"></app-session-log-viewer>
 </div>
 <div class="modal-footer">
 	<div class="btn-toolbar">

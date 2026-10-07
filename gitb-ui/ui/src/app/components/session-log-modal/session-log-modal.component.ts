@@ -13,138 +13,40 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
-import {DataService} from 'src/app/services/data.service';
-import {PopupService} from 'src/app/services/popup.service';
-import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
-import {LineInfo} from './line-info';
-import {LogLevel} from '../../types/log-level';
-import {Constants} from '../../common/constants';
+import {Component, EventEmitter, Input, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {BaseComponent} from '../../pages/base-component.component';
+import {Constants} from '../../common/constants';
+import {SessionLogViewerComponent} from '../session-log-viewer/session-log-viewer.component';
 
 @Component({
     selector: 'app-session-log-modal',
     templateUrl: './session-log-modal.component.html',
-    styleUrls: ['./session-log-modal.component.less'],
     changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
-export class SessionLogModalComponent extends BaseCodeEditorModalComponent implements OnInit {
-
-  static LINE_PARTS_REGEX = /^(.+)/gm
+export class SessionLogModalComponent extends BaseComponent {
 
   @Input() messages!: string[]
   @Input() messageEmitter?: EventEmitter<string>
 
-  lines: LineInfo[] = []
-  minimumLogLevel = LogLevel.DEBUG
-  content = ''
-  contentLines: LineInfo[] = []
+  @ViewChild('viewer') viewer?: SessionLogViewerComponent
+
   tail = true
-  LogLevel = LogLevel
+  Constants = Constants
 
-  constructor(
-    modalRef: NgbActiveModal,
-    dataService: DataService,
-    popupService: PopupService
-  ) { super(modalRef, dataService, popupService) }
+  constructor(private readonly modalRef: NgbActiveModal) { super() }
 
-  ngOnInit(): void {
-    this.editorOptions = {
-      readOnly: true,
-      lineNumbers: true,
-      mode: 'text/plain',
-      download: {
-        fileName: 'log.txt',
-        mimeType: 'text/plain'
-      }
-    }
-    this.initialiseLines(this.messages)
-    this.updateContent()
-    if (this.messageEmitter) {
-      // Subscribe to live log updates
-      this.messageEmitter.subscribe((newMessage) => {
-        this.messages.push(newMessage)
-        const createdLines = this.initialiseLines([newMessage])
-        for (let line of createdLines) {
-          if (line.level >= this.minimumLogLevel) {
-            this.contentLines.push(line)
-            // Do not update the content directly because this causes a full editor refresh
-            this.codeEditor!.appendText(line.text+'\n')
-            if (this.tail) {
-              this.scrollToLast()
-            }
-          }
-        }
-        setTimeout(() => {
-          this.applyLineStyles()
-        })
-      })
-    }
+  close() {
+    this.modalRef.dismiss()
   }
 
-  scrollToLast() {
-    this.jumpToLine(this.codeEditor!.lineCount)
+  copyToClipboard() {
+    this.viewer?.copyToClipboard()
   }
 
-  private initialiseLines(newMessages: string[]) {
-    let previousLevel = LogLevel.INFO
-    const createdLines: LineInfo[] = []
-    for (let message of newMessages) {
-      const messageParts = message.replace('\r', '\n').match(SessionLogModalComponent.LINE_PARTS_REGEX)
-      if (messageParts) {
-        for (let part of messageParts) {
-          if (part.length > 0) {
-            const partLevel = this.dataService.logMessageLevel(part, previousLevel)
-            previousLevel = partLevel
-            createdLines.push({
-              text: part,
-              level: partLevel
-            })
-          }
-        }
-      }
-    }
-    this.lines.push(...createdLines)
-    return createdLines
+  download() {
+    this.viewer?.download()
   }
 
-  private updateContent() {
-    this.content = ''
-    this.contentLines = []
-    for (let line of this.lines) {
-      if (line.level >= this.minimumLogLevel) {
-        this.contentLines.push(line)
-        this.content += line.text + '\n'
-      }
-    }
-  }
-
-  applyLineStyles(): boolean {
-    for (let i=0; i < this.contentLines.length; i++) {
-      this.applyLineStyle(i, this.contentLines[i])
-    }
-    return true
-  }
-
-  applyLineStyle(lineNumber: number, lineData: LineInfo) {
-    // Line numbers used by the editor are 1-based.
-    this.codeEditor?.addLineClass(lineNumber + 1, 'log-level '+this.logLevelToString(lineData.level))
-  }
-
-  private logLevelToString(level: LogLevel) {
-    if (level == LogLevel.DEBUG) return 'debug'
-    else if (level == LogLevel.INFO) return 'info'
-    else if (level == LogLevel.WARN) return 'warn'
-    else return 'error'
-  }
-
-  applyMinimumLogLevel() {
-    this.updateContent()
-    setTimeout(() => {
-      this.applyLineStyles()
-    })
-  }
-
-  protected readonly Constants = Constants;
 }

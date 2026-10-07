@@ -1,4 +1,4 @@
-<div class="page">
+<div #testExecutionPage class="page">
     <div class="card test-case-list-table mb-0">
         <div class="card-header">
             <div class="card-title">Test execution</div>
@@ -38,6 +38,8 @@
                 }
             </div>
         </div>
+        <app-split-view #splitView [enabled]="logPanelTestId != undefined" [topShaded]="true" [bottomShaded]="true" [bottomBoundary]="contentBottomProvider" [minPrimaryHeight]="150" [minSecondaryHeight]="124">
+        <div splitViewPrimary class="test-case-list">
         @if (testCaseLoadStatus.status == Constants.STATUS.FINISHED) {
             @for (testCase of testsToExecute; track testCase.id) {
                 <div class="test-case-container" [class.last-visible]="lastVisibleTestId === testCase.id" [class.no-display]="!testCaseVisible[testCase.id]" [class.expandable]="isTestCaseClickable(testCase)">
@@ -138,7 +140,7 @@
                                                 </app-session-flag-control>
                                             }
                                             <div class="position-relative">
-                                                <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
+                                                <button type="button" class="btn btn-secondary position-relative" [disabled]="logPanelTestId === testCase.id" (click)="viewLog(testCase)">
                                                     <span class="mini-tab label-icon"><i [class]="Constants.BUTTON_ICON.VIEW_LOG"></i></span>View log
                                                     <span
                                                         [class.badgeLogErrors]="unreadLogErrors[testCase.id]"
@@ -184,5 +186,18 @@
                 <app-pending-block></app-pending-block>
             </div>
         }
+        </div>
+        <div splitViewSecondary class="log-panel-container" [class.d-none]="logPanelTestId == undefined">
+            @if (logPanelTestId != undefined) {
+                <app-session-log-viewer layout="panel"
+                                        [messages]="logMessages[logPanelTestId]"
+                                        [messageEmitter]="logMessageEventEmitters[logPanelTestId]"
+                                        [contextLabel]="logContextLabel()"
+                                        [tail]="logPanelFollow"
+                                        (tailChange)="onLogFollowChange($event)"
+                                        (closed)="closeLogPanel()"></app-session-log-viewer>
+            }
+        </div>
+    </app-split-view>
     </div>
 </div>

@@ -211,48 +211,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   private contentBottom(): number {
     if (!this.messagesPage) return window.innerHeight
     const pageEl: HTMLElement = this.messagesPage.nativeElement
-    const cardBodyEl = pageEl.querySelector('.card-body') as HTMLElement | null
-    const cardEl = pageEl.querySelector('.card') as HTMLElement | null
-    // The card body's own bottom padding (below its last child) plus the card's own border - not just
-    // the padding, which alone left the card a few pixels past the footer's top edge.
-    const cardBottomChrome = (cardBodyEl ? (Number.parseFloat(getComputedStyle(cardBodyEl).paddingBottom) || 0) : 0)
-      + (cardEl ? (Number.parseFloat(getComputedStyle(cardEl).borderBottomWidth) || 0) : 0)
-    // .page-root (IndexComponent's own wrapper around the routed page, see index.component.less) carries
-    // its own margin-bottom below our card - easy to miss since it's outside this component entirely. Not
-    // sticky itself, so its own document-relative top is stable regardless of scroll position (see
-    // app-split-view's class comment for why that matters).
-    const pageRootEl = pageEl.closest('.page-root') as HTMLElement | null
-    const pageRootBottomMargin = pageRootEl ? (Number.parseFloat(getComputedStyle(pageRootEl).marginBottom) || 0) : 0
-    const pageRootDocTop = pageRootEl ? (pageRootEl.getBoundingClientRect().top + window.scrollY) : 0
-    // .page.index is a flex column (header-bar / .child / .footer-bar, see app.less) with .child set to
-    // flex:1 - so while page-root's content is shorter than the space available to .child, flex-grow
-    // stretches .child (with blank filler below page-root) to reach exactly down to the viewport bottom,
-    // and .footer-bar sits flush after it. But .page-menu (the left sidebar, see index.component.less) can
-    // be taller than the viewport by itself, in which case page-root's own content now needs more room than
-    // that available space, and .child's height instead follows page-root's own (page-root's own
-    // margin-bottom included) - pushing .footer-bar down below the fold. Taking the two possible positions'
-    // max (rather than just measuring .footer-bar's own current rect, which is exactly the self-referential
-    // measurement that produced the old shrink-loop: the footer's rect depends on how tall .page-content
-    // currently is, which is what this component is about to compute) gives the desired footer position
-    // independent of this component's own panes - "desired" because, as covered next, our own card is what
-    // actually determines which of the two applies once it's sized to reach it.
-    const footerEl = document.querySelector('.footer-bar') as HTMLElement | null
-    const footerHeight = footerEl ? footerEl.getBoundingClientRect().height : 0
-    // .page-menu is position:sticky, so its own rect only reflects a viewport-relative position while
-    // scrolled into view - offsetHeight (a layout size, not a position) is used instead.
-    const pageMenuEl = pageRootEl?.querySelector('.page-menu') as HTMLElement | null
-    const menuHeight = pageMenuEl ? pageMenuEl.offsetHeight : 0
-    const desiredFooterTop = Math.max(window.innerHeight - footerHeight, pageRootDocTop + menuHeight + pageRootBottomMargin)
-    // page-content (page-root's other child, wrapping our own card) has align-self:stretch by default, so
-    // whichever of page-menu/page-content ends up taller *before* stretch is what actually determines
-    // page-root's own height - and since our own card is what we're about to size to reach desiredFooterTop,
-    // page-content (not page-menu) ends up being that taller sibling as soon as our own target exceeds
-    // menuHeight, which it does as soon as there's any meaningful vertical budget to work with. In other
-    // words, our own card's height is what determines page-root's (and so page-menu's max() aside,
-    // .footer-bar's) *true* position from this point on - so reaching desiredFooterTop exactly means sizing
-    // our card to leave room for pageRootBottomMargin *again* on top of cardBottomChrome (once for page-root
-    // itself, once for the gap from page-root's own border-box to .child's), not just once.
-    return desiredFooterTop - cardBottomChrome - pageRootBottomMargin
+    return SplitViewComponent.pageContentBottom(pageEl, pageEl.querySelector('.card'), pageEl.querySelector('.card-body'))
   }
 
   // Stable reference for the [bottomBoundary] template binding - app-split-view calls this itself on

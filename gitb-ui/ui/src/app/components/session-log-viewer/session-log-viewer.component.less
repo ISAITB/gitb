@@ -1,0 +1,146 @@
+/*
+ * Copyright (C) 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+@import '../../../styles/less/_common.less';
+
+::ng-deep {
+    .log-level {
+        &.error {
+            font-weight: bold;
+            color: @red-error !important;
+        }
+        &.warn {
+            font-weight: bold;
+            color: @orange-warning !important;
+        }
+        &.debug {
+            color: @gray-medium !important;
+        }
+    }
+}
+
+@bar-separator-gap: 20px;
+
+// Wrappers that only matter in the panel layout (see .panel-bar below).
+.bar-controls, .bar-controls-inner {
+    display: contents;
+}
+
+:host {
+    display: block;
+}
+
+.view-option-container {
+    display: flex;
+    justify-content: center;
+    border-width: 1px;
+    border-top-width: 0;
+    border-style: solid;
+    border-color: @gray-dark-1;
+    border-bottom-left-radius: @border-radius;
+    border-bottom-right-radius: @border-radius;
+    background-color: @gray-codemirror-gutter;
+    padding: 0.5rem;
+}
+.view-options {
+    display: flex;
+    align-items: center;
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+}
+
+// Panel layout: the host fills the split view's secondary pane, the editor takes the remaining height and
+// the control bar stays on a single line below it.
+:host(.panel) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+.log-viewer.panel-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    .editor.editor-fill {
+        flex: 1 1 0;
+        min-height: 0;
+        --code-editor-height: 100%;
+        // The editor itself is transparent, so it would otherwise show the (grey) panel behind it.
+        background-color: @white;
+    }
+
+    .view-option-container.panel-bar {
+        flex: 0 0 auto;
+        // Sits directly on the (shaded) panel: no border, no own background, only a gap above.
+        border: none;
+        background-color: transparent;
+        padding: 10px 0 0 0;
+        justify-content: flex-start;
+        align-items: center;
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+        // The test case name is the first thing to wrap (onto a line of its own, above the controls): its
+        // flex-basis is just a small minimum, so it only claims a line to itself when the controls plus that
+        // minimum no longer fit. Otherwise it grows up to the controls and truncates with an ellipsis.
+        .context-label {
+            flex: 1 1 120px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: bold;
+            margin-right: 0.75rem;
+        }
+        // The control sections wrap individually. Each section draws its own leading separator (border-left),
+        // and the inner container is pulled left by exactly the separator's width plus padding so that a
+        // section starting a line has its separator outside .bar-controls' box, where it is clipped - i.e. a
+        // separator only ever shows between two sections sharing a line. The matching negative right margin
+        // swallows the last section's trailing padding so it does not count towards wrapping.
+        .bar-controls {
+            display: block;
+            flex: 0 1 auto;
+            min-width: 0;
+            margin-left: auto;
+            overflow-x: clip;
+        }
+        .bar-controls-inner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            row-gap: 0.5rem;
+            margin-left: -(@bar-separator-gap + 1px);
+            margin-right: -@bar-separator-gap;
+        }
+        .bar-section {
+            display: flex;
+            align-items: center;
+            flex: 0 0 auto;
+            border-left: 1px solid @gray-dark-1;
+            padding-left: @bar-separator-gap;
+            padding-right: @bar-separator-gap;
+        }
+        .view-options {
+            flex: 0 0 auto;
+            margin: 0;
+            white-space: nowrap;
+        }
+        .panel-actions {
+            flex: 0 0 auto;
+            flex-wrap: nowrap;
+        }
+    }
+}
