@@ -415,13 +415,13 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   private def propertyTypeToKind(propertyType: PropertyType, isDomainParameter: Boolean): String = {
     require(propertyType != null, "Enum value cannot be null")
     propertyType match {
-      case PropertyType.BINARY => "BINARY"
-      case PropertyType.SIMPLE => "SIMPLE"
+      case PropertyType.BINARY => PropertyKind.BINARY
+      case PropertyType.SIMPLE => PropertyKind.SIMPLE
       case PropertyType.SECRET =>
         if (isDomainParameter) {
           "HIDDEN"
         } else {
-          "SECRET"
+          PropertyKind.SECRET
         }
       case _ => throw new IllegalArgumentException("Unknown enum value ["+propertyType+"]")
     }
@@ -3510,7 +3510,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     val kind = propertyTypeToKind(parameterType, isDomainParameter)
     var fileToStore: Option[File] = None
     var contentType: Option[String] = None
-    if (kind == "BINARY") {
+    if (kind == PropertyKind.BINARY) {
       contentType = Some(MimeUtil.getMimeTypeFromDataURL(parameterValue))
       fileToStore = Some(dataUrlToTempFile(parameterValue))
       ctx.onFailureCalls += (() => if (fileToStore.get.exists()) { FileUtils.deleteQuietly(fileToStore.get) })

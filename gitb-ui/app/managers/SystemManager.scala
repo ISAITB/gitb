@@ -318,15 +318,15 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
             val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
             if (matchedProvidedParameter.isDefined) {
               // Create or update
-              if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
+              if (parameterDefinition.kind != PropertyKind.SECRET || (parameterDefinition.kind == PropertyKind.SECRET && matchedProvidedParameter.get.value != "")) {
                 // Special case: No update for secret parameters that are defined but not updated.
                 var valueToSet = matchedProvidedParameter.get.value
                 var existingBinaryNotUpdated = false
                 var contentTypeToSet: Option[String] = None
-                if (parameterDefinition.kind == "SECRET") {
+                if (parameterDefinition.kind == PropertyKind.SECRET) {
                   // Encrypt secret value at rest.
                   valueToSet = MimeUtil.encryptString(valueToSet)
-                } else if (parameterDefinition.kind == "BINARY") {
+                } else if (parameterDefinition.kind == PropertyKind.BINARY) {
                   // Store file.
                   if (files.contains(parameterDefinition.id)) {
                     contentTypeToSet = files(parameterDefinition.id).contentType
@@ -1036,7 +1036,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
   def getSystemParameterValues(systemId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): Future[List[SystemParametersWithValue]] = {
     var typeToCheck: Option[String] = None
     if (onlySimple.isDefined && onlySimple.get) {
-      typeToCheck = Some("SIMPLE")
+      typeToCheck = Some(PropertyKind.SIMPLE)
     }
     val action = for {
       communityId <- getCommunityIdOfSystemInternal(systemId)

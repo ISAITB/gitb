@@ -858,7 +858,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         if (!existingParameter._2.equals(parameter.testKey)) {
           // Update the dependsOn of other properties.
           setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(parameter.testKey))
-        } else if (existingParameter._3.equals("SIMPLE") && !existingParameter._3.equals(parameter.kind)) {
+        } else if (existingParameter._3.equals(PropertyKind.SIMPLE) && !existingParameter._3.equals(parameter.kind)) {
           // Remove the dependsOn of other properties.
           setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
         } else {
@@ -867,9 +867,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       _ <- {
         if (existingParameter._3 != parameter.kind) {
-          // Remove previous values.
-          onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameter.id))
-          PersistenceSchema.organisationParameterValues.filter(_.parameter === parameter.id).delete
+          if (PropertyKind.valuesPreservedOnChange(existingParameter._3, parameter.kind)) {
+            DBIO.successful(())
+          } else {
+            // Remove previous values.
+            onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameter.id))
+            PersistenceSchema.organisationParameterValues.filter(_.parameter === parameter.id).delete
+          }
         } else {
           DBIO.successful(())
         }
@@ -905,27 +909,37 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedOrganisationParameterExistence(communityId, input.dependsOn.flatten, property.map(_.id))
       // Proceed with update.
       _ <- {
+        val kind = automationApiHelper.propertyKind(input.kind, property.get.kind)
         val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        val allowedValues = if (kind == PropertyKind.SIMPLE) {
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues)
+        } else {
+          None
+        }
         updateOrganisationParameterInternal(OrganisationParameters(
           property.get.id,
           input.name.getOrElse(property.get.name),
           input.key,
           input.description.getOrElse(property.get.description),
           automationApiHelper.propertyUseText(input.required, property.get.use),
-          "SIMPLE",
+          kind,
           !input.editableByUsers.getOrElse(!property.get.adminOnly),
           !input.inTests.getOrElse(!property.get.notForTests),
-          input.inExports.getOrElse(property.get.inExports),
+          kind == PropertyKind.SIMPLE && input.inExports.getOrElse(property.get.inExports),
           input.inSelfRegistration.getOrElse(property.get.inSelfRegistration),
           input.hidden.getOrElse(property.get.hidden),
-          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
+          allowedValues,
           input.displayOrder.getOrElse(property.get.displayOrder),
           dependsOnStatus._1.getOrElse(property.get.dependsOn),
           dependsOnStatus._2.getOrElse(property.get.dependsOnValue),
-          automationApiHelper.propertyDefaultValue(
-            input.defaultValue.getOrElse(property.get.defaultValue),
-            input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
-          ),
+          if (kind == PropertyKind.SIMPLE) {
+            automationApiHelper.propertyDefaultValue(
+              input.defaultValue.getOrElse(property.get.defaultValue),
+              input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
+            )
+          } else {
+            None
+          },
           communityId
         ), updateDisplayOrder = true, onSuccessCalls)
       }
@@ -944,26 +958,36 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedSystemParameterExistence(communityId, input.dependsOn.flatten, property.map(_.id))
       // Proceed with update.
       _ <- {
+        val kind = automationApiHelper.propertyKind(input.kind, property.get.kind)
         val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        val allowedValues = if (kind == PropertyKind.SIMPLE) {
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues)
+        } else {
+          None
+        }
         updateSystemParameterInternal(SystemParameters(
           property.get.id,
           input.name.getOrElse(property.get.name),
           input.key,
           input.description.getOrElse(property.get.description),
           automationApiHelper.propertyUseText(input.required, property.get.use),
-          "SIMPLE",
+          kind,
           !input.editableByUsers.getOrElse(!property.get.adminOnly),
           !input.inTests.getOrElse(!property.get.notForTests),
-          input.inExports.getOrElse(property.get.inExports),
+          kind == PropertyKind.SIMPLE && input.inExports.getOrElse(property.get.inExports),
           input.hidden.getOrElse(property.get.hidden),
-          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
+          allowedValues,
           input.displayOrder.getOrElse(property.get.displayOrder),
           dependsOnStatus._1.getOrElse(property.get.dependsOn),
           dependsOnStatus._2.getOrElse(property.get.dependsOnValue),
-          automationApiHelper.propertyDefaultValue(
-            input.defaultValue.getOrElse(property.get.defaultValue),
-            input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
-          ),
+          if (kind == PropertyKind.SIMPLE) {
+            automationApiHelper.propertyDefaultValue(
+              input.defaultValue.getOrElse(property.get.defaultValue),
+              input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
+            )
+          } else {
+            None
+          },
           communityId
         ), updateDisplayOrder = true, onSuccessCalls)
       }
@@ -978,7 +1002,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       for {
         property <- checkOrganisationParameterExistence(communityId, dependsOn.get, expectedToExist = true, propertyIdToIgnore)
         _ <- {
-          if (property.get.kind != "SIMPLE") {
+          if (property.get.kind != PropertyKind.SIMPLE) {
             throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Property [%s] upon which this property depends on must be of simple type".formatted(dependsOn.get))
           } else {
             DBIO.successful(())
@@ -995,7 +1019,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       for {
         property <- checkSystemParameterExistence(communityId, dependsOn.get, expectedToExist = true, propertyIdToIgnore)
         _ <- {
-          if (property.get.kind != "SIMPLE") {
+          if (property.get.kind != PropertyKind.SIMPLE) {
             throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Property [%s] upon which this property depends on must be of simple type".formatted(dependsOn.get))
           } else {
             DBIO.successful(())
@@ -1048,7 +1072,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete
       existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
-        if (existingParameter._3.equals("SIMPLE")) {
+        if (existingParameter._3.equals(PropertyKind.SIMPLE)) {
           setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
         } else {
           DBIO.successful(())
@@ -1100,7 +1124,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         if (!existingParameter._2.equals(parameter.testKey)) {
           // Update the dependsOn of other properties.
           setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(parameter.testKey))
-        } else if (existingParameter._3.equals("SIMPLE") && !existingParameter._3.equals(parameter.kind)) {
+        } else if (existingParameter._3.equals(PropertyKind.SIMPLE) && !existingParameter._3.equals(parameter.kind)) {
           // Remove the dependsOn of other properties.
           setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
         } else {
@@ -1109,9 +1133,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       _ <- {
         if (existingParameter._3 != parameter.kind) {
-          // Remove previous values.
-          onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameter.id))
-          PersistenceSchema.systemParameterValues.filter(_.parameter === parameter.id).delete
+          if (PropertyKind.valuesPreservedOnChange(existingParameter._3, parameter.kind)) {
+            DBIO.successful(())
+          } else {
+            // Remove previous values.
+            onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameter.id))
+            PersistenceSchema.systemParameterValues.filter(_.parameter === parameter.id).delete
+          }
         } else {
           DBIO.successful(())
         }
@@ -1149,7 +1177,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete
       existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
-        if (existingParameter._3.equals("SIMPLE")) {
+        if (existingParameter._3.equals(PropertyKind.SIMPLE)) {
           setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
         } else {
           DBIO.successful(())
@@ -1203,7 +1231,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   def getOrganisationParameters(communityId: Long, forFiltering: Option[Boolean], onlyPublic: Boolean): Future[List[OrganisationParameters]] = {
     var typeToCheck: Option[String] = None
     if (forFiltering.isDefined && forFiltering.get) {
-      typeToCheck = Some("SIMPLE")
+      typeToCheck = Some(PropertyKind.SIMPLE)
     }
     DB.run(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
@@ -1217,7 +1245,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
       .filterOpt(forExports)((q, flag) => q.inExports === flag)
-      .filter(_.kind === "SIMPLE")
+      .filter(_.kind === PropertyKind.SIMPLE)
       .sortBy(_.testKey.asc)
       .result).map(_.toList)
   }
@@ -1229,7 +1257,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       .join(PersistenceSchema.organizations).on(_._1.organisation === _.id)
       .filter(_._2.community === communityId)
       .filter(_._1._2.inExports === true)
-      .filter(_._1._2.kind === "SIMPLE")
+      .filter(_._1._2.kind === PropertyKind.SIMPLE)
     if (organisationIds.isDefined) {
       query = query.filter(_._2.id inSet organisationIds.get)
     }
@@ -1254,7 +1282,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   def getSystemParameters(communityId: Long, forFiltering: Option[Boolean], onlyPublic: Boolean): Future[List[SystemParameters]] = {
     var typeToCheck: Option[String] = None
     if (forFiltering.isDefined && forFiltering.get) {
-      typeToCheck = Some("SIMPLE")
+      typeToCheck = Some(PropertyKind.SIMPLE)
     }
     DB.run(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
@@ -1268,7 +1296,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
       .filterOpt(forExports)((q, flag) => q.inExports === flag)
-      .filter(_.kind === "SIMPLE")
+      .filter(_.kind === PropertyKind.SIMPLE)
       .sortBy(_.testKey.asc)
       .result).map(_.toList)
   }
@@ -1295,7 +1323,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
       .filter(_._2.community === communityId)
       .filter(_._1._1._2.inExports === true)
-      .filter(_._1._1._2.kind === "SIMPLE")
+      .filter(_._1._1._2.kind === PropertyKind.SIMPLE)
     if (organisationIds.isDefined) {
       query = query.filter(_._2.id inSet organisationIds.get)
     }
@@ -1752,7 +1780,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         if (statementIds.isDefined) {
           updateData.properties.foreach { configData =>
             if (existingProperties.contains(configData.key)) {
-              if (existingProperties(configData.key)._3 == "SIMPLE") {
+              if (PropertyKind.isText(existingProperties(configData.key)._3)) {
                 if (existingValues.contains(configData.key)) {
                   if (configData.value.isDefined) {
                     // Update
@@ -1838,7 +1866,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         if (organisationId.isDefined) {
           updateData.properties.foreach { configData =>
             if (existingProperties.contains(configData.key)) {
-              if (existingProperties(configData.key)._2 == "SIMPLE") {
+              if (PropertyKind.isText(existingProperties(configData.key)._2)) {
                 if (existingValues.contains(configData.key)) {
                   if (configData.value.isDefined) {
                     // Update
@@ -1925,7 +1953,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         if (systemId.isDefined) {
           updateData.properties.foreach { configData =>
             if (existingProperties.contains(configData.key)) {
-              if (existingProperties(configData.key)._2 == "SIMPLE") {
+              if (PropertyKind.isText(existingProperties(configData.key)._2)) {
                 if (existingValues.contains(configData.key)) {
                   if (configData.value.isDefined) {
                     // Update
@@ -2012,23 +2040,24 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedOrganisationParameterExistence(communityId, input.dependsOn.flatten, None)
       // Create property.
       _ <- {
+        val kind = automationApiHelper.propertyKind(input.kind)
         val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
         createOrganisationParameterInternal(OrganisationParameters(0L,
           input.name.getOrElse(input.key),
           input.key,
           input.description.flatten,
           automationApiHelper.propertyUseText(input.required),
-          "SIMPLE",
+          kind,
           !input.editableByUsers.getOrElse(true),
           !input.inTests.getOrElse(false),
-          input.inExports.getOrElse(false),
+          kind == PropertyKind.SIMPLE && input.inExports.getOrElse(false),
           input.inSelfRegistration.getOrElse(false),
           input.hidden.getOrElse(false),
-          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
+          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten) else None,
           input.displayOrder.getOrElse(0),
           dependsOnStatus._1.flatten,
           dependsOnStatus._2.flatten,
-          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten) else None,
           communityId
         ))
       }
@@ -2046,22 +2075,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedSystemParameterExistence(communityId, input.dependsOn.flatten, None)
       // Create property.
       _ <- {
+        val kind = automationApiHelper.propertyKind(input.kind)
         val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
         createSystemParameterInternal(SystemParameters(0L,
           input.name.getOrElse(input.key),
           input.key,
           input.description.flatten,
           automationApiHelper.propertyUseText(input.required),
-          "SIMPLE",
+          kind,
           !input.editableByUsers.getOrElse(true),
           !input.inTests.getOrElse(false),
-          input.inExports.getOrElse(false),
+          kind == PropertyKind.SIMPLE && input.inExports.getOrElse(false),
           input.hidden.getOrElse(false),
-          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
+          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten) else None,
           input.displayOrder.getOrElse(0),
           dependsOnStatus._1.flatten,
           dependsOnStatus._2.flatten,
-          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten) else None,
           communityId
         ))
       }

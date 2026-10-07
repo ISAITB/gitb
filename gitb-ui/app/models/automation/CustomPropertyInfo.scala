@@ -28,5 +28,6 @@ case class CustomPropertyInfo(key: String,
                               displayOrder: Option[Short],
                               dependsOn: Option[Option[String]],
                               dependsOnValue: Option[Option[String]],
-                              defaultValue: Option[Option[String]]
+                              defaultValue: Option[Option[String]],
+                              kind: Option[String]
                              )

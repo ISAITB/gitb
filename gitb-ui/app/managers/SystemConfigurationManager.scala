@@ -639,7 +639,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       // Update organisation parameters
       orgParams <- PersistenceSchema.organisationParameterValues
                     .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
-                    .filter(_._2.kind === "SECRET")
+                    .filter(_._2.kind === PropertyKind.SECRET)
                     .map(x => (x._1.parameter, x._1.organisation, x._1.value))
                     .result
       _ <- {
@@ -653,7 +653,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       // Update system parameters
       sysParams <- PersistenceSchema.systemParameterValues
                     .join(PersistenceSchema.systemParameters).on(_.parameter === _.id)
-                    .filter(_._2.kind === "SECRET")
+                    .filter(_._2.kind === PropertyKind.SECRET)
                     .map(x => (x._1.parameter, x._1.system, x._1.value))
                     .result
       _ <- {
@@ -667,7 +667,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       // Update statement parameters
       stmtParams <- PersistenceSchema.configs
                       .join(PersistenceSchema.parameters).on(_.parameter === _.id)
-                      .filter(_._2.kind === "SECRET")
+                      .filter(_._2.kind === PropertyKind.SECRET)
                       .map(x => (x._1.parameter, x._1.system, x._1.value))
                       .result
       _ <- {

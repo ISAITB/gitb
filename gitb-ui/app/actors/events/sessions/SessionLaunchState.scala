@@ -17,7 +17,7 @@ package actors.events.sessions
 
 import com.gitb.core.AnyContent
 import com.gitb.tpl.TestCase
-import models.{SessionConfigurationData, TestSessionLaunchData, TypedActorConfiguration}
+import models.{PropertyKind, SessionConfigurationData, TestSessionLaunchData, TypedActorConfiguration}
 
 import scala.collection.mutable
 
@@ -150,13 +150,13 @@ class SessionLaunchState {
       // Include only the configuration values that are simple texts
       SessionConfigurationData(
         statementParameters = Some(data.get.statementParameters.map { x =>
-          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == PropertyKind.SIMPLE))
         }),
         domainParameters = data.get.domainParameters.map { x =>
-          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == PropertyKind.SIMPLE))
         },
-        organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
-        systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == "SIMPLE"))),
+        organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == PropertyKind.SIMPLE))),
+        systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == PropertyKind.SIMPLE))),
         testServiceParameters = data.get.testServiceParameters,
         predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None,
         settings = Some(TypedActorConfiguration.fromSettings())

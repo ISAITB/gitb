@@ -431,9 +431,9 @@ object JsonUtil {
     var json = jsParameter(parameter.parameter)
     json = json.+("configured" -> JsBoolean(parameter.configured))
     if (addValues && parameter.config.isDefined) {
-      if (parameter.parameter.kind != "SECRET") {
+      if (parameter.parameter.kind != PropertyKind.SECRET) {
         json = json.+("value" -> JsString(parameter.config.get.value))
-        if (parameter.parameter.kind == "BINARY") {
+        if (parameter.parameter.kind == PropertyKind.BINARY) {
           if (parameter.config.get.contentType.isDefined) {
             json = json.+("mimeType" -> JsString(parameter.config.get.contentType.get))
           }
@@ -1011,7 +1011,7 @@ object JsonUtil {
 
   def jsDomainParameter(domainParameter:DomainParameter):JsObject = {
     var valueToUse = ""
-    if (domainParameter.kind == "SIMPLE" && domainParameter.value.isDefined) {
+    if (domainParameter.kind == PropertyKind.SIMPLE && domainParameter.value.isDefined) {
       valueToUse = domainParameter.value.get
     }
     val json = Json.obj(
@@ -1650,7 +1650,8 @@ object JsonUtil {
       (json \ "displayOrder").asOpt[Short],
       (json \ "dependsOn").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "dependsOnValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
-      (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x))
+      (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "kind").asOpt[String]
     )
     if (!ParameterExtractor.validTestVariableName(info.key)) {
       throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
@@ -2184,7 +2185,7 @@ object JsonUtil {
       idToUse = domainParameterId.get
     }
     val kind = if (isTestService) {
-      "SIMPLE"
+      PropertyKind.SIMPLE
     } else {
       (jsonConfig \ "kind").as[String]
     }
@@ -2195,7 +2196,7 @@ object JsonUtil {
       if (value.isDefined) {
         value = Some(MimeUtil.encryptString(value.get))
       }
-    } else if (kind.equals("SIMPLE")) {
+    } else if (kind.equals(PropertyKind.SIMPLE)) {
       value = (jsonConfig \ "value").asOpt[String]
     } else {
       value = Some("")
@@ -3846,9 +3847,9 @@ object JsonUtil {
     var json = jsOrganisationParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
     if (includeValues) {
-      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+      if (param.value.isDefined && param.parameter.kind != PropertyKind.SECRET) {
         json = json.+("value" -> JsString(param.value.get.value))
-        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+        if (param.value.get.contentType.isDefined && param.parameter.kind == PropertyKind.BINARY) {
           json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
         }
       }
@@ -3868,9 +3869,9 @@ object JsonUtil {
     var json = jsParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
     if (includeValues) {
-      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+      if (param.value.isDefined && param.parameter.kind != PropertyKind.SECRET) {
         json = json.+("value" -> JsString(param.value.get.value))
-        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+        if (param.value.get.contentType.isDefined && param.parameter.kind == PropertyKind.BINARY) {
           json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
         }
       }
@@ -3890,9 +3891,9 @@ object JsonUtil {
     var json = jsSystemParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
     if (includeValues) {
-      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+      if (param.value.isDefined && param.parameter.kind != PropertyKind.SECRET) {
         json = json.+("value" -> JsString(param.value.get.value))
-        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+        if (param.value.get.contentType.isDefined && param.parameter.kind == PropertyKind.BINARY) {
           json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
         }
       }

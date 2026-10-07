@@ -38,3 +38,33 @@ class ParametersWithValue(_parameter: Parameters, _value: Option[Configs]) exten
 	override def currentValue(): Option[String] = if (value.isDefined) Some(value.get.value) else None
 }
 
+/**
+ * The kinds ("kind") supported for organisation, system and actor endpoint configuration properties.
+ */
+object PropertyKind {
+
+	val SIMPLE = "SIMPLE"
+	val BINARY = "BINARY"
+	val SECRET = "SECRET"
+
+	private val ALL = Set(SIMPLE, BINARY, SECRET)
+	private val TEXT_KINDS = Set(SIMPLE)
+
+	def isValid(kind: String): Boolean = ALL.contains(kind)
+
+	/**
+	 * True for the kinds that hold a plain string value (as opposed to BINARY, held as a file, and
+	 * SECRET, held encrypted).
+	 */
+	def isText(kind: String): Boolean = TEXT_KINDS.contains(kind)
+
+	/**
+	 * True if changing a property's kind from [[oldKind]] to [[newKind]] should keep the values
+	 * already recorded for it. This is the case only when both kinds are text kinds - any change
+	 * involving BINARY or SECRET still results in previous values being discarded.
+	 */
+	def valuesPreservedOnChange(oldKind: String, newKind: String): Boolean = {
+		isText(oldKind) && isText(newKind)
+	}
+
+}

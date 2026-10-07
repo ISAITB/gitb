@@ -98,7 +98,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       }
       // Update the parameter.
       _ <- {
-        if (kind == "BINARY") {
+        if (kind == PropertyKind.BINARY) {
           if (fileToStore.isDefined) {
             onSuccessCalls += (() => repositoryUtils.setDomainParameterFile(domainId, parameterId, fileToStore.get))
             PersistenceSchema.domainParameters.filter(_.id === parameterId)
@@ -111,7 +111,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
           }
         } else {
           onSuccessCalls += (() => repositoryUtils.deleteDomainParameterFile(domainId, parameterId))
-          if (kind == "SIMPLE" || (kind == "HIDDEN" && value.isDefined)) {
+          if (kind == PropertyKind.SIMPLE || (kind == "HIDDEN" && value.isDefined)) {
             PersistenceSchema.domainParameters.filter(_.id === parameterId)
               .map(x => (x.name, x.desc, x.kind, x.inTests, x.value, x.contentType, x.isTestService))
               .update((name, description, kind, inTests, value, None, isTestService))
@@ -166,7 +166,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         if (domainId.isDefined) {
           val query = PersistenceSchema.domainParameters
             .filter(_.domain === domainId.get)
-            .filterIf(onlySimple)(_.kind === "SIMPLE")
+            .filterIf(onlySimple)(_.kind === PropertyKind.SIMPLE)
           if (loadValues) {
             query.map(x => (x.id, x.name, x.kind, x.desc, x.value))
               .sortBy(_._2.asc)
@@ -215,7 +215,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
   def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean], onlySimple: Boolean): Future[List[DomainParameter]] = {
     val query = PersistenceSchema.domainParameters.filter(_.domain === domainId)
       .filterOpt(onlyForTests)((table, filterValue) => table.inTests === filterValue)
-      .filterIf(onlySimple)(_.kind === "SIMPLE")
+      .filterIf(onlySimple)(_.kind === PropertyKind.SIMPLE)
       .sortBy(_.name.asc)
     if (loadValues) {
       DB.run(
@@ -455,7 +455,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       // Create property.
       _ <- {
         createDomainParameterInternal(DomainParameter(0L, parameter.parameterInfo.key,
-          parameter.description.flatten, "SIMPLE",
+          parameter.description.flatten, PropertyKind.SIMPLE,
           parameter.parameterInfo.value,
           parameter.inTests.getOrElse(true), None, isTestService = false,
           domainId
@@ -474,7 +474,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       domainParameter <- checkDomainParameterExistence(domainId, update.parameterInfo.key, expectedToExist = true)
       // Update property.
       _ <- {
-        if (domainParameter.get.kind != "SIMPLE") {
+        if (domainParameter.get.kind != PropertyKind.SIMPLE) {
           throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Only simple properties can be updated through the REST API")
         } else {
           val inTestsValue = domainParameter.get.isTestService || update.inTests.getOrElse(domainParameter.get.inTests)
@@ -529,7 +529,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
               .filter(prop => propertyData.domainApiKey.isEmpty || propertyData.domainApiKey.get.equals(prop._3))
             if (matchingProperties.size == 1) {
               val matchingPropertyInfo = matchingProperties.head
-              if (matchingPropertyInfo._2 == "SIMPLE") {
+              if (matchingPropertyInfo._2 == PropertyKind.SIMPLE) {
                 // Update.
                 if (propertyData.parameterInfo.value.isDefined) {
                   actions += PersistenceSchema.domainParameters.filter(_.id === matchingPropertyInfo._1)
@@ -574,7 +574,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       parameterIdToUse <- {
         if (matchingParameterId.isEmpty) {
           // This is a new domain parameter.
-          createDomainParameterInternal(serviceData.parameter.copy(kind = "SIMPLE", inTests = true), None, onSuccessCalls)
+          createDomainParameterInternal(serviceData.parameter.copy(kind = PropertyKind.SIMPLE, inTests = true), None, onSuccessCalls)
         } else {
           // The test service points to an existing domain parameter.
           updateDomainParameterAsTestService(serviceData.parameter.copy(id = matchingParameterId.get), onSuccessCalls).map(_ => matchingParameterId.get)
@@ -615,7 +615,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
 
   private def updateDomainParameterAsTestService(parameter: DomainParameter, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Unit] = {
     updateDomainParameterInternal(parameter.domain, parameter.id, parameter.name, parameter.desc,
-      "SIMPLE", parameter.value, inTests = true, isTestService = true, None, None, onSuccessCalls).map(_ => ())
+      PropertyKind.SIMPLE, parameter.value, inTests = true, isTestService = true, None, None, onSuccessCalls).map(_ => ())
   }
 
   def updateTestServiceWithParameter(serviceData: TestServiceWithParameter): Future[Unit] = {
@@ -826,7 +826,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         .filter(_.domain === domainId)
         .filter(_.inTests === true)
         .filter(_.isTestService =!= true)
-        .filter(_.kind === "SIMPLE")
+        .filter(_.kind === PropertyKind.SIMPLE)
         .result
     }
   }

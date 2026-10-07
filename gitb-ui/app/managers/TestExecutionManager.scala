@@ -161,7 +161,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       parameterData.foreach{ p =>
         if (p.parameterUse == "R" && p.parameterValue.isEmpty) {
           throw MissingRequiredParameterException(p.parameterName, "Missing required conformance statement parameter ["+p.parameterName+"]")
-        } else if (!p.notForTests && p.parameterValue.isDefined && (!onlySimple || p.parameterKind == "SIMPLE")) {
+        } else if (!p.notForTests && p.parameterValue.isDefined && (!onlySimple || p.parameterKind == PropertyKind.SIMPLE)) {
           var actorConfigEntry = actorMap.get(p.endpointName)
           if (actorConfigEntry.isEmpty) {
             val actorConfigData = (result._1, p.endpointName, new ListBuffer[TypedConfiguration])
@@ -170,9 +170,9 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           }
           val config = new Configuration()
           config.setName(p.parameterKey)
-          if (p.parameterKind == "SECRET") {
+          if (p.parameterKind == PropertyKind.SECRET) {
             config.setValue(MimeUtil.decryptString(p.parameterValue.get))
-          } else if (p.parameterKind == "BINARY") {
+          } else if (p.parameterKind == PropertyKind.BINARY) {
             config.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getStatementParameterFile(p.parameterId, systemId), p.valueContentType.orNull))
           } else {
             config.setValue(p.parameterValue.get)
@@ -205,33 +205,33 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             val apiKey = result._10
             val configs = new ListBuffer[TypedConfiguration]
             if (authBasicUsername.isDefined && authBasicPassword.isDefined) {
-              configs += toTypedConfig(PropertyConstants.AUTH_BASIC_USERNAME, authBasicUsername.get, "SIMPLE")
-              configs += toTypedConfig(PropertyConstants.AUTH_BASIC_PASSWORD, MimeUtil.decryptString(authBasicPassword.get), "SIMPLE")
+              configs += toTypedConfig(PropertyConstants.AUTH_BASIC_USERNAME, authBasicUsername.get, PropertyKind.SIMPLE)
+              configs += toTypedConfig(PropertyConstants.AUTH_BASIC_PASSWORD, MimeUtil.decryptString(authBasicPassword.get), PropertyKind.SIMPLE)
             }
             TestServiceApiType.apply(apiType) match {
               case TestServiceApiType.RestApi =>
-                configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_TYPE, PropertyConstants.TEST_SERVICE_API_TYPE_REST, "SIMPLE")
+                configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_TYPE, PropertyConstants.TEST_SERVICE_API_TYPE_REST, PropertyKind.SIMPLE)
                 if (authHeaderName.isDefined && authHeaderValue.isDefined) {
-                  configs += toTypedConfig(PropertyConstants.AUTH_HEADER_NAME, authHeaderName.get, "SIMPLE")
-                  configs += toTypedConfig(PropertyConstants.AUTH_HEADER_VALUE, MimeUtil.decryptString(authHeaderValue.get), "SIMPLE")
+                  configs += toTypedConfig(PropertyConstants.AUTH_HEADER_NAME, authHeaderName.get, PropertyKind.SIMPLE)
+                  configs += toTypedConfig(PropertyConstants.AUTH_HEADER_VALUE, MimeUtil.decryptString(authHeaderValue.get), PropertyKind.SIMPLE)
                 }
               case TestServiceApiType.SoapApi =>
-                configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_TYPE, PropertyConstants.TEST_SERVICE_API_TYPE_SOAP, "SIMPLE")
+                configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_TYPE, PropertyConstants.TEST_SERVICE_API_TYPE_SOAP, PropertyKind.SIMPLE)
                 if (authTokenUsername.isDefined && authTokenPassword.isDefined && authTokenPasswordType.isDefined) {
-                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME, authTokenUsername.get, "SIMPLE")
-                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD, MimeUtil.decryptString(authTokenPassword.get), "SIMPLE")
+                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME, authTokenUsername.get, PropertyKind.SIMPLE)
+                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD, MimeUtil.decryptString(authTokenPassword.get), PropertyKind.SIMPLE)
                   TestServiceAuthTokenPasswordType.apply(authTokenPasswordType.get) match {
                     case TestServiceAuthTokenPasswordType.Digest =>
-                      configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST, "SIMPLE")
+                      configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST, PropertyKind.SIMPLE)
                     case TestServiceAuthTokenPasswordType.Text =>
-                      configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT, "SIMPLE")
+                      configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT, PropertyKind.SIMPLE)
                     case _ => throw new IllegalStateException("Unknown token password type [%s]".formatted(authTokenPasswordType.get))
                   }
                 }
               case _ => throw new IllegalStateException("Unknown test service API type [%s]".formatted(apiType))
             }
             if (Configurations.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED) {
-              configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_KEY, apiKey, "SIMPLE")
+              configs += toTypedConfig(PropertyConstants.TEST_SERVICE_API_KEY, apiKey, PropertyKind.SIMPLE)
             }
             val actorKey = "%s%s%s".formatted(PropertyConstants.ACTOR_CONFIG_TEST_SERVICE, PropertyConstants.ACTOR_CONFIG_TEST_SERVICE_SEPARATOR, testKey)
             TypedActorConfiguration(actorKey, actorKey, configs.toList)
@@ -246,7 +246,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         val configs = parameters.map(parameter => {
           if (parameter.kind == "HIDDEN") {
             toTypedConfig(parameter.name, MimeUtil.decryptString(parameter.value.get), parameter.kind)
-          } else if (parameter.kind == "BINARY") {
+          } else if (parameter.kind == PropertyKind.BINARY) {
             toTypedConfig(parameter.name, MimeUtil.getFileAsDataURL(repositoryUtils.getDomainParameterFile(domainId, parameter.id), parameter.contentType.orNull), parameter.kind)
           } else {
             toTypedConfig(parameter.name, parameter.value.get, parameter.kind)
@@ -274,8 +274,8 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
   def loadOrganisationParameters(systemId: Long, onlySimple: Boolean): Future[(Organizations, TypedActorConfiguration)] = {
     organisationManager.getOrganizationBySystemId(systemId).flatMap { organisation =>
       val configs = new ListBuffer[TypedConfiguration]
-      configs += toTypedConfig(Constants.organisationConfiguration_fullName, organisation.fullname, "SIMPLE")
-      configs += toTypedConfig(Constants.organisationConfiguration_shortName, organisation.shortname, "SIMPLE")
+      configs += toTypedConfig(Constants.organisationConfiguration_fullName, organisation.fullname, PropertyKind.SIMPLE)
+      configs += toTypedConfig(Constants.organisationConfiguration_shortName, organisation.shortname, PropertyKind.SIMPLE)
       organisationManager.getOrganisationParameterValues(organisation.id, onlySimple = Some(onlySimple)).map { parameters =>
         val organisationProperties = PrerequisiteUtil.withValidPrerequisites(parameters)
         if (organisationProperties.nonEmpty) {
@@ -284,9 +284,9 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
               throw MissingRequiredParameterException(property.parameter.name, "Missing required organisation parameter ["+property.parameter.name+"]")
             }
             if (!property.parameter.notForTests && property.value.isDefined) {
-              if (property.parameter.kind == "SECRET") {
+              if (property.parameter.kind == PropertyKind.SECRET) {
                 configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
-              } else if (property.parameter.kind == "BINARY") {
+              } else if (property.parameter.kind == PropertyKind.BINARY) {
                 configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getOrganisationPropertyFile(property.parameter.id, organisation.id), property.value.get.contentType.orNull), property.parameter.kind)
               } else {
                 configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
@@ -303,12 +303,12 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     systemManager.getSystemById(systemId).flatMap { result =>
       val system = result.get
       val configs = new ListBuffer[TypedConfiguration]
-      configs += toTypedConfig(Constants.systemConfiguration_fullName, system.fullname, "SIMPLE")
-      configs += toTypedConfig(Constants.systemConfiguration_shortName, system.shortname, "SIMPLE")
+      configs += toTypedConfig(Constants.systemConfiguration_fullName, system.fullname, PropertyKind.SIMPLE)
+      configs += toTypedConfig(Constants.systemConfiguration_shortName, system.shortname, PropertyKind.SIMPLE)
       if (system.version.nonEmpty) {
-        configs += toTypedConfig(Constants.systemConfiguration_version, system.version.get, "SIMPLE")
+        configs += toTypedConfig(Constants.systemConfiguration_version, system.version.get, PropertyKind.SIMPLE)
       }
-      configs += toTypedConfig(Constants.systemConfiguration_apiKey, system.apiKey, "SIMPLE")
+      configs += toTypedConfig(Constants.systemConfiguration_apiKey, system.apiKey, PropertyKind.SIMPLE)
       systemManager.getSystemParameterValues(systemId, onlySimple = Some(onlySimple)).map { parameters =>
         val systemProperties = PrerequisiteUtil.withValidPrerequisites(parameters)
         if (systemProperties.nonEmpty) {
@@ -317,9 +317,9 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
               throw exceptions.MissingRequiredParameterException(property.parameter.name, "Missing required system parameter ["+property.parameter.name+"]")
             }
             if (!property.parameter.notForTests && property.value.isDefined) {
-              if (property.parameter.kind == "SECRET") {
+              if (property.parameter.kind == PropertyKind.SECRET) {
                 configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
-              } else if (property.parameter.kind == "BINARY") {
+              } else if (property.parameter.kind == PropertyKind.BINARY) {
                 configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getSystemPropertyFile(property.parameter.id, systemId), property.value.get.contentType.orNull), property.parameter.kind)
               } else {
                 configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
