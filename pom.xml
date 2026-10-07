@@ -43,7 +43,7 @@
         <version.helgerSchematron>9.2.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.2.3</version.cxf> <!-- When upgrading ensure that the neethi version is up to date. -->
-        <version.neethi>3.2.3</version.neethi>
+        <version.neethi>3.2.4</version.neethi>
         <version.commonsCodec>1.22.1</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.22.0</version.commonsIo>
