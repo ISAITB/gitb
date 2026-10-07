@@ -1,7 +1,7 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
-val pekkoVersion = "1.7.0"
+val pekkoVersion = "1.7.1"
 val jacksonVersion = "3.2.3"
 val jackson2Version = "2.22.3"
 val jacksonAnnotationsVersion = "2.22"
