@@ -19,7 +19,7 @@ import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, DomainParameterManager}
-import models.TestServiceWithParameter
+import models.{PropertyKind, TestServiceWithParameter}
 import org.apache.commons.io.FileUtils
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
@@ -94,7 +94,7 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
         if (parameter.isDefined) {
           response = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
         } else {
-          if (domainParameter.kind == "BINARY") {
+          if (domainParameter.kind == PropertyKind.BINARY) {
             if (fileToStore.isDefined) {
               if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
                 response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.", Some("file"))
@@ -139,7 +139,7 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
         var result: Result = null
         if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
           result = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
-        } else if (domainParameter.kind == "BINARY") {
+        } else if (domainParameter.kind == PropertyKind.BINARY) {
           if (fileToStore.isDefined) {
             if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
               result = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")

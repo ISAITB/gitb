@@ -1112,7 +1112,7 @@ object ParameterExtractor {
       id = optionalLongBodyParameter(request, ParameterNames.PARAMETER).getOrElse(0L),
       name = requiredBodyParameter(request, ParameterNames.NAME),
       desc = optionalBodyParameter(request, ParameterNames.DESC),
-      kind = "SIMPLE",
+      kind = PropertyKind.SIMPLE,
       value = Some(requiredBodyParameter(request, ParameterNames.VALUE)),
       inTests = true,
       contentType = None,

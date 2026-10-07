@@ -3527,7 +3527,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     val kind = propertyTypeToKind(parameterType, isDomainParameter)
     var fileToStore: Option[File] = None
     var contentType: Option[String] = None
-    if (kind == "BINARY") {
+    if (kind == PropertyKind.BINARY) {
       contentType = Some(MimeUtil.getMimeTypeFromDataURL(parameterValue))
       fileToStore = Some(dataUrlToTempFile(parameterValue))
       ctx.onFailureCalls += (() => if (fileToStore.get.exists()) { FileUtils.deleteQuietly(fileToStore.get) })

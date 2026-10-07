@@ -653,7 +653,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       communityId <- getById(orgId).map(_.get.community)
       result <- {
         val typeToCheck = if (onlySimple.isDefined && onlySimple.get) {
-          Some("SIMPLE")
+          Some(PropertyKind.SIMPLE)
         } else {
           None
         }
@@ -719,7 +719,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
             simpleValueList <- PersistenceSchema.organisationParameterValues
               .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
               .filter(_._1.organisation === orgId)
-              .filter(_._2.kind === "SIMPLE")
+              .filter(_._2.kind === PropertyKind.SIMPLE)
               .map(x => x._1)
               .result
           } yield Some(simpleValueList.map(x => (x.parameter, x)).toMap)

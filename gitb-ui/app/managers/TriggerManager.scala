@@ -482,13 +482,13 @@ class TriggerManager @Inject()(env: Environment,
                 if (data.nonEmpty) {
                   val orgParamData = initializeContentMap("organisationProperties")
                   data.foreach { param =>
-                    if ("BINARY".equals(param._2._2)) {
+                    if (PropertyKind.BINARY.equals(param._2._2)) {
                       var value = "BASE64_CONTENT_OF_FILE"
                       if (param._2._3.isDefined && param._2._4.isDefined) {
                         value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getOrganisationPropertyFile(param._1, param._2._4.get).toPath))
                       }
                       orgParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
-                    } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                    } else if ("HIDDEN".equals(param._2._2) || PropertyKind.SECRET.equals(param._2._2)) {
                       orgParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                     } else {
                       orgParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))
@@ -517,13 +517,13 @@ class TriggerManager @Inject()(env: Environment,
                 if (data.nonEmpty) {
                   val sysParamData = initializeContentMap("systemProperties")
                   data.foreach { param =>
-                    if ("BINARY".equals(param._2._2)) {
+                    if (PropertyKind.BINARY.equals(param._2._2)) {
                       var value = "BASE64_CONTENT_OF_FILE"
                       if (param._2._3.isDefined && param._2._4.isDefined) {
                         value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getSystemPropertyFile(param._1, param._2._4.get).toPath))
                       }
                       sysParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
-                    } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                    } else if ("HIDDEN".equals(param._2._2) || PropertyKind.SECRET.equals(param._2._2)) {
                       sysParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                     } else {
                       sysParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))
@@ -548,13 +548,13 @@ class TriggerManager @Inject()(env: Environment,
               if (data.nonEmpty) {
                 val domainParamData = initializeContentMap("domainParameters")
                 data.foreach { param =>
-                  if ("BINARY".equals(param._2._2)) {
+                  if (PropertyKind.BINARY.equals(param._2._2)) {
                     var value = "BASE64_CONTENT_OF_FILE"
                     if (param._2._3.isDefined) {
                       value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getDomainParameterFile(param._2._4, param._1).toPath))
                     }
                     domainParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
-                  } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                  } else if ("HIDDEN".equals(param._2._2) || PropertyKind.SECRET.equals(param._2._2)) {
                     domainParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                   } else {
                     domainParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))
@@ -585,13 +585,13 @@ class TriggerManager @Inject()(env: Environment,
                 if (data.nonEmpty) {
                   val statementParamData = initializeContentMap("statementProperties")
                   data.foreach { param =>
-                    if ("BINARY".equals(param._2._2)) {
+                    if (PropertyKind.BINARY.equals(param._2._2)) {
                       var value = "BASE64_CONTENT_OF_FILE"
                       if (param._2._3.isDefined) {
                         value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getStatementParameterFile(param._1, param._2._4.get).toPath))
                       }
                       statementParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
-                    } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                    } else if ("HIDDEN".equals(param._2._2) || PropertyKind.SECRET.equals(param._2._2)) {
                       statementParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                     } else {
                       statementParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))

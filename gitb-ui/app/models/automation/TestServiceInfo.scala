@@ -16,7 +16,7 @@
 package models.automation
 
 import models.Enums.TestServiceApiType
-import models.{DomainParameter, TestService}
+import models.{DomainParameter, PropertyKind, TestService}
 import models.Enums.TestServiceApiType.TestServiceApiType
 import models.Enums.TestServiceAuthTokenPasswordType.TestServiceAuthTokenPasswordType
 import models.Enums.TestServiceType.TestServiceType
@@ -29,7 +29,7 @@ case class TestServiceInfo(parameterInfo: KeyValue, description: Option[Option[S
                            identifier: Option[Option[String]], version: Option[Option[String]], domainApiKey: Option[String], replaceExisting: Boolean) {
 
   def getParameter(parameterId: Option[Long], domainId: Long): DomainParameter = {
-    DomainParameter(parameterId.getOrElse(0L), parameterInfo.key, description.flatten, "SIMPLE", parameterInfo.value, inTests = true, None, isTestService = true, domainId)
+    DomainParameter(parameterId.getOrElse(0L), parameterInfo.key, description.flatten, PropertyKind.SIMPLE, parameterInfo.value, inTests = true, None, isTestService = true, domainId)
   }
 
   def getAsNewTestService(serviceId: Option[Long], parameterId: Long, apiKey: String): TestService = {

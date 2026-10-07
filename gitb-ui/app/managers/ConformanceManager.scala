@@ -2017,7 +2017,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			properties <- PersistenceSchema.organisationParameterValues
 				.join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
 				.filter(_._2.community === communityId)
-				.filter(_._2.kind === "SIMPLE")
+				.filter(_._2.kind === PropertyKind.SIMPLE)
 				.result
 			_ <- {
 				val actions = ListBuffer[DBIO[_]]()
@@ -2036,7 +2036,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			properties <- PersistenceSchema.systemParameterValues
 				.join(PersistenceSchema.systemParameters).on(_.parameter === _.id)
 				.filter(_._2.community === communityId)
-				.filter(_._2.kind === "SIMPLE")
+				.filter(_._2.kind === PropertyKind.SIMPLE)
 				.result
 			_ <- {
 				val actions = ListBuffer[DBIO[_]]()

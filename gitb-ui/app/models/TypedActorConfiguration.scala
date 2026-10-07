@@ -27,7 +27,7 @@ object TypedActorConfiguration {
         val config = new Configuration()
         config.setName(value.getName)
         config.setValue(value.getValue)
-        TypedConfiguration(config, "SIMPLE")
+        TypedConfiguration(config, PropertyKind.SIMPLE)
       }
     TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_VARIABLES, PropertyConstants.ACTOR_CONFIG_VARIABLES, configs)
   }
@@ -35,9 +35,9 @@ object TypedActorConfiguration {
   def fromSettings(): TypedActorConfiguration = {
     val settings = TestEngineCallbackSettings.fromEnvironment()
     TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_SETTINGS, PropertyConstants.ACTOR_CONFIG_SETTINGS, List(
-      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_REST_ENABLED, settings.restEnabled), "SIMPLE"),
-      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_SOAP_ENABLED, settings.soapEnabled), "SIMPLE"),
-      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED, settings.apiKeysEnabled), "SIMPLE")
+      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_REST_ENABLED, settings.restEnabled), PropertyKind.SIMPLE),
+      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_SOAP_ENABLED, settings.soapEnabled), PropertyKind.SIMPLE),
+      TypedConfiguration(createBooleanConfig(PropertyConstants.TEST_SERVICE_CALLBACKS_API_KEYS_ENABLED, settings.apiKeysEnabled), PropertyKind.SIMPLE)
     ))
   }
 

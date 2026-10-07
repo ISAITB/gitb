@@ -1047,7 +1047,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
   def getSystemParameterValues(systemId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): Future[List[SystemParametersWithValue]] = {
     var typeToCheck: Option[String] = None
     if (onlySimple.isDefined && onlySimple.get) {
-      typeToCheck = Some("SIMPLE")
+      typeToCheck = Some(PropertyKind.SIMPLE)
     }
     val action = for {
       communityId <- getCommunityIdOfSystemInternal(systemId)
