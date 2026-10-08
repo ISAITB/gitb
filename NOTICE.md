@@ -253,7 +253,7 @@ Library licences are organised in three sections:
 | Apache | [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | com.google.errorprone # error_prone_annotations # 2.49.0 | <notextile></notextile> |
 | Apache | [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.html) | [net.debasishg # redisclient_2.13 # 3.42](https://github.com/debasishg/scala-redis) | <notextile></notextile> |
 | Apache | [Apache License version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.xmlresolver # xmlresolver # 5.3.3](https://github.com/xmlresolver/xmlresolver) | <notextile></notextile> |
-| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [at.yawk.lz4 # lz4-java # 1.11.2](https://github.com/yawkat/lz4-java) | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [at.yawk.lz4 # lz4-java # 1.11.4](https://github.com/yawkat/lz4-java) | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [com.github.ben-manes.caffeine # caffeine # 3.2.4](https://github.com/ben-manes/caffeine) | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [com.github.stephenc.jcip # jcip-annotations # 1.0-1](http://stephenc.github.com/jcip-annotations) | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [com.google.crypto.tink # tink # 1.23.0](http://github.com/tink-crypto/tink-java) | <notextile></notextile> |
@@ -332,36 +332,36 @@ Library licences are organised in three sections:
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.eclipse.jetty.ee11 # jetty-ee11-servlet # 12.1.11 | <notextile></notextile> |
 | Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.parboiled # parboiled_2.13 # 2.5.0](http://parboiled.org) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # cachecontrol_2.13 # 3.0.1](https://github.com/playframework/cachecontrol) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ahc-ws-standalone_2.13 # 3.0.12](https://github.com/playframework/play-ws/) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-ahc-ws_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-build-link # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-cache_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-configuration_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-ehcache_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-exceptions # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-filters-helpers_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ahc-ws-standalone_2.13 # 3.0.14](https://github.com/playframework/play-ws/) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-ahc-ws_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-build-link # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-cache_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-configuration_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-ehcache_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-exceptions # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-filters-helpers_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-functional_2.13 # 3.0.6](https://github.com/playframework/play-json) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-guice_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-guice_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
 | Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-jdbc-api_2.13 # 3.0.7](https://github.com/playframework/playframework) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-json_2.13 # 3.0.6](https://github.com/playframework/play-json) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-logback_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-pekko-http-server_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-server_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-logback_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-pekko-http-server_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-server_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-slick_2.13 # 6.2.0](https://github.com/playframework/play-slick) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-streams_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ws-standalone-json_2.13 # 3.0.12](https://github.com/playframework/play-ws/) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ws-standalone-xml_2.13 # 3.0.12](https://github.com/playframework/play-ws/) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ws-standalone_2.13 # 3.0.12](https://github.com/playframework/play-ws/) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-ws_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play_2.13 # 3.0.11](https://github.com/playframework/playframework) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # shaded-asynchttpclient # 3.0.12](https://github.com/playframework/play-ws/) | <notextile></notextile> |
-| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # shaded-oauth # 3.0.12](https://github.com/playframework/play-ws/) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-streams_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ws-standalone-json_2.13 # 3.0.14](https://github.com/playframework/play-ws/) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ws-standalone-xml_2.13 # 3.0.14](https://github.com/playframework/play-ws/) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # play-ws-standalone_2.13 # 3.0.14](https://github.com/playframework/play-ws/) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play-ws_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework # play_2.13 # 3.0.12](https://github.com/playframework/playframework) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # shaded-asynchttpclient # 3.0.14](https://github.com/playframework/play-ws/) | <notextile></notextile> |
+| Apache | [Apache-2.0](http://opensource.org/licenses/Apache-2.0) | [org.playframework # shaded-oauth # 3.0.14](https://github.com/playframework/play-ws/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.playframework.twirl # twirl-api_2.13 # 2.0.9](https://github.com/playframework/twirl) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.scala-lang # scala-library # 2.13.18](https://www.scala-lang.org/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.scala-lang # scala-reflect # 2.13.18](https://www.scala-lang.org/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.scala-lang.modules # scala-parser-combinators_2.13 # 1.1.2](http://www.scala-lang.org/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.scala-lang.modules # scala-xml_2.13 # 2.2.0](http://www.scala-lang.org/) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.slf4j # jcl-over-slf4j # 2.0.18](http://www.slf4j.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.slf4j # jcl-over-slf4j # 2.0.20](http://www.slf4j.org) | <notextile></notextile> |
 | Apache | [Apache-2.0](http://localhost) | [org.webjars # swagger-ui # 5.32.15](https://www.webjars.org) | <notextile></notextile> |
 | Apache | [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [com.fasterxml.woodstox # woodstox-core # 7.2.1](https://github.com/FasterXML/woodstox) | <notextile></notextile> |
 | Apache | [The Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [com.hierynomus # asn-one # 0.6.0](https://github.com/hierynomus/asn-one) | <notextile></notextile> |
@@ -375,7 +375,7 @@ Library licences are organised in three sections:
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | com.fasterxml.jackson.datatype # jackson-datatype-jdk8 # 2.21.6 | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | com.fasterxml.jackson.datatype # jackson-datatype-jsr310 # 2.22.1 | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | com.fasterxml.jackson.module # jackson-module-parameter-names # 2.21.6 | <notextile></notextile> |
-| Apache | [The Apache Software License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [com.fasterxml.jackson.module # jackson-module-scala_2.13 # 2.22.3](https://github.com/FasterXML/jackson-module-scala) | <notextile></notextile> |
+| Apache | [The Apache Software License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [com.fasterxml.jackson.module # jackson-module-scala_2.13 # 2.22.3.1](https://github.com/FasterXML/jackson-module-scala) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [com.google.code.findbugs # jsr305 # 3.0.2](http://findbugs.sourceforge.net/) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | com.google.guava # listenablefuture # 9999.0-empty-to-avoid-conflict-with-guava | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | com.google.inject # guice # 6.0.0 | <notextile></notextile> |
@@ -419,7 +419,6 @@ Library licences are organised in three sections:
 | Apache | [The Apache Software License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [tools.jackson.core # jackson-core # 3.2.3](https://github.com/FasterXML/jackson-core) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [tools.jackson.core # jackson-databind # 3.2.3](https://github.com/FasterXML/jackson) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [tools.jackson.module # jackson-module-jakarta-xmlbind-annotations # 3.2.3](https://github.com/FasterXML/jackson-modules-base) | <notextile></notextile> |
-| Apache | [The Apache Software License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [tools.jackson.module # jackson-module-scala_2.13 # 3.2.3](https://github.com/FasterXML/jackson-module-scala) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [xml-apis # xml-apis-ext # 1.3.04](http://xml.apache.org/commons/components/external/) | <notextile></notextile> |
 | BSD | [BSD](https://opensource.org/license/bsd-3-clause) | com.thoughtworks.paranamer # paranamer # 2.8.3 | <notextile></notextile> |
 | BSD | [BSD 2-Clause License](https://opensource.org/licenses/BSD-2-Clause) | [com.googlecode.owasp-java-html-sanitizer # owasp-java-html-sanitizer # 20260924.2](https://github.com/OWASP/java-html-sanitizer) | <notextile></notextile> |
@@ -451,14 +450,14 @@ Library licences are organised in three sections:
 | GPL | [The GNU General Public License, v2 with Universal FOSS Exception, v1.0](http://localhost) | [com.mysql # mysql-connector-j # 26.7.0](http://dev.mysql.com/doc/connector-j/en/) | <notextile>The Universal FOSS Exception allows its usage as it is used unchanged.</notextile> |
 | GPL with Classpath Extension | [GPL with Classpath Extension]() | [jakarta.annotation # jakarta.annotation-api # 3.0.0](https://projects.eclipse.org/projects/ee4j.ca) | <notextile></notextile> |
 | GPL with Classpath Extension | [GPL with Classpath Extension]() | [jakarta.servlet # jakarta.servlet-api # 6.1.0](https://projects.eclipse.org/projects/ee4j.servlet) | <notextile></notextile> |
-| LGPL | [GNU Lesser General Public License](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) | ch.qos.logback # logback-classic # 1.5.32 | <notextile></notextile> |
-| LGPL | [GNU Lesser General Public License](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) | ch.qos.logback # logback-core # 1.5.32 | <notextile></notextile> |
 | LGPL | [GNU Lesser General Public License (LGPL), version 2.1 or later](http://www.gnu.org/licenses/lgpl.html) | [io.github.openhtmltopdf # openhtmltopdf-core # 1.1.86](https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-core) | <notextile></notextile> |
 | LGPL | [GNU Lesser General Public License (LGPL), version 2.1 or later](http://www.gnu.org/licenses/lgpl.html) | [io.github.openhtmltopdf # openhtmltopdf-pdfbox # 1.1.86](https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-pdfbox) | <notextile></notextile> |
 | LGPL | [GNU Lesser General Public License (LGPL), version 2.1 or later](http://www.gnu.org/licenses/lgpl.html) | [io.github.openhtmltopdf # openhtmltopdf-slf4j # 1.1.86](https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-slf4j) | <notextile></notextile> |
 | LGPL | [GNU Lesser General Public License (LGPL), version 2.1 or later](http://www.gnu.org/licenses/lgpl.html) | [io.github.openhtmltopdf # openhtmltopdf-svg-support # 1.1.86](https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-svg-support) | <notextile></notextile> |
-| MIT | [MIT](https://opensource.org/license/mit) | [org.slf4j # jul-to-slf4j # 2.0.18](http://www.slf4j.org) | <notextile></notextile> |
-| MIT | [MIT](https://opensource.org/license/mit) | [org.slf4j # slf4j-api # 2.0.18](http://www.slf4j.org) | <notextile></notextile> |
+| LGPL | [LGPL-2.1-only](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) | ch.qos.logback # logback-classic # 1.6.4 | <notextile></notextile> |
+| LGPL | [LGPL-2.1-only](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) | ch.qos.logback # logback-core # 1.6.4 | <notextile></notextile> |
+| MIT | [MIT](https://opensource.org/license/mit) | [org.slf4j # jul-to-slf4j # 2.0.20](http://www.slf4j.org) | <notextile></notextile> |
+| MIT | [MIT](https://opensource.org/license/mit) | [org.slf4j # slf4j-api # 2.0.20](http://www.slf4j.org) | <notextile></notextile> |
 | MIT | [MIT](http://localhost) | [org.webjars # jquery # 4.0.0](https://www.webjars.org) | <notextile></notextile> |
 | MIT | [MIT-0](https://spdx.org/licenses/MIT-0.html) | [org.reactivestreams # reactive-streams # 1.0.4](http://www.reactive-streams.org/) | <notextile></notextile> |
 | MIT | [The MIT License](https://jsoup.org/license) | [org.jsoup # jsoup # 1.23.2](https://jsoup.org/) | <notextile></notextile> |
