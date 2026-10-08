@@ -16,6 +16,7 @@
 import {Component, ElementRef, EventEmitter, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
+import {formatDate} from '@angular/common';
 import {Observable, of, Subscription, throwError, timer, TimeoutError} from 'rxjs';
 import {catchError, map, mergeMap, share} from 'rxjs/operators';
 import {Constants} from 'src/app/common/constants';
@@ -318,7 +319,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {
-    return this.testService.getTestCaseDefinitionByStatement(testCaseToLookup, this.actorId, this.systemId).pipe(
+    // Errors are reported through the test case's log and a dedicated popup (see definitionLoadFailed).
+    return this.testService.getTestCaseDefinitionByStatement(testCaseToLookup, this.actorId, this.systemId, (error) => throwError(() => error)).pipe(
       mergeMap((testCase) => {
         if (testCase.preliminary != undefined) {
           this.currentTest!.preliminary = testCase.preliminary
@@ -411,6 +413,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
             this.currentTest.sessionId = ''
             this.stepsOfTests[this.currentTest.id] = []
             this.updateTestCaseStatus(this.currentTest.id, Constants.TEST_CASE_STATUS.STOPPED)
+            this.definitionLoadFailed(this.currentTest.id, error)
           }
           return throwError(() => error)
         })
@@ -480,6 +483,19 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
         return throwError(() => error)
       })
     )
+  }
+
+  private definitionLoadFailed(testCaseId: number, error: any) {
+    // Record the failure in the test case's log (no test session exists yet to provide one).
+    const description = error?.error?.error_description ?? 'An unexpected error occurred while loading the test case definition.'
+    this.processLogMessage(`[${formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss', 'en')}] ERROR - ${description}`, testCaseId)
+    let message: string
+    if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+      message = "An error occurred while loading the test case definition. Details on the cause are included in the test session log."
+    } else {
+      message = "An error occurred while loading the test case definition. Please contact your community administrator to resolve this."
+    }
+    this.errorService.showSimpleErrorMessage("Test case loading error", message)
   }
 
   private configurationFailed() {
@@ -584,17 +600,18 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     }
   }
 
-  private processLogMessage(logMessage: string) {
-    this.logMessages[this.currentTest!.id].push(logMessage)
-    this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
-    if (this.currentTest!.id != this.logPanelTestId) {
+  private processLogMessage(logMessage: string, testCaseId?: number) {
+    const testId = testCaseId ?? this.currentTest!.id
+    this.logMessages[testId].push(logMessage)
+    this.logMessageEventEmitters[testId].emit(logMessage)
+    if (testId != this.logPanelTestId) {
       const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
       if (messageLevel == LogLevel.ERROR) {
-        this.unreadLogErrors[this.currentTest!.id] = true
+        this.unreadLogErrors[testId] = true
       } else if (messageLevel == LogLevel.WARN) {
-        this.unreadLogWarnings[this.currentTest!.id] = true
+        this.unreadLogWarnings[testId] = true
       } else {
-        this.unreadLogMessages[this.currentTest!.id] = true
+        this.unreadLogMessages[testId] = true
       }
     }
   }

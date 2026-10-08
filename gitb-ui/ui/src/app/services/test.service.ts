@@ -122,10 +122,11 @@ export class TestService {
     })
   }
 
-  getTestCaseDefinitionByStatement(testCase: number, actorId: number, systemId: number) {
+  getTestCaseDefinitionByStatement(testCase: number, actorId: number, systemId: number, errorHandler?: (_: any) => Observable<any>) {
     return this.restService.get<TestCaseDefinition>({
       path: ROUTES.controllers.TestService.getTestCaseDefinitionByStatement(testCase).url,
       authenticate: true,
+      errorHandler: errorHandler,
       params: {
         actor: actorId,
         system: systemId

@@ -15,8 +15,11 @@
 
 package com.gitb.engine.repository;
 
+import com.gitb.core.ErrorCode;
+import com.gitb.core.ErrorInfo;
 import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.utils.ErrorUtils;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Scriptlet;
 import com.gitb.tdl.TestCase;
@@ -90,8 +93,33 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 			}
 		} catch (Exception e) {
             logger.error("Failed to look up resource path [{}] for test case [{}] from test suite [{}]", resourcePath, testCaseId, StringUtils.defaultString(from));
-			throw new GITBEngineInternalError(e);
+			var message = "Unexpected error while looking up resource [%s]%s: %s".formatted(resourcePath, (from == null)?"":" from test suite [%s]".formatted(from), rootMessage(e));
+			throw new GITBEngineInternalError(toErrorInfo(e, message), e);
 		}
+	}
+
+	private String rootMessage(Throwable error) {
+		String message = null;
+		if (error instanceof GITBEngineInternalError) {
+			message = error.getMessage();
+		}
+		Throwable current = error;
+		while (message == null && current != null) {
+			message = current.getMessage();
+			current = current.getCause();
+		}
+		if (message == null) {
+			message = (error == null)?"":error.getClass().getSimpleName();
+		}
+		return message;
+	}
+
+	private ErrorInfo toErrorInfo(Throwable cause, String message) {
+		var code = ErrorCode.INTERNAL_ERROR;
+		if (cause instanceof GITBEngineInternalError internalError && internalError.getErrorInfo() != null && internalError.getErrorInfo().getErrorCode() != null) {
+			code = internalError.getErrorInfo().getErrorCode();
+		}
+		return ErrorUtils.errorInfo(code, message);
 	}
 
 	private TestCase getTestCaseResource(String testCaseId) {
@@ -109,7 +137,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 				return null;
 			}
 		} catch (Exception e) {
-			throw new GITBEngineInternalError(e);
+			throw new GITBEngineInternalError(toErrorInfo(e, "Unexpected error while looking up test case definition: %s".formatted(rootMessage(e))), e);
 		}
 	}
 
@@ -135,6 +163,8 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 			HttpResponse<byte[]> httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
 			if (httpResponse.statusCode() == 200) {
 				return new ByteArrayInputStream(httpResponse.body());
+			} else if (httpResponse.statusCode() == 404) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.ARTIFACT_NOT_FOUND, "Resource not found (HTTP status 404)"));
 			} else {
 				throw new GITBEngineInternalError("Unexpected response returned while looking up resource: %s".formatted(httpResponse.statusCode()));
 			}

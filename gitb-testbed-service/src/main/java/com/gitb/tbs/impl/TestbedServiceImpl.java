@@ -68,7 +68,12 @@ public class TestbedServiceImpl implements TestbedService {
             throw new Error(e.getMessage(), e.getErrorInfo());
         } catch (Exception e) {
             logger.error("An error occurred", e);
-            throw new Error("An error occurred.", ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR), e);
+            Throwable root = e;
+            while (root.getCause() != null && root.getCause() != root) {
+                root = root.getCause();
+            }
+            String message = "Unexpected error while loading the test case definition: %s".formatted(StringUtils.defaultIfBlank(root.getMessage(), root.getClass().getSimpleName()));
+            throw new Error(message, ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, message), e);
         }
     }
 
