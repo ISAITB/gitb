@@ -56,19 +56,11 @@ libraryDependencies ++= Seq(
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.pac4j" % "pac4j-http" % pac4jVersion,
   "org.pac4j" % "pac4j-ldap" % pac4jVersion,
-  // Override the netty version used to establish connections. These should be aligned with the major version brought in by ldaptive (dependency of pac4j-ldap) - START
-  "io.netty" % "netty-handler" % nettyVersion,
-  "io.netty" % "netty-transport-native-epoll" % nettyVersion,
-  "io.netty" % "netty-transport-native-kqueue" % nettyVersion,
-  // - END.
   "org.apache.commons" % "commons-lang3" % "3.20.0",
-  "tools.jackson.module" %% "jackson-module-scala" % jacksonVersion,
-  "tools.jackson.core" % "jackson-databind" % jacksonVersion,
   "tools.jackson.core" % "jackson-core" % jacksonVersion,
+  "tools.jackson.core" % "jackson-databind" % jacksonVersion,
   "tools.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationsVersion,
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson2ScalaVersion,
-  "com.fasterxml.jackson.core" % "jackson-databind" % jackson2Version,
   "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
@@ -76,8 +68,6 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.neethi" % "neethi" % "3.2.4",
-  "org.apache.ws.xmlschema" % "xmlschema-core" % "2.3.3",
   "org.apache.tika" % "tika-core" % "3.3.2",
   "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
@@ -104,6 +94,23 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-text" % commonsTextVersion,
   "com.bucket4j" % "bucket4j_jdk17-core" % "8.21.0",
   "com.github.ben-manes.caffeine" % "caffeine" % "3.3.0"
+)
+
+// Overrides for transitive dependencies to apply patches.
+dependencyOverrides ++= Seq(
+  // Override the netty version brought in by ldaptive (dependency of pac4j-ldap)
+  "io.netty" % "netty-handler" % nettyVersion,
+  "io.netty" % "netty-transport-native-epoll" % nettyVersion,
+  "io.netty" % "netty-transport-native-kqueue" % nettyVersion,
+  // Override the neethi version brought in by CXF.
+  "org.apache.neethi" % "neethi" % "3.2.4",
+  // Override the xmlschema-core version brought in by CXF.
+  "org.apache.ws.xmlschema" % "xmlschema-core" % "2.3.3",
+  // Override Jackson and legacy Jackson2 modules brought in by Pac4J and Play.
+  "tools.jackson.module" %% "jackson-module-scala" % jacksonVersion,
+  "com.fasterxml.jackson.core" % "jackson-databind" % jackson2Version,
+  "com.fasterxml.jackson.core" % "jackson-core" % jackson2Version,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson2ScalaVersion
 )
 
 // Deactivate repeatable builds to speed up via parallelization
