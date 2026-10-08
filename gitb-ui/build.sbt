@@ -56,7 +56,7 @@ libraryDependencies ++= Seq(
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.pac4j" % "pac4j-http" % pac4jVersion,
   "org.pac4j" % "pac4j-ldap" % pac4jVersion,
-  "org.apache.commons" % "commons-lang3" % "3.20.0",
+  "org.apache.commons" % "commons-lang3" % "3.21.0",
   "tools.jackson.core" % "jackson-core" % jacksonVersion,
   "tools.jackson.core" % "jackson-databind" % jacksonVersion,
   "tools.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
