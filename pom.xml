@@ -80,7 +80,7 @@
         <version.xmlUnit>2.13.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.freeMarker>2.3.35</version.freeMarker>
-        <version.openhtmltopdf>1.1.86</version.openhtmltopdf>
+        <version.openhtmltopdf>1.1.94</version.openhtmltopdf>
         <version.org.jsoup>1.23.2</version.org.jsoup>
         <version.jena>6.1.0</version.jena>
         <!-- Ensure the libthrift version matches the one used within Jena. -->
