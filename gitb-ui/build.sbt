@@ -71,7 +71,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.3.2",
   "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.32.15",
+  "org.webjars" % "swagger-ui" % "5.33.1",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
   "org.glassfish.jaxb"  % "jaxb-runtime" % jaxbVersion,
