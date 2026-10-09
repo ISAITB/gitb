@@ -121,9 +121,9 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
 
   cancelCreateErrorTemplate() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)
+      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)
     } else {
-      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ERROR_TEMPLATES)
+      void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ERROR_TEMPLATES)
     }
   }
 

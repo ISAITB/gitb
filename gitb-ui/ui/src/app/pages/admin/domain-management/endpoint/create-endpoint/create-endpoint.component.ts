@@ -75,7 +75,7 @@ export class CreateEndpointComponent extends BaseComponent implements OnInit, Af
   }
 
 	cancel() {
-    this.routingService.toActor(this.domainId, this.specificationId, this.actorId)
+    void this.routingService.toActor(this.domainId, this.specificationId, this.actorId)
   }
 
 }

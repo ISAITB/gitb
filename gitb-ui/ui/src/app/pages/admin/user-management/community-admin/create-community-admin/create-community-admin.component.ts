@@ -131,7 +131,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   }
 
   cancelCreateAdmin() {
-    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ADMINISTRATORS)
+    void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ADMINISTRATORS)
   }
 
 }

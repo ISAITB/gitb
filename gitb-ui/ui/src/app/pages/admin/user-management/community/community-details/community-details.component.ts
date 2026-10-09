@@ -239,7 +239,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     this.copyTags(this.community.tags)
     this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration()
+      void this.routingService.toSystemAdministration()
     }
     this.community.domainId = this.community.domain?.id
     this.originalDomainId = this.community.domain?.id
@@ -768,7 +768,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   cancelCommunityDetail() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
-      this.routingService.toUserManagement()
+      void this.routingService.toUserManagement()
     })
   }
 

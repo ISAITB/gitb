@@ -109,7 +109,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit {
   }
 
   cancelDetailAdmin() {
-    this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)
+    void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)
   }
 
 }

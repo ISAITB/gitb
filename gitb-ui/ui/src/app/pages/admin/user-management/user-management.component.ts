@@ -64,7 +64,7 @@ export class UserManagementComponent extends BaseComponent implements OnInit, Af
 
   ngOnInit(): void {
     if (!this.dataService.isSystemAdmin) {
-      this.routingService.toHome()
+      void this.routingService.toHome()
     }
     let targetPaging: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
     const existingState = this.getDisplayState<UserManagementListState>(Constants.DISPLAY_STATE_KEY.COMMUNITIES, true)

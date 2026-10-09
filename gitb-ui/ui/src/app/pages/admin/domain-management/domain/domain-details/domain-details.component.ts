@@ -477,7 +477,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       this.conformanceService.deleteDomain(this.domainId)
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' deleted.')
-        this.routingService.toDomains()
+        void this.routingService.toDomains()
       }).add(() => {
         this.deletePending = false
       })
@@ -506,13 +506,13 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
 	back() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
-      this.routingService.toDomains()
+      void this.routingService.toDomains()
     })
   }
 
 	onSpecificationSelect(specification: DomainSpecification) {
     if (!this.managingSpecificationOrder) {
-      this.routingService.toSpecification(this.domainId, specification.id)
+      void this.routingService.toSpecification(this.domainId, specification.id)
     }
   }
 

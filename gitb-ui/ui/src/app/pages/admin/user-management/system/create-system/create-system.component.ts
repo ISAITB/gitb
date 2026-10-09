@@ -105,9 +105,9 @@ export class CreateSystemComponent extends BaseComponent implements OnInit, Afte
 
   cancel() {
     if (this.fromCommunityManagement) {
-      this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
+      void this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
     } else {
-      this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
+      void this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
     }
   }
 

@@ -334,9 +334,9 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 	back() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
       if (this.specificationId) {
-        this.routingService.toSpecification(this.domainId, this.specificationId!, Constants.TAB.SPECIFICATION.TEST_SUITES)
+        void this.routingService.toSpecification(this.domainId, this.specificationId!, Constants.TAB.SPECIFICATION.TEST_SUITES)
       } else {
-        this.routingService.toDomain(this.domainId, Constants.TAB.DOMAIN.TEST_SUITES)
+        void this.routingService.toDomain(this.domainId, Constants.TAB.DOMAIN.TEST_SUITES)
       }
     })
   }
@@ -454,7 +454,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
         this.addAlertError(result.error_description)
       } else {
         this.popupService.success('Test suite moved successfully.')
-        this.routingService.toTestSuite(this.domainId, specificationId, this.testSuiteId).then(() => {
+        void this.routingService.toTestSuite(this.domainId, specificationId, this.testSuiteId).then(() => {
           // Reset breadcrumbs and loaded IDs
           this.specificationId = specificationId
           this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
@@ -473,7 +473,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
         this.addAlertError(result.error_description)
       } else {
         this.popupService.success('Test suite converted successfully.')
-        this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
+        void this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
       }
     }).add(() => {
       this.convertPending = false
@@ -488,7 +488,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
         this.addAlertError(result.error_description)
       } else {
         this.popupService.success('Test suite converted successfully.')
-        this.routingService.toTestSuite(this.domainId, result.id, this.testSuiteId)
+        void this.routingService.toTestSuite(this.domainId, result.id, this.testSuiteId)
       }
     }).add(() => {
       this.convertPending = false

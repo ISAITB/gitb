@@ -148,7 +148,7 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
   }
 
   back() {
-    this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)
+    void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)
   }
 
 }

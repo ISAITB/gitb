@@ -75,13 +75,13 @@ export class UsageTipModalComponent {
 
   toCommunityManagement() {
     this.closeModal((pending) => this.goToCommunityManagementPending = pending).subscribe(() => {
-      this.routingService.toUserManagement()
+      void this.routingService.toUserManagement()
     })
   }
 
   toSystemAdministration() {
     this.closeModal((pending) => this.goToSystemAdministrationPending = pending).subscribe(() => {
-      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
+      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
     })
   }
 

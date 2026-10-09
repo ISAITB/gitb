@@ -125,7 +125,7 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   }
 
   cancelCreateOrganisation() {
-    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
+    void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
   }
 
 }

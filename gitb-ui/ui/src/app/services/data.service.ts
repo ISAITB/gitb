@@ -1338,7 +1338,7 @@ export class DataService {
           navigator.clipboard.writeText(text).then(() => {
             observer.next(text)
             observer.complete()
-          })
+          }, (error) => observer.error(error))
         } else {
           // IE11 support.
           const clipboard = (window as any).clipboardData

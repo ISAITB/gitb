@@ -452,7 +452,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
       this.deletePending = true
       this.specificationService.deleteSpecification(this.specificationId)
       .subscribe(() => {
-        this.routingService.toDomain(this.domainId)
+        void this.routingService.toDomain(this.domainId)
         this.popupService.success(this.dataService.labelSpecification()+' deleted.')
       }).add(() => {
         this.deletePending = false
@@ -484,9 +484,9 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 	back() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
       if (this.sharedTestSuiteId) {
-        this.routingService.toSharedTestSuite(this.domainId, this.sharedTestSuiteId)
+        void this.routingService.toSharedTestSuite(this.domainId, this.sharedTestSuiteId)
       } else {
-        this.routingService.toDomain(this.domainId)
+        void this.routingService.toDomain(this.domainId)
       }
     })
   }

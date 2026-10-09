@@ -111,7 +111,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   cancelDetailAdmin() {
-    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ADMINISTRATORS)
+    void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ADMINISTRATORS)
   }
 
 

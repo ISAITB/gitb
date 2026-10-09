@@ -59,7 +59,7 @@ export class CreateSpecificationGroupComponent extends BaseComponent implements 
       this.pending = true
       this.specificationService.createSpecificationGroup(this.group.sname!, this.group.fname!, this.group.description, this.group.reportMetadata, domainId)
       .subscribe(() => {
-        this.routingService.toDomain(domainId)
+        void this.routingService.toDomain(domainId)
         this.popupService.success(this.dataService.labelSpecificationGroup()+' created.')
       }).add(() => {
         this.pending = false
@@ -69,6 +69,6 @@ export class CreateSpecificationGroupComponent extends BaseComponent implements 
 
 	cancel() {
     let domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
-    this.routingService.toDomain(domainId)
+    void this.routingService.toDomain(domainId)
   }
 }

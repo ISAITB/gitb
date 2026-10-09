@@ -142,9 +142,9 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   copyLandingPage() {
     this.copyPending = true
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toCreateLandingPage(undefined, undefined, this.pageId)
+      void this.routingService.toCreateLandingPage(undefined, undefined, this.pageId)
     } else {
-      this.routingService.toCreateLandingPage(this.communityId, false, this.pageId)
+      void this.routingService.toCreateLandingPage(this.communityId, false, this.pageId)
     }
   }
 
@@ -166,9 +166,9 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
 
   cancelDetailLandingPage() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
+      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
     } else {
-      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LANDING_PAGES)
+      void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LANDING_PAGES)
     }
   }
 

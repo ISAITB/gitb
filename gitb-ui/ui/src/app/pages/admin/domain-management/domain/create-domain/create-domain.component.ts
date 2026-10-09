@@ -65,7 +65,7 @@ export class CreateDomainComponent extends BaseComponent implements OnInit, Afte
 			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' created.')
-        this.routingService.toDomains()
+        void this.routingService.toDomains()
       }).add(() => {
         this.pending = false
       })
@@ -73,7 +73,7 @@ export class CreateDomainComponent extends BaseComponent implements OnInit, Afte
   }
 
 	cancel() {
-    this.routingService.toDomains()
+    void this.routingService.toDomains()
   }
 
   protected readonly Constants = Constants;

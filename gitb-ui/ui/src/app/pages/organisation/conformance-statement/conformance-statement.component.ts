@@ -673,9 +673,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         if (this.executionMode == this.executionModeInteractive) {
             this.dataService.setTestsToExecute([test])
             if (this.communityId == undefined) {
-              this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
+              void this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
             } else {
-              this.routingService.toTestCaseExecution(this.communityId, this.organisationId, this.systemId, this.actorId, test.id)
+              void this.routingService.toTestCaseExecution(this.communityId, this.organisationId, this.systemId, this.actorId, test.id)
             }
         } else {
           this.executeHeadless([test])
@@ -736,15 +736,15 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
               this.dataService.setTestsToExecute(testsToExecute)
               if (this.communityId == undefined) {
                 if (testSuite) {
-                  this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
+                  void this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
                 } else {
-                  this.routingService.toOwnStatementExecution(this.organisationId, this.systemId, this.actorId)
+                  void this.routingService.toOwnStatementExecution(this.organisationId, this.systemId, this.actorId)
                 }
               } else {
                 if (testSuite) {
-                  this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
+                  void this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
                 } else {
-                  this.routingService.toStatementExecution(this.communityId, this.organisationId, this.systemId, this.actorId)
+                  void this.routingService.toStatementExecution(this.communityId, this.organisationId, this.systemId, this.actorId)
                 }
               }
             } else {
@@ -894,9 +894,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     // following the default hierarchical navigation below.
     this.routingService.returnToSource(this.viewReturnTarget, () => {
       if (this.communityId == undefined) {
-        this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
+        void this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
       } else {
-        this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
+        void this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
       }
     })
   }

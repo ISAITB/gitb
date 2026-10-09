@@ -127,7 +127,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   }
 
   cancelCreateAdmin() {
-    this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)
+    void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)
   }
 
 }

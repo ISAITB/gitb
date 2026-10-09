@@ -174,7 +174,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   }
 
   back() {
-    this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)
+    void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)
   }
 
 }

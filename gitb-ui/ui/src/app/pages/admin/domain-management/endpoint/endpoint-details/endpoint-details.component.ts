@@ -112,7 +112,7 @@ export class EndpointDetailsComponent extends BaseTabbedComponent implements OnI
   }
 
 	back() {
-    this.routingService.toActor(this.domainId, this.specificationId, this.actorId)
+    void this.routingService.toActor(this.domainId, this.specificationId, this.actorId)
   }
 
 }

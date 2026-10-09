@@ -124,9 +124,9 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
 
   cancelCreateLandingPage() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
+      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
     } else {
-      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LANDING_PAGES)
+      void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LANDING_PAGES)
     }
   }
 

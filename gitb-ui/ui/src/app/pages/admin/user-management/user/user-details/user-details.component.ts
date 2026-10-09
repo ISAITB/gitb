@@ -189,9 +189,9 @@ export class UserDetailsComponent extends BaseComponent implements OnInit {
 
   cancelDetailUser() {
     if (this.fromCommunityManagement) {
-      this.routingService.toOrganisationDetails(this.communityId, this.orgId, Constants.TAB.ORGANISATION.USERS)
+      void this.routingService.toOrganisationDetails(this.communityId, this.orgId, Constants.TAB.ORGANISATION.USERS)
     } else {
-      this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.USERS)
+      void this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.USERS)
     }
   }
 

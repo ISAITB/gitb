@@ -131,9 +131,9 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   copyErrorTemplate() {
     this.copyPending = true
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toCreateErrorTemplate(undefined, undefined, this.templateId)
+      void this.routingService.toCreateErrorTemplate(undefined, undefined, this.templateId)
     } else {
-      this.routingService.toCreateErrorTemplate(this.communityId, false, this.templateId)
+      void this.routingService.toCreateErrorTemplate(this.communityId, false, this.templateId)
     }
   }
 
@@ -154,9 +154,9 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
 
   cancelDetailErrorTemplate() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)
+      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)
     } else {
-      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ERROR_TEMPLATES)
+      void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ERROR_TEMPLATES)
     }
   }
 

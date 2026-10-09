@@ -110,7 +110,7 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
   }
 
   cancel() {
-    this.routingService.toCommunity(this.communityId)
+    void this.routingService.toCommunity(this.communityId)
   }
 
   saveDisabled() {

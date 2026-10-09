@@ -101,7 +101,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
       this.pending = true
       this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.documentation, this.specification.reportMetadata, this.specification.hidden, this.domainId, this.specification.group, this.specification.badges!)
       .subscribe(() => {
-        this.routingService.toDomain(this.domainId)
+        void this.routingService.toDomain(this.domainId)
         this.popupService.success(this.dataService.labelSpecification()+' created.')
       }).add(() => {
         this.pending = false
@@ -111,7 +111,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 
 	cancel() {
     let domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
-    this.routingService.toDomain(domainId)
+    void this.routingService.toDomain(domainId)
   }
 
 }

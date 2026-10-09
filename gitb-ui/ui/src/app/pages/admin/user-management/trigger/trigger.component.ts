@@ -421,7 +421,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   back() {
-    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.TRIGGERS)
+    void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.TRIGGERS)
   }
 
   testEndpoint() {

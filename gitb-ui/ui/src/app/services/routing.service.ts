@@ -143,7 +143,7 @@ export class RoutingService {
    */
   returnToSource(target: string|undefined, defaultNavigation: () => void) {
     if (target != undefined) {
-      this.toURL(target, { state: { restore: true } })
+      void this.toURL(target, { state: { restore: true } })
     } else {
       defaultNavigation()
     }

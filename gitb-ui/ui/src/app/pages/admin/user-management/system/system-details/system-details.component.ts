@@ -148,9 +148,9 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   cancel() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
       if (this.fromCommunityManagement) {
-        this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
+        void this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
       } else {
-        this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
+        void this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
       }
     })
   }

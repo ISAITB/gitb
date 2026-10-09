@@ -99,7 +99,7 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
   }
 
   back() {
-    this.routingService.toDomain(this.domainId)
+    void this.routingService.toDomain(this.domainId)
   }
 
 }

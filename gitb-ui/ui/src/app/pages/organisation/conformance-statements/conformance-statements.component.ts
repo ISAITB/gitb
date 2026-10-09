@@ -206,9 +206,9 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   onStatementSelect(statement: ConformanceStatementItem) {
     this.routingService.recordViewReturnTarget()
     if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+      void this.routingService.toOwnConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {
-      this.routingService.toConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+      void this.routingService.toConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     }
   }
 
@@ -244,7 +244,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   back() {
-    this.routingService.toOrganisationDetails(this.communityId!, this.organisationId!)
+    void this.routingService.toOrganisationDetails(this.communityId!, this.organisationId!)
   }
 
   createSystemTarget(): NavigationTarget {
@@ -257,9 +257,9 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
 
   private updateRouting() {
     if (this.communityId != undefined) {
-      this.routingService.toConformanceStatements(this.communityId, this.organisationId!, this.system?.id, this.activeConformanceSnapshot?.id, true)
+      void this.routingService.toConformanceStatements(this.communityId, this.organisationId!, this.system?.id, this.activeConformanceSnapshot?.id, true)
     } else {
-      this.routingService.toOwnConformanceStatements(this.organisationId!, this.system?.id, this.activeConformanceSnapshot?.id, true)
+      void this.routingService.toOwnConformanceStatements(this.organisationId!, this.system?.id, this.activeConformanceSnapshot?.id, true)
     }
   }
 

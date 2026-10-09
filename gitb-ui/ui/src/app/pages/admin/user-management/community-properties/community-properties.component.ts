@@ -319,7 +319,7 @@ export class CommunityPropertiesComponent implements OnInit {
   }
 
   cancel() {
-    this.routingService.toCommunity(this.communityId)
+    void this.routingService.toCommunity(this.communityId)
   }
 
   dropOrganisationParameter(event: CdkDragDrop<any>) {

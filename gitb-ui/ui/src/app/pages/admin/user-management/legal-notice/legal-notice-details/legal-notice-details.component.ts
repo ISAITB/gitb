@@ -124,9 +124,9 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   copyLegalNotice() {
     this.copyPending = true
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toCreateLegalNotice(undefined, undefined, this.noticeId)
+      void this.routingService.toCreateLegalNotice(undefined, undefined, this.noticeId)
     } else {
-      this.routingService.toCreateLegalNotice(this.communityId, false, this.noticeId)
+      void this.routingService.toCreateLegalNotice(this.communityId, false, this.noticeId)
     }
   }
 
@@ -147,9 +147,9 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
 
   cancelDetailLegalNotice() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES)
+      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES)
     } else {
-      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LEGAL_NOTICES)
+      void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LEGAL_NOTICES)
     }
   }
 

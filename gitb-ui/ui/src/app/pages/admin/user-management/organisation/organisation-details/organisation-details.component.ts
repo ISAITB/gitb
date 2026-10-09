@@ -401,7 +401,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
 
   cancelDetailOrganisation() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
-      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
+      void this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
     })
   }
 

@@ -317,7 +317,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (this.dataService.isSystemAdmin) {
       communityId = this.selectedCommunityId
     }
-    this.routingService.toConformanceDashboard(communityId, this.selectedOrganisationId, this.selectedSystemId, this.snapshotIdToUse(), true)
+    void this.routingService.toConformanceDashboard(communityId, this.selectedOrganisationId, this.selectedSystemId, this.snapshotIdToUse(), true)
   }
 
   private snapshotIdToUse() {
@@ -494,7 +494,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   onStatementSelect(statement: ConformanceStatementItem) {
     this.routingService.recordViewReturnTarget()
-    this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
+    void this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
   listViewStatementRowTarget = (statement: ConformanceResultFullWithTestSuites): NavigationTarget => {

@@ -52,7 +52,7 @@ export class CommunityReportsComponent implements OnInit {
   }
 
   back() {
-    this.routingService.toCommunity(this.communityId)
+    void this.routingService.toCommunity(this.communityId)
   }
 
   protected readonly Constants = Constants;

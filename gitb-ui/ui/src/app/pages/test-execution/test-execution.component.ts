@@ -1184,9 +1184,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   back() {
     if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId)
+      void this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId)
     } else {
-      this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId)
+      void this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId)
     }
   }
 

@@ -291,9 +291,9 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
 
   cancel() {
     if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
+      void this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
     } else {
-      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
+      void this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
     }
   }
 

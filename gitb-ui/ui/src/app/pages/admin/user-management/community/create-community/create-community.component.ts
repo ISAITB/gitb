@@ -150,7 +150,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   }
 
   cancelCreateCommunity() {
-    this.routingService.toUserManagement()
+    void this.routingService.toUserManagement()
   }
 
 }

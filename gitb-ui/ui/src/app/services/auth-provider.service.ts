@@ -65,7 +65,7 @@ export class AuthProviderService {
     })
     // Handle post-login event
     this.afterLogin$.subscribe((loginInfo) => {
-      this.routingService.toStartPage(loginInfo.userId)
+      void this.routingService.toStartPage(loginInfo.userId)
     })
     // Handle logout event
     this.onLogout$.subscribe((info) => {
@@ -94,7 +94,7 @@ export class AuthProviderService {
               window.location.href = url.substring(0, url.indexOf('app#'))
             }
           } else {
-            this.routingService.toLogin().finally(() => {
+            void this.routingService.toLogin().finally(() => {
               this.onLogoutCompleteSource.next()
             })
           }

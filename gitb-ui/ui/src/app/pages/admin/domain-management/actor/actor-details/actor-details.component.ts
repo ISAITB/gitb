@@ -166,7 +166,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
 
   back() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
-      this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
+      void this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
     })
   }
 
@@ -190,7 +190,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
    * from the standalone "Create endpoint" button above (converted to a link) since it lives inside
    * a shared, reusable component. */
   createEndpoint() {
-    this.routingService.toCreateEndpoint(this.domainId, this.specificationId, this.actorId)
+    void this.routingService.toCreateEndpoint(this.domainId, this.specificationId, this.actorId)
   }
 
 }

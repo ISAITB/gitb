@@ -118,7 +118,7 @@ export class RestService {
       result = this.errorService.showUnauthorisedAccessError().pipe(
         mergeMap((shown) => {
           if (shown) {
-            this.routingService.toHome()
+            void this.routingService.toHome()
           }
           return throwError(() => error)
         }

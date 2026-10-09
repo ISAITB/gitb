@@ -98,7 +98,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
   }
 
 	cancel() {
-    this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
+    void this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
   }
 
 }

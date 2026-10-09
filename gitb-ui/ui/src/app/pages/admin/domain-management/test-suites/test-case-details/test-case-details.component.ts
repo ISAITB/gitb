@@ -121,10 +121,10 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
 	back() {
     this.routingService.returnToSource(this.viewReturnTarget, () => {
       if (this.specificationId != undefined) {
-        this.routingService.toTestSuite(this.domainId, this.specificationId, this.testSuiteId)
+        void this.routingService.toTestSuite(this.domainId, this.specificationId, this.testSuiteId)
       } else {
         // Shared test suite.
-        this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
+        void this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
       }
     })
   }
