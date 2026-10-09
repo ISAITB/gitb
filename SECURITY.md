@@ -60,6 +60,34 @@ not exploitable, to facilitate automated security monitoring processes of downst
 If you find that a vulnerability in a third-party dependency is not sufficiently addressed, or leads to unexpected
 implications, please report it as described above.
 
+## Software Bill of Materials and Vulnerability Reports
+
+To support the transparency and security monitoring needs of downstream users, the Test Bed team publishes the
+following reports for the releases of the Solution:
+
+- A **Software Bill of Materials (SBOM)**, listing the components included in the release.
+- A **Vulnerability Disclosure Report (VDR)**, listing the known vulnerabilities that relate to these components
+  along with the Test Bed team's assessment of each one (e.g. *not affected*, with a justification, or *exploitable*).
+  Besides informing users, this allows the report to be used as a VEX document, for example to dismiss the findings
+  of vulnerability scanners that do not apply to the Solution.
+
+The Solution is reported as a whole: a single SBOM and VDR is published per release, covering the test engine
+(``gitb-srv``) and the frontend (``gitb-ui``). Reports are provided in [CycloneDX](https://cyclonedx.org/) JSON format
+and are digitally signed. They are published in the [release-reports](https://github.com/ISAITB/release-reports)
+repository, which also includes instructions on how to verify their signatures:
+
+- The reports of the Solution are available under [``reports/itb``](https://github.com/ISAITB/release-reports/tree/master/reports/itb).
+- An overview of the vulnerability status of all releases is available in [VULNERABILITY_STATUS.md](https://github.com/ISAITB/release-reports/blob/master/VULNERABILITY_STATUS.md).
+- For automated integrations, a mirror of the reports with a machine-readable index is available at
+  https://www.itb.ec.europa.eu/release-reports/reports/index.json.
+
+Note that VDRs are living documents: the VDR of a release may be updated after the release is published, as new
+vulnerabilities are discovered or assessments are revisited. When consulting the report of a release, always use its
+latest version.
+
+If a vulnerability scanner reports an issue that is not covered by the Solution's VDR, or you disagree with an
+assessment made in it, please report it as described above.
+
 ## Responsible Disclosure
 
 We ask security researchers and users to give the maintainers a reasonable opportunity to investigate and address

@@ -13,6 +13,7 @@
 [![docs](https://img.shields.io/static/v1?label=docs&message=Test%20Bed%20guides&color=blue)](https://www.itb.ec.europa.eu/docs/guides/latest/)
 [![docs](https://img.shields.io/static/v1?label=docs&message=GITB%20TDL%20&color=blue)](https://www.itb.ec.europa.eu/docs/tdl/latest/)
 [![docs](https://img.shields.io/static/v1?label=docs&message=GITB%20test%20services&color=blue)](https://www.itb.ec.europa.eu/docs/services/latest/)
+[![reports](https://img.shields.io/static/v1?label=reports&message=SBOM%20%26%20VDR&color=blue)](https://github.com/ISAITB/release-reports/tree/master/reports/itb)
 [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20ITB%20Guru-006BFF?color=blue)](https://gurubase.io/g/itb)
 [![docker](https://img.shields.io/docker/pulls/isaitb/gitb-ui?color=blue&logo=docker&logoColor=white)](https://hub.docker.com/r/isaitb/gitb-ui)
 
@@ -290,6 +291,17 @@ b1afbc39-8ad7-49f4-a9d9-0bcec942aef4
 
 For information on how to proceed once you have logged in, you may refer to the Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/) 
 and [sample usage tutorials](https://www.itb.ec.europa.eu/docs/guides/latest/definingYourTestConfiguration/index.html).
+
+# Security
+
+To report a security vulnerability please follow this repository's [security policy](SECURITY.md).
+
+To support transparency and the security monitoring needs of downstream users, signed **Software Bill of Materials (SBOM)**
+and **Vulnerability Disclosure Report (VDR)** documents in [CycloneDX](https://cyclonedx.org/) format are published for every
+release of the Test Bed software in the [release-reports](https://github.com/ISAITB/release-reports) repository:
+- The [reports of the Test Bed software](https://github.com/ISAITB/release-reports/tree/master/reports/itb).
+- An [overview of the vulnerability status](https://github.com/ISAITB/release-reports/blob/master/VULNERABILITY_STATUS.md) of all releases.
+- A mirror of the reports for automated integrations, with a machine-readable index, at https://www.itb.ec.europa.eu/release-reports/reports/index.json.
 
 # Licence
 
