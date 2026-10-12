@@ -63,7 +63,7 @@ and then for more [complex testing needs](https://www.itb.ec.europa.eu/docs/guid
 # Technology stack
 
 Both ``gitb-srv`` and ``gitb-ui`` are Java-based applications. Specifically, ``gitb-srv`` is packaged
-as a Spring Boot application using Akka as its primary internal framework, whereas ``gitb-ui``
+as a Spring Boot application using Pekko as its primary internal framework, whereas ``gitb-ui``
 is developed in Scala and uses the Play Framework.
 
 The frontend of the ``gitb-ui`` component is an Angular app developed in TypeScript, and is managed in terms
@@ -88,7 +88,7 @@ To build and run the Test Bed's components you need to have the following tools:
 - Maven 3.9+, used to build ``gitb-srv``.
 - SBT 1.10+, used to build ``gitb-ui``.
 - Scala 2.13+, used to build the backend app of ``gitb-ui``.
-- Node version 22+, used to build the frontend app of ``gitb-ui``.
+- Node version 22.22.3+, used to build the frontend app of ``gitb-ui``.
 
 Although not mandatory, the proposed IDE to use is IntelliJ, and VS Code for ``gitb-ui``'s Angular app.
 
