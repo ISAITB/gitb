@@ -46,6 +46,26 @@
     .message {
         flex: 1;
         min-width: 0;
+        transition: opacity 150ms ease;
+        &.swapping {
+            opacity: 0;
+        }
+        .message-action {
+            // A block (not inline-block) so that no line box (strut) is added around the text lines, which
+            // would make notifications with a subtitle taller than the minimum height.
+            display: block;
+            width: fit-content;
+            max-width: 100%;
+            color: inherit;
+            text-decoration: underline;
+            text-decoration-color: transparent;
+            transition: text-decoration-color 0.2s ease;
+            &:hover, &:focus-visible {
+                color: inherit;
+                text-decoration: underline;
+                text-decoration-color: currentColor;
+            }
+        }
         .notification-subtitle {
             font-size: 9pt;
             opacity: 0.5;
@@ -86,6 +106,10 @@
         .close {
             opacity: 1;
         }
+    }
+    // Over the action text a click no longer dismisses, so the close mark is un-highlighted (same speed as the underline).
+    &:has(.message-action:hover) .close {
+        opacity: 0.2;
     }
 }
 

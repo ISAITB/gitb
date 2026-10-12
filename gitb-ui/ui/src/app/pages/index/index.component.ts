@@ -33,6 +33,8 @@ import {Constants} from '../../common/constants';
 import {NavigationTarget} from 'src/app/types/navigation-target';
 import {MessageComposeService} from '../../services/message-compose.service';
 import {ServerEventService} from '../../services/server-event.service';
+import {Router} from '@angular/router';
+import {PopupNotificationAction} from '../../types/popup-notification-action';
 
 @Component({
     selector: 'app-index',
@@ -70,7 +72,8 @@ export class IndexComponent implements OnInit, OnDestroy {
     private readonly healthCheckService: HealthCheckService,
     private readonly messageService: MessageService,
     private readonly messageComposeService: MessageComposeService,
-    private readonly serverEventService: ServerEventService
+    private readonly serverEventService: ServerEventService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -131,12 +134,31 @@ export class IndexComponent implements OnInit, OnDestroy {
   private handleNewMessage(subject?: string): void {
     // My messages is unavailable to the demo account (see handlePostUserLoad).
     if (this.dataService.isDemoAccount()) return
-    this.popupService.infoWithSubtitle('New message received.', subject?.length ? subject : undefined)
+    const title = 'New message received.'
+    const subtitle = subject?.length ? subject : undefined
+    const action = this.messagesNotificationAction()
+    // A message notification that is still displayed is replaced rather than adding another notification.
+    const existingId = this.dataService.unreadMessagesNotificationId
+    if (existingId == null || !this.popupService.update(existingId, { message: title, subtitle: subtitle, action: action })) {
+      this.dataService.unreadMessagesNotificationId = this.popupService.infoWithSubtitle(title, subtitle, true, action)
+    }
     // Also raised if the user is on "My messages" as the displayed messages are not refreshed automatically
     // (the badge is cleared once they are reloaded - see MessagesComponent.load).
     this.dataService.updateMenuItemStatus(MenuItem.myMessages, MenuItemStatus.Info)
   }
 
+
+  private messagesNotificationAction(): PopupNotificationAction {
+    return {
+      target: this.routingService.linkToMyMessages(),
+      handler: () => {
+        // Navigating to the page already displayed does nothing, so ask it to refresh instead.
+        if (this.router.url.startsWith('/settings/messages')) {
+          this.messageService.requestReload()
+        }
+      }
+    }
+  }
 
   handlePostUserLoad(): void {
     // Lifted out of the (former) isSystemAdmin-only guard - the menuItemStatusMap is written for every
@@ -188,7 +210,7 @@ export class IndexComponent implements OnInit, OnDestroy {
           // Stashed on DataService (not a local field, unlike prepareForShutdownNotificationId above)
           // so MessagesComponent can close this specific popup - not just clear the badge - when the
           // user visits "My messages".
-          this.dataService.unreadMessagesNotificationId = this.popupService.info("You have unread messages.", true)
+          this.dataService.unreadMessagesNotificationId = this.popupService.info("You have unread messages.", true, this.messagesNotificationAction())
         }
       })
     }

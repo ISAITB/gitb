@@ -17,6 +17,7 @@ import {Injectable} from '@angular/core';
 import {BehaviorSubject, Subject} from 'rxjs';
 import {PopupNotification} from '../types/popup-notification';
 import {CloseNotificationEvent} from '../types/close-notification-event';
+import {PopupNotificationAction} from '../types/popup-notification-action';
 
 @Injectable({
   providedIn: 'root'
@@ -44,29 +45,48 @@ export class PopupService {
     return this.add(message, 'error', persistent)
   }
 
-  info(message: string, persistent?: boolean): string|null {
-    return this.add(message, 'info', persistent)
+  info(message: string, persistent?: boolean, action?: PopupNotificationAction): string|null {
+    return this.add(message, 'info', persistent, undefined, action)
   }
 
   /**
    * Info notification with a title and a (less prominent) subtitle line. Unlike plain notifications, both
    * texts are rendered as text (not HTML), so they can safely include user-provided content.
    */
-  infoWithSubtitle(title: string, subtitle?: string, persistent?: boolean): string|null {
-    return this.add(title, 'info', persistent, subtitle)
+  infoWithSubtitle(title: string, subtitle?: string, persistent?: boolean, action?: PopupNotificationAction): string|null {
+    return this.add(title, 'info', persistent, subtitle, action)
   }
 
-  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean, subtitle?: string): string|null {
+  /**
+   * Replaces the displayed texts and action of an existing notification (its severity and persistence are
+   * retained). Returns false if the notification is no longer displayed, in which case the caller should
+   * raise a new one.
+   */
+  update(id: string, changes: { message: string, subtitle?: string, action?: PopupNotificationAction }): boolean {
+    const list = this.notificationsSubject.value
+    if (!list.some(n => n.id === id)) return false
+    this.notificationsSubject.next(list.map(n => n.id === id ? {
+      ...n,
+      message: this.withTrailingDot(changes.message),
+      subtitle: changes.subtitle,
+      action: changes.action
+    } : n))
+    return true
+  }
+
+  private withTrailingDot(message: string): string {
+    return message.endsWith(".") ? message : message + "."
+  }
+
+  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean, subtitle?: string, action?: PopupNotificationAction): string|null {
     if (message !== undefined) {
-      if (!message.endsWith(".")) {
-        message = message + "."
-      }
       const notification: PopupNotification = {
         id: crypto.randomUUID(),
         type: type,
-        message: message,
+        message: this.withTrailingDot(message),
         subtitle: subtitle,
-        persistent: persistent === true
+        persistent: persistent === true,
+        action: action
       }
       const list = this.notificationsSubject.value;
       this.notificationsSubject.next([...list, notification]);

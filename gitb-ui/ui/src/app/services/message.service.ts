@@ -14,6 +14,7 @@
  */
 
 import {Injectable} from '@angular/core';
+import {Subject} from 'rxjs';
 import {ROUTES} from '../common/global';
 import {RestService} from './rest.service';
 import {SearchResult} from '../types/search-result';
@@ -31,10 +32,18 @@ import {DataService} from './data.service';
 })
 export class MessageService {
 
+  private reloadRequestedSubject = new Subject<void>()
+  // Emitted when something (e.g. a notification action) asks the "My messages" screen, if displayed, to reload.
+  reloadRequested$ = this.reloadRequestedSubject.asObservable()
+
   constructor(
     private readonly restService: RestService,
     private readonly dataService: DataService
   ) { }
+
+  requestReload() {
+    this.reloadRequestedSubject.next()
+  }
 
   getReceivedMessages(page: number, limit: number, filterText: string|undefined, showRead: boolean, showUnread: boolean,
                       showImportant: boolean, deliveredAfter: string|undefined, deliveredBefore: string|undefined,

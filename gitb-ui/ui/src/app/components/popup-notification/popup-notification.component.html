@@ -1,4 +1,4 @@
-<div class="notification" [ngClass]="notification.type"
+<div class="notification" [ngClass]="displayed.type"
      (mouseenter)="mouseEntering()"
      (mouseleave)="mouseLeaving()"
      (click)="closeNotification()"
@@ -6,7 +6,7 @@
     <div class="icon">
         <span class="fa-stack">
             <i class="fa-solid fa-circle background-icon fa-stack-2x"></i>
-            @switch (notification.type) {
+            @switch (displayed.type) {
                 @case ('error') {
                     <i class="fa-solid fa-xmark foreground-icon fa-stack-1x"></i>
                 }
@@ -22,15 +22,35 @@
             }
         </span>
     </div>
-    @if (notification.subtitle != undefined) {
-        <div class="message">
-            <div>{{ notification.message }}</div>
-            <div class="notification-subtitle">{{ notification.subtitle }}</div>
-        </div>
-    } @else {
-        <div class="message" [innerHTML]="notification.message"></div>
-    }
+    <div class="message" [class.swapping]="swapping">
+        @if (displayed.action) {
+            @if (displayed.action.target) {
+                <a class="message-action plain-link"
+                   [navTarget]="displayed.action.target"
+                   (click)="actionClicked($event)"
+                   (auxclick)="actionAuxClicked($event)">
+                    <ng-container *ngTemplateOutlet="content"></ng-container>
+                </a>
+            } @else {
+                <a class="message-action plain-link" role="button" tabindex="0"
+                   (click)="actionClicked($event)"
+                   (auxclick)="actionAuxClicked($event)">
+                    <ng-container *ngTemplateOutlet="content"></ng-container>
+                </a>
+            }
+        } @else {
+            <ng-container *ngTemplateOutlet="content"></ng-container>
+        }
+    </div>
     <div class="close">
         <span><i [class]="Constants.BUTTON_ICON.CANCEL"></i></span>
     </div>
 </div>
+<ng-template #content>
+    @if (displayed.subtitle != undefined) {
+        <div>{{ displayed.message }}</div>
+        <div class="notification-subtitle">{{ displayed.subtitle }}</div>
+    } @else {
+        <div [innerHTML]="displayed.message"></div>
+    }
+</ng-template>

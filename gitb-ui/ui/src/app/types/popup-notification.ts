@@ -13,6 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {PopupNotificationAction} from './popup-notification-action';
+
 export interface PopupNotification {
 
   id: string;
@@ -20,5 +22,6 @@ export interface PopupNotification {
   message: string;
   subtitle?: string;
   persistent: boolean;
+  action?: PopupNotificationAction;
 
 }

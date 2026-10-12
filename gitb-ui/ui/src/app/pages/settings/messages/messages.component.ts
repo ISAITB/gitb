@@ -110,6 +110,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   @ViewChild('splitViewComponent') splitViewComponent?: SplitViewComponent
 
   private messageSentSubscription?: Subscription
+  private reloadRequestedSubscription?: Subscription
   private resizeObserver!: ResizeObserver
 
   constructor(
@@ -162,6 +163,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     }
     this.setupPeerFilter()
     this.messageSentSubscription = this.messageComposeService.onMessageSent.subscribe(() => this.load(1))
+    this.reloadRequestedSubscription = this.messageService.reloadRequested$.subscribe(() => this.load(1))
     this.load(1)
   }
 
@@ -182,6 +184,7 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
 
   ngOnDestroy(): void {
     this.messageSentSubscription?.unsubscribe()
+    this.reloadRequestedSubscription?.unsubscribe()
     if (this.resizeObserver && this.messagesPage) {
       this.resizeObserver.unobserve(this.messagesPage.nativeElement)
     }
