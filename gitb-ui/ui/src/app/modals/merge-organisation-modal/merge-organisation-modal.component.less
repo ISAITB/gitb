@@ -1,0 +1,61 @@
+@import "../../../styles/less/_common.less";
+
+.modal-title.fade-in {
+    animation: title-fade-in 0.4s ease-in;
+}
+
+@keyframes title-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.merge-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    .merge-row {
+        display: flex;
+        align-items: center;
+        // Horizontal spacing is applied as padding on the items themselves (not as a flex gap) as a gap would
+        // still be reserved for the target when it is collapsed.
+        border: 1px solid @gray-dark-1;
+        border-radius: @border-radius;
+        padding: 10px 16px;
+        .merge-row-name {
+            flex: 1 1 0;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .merge-row-action {
+            flex: 0 0 auto;
+            padding-left: 16px;
+        }
+        .merge-row-target-collapse {
+            flex: 0 0 auto;
+        }
+        .merge-row-target {
+            width: 266px; // 250px control + 16px spacing
+            padding-left: 16px;
+        }
+        // Narrow screens: the name takes its own line, followed by the action and a target that fills the remaining width.
+        @media (max-width: 640px) {
+            flex-wrap: wrap;
+            .merge-row-name {
+                flex: 1 1 100%;
+                padding-bottom: 8px;
+            }
+            .merge-row-action {
+                padding-left: 0;
+            }
+            .merge-row-target-collapse {
+                flex: 1 1 0;
+                min-width: 0;
+            }
+            .merge-row-target {
+                width: 100%;
+            }
+        }
+    }
+}

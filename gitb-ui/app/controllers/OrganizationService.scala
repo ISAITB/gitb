@@ -18,7 +18,7 @@ package controllers
 import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
-import managers.{AuthorizationManager, OrganizationManager, TestResultManager, UserManager}
+import managers.{AuthorizationManager, MergeManager, OrganizationManager, TestResultManager, UserManager}
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
 import play.api.libs.json.Json
@@ -35,6 +35,7 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
                                      authorizedAction: AuthorizedAction,
                                      cc: ControllerComponents,
                                      organizationManager: OrganizationManager,
+                                     mergeManager: MergeManager,
                                      userManager: UserManager,
                                      authorizationManager: AuthorizationManager,
                                      testResultManager: TestResultManager)
@@ -242,6 +243,18 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
     authorizationManager.canDeleteOrganisation(request, orgId).flatMap { _ =>
       organizationManager.deleteOrganizationWrapper(orgId).map { _ =>
         ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  /**
+   * Merges the organisation or its systems, or moves its systems to another organisation.
+   */
+  def mergeOrganisation(orgId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val mergeRequest = JsonUtil.parseJsMergeRequest(ParameterExtractor.requiredBodyParameter(request, ParameterNames.CONFIG))
+    authorizationManager.canMergeOrganisation(request, orgId, mergeRequest.target).flatMap { _ =>
+      mergeManager.process(orgId, mergeRequest).map { organisationId =>
+        ResponseConstructor.constructJsonResponse(Json.obj("id" -> organisationId).toString())
       }
     }
   }

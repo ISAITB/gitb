@@ -103,6 +103,7 @@ export class Constants {
     LOGOUT: 'fa-solid fa-power-off',
     MANAGE_TESTS: 'fa-solid fa-award',
     MAXIMIZE: 'fa-solid fa-up-right-and-down-left-from-center',
+    MERGE: 'fa-solid fa-code-merge',
     MESSAGE: 'fa-solid fa-envelope',
     MESSAGE_IMPORTANT: 'fa-solid fa-exclamation',
     MESSAGE_NEW: 'fa-solid fa-pen-to-square',
@@ -381,6 +382,19 @@ export class Constants {
 		CERTIFICATE: 1,
 		REPORT: 2,
 		DETAILED_REPORT: 3
+	}
+
+	public static readonly MERGE_OPERATION = {
+		MERGE_ORGANISATIONS: 'merge_organisations',
+		MERGE_SYSTEMS: 'merge_systems',
+		MOVE_SYSTEMS: 'move_systems'
+	}
+
+	public static readonly MERGE_SYSTEM_ACTION = {
+		KEEP: 'keep',
+		MOVE: 'move',
+		MERGE: 'merge',
+		DELETE: 'delete'
 	}
 
 	public static readonly CREATE_ACCOUNT_OPTION = {

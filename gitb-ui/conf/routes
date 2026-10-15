@@ -292,6 +292,7 @@ GET     /api/organizations/orgparam/check/:id   @controllers.OrganizationService
 GET     /api/organizations/own/orgparam         @controllers.OrganizationService.getOwnOrganisationParameterValues()
 POST    /api/organizations/orgparam/:id         @controllers.OrganizationService.updateOrganisationParameterValues(id: Long)
 GET     /api/organizations/orgparam/:orgId/parameters/:parameterId/download @controllers.OrganizationService.downloadOrganisationParameterFile(orgId : Long, parameterId : Long)
+POST    /api/organizations/:id/merge            @controllers.OrganizationService.mergeOrganisation(id: Long)
 POST    /api/organizations/:id/apiKey           @controllers.OrganizationService.updateOrganisationApiKey(id: Long)
 DELETE  /api/organizations/:id/apiKey           @controllers.OrganizationService.deleteOrganisationApiKey(id: Long)
 GET     /api/organizations/:id/apiKey           @controllers.OrganizationService.getAutomationKeysForOrganisation(id: Long)

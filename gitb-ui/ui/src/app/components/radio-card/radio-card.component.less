@@ -18,6 +18,16 @@
         outline: 0;
         box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
     }
+    &.disabled {
+        cursor: default;
+        opacity: 0.6;
+        input, label {
+            cursor: default;
+        }
+        &:hover {
+            background-color: transparent;
+        }
+    }
     .form-check-label {
         font-weight: bold;
     }

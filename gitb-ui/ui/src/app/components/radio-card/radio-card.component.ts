@@ -36,6 +36,7 @@ export class RadioCardComponent<T> implements ControlValueAccessor {
   @Input() radioId!: string
   @Input() radioName!: string
   @Input() radioLabel!: string
+  @Input() disabled = false
   @Output() select = new EventEmitter<T>();
 
   onChange = (_: any) => {}
@@ -52,8 +53,10 @@ export class RadioCardComponent<T> implements ControlValueAccessor {
   }
 
   activate() {
-    this._value = this.radioValue
-    this.emitChanges()
+    if (!this.disabled) {
+      this._value = this.radioValue
+      this.emitChanges()
+    }
   }
 
   emitChanges() {
@@ -72,6 +75,10 @@ export class RadioCardComponent<T> implements ControlValueAccessor {
 
   registerOnTouched(fn: any): void {
     this.onTouched = fn
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled
   }
 
 }

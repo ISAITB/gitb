@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnInit, ViewChild, ChangeDetectionStrategy, inject} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
@@ -32,7 +32,7 @@ import {System} from 'src/app/types/system';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
 import {CommunityService} from 'src/app/services/community.service';
-import {forkJoin, Observable, of} from 'rxjs';
+import {distinctUntilChanged, forkJoin, map, Observable, of, skip} from 'rxjs';
 import {LandingPage} from 'src/app/types/landing-page';
 import {LegalNotice} from 'src/app/types/legal-notice';
 import {ErrorTemplate} from 'src/app/types/error-template';
@@ -45,6 +45,10 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 import {PagingEvent} from 'src/app/components/paging-controls/paging-event';
 import {TableApi} from 'src/app/components/table/table-api';
 import {ApiKeyInfoState} from 'src/app/components/api-key-info/api-key-info-state';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {MergeOrganisationModalComponent} from 'src/app/modals/merge-organisation-modal/merge-organisation-modal.component';
+import {MergeResult} from 'src/app/modals/merge-organisation-modal/merge-result';
+import {Organisation} from 'src/app/types/organisation.type';
 
 @Component({
     selector: 'app-organisation-details',
@@ -103,6 +107,8 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   formDataUpdated = false
   validation = new ValidationState()
   apiKeyState?: ApiKeyInfoState
+  // Not a constructor parameter to avoid affecting subclasses.
+  private readonly modalService = inject(NgbModal)
 
   constructor(
     private readonly confirmationDialogService: ConfirmationDialogService,
@@ -189,6 +195,33 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   }
 
   ngOnInit(): void {
+    this.initialise()
+    // The component instance is reused when navigating from one organisation to another (e.g. after merging
+    // organisations), in which case the previous organisation's state must be discarded.
+    this.route.paramMap.pipe(
+      map(params => params.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID)),
+      distinctUntilChanged(),
+      skip(1)
+    ).subscribe(() => this.reset())
+  }
+
+  private reset() {
+    this.loaded = false
+    this.formDataLoaded = false
+    this.formDataUpdated = false
+    this.organisation = {}
+    this.users = []
+    this.systems = []
+    this.usersStatus.status = Constants.STATUS.NONE
+    this.systemsStatus.status = Constants.STATUS.NONE
+    this.propertyData.properties = []
+    this.propertyData.edit = false
+    this.apiKeyState = undefined
+    this.initialise()
+    this.showTab()
+  }
+
+  private initialise(): void {
     this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     this.orgId = this.getOrganisationId()
     this.organisation.id = this.orgId
@@ -350,6 +383,30 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
       }).add(() => {
         this.deletePending = false
       })
+    })
+  }
+
+  /** Merging is only offered to Test Bed and community administrators in the community management screens, and never for the administrator's own, administration or template organisations. */
+  mergeVisible() {
+    return this.showAdminInfo && this.fromCommunityManagement === true && this.organisation.id != undefined
+      && this.organisation.adminOrganization !== true && this.organisation.template !== true
+      && this.orgId != this.dataService.vendor?.id
+  }
+
+  mergeOrganisation() {
+    const modal = this.modalService.open(MergeOrganisationModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as MergeOrganisationModalComponent
+    modalInstance.organisation = this.organisation as Organisation
+    modalInstance.communityId = this.communityId
+    modal.closed.subscribe((result: MergeResult) => {
+      if (result.operation == Constants.MERGE_OPERATION.MERGE_ORGANISATIONS) {
+        // The current organisation no longer exists.
+        void this.routingService.toOrganisationDetails(this.communityId, result.organisationId)
+      } else {
+        // Refresh the organisation's systems.
+        this.systemsStatus.status = Constants.STATUS.NONE
+        this.showSystems()
+      }
     })
   }
 

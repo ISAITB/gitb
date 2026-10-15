@@ -1,0 +1,124 @@
+<div class="modal-header">
+    <div #focusAnchor tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
+    @if (this.step > 0 && this.operation != undefined) {
+        <!-- Redefine the div in each branch to force element re-creation and fade in. -->
+        <div class="modal-title" [class.fade-in]="titleAnimated">{{this.operationLabel(this.operation)}}</div>
+    } @else {
+        <div class="modal-title" [class.fade-in]="titleAnimated">Merge or move</div>
+    }
+</div>
+<div class="modal-body" [pending]="loading">
+    @if (step == 0) {
+        <div class="alert alert-info">
+            Select the operation to perform. Further actions are determined in the next step.
+        </div>
+        <div>
+            <app-radio-card [radioValue]="Constants.MERGE_OPERATION.MERGE_ORGANISATIONS"
+                            [(ngModel)]="operation"
+                            [disabled]="loading || !mergeOrganisationsAvailable()"
+                            radioId="merge_organisations"
+                            radioName="operation"
+                            [radioLabel]="operationLabel(Constants.MERGE_OPERATION.MERGE_ORGANISATIONS)">
+                Merge the current {{dataService.labelOrganisationLower()}} and its {{dataService.labelSystemsLower()}} into another {{dataService.labelOrganisationLower()}}.
+                @if (!loading && !mergeOrganisationsAvailable()) {
+                    <div class="mt-2">No other {{dataService.labelOrganisationsLower()}} are available to merge with.</div>
+                }
+            </app-radio-card>
+        </div>
+        <div class="mt-3">
+            <app-radio-card [radioValue]="Constants.MERGE_OPERATION.MERGE_SYSTEMS"
+                            [(ngModel)]="operation"
+                            [disabled]="loading || !mergeSystemsAvailable()"
+                            radioId="merge_systems"
+                            radioName="operation"
+                            [radioLabel]="operationLabel(Constants.MERGE_OPERATION.MERGE_SYSTEMS)">
+                Merge {{dataService.labelSystemsLower()}} within the current {{dataService.labelOrganisationLower()}}.
+                @if (!loading && !mergeSystemsAvailable()) {
+                    <div class="mt-2">At least two {{dataService.labelSystemsLower()}} are needed to merge.</div>
+                }
+            </app-radio-card>
+        </div>
+        <div class="mt-3">
+            <app-radio-card [radioValue]="Constants.MERGE_OPERATION.MOVE_SYSTEMS"
+                            [(ngModel)]="operation"
+                            [disabled]="loading || !moveSystemsAvailable()"
+                            radioId="move_systems"
+                            radioName="operation"
+                            [radioLabel]="operationLabel(Constants.MERGE_OPERATION.MOVE_SYSTEMS)">
+                Move {{dataService.labelSystemsLower()}} from the current {{dataService.labelOrganisationLower()}} to another.
+                @if (!loading && !moveSystemsAvailable()) {
+                    <div class="mt-2">
+                        @if (sourceSystems.length == 0) {
+                            This {{dataService.labelOrganisationLower()}} has no {{dataService.labelSystemsLower()}} to move.
+                        } @else {
+                            No other {{dataService.labelOrganisationsLower()}} are available.
+                        }
+                    </div>
+                }
+            </app-radio-card>
+        </div>
+    } @else {
+        <div class="alert alert-info">
+            @switch (operation) {
+                @case (Constants.MERGE_OPERATION.MERGE_ORGANISATIONS) {
+                    Select the target {{dataService.labelOrganisationLower()}} to merge with. Merging combines conformance statements,
+                    test sessions and configuration values. Existing configuration values in the target {{dataService.labelOrganisationLower()}}
+                    and {{dataService.labelSystemsLower()}} have priority.
+                }
+                @case (Constants.MERGE_OPERATION.MERGE_SYSTEMS) {
+                    Choose the {{dataService.labelSystemsLower()}} to merge. Merging combines conformance statements, test sessions
+                    and configuration values. Existing configuration values in target {{dataService.labelSystemsLower()}} have priority.
+                }
+                @default {
+                    Select the target {{dataService.labelOrganisationLower()}} and choose the {{dataService.labelSystemsLower()}} to move or merge.
+                    Conformance statements, test sessions and configuration values follow the processed {{dataService.labelSystemsLower()}}.
+                }
+            }
+        </div>
+        @if (needsTargetOrganisation()) {
+            <app-multi-select-filter [config]="targetOrganisationConfig" (apply)="targetOrganisationSelected($event)"></app-multi-select-filter>
+        }
+        @if (showSystems()) {
+            <!-- The pending directive wraps its content in an extra div, so the flex container must be nested inside it. -->
+            <div [class.pt-3]="needsTargetOrganisation()" [pending]="targetSystemsPending">
+                <div class="merge-rows">
+                    @for (row of rows; track row) {
+                        <div class="merge-row">
+                            <div class="merge-row-name">
+                                <i [class]="Constants.BUTTON_ICON.SYSTEM"></i>
+                                <span class="ms-2">{{row.system.sname}}</span>
+                            </div>
+                            <div class="merge-row-action">
+                                <div class="btn-group" role="group" aria-label="Merge action">
+                                    @for (option of actionOptions(); track option.value) {
+                                        @let actionId = 'action_' + row.system.id + "_" + option.value;
+                                        <input type="radio" class="btn-check" [disabled]="option.value == Constants.MERGE_SYSTEM_ACTION.MERGE && mergeDisabled(row)" [(ngModel)]="row.action" [name]="actionId" [id]="actionId" [value]="option.value" (change)="actionChanged(row)">
+                                        <label class="btn" #pop=ngbTooltip [ngClass]="{ 'btn-outline-primary': option.value == row.action, 'btn-outline-secondary': option.value != row.action }" [for]="actionId" tooltipClass="shortTooltip" container="body" [ngbTooltip]="option.label" [triggers]="'mouseover:mouseout'" [openDelay]="Constants.TOOLTIP_DELAY" (click)="pop.close(false)" [aria-label]="option.label">
+                                            <span><i [class]="option.icon"></i></span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+                            <div class="merge-row-target-collapse" [ngbCollapse]="row.action != Constants.MERGE_SYSTEM_ACTION.MERGE" [horizontal]="true" [animation]="true">
+                                <div class="merge-row-target">
+                                    <app-multi-select-filter [config]="row.targetConfig" (apply)="targetSystemSelected(row, $event)"></app-multi-select-filter>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+<div class="modal-footer">
+    <div class="btn-toolbar">
+        <button class="btn btn-secondary" type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" [disable]="pending" (click)="cancel()">Cancel</button>
+        @if (step > 0) {
+            <button class="btn btn-secondary" type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" [disable]="pending" (click)="previous()">Previous</button>
+            <button class="btn btn-secondary" type="button" [labelIcon]="actionIcon()" [disable]="actionDisabled()" [pending]="pending" (click)="merge()">{{actionLabel()}}</button>
+        } @else {
+            <button class="btn btn-secondary" type="button" [labelIcon]="Constants.BUTTON_ICON.NEXT" [disable]="loading || operationIncomplete()" (click)="next()">Next</button>
+        }
+    </div>
+</div>

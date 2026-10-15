@@ -1501,6 +1501,27 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot delete the requested organisation"))
   }
 
+  /**
+   * Merging or moving is only for Test Bed and community administrators that manage both the source and (if applicable) the
+   * target organisation. A user's own organisation cannot be merged as this would remove the user's own account.
+   */
+  def canMergeOrganisation(request: RequestWithAttributes[_], orgId: Long, targetOrgId: Option[Long]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if ((isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) && !userInfo.organization.exists(_.id == orgId)) {
+        canManageOrganisationFull(request, userInfo, orgId).flatMap { sourceOk =>
+          if (sourceOk && targetOrgId.isDefined) {
+            canManageOrganisationFull(request, userInfo, targetOrgId.get)
+          } else {
+            Future.successful(sourceOk)
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot merge the requested organisation"))
+  }
+
   def canUpdateOrganisation(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
       canManageOrganisationFull(request, userInfo, orgId)

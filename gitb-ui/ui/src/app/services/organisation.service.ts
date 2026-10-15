@@ -19,6 +19,7 @@ import { ApiKeyInfo } from '../types/api-key-info';
 import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
+import { MergeRequest } from '../types/merge-request';
 import { Organisation } from '../types/organisation.type';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
@@ -156,6 +157,16 @@ export class OrganisationService {
   deleteOrganisation(orgId: number) {
     return this.restService.delete<void>({
       path: ROUTES.controllers.OrganizationService.deleteOrganization(orgId).url
+    })
+  }
+
+  mergeOrganisation(orgId: number, request: MergeRequest) {
+    return this.restService.post<{ id: number }>({
+      path: ROUTES.controllers.OrganizationService.mergeOrganisation(orgId).url,
+      data: {
+        config: JSON.stringify(request)
+      },
+      authenticate: true
     })
   }
 

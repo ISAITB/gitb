@@ -31,6 +31,9 @@
                             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
                         }
                         <a class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS" [navTarget]="manageOrganisationTestsTarget()">Manage tests</a>
+                        @if (mergeVisible()) {
+                            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MERGE" type="button" (click)="mergeOrganisation()" [disable]="!loaded || savePending || deletePending">Merge...</button>
+                        }
                         @if (showBackButton) {
                             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancelDetailOrganisation()">Back</button>
                         }

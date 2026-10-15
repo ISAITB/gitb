@@ -2172,6 +2172,21 @@ object JsonUtil {
     result
   }
 
+  def parseJsMergeRequest(json: String): MergeRequest = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    MergeRequest(
+      (jsonConfig \ "operation").as[String],
+      (jsonConfig \ "target").asOpt[Long],
+      (jsonConfig \ "systems").asOpt[JsArray].map(_.value.map { systemJson =>
+        MergeSystemAction(
+          (systemJson \ "id").as[Long],
+          (systemJson \ "action").as[String],
+          (systemJson \ "target").asOpt[Long]
+        )
+      }.toList).getOrElse(List.empty)
+    )
+  }
+
   def parseJsExportSettings(json:String, includeSettings: Boolean):ExportSettings = {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ExportSettings()
