@@ -257,7 +257,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       newOrgId <- {
         var orgToUse = if (replaceApiKey) organization.withApiKey(CryptoUtil.generateApiKey()) else organization
-        orgToUse = if (replaceSelfRegistrationToken) organization.withSelfRegistrationToken(CryptoUtil.generateApiKey()) else organization
+        orgToUse = if (replaceSelfRegistrationToken) orgToUse.withSelfRegistrationToken(CryptoUtil.generateApiKey()) else orgToUse
         PersistenceSchema.insertOrganization += orgToUse
       }
     } yield newOrgId
