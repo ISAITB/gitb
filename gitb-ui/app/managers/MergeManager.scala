@@ -195,10 +195,6 @@ class MergeManager @Inject() (repositoryUtils: RepositoryUtils,
           _ <- PersistenceSchema.systemImplementsActors.filter(x => x.systemId === sourceSystemId && x.specId === statement._2 && x.actorId === statement._3).map(_.systemId).update(targetSystemId)
         } yield ()
       }: _*)
-      // Options.
-      sourceOptionIds <- PersistenceSchema.systemImplementsOptions.filter(_.systemId === sourceSystemId).map(_.optionId).result
-      targetOptionIds <- PersistenceSchema.systemImplementsOptions.filter(_.systemId === targetSystemId).map(_.optionId).result.map(_.toSet)
-      _ <- DBIO.seq(sourceOptionIds.filter(x => !targetOptionIds.contains(x)).map(optionId => PersistenceSchema.systemImplementsOptions += ((targetSystemId, optionId))): _*)
       // Configuration (statement parameters and system properties).
       _ <- mergeStatementParameters(sourceSystemId, targetSystemId, onSuccess)
       _ <- mergeSystemProperties(sourceSystemId, targetSystemId, onSuccess)

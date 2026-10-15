@@ -138,7 +138,6 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager,
 		val actions = new ListBuffer[DBIO[_]]()
 		actions += testResultManager.updateForDeletedTestCase(testCaseId)
 		actions += removeActorLinksForTestCase(testCaseId)
-		actions += PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCaseId).map(_.testCaseId).update(testCaseId * -1)
 		actions += PersistenceSchema.conformanceSnapshotTestCases.filter(_.id === testCaseId).map(_.id).update(testCaseId * -1)

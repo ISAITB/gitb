@@ -2487,35 +2487,6 @@ object JsonUtil {
     json
   }
 
-	/**
-	 * Converts a Option object into Play!'s JSON notation.
-	 * @param option Option object to be converted
-	 * @return JsObject
-	 */
-	def jsOption(option:Options):JsObject = {
-		val json = Json.obj(
-			"id" -> option.id,
-			"sname" -> option.sname,
-			"fname" -> option.fname,
-			"description" -> option.description,
-			"actor" -> option.actor
-		)
-		json
-	}
-
-	/**
-	 * Converts a List of Options into Play!'s JSON notation
-	 * @param list List of Options to be converted
-	 * @return JsArray
-	 */
-	def jsOptions(list:List[Options]):JsArray = {
-		var json = Json.arr()
-		list.foreach{ option =>
-			json = json.append(jsOption(option))
-		}
-		json
-	}
-
   /**
    * Converts a TestResult object into Play!'s JSON notation.
    * @param testResult TestResult object to be converted

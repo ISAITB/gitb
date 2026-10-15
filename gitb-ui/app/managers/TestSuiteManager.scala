@@ -2138,7 +2138,6 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				for {
 					_ <- testResultManager.updateForDeletedTestCase(testCase)
 					_ <- testCaseManager.removeActorLinksForTestCase(testCase)
-					_ <- PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCase).delete
 					_ <- PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCase).delete
 					_ <- PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCase).map(_.testCaseId).update(testCase * -1)
 					_ <- PersistenceSchema.conformanceSnapshotTestCases.filter(_.id === testCase).map(_.id).update(testCase * -1)

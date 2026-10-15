@@ -33,7 +33,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
                               testResultManager: TestResultManager,
                               endPointManager: EndPointManager,
-                              optionManager: OptionManager,
                               automationApiHelper: AutomationApiHelper,
                               dbConfigProvider: DatabaseConfigProvider)
                              (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
@@ -95,9 +94,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
       _ <- PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete
       _ <- PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete
-      _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete
       _ <- endPointManager.deleteEndPointByActor(actorId, onSuccessCalls)
-      _ <- optionManager.deleteOptionByActor(actorId)
       _ <- PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1)
       _ <- PersistenceSchema.conformanceSnapshotActors.filter(_.id === actorId).map(_.id).update(actorId * -1)

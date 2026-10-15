@@ -301,7 +301,6 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
       _ <- PersistenceSchema.specificationGroups.filter(_.domain === domain).delete
       sharedTestSuiteIds <- PersistenceSchema.testSuites.filter(_.domain === domain).map(_.id).result
       _ <- DBIO.seq(sharedTestSuiteIds.map(testSuiteManager.undeployTestSuite(_, onSuccessCalls)): _*)
-      _ <- deleteTransactionByDomain(domain)
       _ <- testResultManager.updateForDeletedDomain(domain)
       _ <- domainParameterManager.deleteTestServices(domain)
       _ <- domainParameterManager.deleteDomainParameters(domain, onSuccessCalls)
@@ -335,10 +334,6 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
       _ <- deleteDomainInternal(domainId, onSuccessCalls)
     } yield ()
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
-  }
-
-  private def deleteTransactionByDomain(domainId: Long) = {
-    PersistenceSchema.transactions.filter(_.domain === domainId).delete
   }
 
   def getDomainThroughAutomationApi(communityKey: String, domainKey: String): Future[Domain] = {

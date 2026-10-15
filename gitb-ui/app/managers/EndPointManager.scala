@@ -82,7 +82,6 @@ class EndPointManager @Inject() (parameterManager: ParameterManager,
   def delete(endPointId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       endPoint <- PersistenceSchema.endpoints.filter(_.id === endPointId).result.head
-      _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.endpoint === endPoint.name).delete
       _ <- parameterManager.deleteParameterByEndPoint(endPointId, onSuccessCalls)
       _ <- PersistenceSchema.endpoints.filter(_.id === endPointId).delete
     } yield()

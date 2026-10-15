@@ -64,7 +64,6 @@ class TestCase(
 	              _testCaseType: Short,
 	              _path: String,
 	              _targetActors: Option[List[Actors]],
-	              _targetOptions: Option[List[models.Options]],
 	              _testSuiteOrder: Short,
 								_hasDocumentation: Boolean,
 							  _documentation: Option[String],
@@ -87,7 +86,6 @@ class TestCase(
 	var testCaseType: Short = _testCaseType
 	var path: String = _path
 	var targetActors: Option[List[Actors]] = _targetActors
-	var targetOptions: Option[List[models.Options]] = _targetOptions
 	var testSuiteOrder: Short = _testSuiteOrder
 	var hasDocumentation: Boolean = _hasDocumentation
 	var documentation: Option[String] = _documentation
@@ -98,17 +96,17 @@ class TestCase(
 	var specDescription: Option[String] = _specDescription
 	var specLink: Option[String] = _specLink
 
-	def this(_case: TestCases, targetActors: Option[List[Actors]], targetOptions: Option[List[models.Options]]) = {
+	def this(_case: TestCases, targetActors: Option[List[Actors]]) = {
 		this(_case.id, _case.shortname, _case.fullname, _case.version,
 			if (_case.authors.isDefined) Some(_case.authors.get.split(",").toList) else None,
 			_case.originalDate, _case.modificationDate, _case.description,
 			if (_case.keywords.isDefined) Some(_case.keywords.get.split(",").toList) else None,
-			_case.testCaseType, _case.path, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier,
+			_case.testCaseType, _case.path, targetActors, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier,
 			_case.isOptional, _case.isDisabled, _case.specReference, _case.specDescription, _case.specLink)
 	}
 
 	def this(_case: TestCases) = {
-		this(_case, None,	None)
+		this(_case, None)
 	}
 
 }

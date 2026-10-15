@@ -888,8 +888,6 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         }
         PersistenceSchema.configs.filter(_.system === systemId).filter(_.parameter inSet actorParameters).delete
       }
-      optionIds <- PersistenceSchema.options.filter(_.actor inSet actorIds).map(x => x.id).result
-      _ <- PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).filter(_.optionId inSet optionIds).delete
     } yield ()
 	}
 
@@ -1002,7 +1000,6 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- deleteSystemStatementConfiguration(systemId, onSuccess)
       _ <- PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
       _ <- PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
-      _ <- PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
       _ <- PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1)
       _ <- PersistenceSchema.conformanceSnapshotSystems.filter(_.id === systemId).map(_.id).update(systemId * -1)

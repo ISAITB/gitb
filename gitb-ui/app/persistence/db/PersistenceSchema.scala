@@ -297,25 +297,6 @@ object PersistenceSchema {
   }
   val configs = TableQuery[ConfigurationsTable]
 
-  class TransactionsTable(tag: Tag) extends Table[Transaction](tag, "Transactions") {
-    def shortname = column[String]("sname", O.PrimaryKey)
-    def fullname = column[String]("fname")
-    def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def domain = column[Long]("domain")
-    def * = (shortname, fullname, description, domain) <> (Transaction.tupled, Transaction.unapply)
-  }
-  val transactions = TableQuery[TransactionsTable]
-
-  class OptionsTable(tag: Tag) extends Table[Options](tag, "Options") {
-	  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def shortname = column[String]("sname")
-    def fullname = column[String]("fname")
-    def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def actor = column[Long]("actor")
-    def * = (id, shortname, fullname, description, actor) <> (Options.tupled, Options.unapply)
-  }
-  val options = TableQuery[OptionsTable]
-
   class TestCaseGroupsTable(tag: Tag) extends Table[TestCaseGroup](tag, "TestCaseGroups") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def identifier = column[String]("identifier")
@@ -461,15 +442,6 @@ object PersistenceSchema {
   }
   val systemImplementsActors = TableQuery[SystemImplementsActors]
 
-	class SystemImplementsOptions(tag: Tag) extends Table[(Long, Long)] (tag, "SystemImplementsOptions") {
-		def systemId = column[Long]("sut_id")
-		def optionId = column[Long]("option_id")
-
-		def * = (systemId, optionId)
-		def pk = primaryKey("sio_pk", (systemId, optionId))
-	}
-	val systemImplementsOptions = TableQuery[SystemImplementsOptions]
-
   class SpecificationHasActorsTable(tag: Tag) extends Table[(Long, Long)](tag, "SpecificationHasActors") {
     def specId = column[Long]("spec_id")
     def actorId = column[Long]("actor_id")
@@ -485,15 +457,6 @@ object PersistenceSchema {
     def pk = primaryKey("shts_pk", (specId, testSuiteId))
   }
   val specificationHasTestSuites = TableQuery[SpecificationHasTestSuitesTable]
-
-  class EndpointSupportsTransactionsTable(tag: Tag) extends Table[(Long, String, String)](tag, "EndpointSupportsTransactions") {
-    def actorId = column[Long]("actor")
-    def endpoint = column[String]("endpoint")
-    def transaction = column[String]("transaction")
-    def * = (actorId, endpoint, transaction)
-    def pk = primaryKey("est_pk", (actorId, endpoint, transaction))
-  }
-  val endpointSupportsTransactions = TableQuery[EndpointSupportsTransactionsTable]
 
 	class TestCaseHasActorsTable(tag: Tag) extends Table[(Long, Long, Long, Boolean)](tag, "TestCaseHasActors") {
 		def testcase = column[Long]("testcase")
@@ -526,14 +489,6 @@ object PersistenceSchema {
 		def pk = primaryKey("tshtc_pk", (testsuite, testcase))
 	}
 	val testSuiteHasTestCases = TableQuery[TestSuiteHasTestCasesTable]
-
-  class TestCaseCoversOptionsTable(tag: Tag) extends Table[(Long, Long)](tag, "TestCaseCoversOptions") {
-    def testcase = column[Long]("testcase")
-    def option = column[Long]("option")
-    def * =  (testcase, option)
-    def pk = primaryKey("tcco_pk", (testcase, option))
-  }
-  val testCaseCoversOptions = TableQuery[TestCaseCoversOptionsTable]
 
   class LandingPagesTable(tag: Tag) extends Table[LandingPages](tag, "LandingPages") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
