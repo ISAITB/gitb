@@ -421,28 +421,17 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       userInfo <- PersistenceSchema.users.filter(_.id === userId).map(x => (x.organization, x.role)).result.head
-      communityId <- PersistenceSchema.organizations.filter(_.id === userInfo._1).map(_.community).result.head
-      // Update core properties.
-      _ <- PersistenceSchema.organizations
-        .filter(_.id === userInfo._1).map(x => (x.shortname, x.fullname))
-        .update(shortName, fullName)
-      // Update landing page (if applicable).
-      _ <- {
-        if (landingPageId.isDefined) {
-          PersistenceSchema.organizations.filter(_.id === userInfo._1).map(_.landingPage).update(landingPageId.get)
-        } else {
-          DBIO.successful(())
-        }
-      }
-      _ <- {
-        if (propertyValues.isDefined && propertyFiles.isDefined) {
-          val isAdmin = userInfo._2 == UserRole.SystemAdmin.id.toShort || userInfo._2 == UserRole.CommunityAdmin.id.toShort
-          saveOrganisationParameterValues(userInfo._1, communityId, isAdmin, propertyValues.get, propertyFiles.get, onSuccessCalls)
-        } else {
-          DBIO.successful(())
-        }
-      }
-    } yield (communityId, userInfo._1)
+      org <- PersistenceSchema.organizations.filter(_.id === userInfo._1).result.head
+      // Update the core properties (including the names cached in the organisation's test sessions) and the organisation's properties.
+      // All other settings are kept as they are, apart from the landing page that is only updated if provided. Properties that
+      // are only editable by administrators are saved only if the user is an administrator.
+      isAdmin = userInfo._2 == UserRole.SystemAdmin.id.toShort || userInfo._2 == UserRole.CommunityAdmin.id.toShort
+      _ <- updateOrganizationInternal(org, shortName, fullName, landingPageId.getOrElse(org.landingPage), org.legalNotice, org.errorTemplate,
+        None, org.template, org.templateName, None, None, None, propertyValues, propertyFiles, propertiesAsAdmin = isAdmin,
+        copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+        checkApiKeyUniqueness = false, onSuccessCalls
+      )
+    } yield (org.community, org.id)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { results =>
       triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(results._1, results._2))
     }
@@ -450,47 +439,51 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], selfRegistrationToken: Option[Option[String]], selfRegistrationDefault: Option[Boolean], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
     for {
-      org <- PersistenceSchema.organizations.filter(_.id === orgId).result.headOption
+      org <- PersistenceSchema.organizations.filter(_.id === orgId).result.head
+      createdSystemInfo <- updateOrganizationInternal(org, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, apiKey, selfRegistrationToken, selfRegistrationDefault, propertyValues, propertyFiles, propertiesAsAdmin = true, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness, onSuccessCalls)
+    } yield createdSystemInfo
+  }
+
+  /**
+   * Updates the provided (already loaded) organisation. The propertiesAsAdmin flag determines whether properties that are
+   * only editable by administrators are also saved.
+   */
+  def updateOrganizationInternal(org: Organizations, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], selfRegistrationToken: Option[Option[String]], selfRegistrationDefault: Option[Boolean], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], propertiesAsAdmin: Boolean, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
+    val orgId = org.id
+    for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
-        if (org.isDefined) {
-          var templateNameToSet: Option[String] = null
-          if (template) {
-            templateNameToSet = templateName
-          } else {
-            templateNameToSet = None
-          }
-          if (apiKey.isDefined || selfRegistrationToken.isDefined) {
-            // We only optionally update the API key and self registration token
-            actions += (for {
-              replaceApiKey <- {
-                if (apiKey.isDefined && apiKey.get.isDefined && checkApiKeyUniqueness) {
-                  PersistenceSchema.organizations.filter(_.apiKey === apiKey.get.get).filter(_.id =!= orgId).exists.result
-                } else {
-                  DBIO.successful(false)
-                }
+        val templateNameToSet = if (template) templateName else None
+        if (apiKey.isDefined || selfRegistrationToken.isDefined) {
+          // We only optionally update the API key and self registration token
+          actions += (for {
+            replaceApiKey <- {
+              if (apiKey.isDefined && apiKey.get.isDefined && checkApiKeyUniqueness) {
+                PersistenceSchema.organizations.filter(_.apiKey === apiKey.get.get).filter(_.id =!= orgId).exists.result
+              } else {
+                DBIO.successful(false)
               }
-              replaceSelfRegistrationToken <- {
-                if (selfRegistrationToken.isDefined && selfRegistrationToken.get.isDefined && checkApiKeyUniqueness) {
-                  PersistenceSchema.organizations.filter(_.selfRegToken === selfRegistrationToken.get.get).filter(_.id =!= orgId).exists.result
-                } else {
-                  DBIO.successful(false)
-                }
+            }
+            replaceSelfRegistrationToken <- {
+              if (selfRegistrationToken.isDefined && selfRegistrationToken.get.isDefined && checkApiKeyUniqueness) {
+                PersistenceSchema.organizations.filter(_.selfRegToken === selfRegistrationToken.get.get).filter(_.id =!= orgId).exists.result
+              } else {
+                DBIO.successful(false)
               }
-              _ <- {
-                val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
-                val selfRegTokenToUse = if (replaceSelfRegistrationToken) Some(CryptoUtil.generateApiKey()) else selfRegistrationToken.get
-                val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.apiKey, o.selfRegToken, o.selfRegDefault)
-                q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, apiKeyToUse, selfRegTokenToUse, selfRegistrationDefault.getOrElse(org.get.selfRegDefault))
-              }
-            } yield ())
-          } else {
-            val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.selfRegDefault)
-            actions += q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, selfRegistrationDefault.getOrElse(org.get.selfRegDefault))
-          }
-          if (shortName.nonEmpty && !org.get.shortname.equals(shortName)) {
-            actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
-          }
+            }
+            _ <- {
+              val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
+              val selfRegTokenToUse = if (replaceSelfRegistrationToken) Some(CryptoUtil.generateApiKey()) else selfRegistrationToken.get
+              val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.apiKey, o.selfRegToken, o.selfRegDefault)
+              q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, apiKeyToUse, selfRegTokenToUse, selfRegistrationDefault.getOrElse(org.selfRegDefault))
+            }
+          } yield ())
+        } else {
+          val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.selfRegDefault)
+          actions += q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, selfRegistrationDefault.getOrElse(org.selfRegDefault))
+        }
+        if (shortName.nonEmpty && !org.shortname.equals(shortName)) {
+          actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
         }
         toDBIO(actions)
       }
@@ -507,7 +500,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       _ <- {
         if (propertyValues.isDefined && propertyFiles.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
-          saveOrganisationParameterValues(orgId, org.get.community, isAdmin = true, propertyValues.get, propertyFiles.get, onSuccessCalls)
+          saveOrganisationParameterValues(orgId, org.community, propertiesAsAdmin, propertyValues.get, propertyFiles.get, onSuccessCalls)
         } else {
           DBIO.successful(())
         }
