@@ -44,7 +44,8 @@ class SupportStepsTest extends BaseIntegrationTest {
                 "sup-complex-scenario",
                 "sup-multitype-pipeline",
                 "sup-interact-dropdown-multiple",
-                "sup-interact-text-multiple"
+                "sup-interact-text-multiple",
+                "sup-interact-dependency-multiple"
         }) {
             stubTdl(id, "tdl/sup/" + id + ".xml");
         }
@@ -146,6 +147,35 @@ class SupportStepsTest extends BaseIntegrationTest {
                 userInput(1, "text", "x"),
                 userInput(2, "boundString", "y"),
                 userInput(3, "boundList", "z")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnMultipleSelectionMatchesAnySelectedValue() throws Exception {
+        // "b" is among the selected values so the dependent (required) inputs apply and are provided.
+        assertSuccess(runWithInteractions("sup-interact-dependency-multiple", request -> List.of(
+                userInput(1, "implicit", "a,b"),
+                userInput(2, "implicitDependent", "x"),
+                userInput(3, "explicit", "b,c"),
+                userInput(4, "explicitDependent", "y")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnMultipleSelectionRequiresDependentInput() throws Exception {
+        // "b" is among the selected values so the dependent inputs are required, but are not provided.
+        assertFailed(runWithInteractions("sup-interact-dependency-multiple", request -> List.of(
+                userInput(1, "implicit", "a,b"),
+                userInput(3, "explicit", "b,c")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnMultipleSelectionIgnoredWhenValueNotSelected() throws Exception {
+        // "b" is not selected so the dependent (required) inputs do not apply and can be omitted.
+        assertSuccess(runWithInteractions("sup-interact-dependency-multiple", request -> List.of(
+                userInput(1, "implicit", "a,c"),
+                userInput(3, "explicit", "c")
         )));
     }
 }
