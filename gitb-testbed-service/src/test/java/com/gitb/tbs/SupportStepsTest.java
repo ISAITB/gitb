@@ -18,6 +18,8 @@ package com.gitb.tbs;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static com.gitb.tbs.TdlTestHelper.*;
 
 class SupportStepsTest extends BaseIntegrationTest {
@@ -40,7 +42,9 @@ class SupportStepsTest extends BaseIntegrationTest {
                 "sup-level-warning",
                 "sup-mixed-levels",
                 "sup-complex-scenario",
-                "sup-multitype-pipeline"
+                "sup-multitype-pipeline",
+                "sup-interact-dropdown-multiple",
+                "sup-interact-text-multiple"
         }) {
             stubTdl(id, "tdl/sup/" + id + ".xml");
         }
@@ -124,5 +128,24 @@ class SupportStepsTest extends BaseIntegrationTest {
     @Test
     void multitypePipeline() throws Exception {
         assertSuccess(run("sup-multitype-pipeline"));
+    }
+
+    @Test
+    void interactDropdownMultipleIsCommaSeparatedString() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-dropdown-multiple", request -> List.of(
+                userInput(1, "implicit", "a,b"),
+                userInput(2, "explicit", "a,c"),
+                userInput(3, "bound", "b,c"),
+                userInput(4, "boundExplicit", "a,b,c")
+        )));
+    }
+
+    @Test
+    void interactTextMultipleIsList() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-text-multiple", request -> List.of(
+                userInput(1, "text", "x"),
+                userInput(2, "boundString", "y"),
+                userInput(3, "boundList", "z")
+        )));
     }
 }

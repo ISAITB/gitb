@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-interact-dropdown-multiple" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>Interact multiple selection dropdowns are recorded as comma-separated strings</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="bound" type="string"/>
+        <assign to="boundExplicit" type="string"/>
+        <interact id="data" desc="Provide inputs">
+            <request desc="Implicit" name="implicit" options="a,b,c" multiple="true"/>
+            <request desc="Explicit" name="explicit" inputType="SELECT_MULTIPLE" options="a,b,c" multiple="true"/>
+            <request desc="Bound implicit" options="a,b,c" multiple="true">$bound</request>
+            <request desc="Bound explicit" inputType="SELECT_MULTIPLE" options="a,b,c" multiple="true">$boundExplicit</request>
+        </interact>
+        <verify handler="StringValidator" desc="Implicit">
+            <input name="actual">$data{implicit}</input>
+            <input name="expected">'a,b'</input>
+        </verify>
+        <verify handler="StringValidator" desc="Explicit">
+            <input name="actual">$data{explicit}</input>
+            <input name="expected">'a,c'</input>
+        </verify>
+        <verify handler="StringValidator" desc="Bound implicit">
+            <input name="actual">$bound</input>
+            <input name="expected">'b,c'</input>
+        </verify>
+        <verify handler="StringValidator" desc="Bound explicit">
+            <input name="actual">$boundExplicit</input>
+            <input name="expected">'a,b,c'</input>
+        </verify>
+    </steps>
+</testcase>

@@ -134,68 +134,81 @@ public class DataTypeUtils {
 	public static void setDataTypeValueWithAnyContent(DataType data, AnyContent anyContent, DataTypePostProcessor postProcessor) {
 		switch (anyContent.getType()) {
 			case DataType.LIST_DATA_TYPE -> {
-				ListType list = (ListType) data;
-
-				for (AnyContent childItem : anyContent.getItem()) {
-					DataType childData = convertAnyContentToDataType(childItem);
-					postProcessor.process(childData);
-
-					if (list.getContainedType() == null) {
-						list.setContainedType(childData.getType());
+				if (data instanceof ListType list) {
+					for (AnyContent childItem : anyContent.getItem()) {
+						DataType childData = convertAnyContentToDataType(childItem);
+						postProcessor.process(childData);
+						if (list.getContainedType() == null) {
+							list.setContainedType(childData.getType());
+						}
+						list.append(childData);
 					}
-
-					list.append(childData);
+				} else {
+					// A list assigned to a non-list is converted (e.g. to a comma-separated string).
+					ListType items = new ListType();
+					setDataTypeValueWithAnyContent(items, anyContent, postProcessor);
+					data.copyFrom(items);
 				}
 			}
 			case DataType.MAP_DATA_TYPE -> {
-				MapType map = (MapType) data;
-
-				for (AnyContent childItem : anyContent.getItem()) {
-					DataType childData = convertAnyContentToDataType(childItem);
-					postProcessor.process(childData);
-
-					map.addItem(childItem.getName(), childData);
+				if (data instanceof MapType map) {
+					for (AnyContent childItem : anyContent.getItem()) {
+						DataType childData = convertAnyContentToDataType(childItem);
+						postProcessor.process(childData);
+						map.addItem(childItem.getName(), childData);
+					}
+				} else {
+					throw new IllegalStateException("Cannot assign map to a non-map variable");
 				}
-
 			}
 			default -> {
-				switch (anyContent.getEmbeddingMethod()) {
-					case STRING -> {
-						if (anyContent.getValue() == null) {
-							data.setValue(null);
-						} else {
-							data.deserialize(anyContent.getValue().getBytes());
+				if (data instanceof ListType list && !DataType.isListType(anyContent.getType())) {
+					// A single value assigned to a list is recorded as a list with one item.
+					DataType item = DataTypeFactory.getInstance().create(anyContent.getType());
+					setDataTypeValueWithAnyContent(item, anyContent, postProcessor);
+					if (list.getContainedType() != null) {
+						item = item.convertTo(list.getContainedType());
+					}
+					list.append(item);
+				} else {
+					switch (anyContent.getEmbeddingMethod()) {
+						case STRING -> {
+							if (anyContent.getValue() == null) {
+								data.setValue(null);
+							} else {
+								data.deserialize(anyContent.getValue().getBytes());
+							}
+							postProcessor.process(data);
 						}
-						postProcessor.process(data);
-					}
-					case BASE_64 -> {
-                        if (EncodingUtils.isDataUrl(anyContent.getValue())) {
-                            data.deserialize(Base64.decodeBase64(EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
-                        } else {
-                            data.deserialize(Base64.decodeBase64(anyContent.getValue()));
-                        }
-						postProcessor.process(data);
-					}
-					case URI -> {
-						try {
-							var request = HttpRequest
-									.newBuilder()
-									.uri(new URI(anyContent.getValue()))
-									.header("Accept", "*/*")
-									.GET()
-									.build();
-                            try (var client = HttpClient.newHttpClient()) {
-                                var content = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
-                                data.deserialize(content.getBytes());
-                                postProcessor.process(data);
-                            }
-						} catch (URISyntaxException e) {
-							throw new IllegalStateException("URI had invalid syntax ["+anyContent.getValue()+"]", e);
-						} catch (InterruptedException e) {
-							Thread.currentThread().interrupt();
-							throw new IllegalStateException("Thread interrupted ["+anyContent.getValue()+"]", e);
-						} catch (Exception e) {
-							throw new IllegalStateException("Error while calling URI ["+anyContent.getValue()+"]", e);
+						case BASE_64 -> {
+							if (EncodingUtils.isDataUrl(anyContent.getValue())) {
+								data.deserialize(Base64.decodeBase64(EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+							} else {
+								data.deserialize(Base64.decodeBase64(anyContent.getValue()));
+							}
+							postProcessor.process(data);
+						}
+						case URI -> {
+							try {
+								var request = HttpRequest
+										.newBuilder()
+										.uri(new URI(anyContent.getValue()))
+										.header("Accept", "*/*")
+										.GET()
+										.build();
+								try (var client = HttpClient.newHttpClient()) {
+									var content = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+									data.deserialize(content.getBytes());
+									postProcessor.process(data);
+								}
+							} catch (URISyntaxException e) {
+								throw new IllegalStateException("URI had invalid syntax ["+anyContent.getValue()+"]", e);
+							} catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+								throw new IllegalStateException("Thread interrupted ["+anyContent.getValue()+"]", e);
+							} catch (Exception e) {
+								throw new IllegalStateException("Error while calling URI ["+anyContent.getValue()+"]", e);
+							}
 						}
 					}
 				}

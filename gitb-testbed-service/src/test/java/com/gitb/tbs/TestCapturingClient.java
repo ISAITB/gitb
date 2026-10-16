@@ -16,6 +16,7 @@
 package com.gitb.tbs;
 
 import com.gitb.PropertyConstants;
+import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.processors.TestCaseProcessorActor;
 import com.gitb.tr.TAR;
 
@@ -23,9 +24,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public class TestCapturingClient implements TestbedClient {
 
+    private volatile Function<InteractWithUsersRequest, List<UserInput>> interactionResponder;
     private final CompletableFuture<Void> configComplete = new CompletableFuture<>();
     private final CompletableFuture<TestStepStatus> sessionResult = new CompletableFuture<>();
     private final List<TestStepStatus> allStatuses = Collections.synchronizedList(new ArrayList<>());
@@ -58,9 +61,28 @@ public class TestCapturingClient implements TestbedClient {
 
     @Override
     public Void interactWithUsers(InteractWithUsersRequest request) {
-        sessionResult.completeExceptionally(
-                new IllegalStateException("Unexpected interact step in test: " + request));
+        if (interactionResponder == null) {
+            sessionResult.completeExceptionally(
+                    new IllegalStateException("Unexpected interact step in test: " + request));
+        } else {
+            // Respond from a separate thread, as a user would, rather than from within the engine's call.
+            CompletableFuture.runAsync(() -> {
+                try {
+                    TestbedService.provideInput(request.getTcInstanceid(), request.getStepId(), interactionResponder.apply(request), false);
+                } catch (Exception e) {
+                    sessionResult.completeExceptionally(e);
+                }
+            });
+        }
         return new Void();
+    }
+
+    /**
+     * Sets the function providing the user inputs to submit when an interact step is reached. Without one, any
+     * interact step fails the test.
+     */
+    public void respondToInteractionsWith(Function<InteractWithUsersRequest, List<UserInput>> responder) {
+        this.interactionResponder = responder;
     }
 
     public CompletableFuture<Void> configComplete() {

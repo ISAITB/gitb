@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -43,6 +44,33 @@ public class TdlTestHelper {
 
     public static TestRunResult run(String testCaseId, String apiKey) throws Exception {
         return run(testCaseId, apiKey, List.of());
+    }
+
+    /**
+     * Runs a test case containing interact steps, submitting the inputs returned by the responder whenever one is reached.
+     */
+    public static TestRunResult runWithInteractions(String testCaseId, Function<InteractWithUsersRequest, List<UserInput>> responder) throws Exception {
+        TestCapturingClient client = new TestCapturingClient();
+        client.respondToInteractionsWith(responder);
+        String sessionId = TestbedService.initiate(testCaseId, null);
+        TestbedServiceCallbackHandler.getInstance().registerForTest(sessionId, client);
+        TestbedService.configure(sessionId, buildConfigurations(null), List.of());
+        TestbedService.start(sessionId);
+        TestStepStatus status = client.sessionResult().get(30, TimeUnit.SECONDS);
+        return new TestRunResult(status, client.logMessages(), client.allStatuses());
+    }
+
+    /**
+     * A string user input for the interaction request with the given ID (its 1-based position among the interact step's elements).
+     */
+    public static UserInput userInput(int requestId, String name, String value) {
+        UserInput input = new UserInput();
+        input.setId(String.valueOf(requestId));
+        input.setName(name);
+        input.setType("string");
+        input.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        input.setValue(value);
+        return input;
     }
 
     public static TestRunResult run(String testCaseId, String apiKey, List<AnyContent> inputs) throws Exception {
