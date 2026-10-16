@@ -824,9 +824,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         if (expectedValue == null || event.getUserInputs() == null) {
             return true;
         }
+        // The selected values of a multiple selection list are submitted as a single comma-separated value.
+        boolean multipleSelection = targetRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE;
         return event.getUserInputs().stream()
                 .filter(userInput -> target.id().equals(userInput.getId()))
-                .anyMatch(userInput -> expectedValue.equals(userInput.getValue()));
+                .anyMatch(userInput -> {
+                    if (multipleSelection && userInput.getValue() != null) {
+                        return Arrays.stream(StringUtils.split(userInput.getValue(), ',')).anyMatch(selected -> expectedValue.equals(selected.trim()));
+                    }
+                    return expectedValue.equals(userInput.getValue());
+                });
     }
 
     private void addMetadataToken(AnyContent content, String tokenKey, String tokenValue) {
