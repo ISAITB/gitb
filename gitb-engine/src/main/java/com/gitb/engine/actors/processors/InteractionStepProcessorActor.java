@@ -838,6 +838,29 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
     }
 
+    /**
+     * Whether the request is a dropdown, for which the "multiple" attribute selects between a single and a multiple
+     * selection list (a single, comma-separated value) rather than allowing the control to be repeated.
+     */
+    private boolean isDropdown(UserRequest request) {
+        return request.getOptions() != null
+                || request.getInputType() == InputRequestInputType.SELECT_SINGLE
+                || request.getInputType() == InputRequestInputType.SELECT_MULTIPLE;
+    }
+
+    /**
+     * Whether multiple distinct values (recorded as a list) are expected for the request.
+     */
+    private boolean multipleValuesExpected(UserRequest request, VariableResolver variableResolver) {
+        if (request.getMultiple() == null || isDropdown(request)) {
+            return false;
+        }
+        if (VariableResolver.isVariableReference(request.getMultiple())) {
+            return variableResolver.resolveVariableAsBoolean(request.getMultiple()).getValue();
+        }
+        return Boolean.parseBoolean(request.getMultiple());
+    }
+
     private void processUserInput(UserRequest targetRequest, int requestIndex, InputEvent inputEvent, VariableResolver variableResolver, DataTypeFactory dataTypeFactory, Set<Integer> requiredInputIndexes, TAR report, MapType interactionResult, boolean dependencySatisfied) {
         if (inputEvent.getUserInputs() != null) {
             List<UserInput> matchingInputs = inputEvent.getUserInputs().stream()
@@ -847,14 +870,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     })
                     .toList();
             if (!matchingInputs.isEmpty()) {
-                boolean multipleExpected = false;
-                if (targetRequest.getMultiple() != null) {
-                    if (VariableResolver.isVariableReference(targetRequest.getMultiple())) {
-                        multipleExpected = variableResolver.resolveVariableAsBoolean(targetRequest.getMultiple()).getValue();
-                    } else {
-                        multipleExpected = Boolean.parseBoolean(targetRequest.getMultiple());
-                    }
-                }
+                boolean multipleExpected = multipleValuesExpected(targetRequest, variableResolver);
                 boolean recordFileNames = StringUtils.isNotBlank(targetRequest.getFileName());
                 AnyContent contentForContext;
                 String dataTypeForContext;
