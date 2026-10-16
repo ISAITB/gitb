@@ -193,6 +193,17 @@ export class TestService {
           })
           files.push({param: `file_${input.id}_${index}`, data: file})
         })
+      } else if (input.values) {
+        input.values.forEach((value, index) => {
+          inputsToSend.push({
+            id: input.id,
+            name: input.name,
+            type: input.type,
+            embeddingMethod: input.embeddingMethod,
+            value: value,
+            counter: index
+          })
+        })
       } else {
         inputsToSend.push({
           id: input.id,

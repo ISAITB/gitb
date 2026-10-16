@@ -20,6 +20,7 @@ export interface UserInteractionInput {
     type: string
     embeddingMethod: string
     value: string
+    values?: string[]
     file?: File[]
 
 }

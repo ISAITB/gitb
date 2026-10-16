@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sup-interact-multiple-values" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>Interact inputs with multiple values are recorded as lists</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <interact id="data" desc="Provide inputs">
+            <request desc="Text" name="text" multiple="true"/>
+            <request desc="Secret" name="secret" inputType="SECRET" multiple="true"/>
+            <request desc="Multiline" name="multiline" inputType="MULTILINE_TEXT" multiple="true"/>
+            <request desc="Code" name="code" inputType="CODE" multiple="true"/>
+            <request desc="Rich" name="rich" inputType="RICH_TEXT" multiple="true"/>
+            <request desc="Depends on any text value" name="dependent" dependsOn="text" dependsOnValue="t2" required="true"/>
+        </interact>
+        <verify handler="StringValidator" desc="text 0"><input name="actual">$data{text}{0}</input><input name="expected">'t1'</input></verify>
+        <verify handler="StringValidator" desc="text 1"><input name="actual">$data{text}{1}</input><input name="expected">'t2'</input></verify>
+        <verify handler="StringValidator" desc="secret 1"><input name="actual">$data{secret}{1}</input><input name="expected">'s2'</input></verify>
+        <verify handler="StringValidator" desc="multiline 1"><input name="actual">$data{multiline}{1}</input><input name="expected">'m2'</input></verify>
+        <verify handler="StringValidator" desc="code 1"><input name="actual">$data{code}{1}</input><input name="expected">'c2'</input></verify>
+        <verify handler="ExpressionValidator" desc="rich 1"><input name="expression">contains($data{rich}{1}, 'r2')</input></verify>
+        <verify handler="StringValidator" desc="dependent"><input name="actual">$data{dependent}</input><input name="expected">'d'</input></verify>
+    </steps>
+</testcase>

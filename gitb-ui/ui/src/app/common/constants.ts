@@ -19,6 +19,7 @@ import {LabelConfig} from '../types/label-config.type';
 export class Constants {
 
   public static readonly MAX_PROVIDE_INPUT_FILES = 10;
+  public static readonly MAX_PROVIDE_INPUT_VALUES = 10;
 
 	public static readonly THEME_CSS_LINK_ID = "themeCssLink"
 	public static readonly THEME_FAVICON_LINK_ID = "themeFaviconLink"

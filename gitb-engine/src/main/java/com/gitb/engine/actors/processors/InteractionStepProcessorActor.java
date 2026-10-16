@@ -657,6 +657,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             if (inputRequest.getInputType() == null) {
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
+            // Multiple values for the same input (not applicable to dropdowns, for which "multiple" defines the selection mode).
+            if (!isDropdown(request) && request.getMultiple() != null) {
+                inputRequest.setMultiple(multipleValuesExpected(request, variableResolver));
+            }
             // Rows for multiline text, code editors, select multiple and the rich text editor's height.
             if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT
                     || inputRequest.getInputType() == InputRequestInputType.CODE
@@ -827,11 +831,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
         // The selected values of a multiple selection list are submitted as a single comma-separated value.
         boolean multipleSelection = targetRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE;
+        // Rich text values are recorded in sanitized form (see processUserInput), so match against that.
+        boolean richText = targetRequest.getInputType() == InputRequestInputType.RICH_TEXT;
         return event.getUserInputs().stream()
                 .filter(userInput -> target.id().equals(userInput.getId()))
                 .anyMatch(userInput -> {
                     if (multipleSelection && userInput.getValue() != null) {
                         return Arrays.stream(StringUtils.split(userInput.getValue(), ',')).anyMatch(selected -> expectedValue.equals(selected.trim()));
+                    }
+                    if (richText && userInput.getValue() != null) {
+                        return expectedValue.equals(TestCaseUtils.sanitizeRichTextValue(userInput.getValue()));
                     }
                     return expectedValue.equals(userInput.getValue());
                 });
@@ -892,7 +901,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 DataType fileNameValue = null;
                 if (!multipleExpected) {
                     UserInput userInput = matchingInputs.getFirst();
-                    if (userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                    if (StringUtils.isNotBlank(userInput.getValue())) {
                         requiredInputIndexes.remove(requestIndex);
                         if (targetRequest.isReport() && dependencySatisfied) {
                             // Construct the value to return for the step's report.
@@ -908,7 +917,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     }
                 } else {
                     List<UserInput> inputsWithValues = matchingInputs.stream()
-                            .filter(userInput -> userInput.getValue() != null && !userInput.getValue().isEmpty())
+                            .filter(userInput -> StringUtils.isNotBlank(userInput.getValue()))
                             .toList();
                     if (!inputsWithValues.isEmpty()) {
                         requiredInputIndexes.remove(requestIndex);

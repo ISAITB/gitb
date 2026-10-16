@@ -51,7 +51,7 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                             if (StringUtils.isNotBlank(ur.getOptionLabels())) {
                                 addReportItem(ErrorCode.MISSING_INTERACTION_OPTIONS, currentTestCase.getId(), "optionLabels", "optionLabels");
                             }
-                            if (StringUtils.isNotBlank(ur.getMultiple()) && ur.getInputType() != InputRequestInputType.UPLOAD) {
+                            if (StringUtils.isNotBlank(ur.getMultiple()) && (ur.getInputType() == InputRequestInputType.SELECT_SINGLE || ur.getInputType() == InputRequestInputType.SELECT_MULTIPLE)) {
                                 addReportItem(ErrorCode.INVALID_MULTIPLE_ATTRIBUTE, currentTestCase.getId());
                             }
                         } else {

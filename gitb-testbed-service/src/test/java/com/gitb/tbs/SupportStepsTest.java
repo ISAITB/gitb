@@ -45,7 +45,10 @@ class SupportStepsTest extends BaseIntegrationTest {
                 "sup-multitype-pipeline",
                 "sup-interact-dropdown-multiple",
                 "sup-interact-text-multiple",
-                "sup-interact-dependency-multiple"
+                "sup-interact-dependency-multiple",
+                "sup-interact-multiple-values",
+                "sup-interact-dependency-values",
+                "sup-interact-required-values"
         }) {
             stubTdl(id, "tdl/sup/" + id + ".xml");
         }
@@ -176,6 +179,69 @@ class SupportStepsTest extends BaseIntegrationTest {
         assertSuccess(runWithInteractions("sup-interact-dependency-multiple", request -> List.of(
                 userInput(1, "implicit", "a,c"),
                 userInput(3, "explicit", "c")
+        )));
+    }
+
+    @Test
+    void interactMultipleValuesForTextBasedInputs() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-multiple-values", request -> List.of(
+                userInput(1, "text", "t1"), userInput(1, "text", "t2"),
+                userInput(2, "secret", "s1"), userInput(2, "secret", "s2"),
+                userInput(3, "multiline", "m1"), userInput(3, "multiline", "m2"),
+                userInput(4, "code", "c1"), userInput(4, "code", "c2"),
+                userInput(5, "rich", "<p>r1</p>"), userInput(5, "rich", "<p>r2</p>"),
+                userInput(6, "dependent", "d")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnTextWithMultipleValuesMatchesAnyValue() throws Exception {
+        // "t2" is one of the text values so the (required) dependent input applies, but is not provided.
+        assertFailed(runWithInteractions("sup-interact-dependency-values", request -> List.of(
+                userInput(1, "text", "t1"), userInput(1, "text", "t2")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnTextWithMultipleValuesIgnoredWhenNoValueMatches() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-dependency-values", request -> List.of(
+                userInput(1, "text", "t1"), userInput(1, "text", "t3")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnRichTextMatchesSanitizedValue() throws Exception {
+        // The second value only equals the expected one once sanitized, so the (required) dependent input applies, but is not provided.
+        assertFailed(runWithInteractions("sup-interact-dependency-values", request -> List.of(
+                userInput(3, "rich", "<p>r1</p>"), userInput(3, "rich", "<p>r2</p><script>alert(1)</script>")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnRichTextWithMultipleValuesIgnoredWhenNoValueMatches() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-dependency-values", request -> List.of(
+                userInput(3, "rich", "<p>r1</p>"), userInput(3, "rich", "<p>r3</p>")
+        )));
+    }
+
+    @Test
+    void interactRequiredInputWithValuesIsSatisfied() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-required-values", request -> List.of(
+                userInput(1, "single", " x "), userInput(2, "multiple", "y")
+        )));
+    }
+
+    @Test
+    void interactRequiredInputIsNotSatisfiedByWhitespaceOnlyValue() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-required-values", request -> List.of(
+                userInput(1, "single", "   "), userInput(2, "multiple", "y")
+        )));
+    }
+
+    @Test
+    void interactRequiredInputWithMultipleValuesIsNotSatisfiedByWhitespaceOnlyValues() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-required-values", request -> List.of(
+                userInput(1, "single", "x"), userInput(2, "multiple", " "), userInput(2, "multiple", "	")
         )));
     }
 }

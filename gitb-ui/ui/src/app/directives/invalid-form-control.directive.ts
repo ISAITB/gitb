@@ -29,6 +29,13 @@ export class InvalidFormControlDirective implements AfterViewInit, OnDestroy {
 
   @Input() set invalid(_config: undefined|InvalidFormControlConfig|ReplaySubject<InvalidFormControlConfig>) {
     if (this.isEmitter(_config)) {
+      // The emitter can change over time (e.g. when a list of inputs is re-indexed) so drop any previous state.
+      this.emitterSubscription?.unsubscribe()
+      if (this.config.invalid) {
+        this.config.invalid = false
+        this.config.feedback = undefined
+        this.apply()
+      }
       this.emitterSubscription = _config.subscribe((newConfig) => {
         const invalidBefore = this.config.invalid
         const feedbackBefore = this.config.feedback

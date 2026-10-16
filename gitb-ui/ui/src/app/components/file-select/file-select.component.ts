@@ -39,7 +39,22 @@ export class FileSelectComponent implements OnInit, OnDestroy {
   @Input() extraActions = false
   @Input() disableUpload = false
   @Input() reset?: EventEmitter<void>
-  @Input() validation?: ReplaySubject<InvalidFormControlConfig>
+  private _validation?: ReplaySubject<InvalidFormControlConfig>
+  // The validation subject can change over the component's lifetime (e.g. when a list of inputs is re-indexed).
+  @Input() set validation(validation: ReplaySubject<InvalidFormControlConfig>|undefined) {
+    this._validation = validation
+    this.validationStateSubscription?.unsubscribe()
+    this.validationStateSubscription = undefined
+    this.hasValidation = false
+    if (validation) {
+      this.validationStateSubscription = validation.subscribe((status) => {
+        this.hasValidation = status.invalid == true && status.feedback != undefined
+      })
+    }
+  }
+  get validation(): ReplaySubject<InvalidFormControlConfig>|undefined {
+    return this._validation
+  }
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 
@@ -71,11 +86,6 @@ export class FileSelectComponent implements OnInit, OnDestroy {
         if (this.fileInput) {
           this.fileInput.nativeElement.value = null
         }
-      })
-    }
-    if (this.validation) {
-      this.validationStateSubscription = this.validation.subscribe((status) => {
-        this.hasValidation = status.invalid == true && status.feedback != undefined
       })
     }
     this.dragSupport.onDragStartChange$.subscribe(() => {

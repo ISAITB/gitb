@@ -64,25 +64,25 @@
                                     }
 									@case ("CODE") {
 										<!-- Code editor -->
-										<app-code-editor #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, mode: interaction.mimeType}" [submitOnCtrlEnter]="true" (loaded)="editorInitialized($event, interaction)" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></app-code-editor>
+										<ng-container *ngTemplateOutlet="multiValueInputs; context: {interaction: interaction, index: index}"></ng-container>
 									}
 									@case ("MULTILINE_TEXT") {
 										<!-- Text area -->
-										<textarea ctrlEnterSubmit [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [attr.rows]="(interaction.size != undefined && interaction.size > 1)?interaction.size:null" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
+										<ng-container *ngTemplateOutlet="multiValueInputs; context: {interaction: interaction, index: index}"></ng-container>
 									}
 									@case ("SECRET") {
 										<!-- Secret -->
-										<app-secret-input [inputId]="'input-'+index" [inputName]="'input-'+index" [name]="'secret-input-'+index" [(ngModel)]="interaction.data" [validation]="validation.get('input_'+index)"></app-secret-input>
+										<ng-container *ngTemplateOutlet="multiValueInputs; context: {interaction: interaction, index: index}"></ng-container>
 									}
 									@case ("RICH_TEXT") {
 										<!-- Rich text editor -->
 										@if (isVisible(interaction)) {
-											<app-editor [name]="'input-'+index" [attr.id]="'input-'+index" [type]="'minimal'" [height]="editorHeight(interaction)" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></app-editor>
+											<ng-container *ngTemplateOutlet="multiValueInputs; context: {interaction: interaction, index: index}"></ng-container>
 										}
 									}
 									@default {
 										<!-- Text field -->
-										<input [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"/>
+										<ng-container *ngTemplateOutlet="multiValueInputs; context: {interaction: interaction, index: index}"></ng-container>
 									}
 								 }
 							 </div>
@@ -115,3 +115,64 @@
 		</div>
 	</div>
 </form>
+
+<ng-template #multiValueInputs let-interaction="interaction" let-index="index">
+	<div class="d-flex flex-column gap-2">
+		@for (value of interaction.tempValues; let valueIndex = $index; track value.uuid) {
+			@let name = controlName(index, valueIndex);
+			@let removable = interaction.multiple && (interaction.tempValues.length > 1 || hasValue(interaction, value.data));
+			@let valueValidation = validation.get('input_'+index+(valueIndex==0?'':('_'+valueIndex)));
+			@switch (interaction.inputType) {
+				@case ("CODE") {
+					<div class="d-flex gap-2 align-items-start">
+						<div class="multi-value-control">
+							<app-code-editor (focusChange)="codeEditorFocus($event, name)" [name]="name" [attr.id]="name" [(ngModel)]="value.data" [options]="{lineNumbers:true, mode: interaction.mimeType}" [submitOnCtrlEnter]="true" (loaded)="editorInitialized($event, interaction, value)" [ngClass]="{'focused': editorFocus[name]}" [invalid]="valueValidation"></app-code-editor>
+						</div>
+						<ng-container *ngTemplateOutlet="removeButton; context: {interaction: interaction, valueIndex: valueIndex, removable: removable}"></ng-container>
+					</div>
+				}
+				@case ("MULTILINE_TEXT") {
+					<div class="d-flex gap-2 align-items-start">
+						<div class="multi-value-control">
+							<textarea class="form-control" ctrlEnterSubmit [name]="name" [attr.id]="name" [attr.rows]="(interaction.size != undefined && interaction.size > 1)?interaction.size:null" [(ngModel)]="value.data" [invalid]="valueValidation"></textarea>
+						</div>
+						<ng-container *ngTemplateOutlet="removeButton; context: {interaction: interaction, valueIndex: valueIndex, removable: removable}"></ng-container>
+					</div>
+				}
+				@case ("RICH_TEXT") {
+					<div class="d-flex gap-2 align-items-start">
+						<div class="multi-value-control">
+							<app-editor [name]="name" [attr.id]="name" [type]="'minimal'" [height]="editorHeight(interaction)" [focusOnInit]="value.focus == true" [(ngModel)]="value.data" [invalid]="valueValidation"></app-editor>
+						</div>
+						<ng-container *ngTemplateOutlet="removeButton; context: {interaction: interaction, valueIndex: valueIndex, removable: removable}"></ng-container>
+					</div>
+				}
+				@case ("SECRET") {
+					<app-secret-input [inputId]="name" [inputName]="name" [name]="'secret-'+name" [(ngModel)]="value.data" [validation]="valueValidation">
+						<ng-container *ngTemplateOutlet="removeButton; context: {interaction: interaction, valueIndex: valueIndex, removable: removable}"></ng-container>
+					</app-secret-input>
+				}
+				@default {
+					@let validationState = valueValidation | async;
+					<div class="input-group" [class.has-validation]="validationState?.invalid == true && validationState?.feedback != undefined">
+						<input [name]="name" [attr.id]="name" type="text" class="form-control" [(ngModel)]="value.data" [invalid]="valueValidation"/>
+						<ng-container *ngTemplateOutlet="removeButton; context: {interaction: interaction, valueIndex: valueIndex, removable: removable}"></ng-container>
+					</div>
+				}
+			}
+		}
+		@if (interaction.multiple) {
+			<div class="d-flex">
+				<button type="button" [disabled]="!hasValue(interaction, interaction.tempValues[interaction.tempValues.length-1].data) || interaction.tempValues.length >= Constants.MAX_PROVIDE_INPUT_VALUES" class="btn btn-secondary" (click)="addTempValue(interaction, index)" container="body" tooltipClass="shortTooltip" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.NEW"></i></button>
+				@if (interaction.tempValues.length >= Constants.MAX_PROVIDE_INPUT_VALUES) {
+					<div class="ms-2" app-tooltip [tbTooltip]="`You can only add up to ${Constants.MAX_PROVIDE_INPUT_VALUES} values per input.`"></div>
+				}
+			</div>
+		}
+	</div>
+</ng-template>
+<ng-template #removeButton let-interaction="interaction" let-valueIndex="valueIndex" let-removable="removable">
+	@if (removable) {
+		<button #pop="ngbTooltip" type="button" class="btn btn-secondary" (click)="onValueRemove(interaction, valueIndex, pop)" container="body" tooltipClass="shortTooltip" ngbTooltip="Remove" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
+	}
+</ng-template>

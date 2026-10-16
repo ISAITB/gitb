@@ -15,6 +15,7 @@
 
 import {EventEmitter} from '@angular/core';
 import {FileData} from './file-data.type';
+import {TempValue} from './temp-value.type';
 import {ValueLabel} from './value-label';
 
 export interface UserInteraction {
@@ -26,7 +27,6 @@ export interface UserInteraction {
   options?: string;
   optionLabels?: string;
   optionData?: ValueLabel[];
-  data?: string;
   selectedOption?: ValueLabel;
   selectedOptions?: ValueLabel[];
   file?: FileData[];
@@ -50,5 +50,6 @@ export interface UserInteraction {
 
   reset?: EventEmitter<void>;
   tempFiles: Array<Partial<FileData>>;
+  tempValues: TempValue[];
 
 }

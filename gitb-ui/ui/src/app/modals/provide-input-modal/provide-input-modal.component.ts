@@ -18,6 +18,7 @@ import {CodeEditorComponent} from 'src/app/components/code-editor/code-editor.co
 import {AnyContent} from 'src/app/components/diagram/any-content';
 import {DataService} from 'src/app/services/data.service';
 import {FileData} from 'src/app/types/file-data.type';
+import {TempValue} from 'src/app/types/temp-value.type';
 import {UserInteraction} from 'src/app/types/user-interaction';
 import {UserInteractionInput} from 'src/app/types/user-interaction-input';
 import {ValidationState} from '../../types/validation-state';
@@ -108,32 +109,20 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           if (this.firstCodeIndex == undefined && this.isVisible(interaction)) {
             this.firstCodeIndex = i
           }
-          if (interaction.default != undefined) {
-            interaction.data = interaction.default
-          }
-          if (interaction.data == undefined) {
-            interaction.data = ''
-          }
+          this.resetTempValues(interaction, true)
         } else if (interaction.inputType == 'UPLOAD') {
           interaction.reset = new EventEmitter<void>()
           this.resetTempFiles(interaction)
         } else if (interaction.inputType == 'RICH_TEXT') {
           // Not tracked via firstCodeIndex/firstTextIndex - the editor's content is in an iframe and
           // cannot be focused via dataService.focus(id).
-          if (interaction.default != undefined) {
-            interaction.data = interaction.default
-          }
-          if (interaction.data == undefined) {
-            interaction.data = ''
-          }
+          this.resetTempValues(interaction, true)
         } else {
           // Basic text inputs (secret, text, multiline)
           if (this.firstTextIndex == undefined && this.isVisible(interaction)) {
             this.firstTextIndex = i
           }
-          if (interaction.default != undefined) {
-            interaction.data = interaction.default
-          }
+          this.resetTempValues(interaction, true)
         }
       }
 			i += 1
@@ -158,8 +147,10 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       return target.selectedOptions?.some((option) => option.value == interaction.dependsOnValue) ?? false
     } else if (target.inputType == 'SELECT_SINGLE') {
       return target.selectedOption?.value == interaction.dependsOnValue
+    } else if (target.tempValues != undefined) {
+      return target.tempValues.some((value) => value.data == interaction.dependsOnValue)
     } else {
-      return target.data == interaction.dependsOnValue
+      return false
     }
   }
 
@@ -186,8 +177,12 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       this.codeMirrors.forEach((codeMirror) => codeMirror.refresh())
       // Set editor values.
       this.interactions.forEach((interaction, index) => {
-        if (interaction.type == "request" && interaction.inputType == "CODE" && interaction.data != undefined && interaction.data.length > 0) {
-          this.codeEditorForName('input-'+index)?.setValue(interaction.data)
+        if (interaction.type == "request" && interaction.inputType == "CODE") {
+          interaction.tempValues.forEach((value, valueIndex) => {
+            if (value.data != undefined && value.data.length > 0) {
+              this.codeEditorForName(this.controlName(index, valueIndex))?.setValue(value.data)
+            }
+          })
         }
       })
     }
@@ -239,11 +234,9 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     this.validation.clearErrors()
     let index = 0
     for (let interaction of this.interactions) {
-      if (this.editorFocus['input-'+index] == undefined && interaction.inputType != 'RICH_TEXT') {
-        delete interaction.data
-      } else {
-        // Code editor or rich text editor - these don't reflect an undefined model value, so clear explicitly.
-        interaction.data = ''
+      if (interaction.inputType != 'SELECT_SINGLE' && interaction.inputType != 'SELECT_MULTIPLE' && interaction.inputType != 'UPLOAD') {
+        // Text inputs, code editors and rich text editors - cleared to a single empty value.
+        this.resetTempValues(interaction, false)
       }
       if (interaction.reset) {
         interaction.reset.emit()
@@ -289,8 +282,13 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
             }
           }
         } else if (interaction.optionData == undefined) {
-          if (interaction.data != undefined) {
-            inputData.value = interaction.data
+          if (interaction.tempValues != undefined) {
+            if (interaction.multiple) {
+              const values = interaction.tempValues.map((value) => value.data).filter((value) => this.hasValue(interaction, value)) as string[]
+              inputData.values = values.length > 0 ? values : undefined
+            } else {
+              inputData.value = interaction.tempValues[0].data
+            }
           } else if (interaction.tempFiles != undefined) {
             inputData.file = interaction.tempFiles.filter((file: Partial<FileData>) => { return file.file != undefined }).map((file: Partial<FileData>) => { return file.file! })
             if (inputData.file!.length == 0) {
@@ -298,9 +296,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
             }
           }
         }
-        const hasValue = interaction.inputType == 'RICH_TEXT'
-          ? Utils.hasRichTextContent(inputData.value)
-          : (inputData.value != undefined && inputData.value.length > 0) || inputData.file != undefined
+        const hasValue = this.hasValue(interaction, inputData.value) || inputData.values != undefined || inputData.file != undefined
         const inputValid = !interaction.required || hasValue || !this.isVisible(interaction)
         if (!inputValid) {
           inputsValid = false
@@ -312,6 +308,40 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     }
     if (inputsValid) {
       this.modalRef.close(inputs)
+    }
+  }
+
+  protected hasValue(interaction: UserInteraction, value: string|undefined): boolean {
+    if (interaction.inputType == 'RICH_TEXT') {
+      return Utils.hasRichTextContent(value)
+    }
+    return value != undefined && value.trim().length > 0
+  }
+
+  controlName(index: number, valueIndex: number): string {
+    return 'input-'+index+(valueIndex == 0 ? '' : '-'+valueIndex)
+  }
+
+  resetTempValues(request: UserInteraction, withDefault: boolean) {
+    // Code and rich text editors don't reflect an undefined model value so these start with an empty string.
+    const emptyValue = (request.inputType == 'CODE' || request.inputType == 'RICH_TEXT') ? '' : undefined
+    request.tempValues = [{ uuid: crypto.randomUUID(), data: (withDefault && request.default != undefined) ? request.default : emptyValue }]
+  }
+
+  addTempValue(request: UserInteraction, index: number) {
+    const editor = request.inputType == 'CODE' || request.inputType == 'RICH_TEXT'
+    request.tempValues.push({ uuid: crypto.randomUUID(), data: editor ? '' : undefined, focus: editor })
+    if (!editor) {
+      // Focus the new control once it is rendered (editors are focused once they are loaded).
+      this.dataService.focus(this.controlName(index, request.tempValues.length - 1))
+    }
+  }
+
+  onValueRemove(request: UserInteraction, index: number, pop?: NgbTooltip) {
+    Utils.dismissTooltip(pop)
+    request.tempValues.splice(index, 1)
+    if (request.tempValues.length == 0) {
+      this.resetTempValues(request, false)
     }
   }
 
@@ -348,7 +378,11 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     return false
   }
 
-  editorInitialized(editor: CodeEditorComponent, interaction: UserInteraction) {
+  editorInitialized(editor: CodeEditorComponent, interaction: UserInteraction, value?: TempValue) {
+    if (value?.focus) {
+      delete value.focus
+      editor.focus()
+    }
     if (interaction.size != undefined && interaction.size > 0) {
       let sizeToSet = interaction.size
       if (sizeToSet < 30) {

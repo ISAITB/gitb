@@ -38,7 +38,22 @@ export class SecretInputComponent implements OnInit, AfterViewInit, ControlValue
   @Input() inputId!: string
   @Input() inputName!: string
   @Input() autoFocus = false
-  @Input() validation?: ReplaySubject<InvalidFormControlConfig>
+  private _validation?: ReplaySubject<InvalidFormControlConfig>
+  // The validation subject can change over the component's lifetime (e.g. when a list of inputs is re-indexed).
+  @Input() set validation(validation: ReplaySubject<InvalidFormControlConfig>|undefined) {
+    this._validation = validation
+    this.validationStateSubscription?.unsubscribe()
+    this.validationStateSubscription = undefined
+    this.hasValidation = false
+    if (validation) {
+      this.validationStateSubscription = validation.subscribe((status) => {
+        this.hasValidation = status.invalid == true && status.feedback != undefined
+      })
+    }
+  }
+  get validation(): ReplaySubject<InvalidFormControlConfig>|undefined {
+    return this._validation
+  }
   @Input() autocomplete: 'new-password' | 'current-password' | 'off' = 'off'
   @Input() focusChange?: EventEmitter<boolean>
 
@@ -158,11 +173,6 @@ export class SecretInputComponent implements OnInit, AfterViewInit, ControlValue
             this.passwordField.nativeElement.blur()
           }
         }
-      })
-    }
-    if (this.validation) {
-      this.validationStateSubscription = this.validation.subscribe((status) => {
-        this.hasValidation = status.invalid == true && status.feedback != undefined
       })
     }
     if (this.autocomplete == 'off') {

@@ -35,6 +35,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
 
   @Input() type:'normal'|'minimal'|'pdf'|'line' = 'normal'
   @Input() height?: number
+  @Input() focusOnInit = false
   @Input() newHeight?: EventEmitter<number>
   @ViewChild("editor") editor?: HugeRteEditorComponent;
   editorConfig: any = {}
@@ -87,6 +88,9 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       // and CheckboxOptionPanelComponent already close themselves on it.
       setup: (editor: any) => {
         editor.on('click focus', () => this.zone.run(() => this.dataService.signalButtonPopup(this)))
+        if (this.focusOnInit) {
+          editor.on('init', () => editor.focus())
+        }
       }
     }
     if (this.type == 'normal') {
