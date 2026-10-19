@@ -163,6 +163,7 @@ export class Constants {
     SYSTEM: 'fa-solid fa-cube',
     SYSTEM_ADMINISTRATION: 'fa-solid fa-gear',
     TAIL: 'fa-solid fa-arrow-down-wide-short',
+    TEMPLATE: 'fa-solid fa-layer-group',
     TEST: 'fa-solid fa-circle-check',
     TEST_CASE: 'fa-solid fa-list-ul',
     TEST_SERVICE: 'fa-solid fa-play',

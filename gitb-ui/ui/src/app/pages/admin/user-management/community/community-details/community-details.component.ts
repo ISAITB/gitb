@@ -133,6 +133,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     { field: 'adminOnly', title: '', marker: true, iconFn: this.iconForTestFlagPermission, iconTooltipFn: this.tooltipForTestFlagPermission }
   ]
   testFlagsRefreshRows = new EventEmitter<void>()
+  organisationsRefreshRows = new EventEmitter<void>()
   domains: Domain[] = []
   admins: User[] = []
   organizations: Organisation[] = []
@@ -251,7 +252,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     }
     this.adminColumns.push(TableColumns.userStatus())
     if (this.dataService.configuration.registrationEnabled) {
-      this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
+      this.organizationColumns.push(
+        TableColumns.flag('template', Constants.BUTTON_ICON.TEMPLATE, this.dataService.labelOrganisation()+' defined as a template configuration for self-registration.'),
+        TableColumns.flag('selfRegistrationDefault', Constants.BUTTON_ICON.DEFAULT, this.dataService.labelOrganisation()+' set as the default for self-registering users.')
+      )
     }
     this.resourceActions = this.createCommunityResourceActions()
     this.initialUserPreferences = { ...this.community.preferences! }
@@ -341,10 +345,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   private applyOrganisationColumnSortState() {
     if (this.sortByCreationOrder == this.sortByCreationOrderNone) {
-      const fieldForSortColumn: {[key: string]: string} = { shortname: 'sname', fullname: 'fname', template: 'templateName' }
-      const matchingField = fieldForSortColumn[this.organisationSortColumn]
+      const fieldForSortColumn: {[key: string]: string} = { shortname: 'sname', fullname: 'fname' }
+      const matchingField = fieldForSortColumn[this.organisationSortColumn] ?? 'sname'
       for (let column of this.organizationColumns) {
-        column.sortable = true
+        column.sortable = !column.marker
         column.order = (column.field == matchingField) ? (this.organisationSortOrder as 'asc'|'desc') : null
       }
     } else {
@@ -642,6 +646,12 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.domain?.id, this.community.preferences!, forceUserPreferenceUpdate, this.dataService.serializeTags(this.community!.tags))
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id
+      if (this.organisationStatus.status == Constants.STATUS.FINISHED) {
+        for (const organisation of this.organizations) {
+          organisation.selfRegistrationDefault = (organisation.id == selfRegDefaultOrganisationId)
+        }
+        this.organisationsRefreshRows.emit()
+      }
       this.resetSelfRegistrationWarning()
       this.initialUserPreferences = { ...this.community.preferences! }
       if (forceUserPreferenceUpdate && this.communityId == this.dataService.community?.id) {
@@ -998,8 +1008,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.organisationSortColumn = 'shortname'
     } else if (column.field == 'fname') {
       this.organisationSortColumn = 'fullname'
-    } else {
-      this.organisationSortColumn = 'template'
     }
     this.organisationSortOrder = column.order!
     this.refreshOrganisations()
@@ -1015,7 +1023,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     if (type == "none") {
       for (let column of this.organizationColumns) {
         if (column.field == "sname") column.order = "asc"
-        column.sortable = true
+        column.sortable = !column.marker
       }
     } else {
       for (let column of this.organizationColumns) {
