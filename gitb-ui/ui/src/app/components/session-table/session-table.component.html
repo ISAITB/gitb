@@ -164,6 +164,7 @@
                                                     <button id="button-link" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                     <div id="dropdown-link" ngbDropdownMenu aria-labelledby="button-link">
                                                         <button ngbDropdownItem type="button" (click)="copyLink(row, true)">
+                                                            <i class="dropdown-icon" [class]="Constants.BUTTON_ICON.COPY_LINK"></i>
                                                             @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
                                                                 Copy link for {{dataService.labelOrganisationLower()}}
                                                             } @else {

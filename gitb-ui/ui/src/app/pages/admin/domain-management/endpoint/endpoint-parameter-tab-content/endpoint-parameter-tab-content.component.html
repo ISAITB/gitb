@@ -12,7 +12,7 @@
                     <span class="sr-only visually-hidden">Create parameter</span>
                 </button>
                 <div id="dropdown-create" ngbDropdownMenu aria-labelledby="button-create">
-                    <button ngbDropdownItem type="button" (click)="addEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+                    <button ngbDropdownItem type="button" (click)="addEndpoint()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.NEW"></i>Create {{dataService.labelEndpointLower()}}</button>
                 </div>
             </div>
         } @else {

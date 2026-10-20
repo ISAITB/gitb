@@ -22,7 +22,7 @@
                     <span class="sr-only visually-hidden">Download report</span>
                 </button>
                 <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
-                    <button ngbDropdownItem type="button" (click)="exportXml()">Download report as XML</button>
+                    <button ngbDropdownItem type="button" (click)="exportXml()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.REPORT_XML"></i>Download report as XML</button>
                 </div>
             </div>
         } @else {

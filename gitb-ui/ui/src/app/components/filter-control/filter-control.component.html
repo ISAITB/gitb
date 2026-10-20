@@ -7,10 +7,10 @@
         </button>
         <div id="dropdown-filters" ngbDropdownMenu aria-labelledby="button-filters">
             @if (showRefresh) {
-                <button ngbDropdownItem type="button" (click)="doRefresh()">Refresh</button>
+                <button ngbDropdownItem type="button" (click)="doRefresh()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.RESET"></i>Refresh</button>
             }
             @if (showClear) {
-                <button ngbDropdownItem type="button" (click)="doClear()">Clear</button>
+                <button ngbDropdownItem type="button" (click)="doClear()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.FILTER_CLEAR"></i>Clear</button>
             }
         </div>
     </div>

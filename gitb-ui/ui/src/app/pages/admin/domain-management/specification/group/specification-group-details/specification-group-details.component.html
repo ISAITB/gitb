@@ -17,8 +17,8 @@
                     <div class="btn-group" ngbDropdown>
                         <button id="button-delete" [labelIcon]="Constants.BUTTON_ICON.DELETE" [disable]="!loaded || savePending" [pending]="deletePending" ngbDropdownToggle type="button" class="btn btn-outline-danger dropdown-toggle" aria-controls="dropdown-delete"><span class="me-2">Delete</span></button>
                         <div id="dropdown-delete" ngbDropdownMenu aria-labelledby="button-result">
-                            <button ngbDropdownItem type="button" (click)="deleteGroup(false)">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</button>
-                            <button ngbDropdownItem type="button" (click)="deleteGroup(true)">Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</button>
+                            <button ngbDropdownItem type="button" (click)="deleteGroup(false)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.UNGROUP"></i>Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</button>
+                            <button ngbDropdownItem type="button" (click)="deleteGroup(true)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.DELETE"></i>Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</button>
                         </div>
                     </div>
 				</div>

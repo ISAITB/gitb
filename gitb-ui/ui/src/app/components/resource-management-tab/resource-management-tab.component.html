@@ -9,7 +9,7 @@
                     <span class="sr-only visually-hidden"></span>
                 </button>
                 <div id="dropdown-upload-resource" ngbDropdownMenu>
-                    <button ngbDropdownItem type="button" (click)="uploadResourceBulk()">Bulk upload</button>
+                    <button ngbDropdownItem type="button" (click)="uploadResourceBulk()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.REPORT_ZIP"></i>Bulk upload</button>
                 </div>
             </div>
             <button type="button" [labelIcon]="Constants.BUTTON_ICON.DOWNLOAD" class="btn btn-secondary" (click)="downloadAllResources()" [disable]="state.resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>

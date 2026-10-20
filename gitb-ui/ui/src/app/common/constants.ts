@@ -53,7 +53,7 @@ export class Constants {
     ACTIVATE: 'fa-solid fa-circle-check',
     ACTIVE: 'fa-solid fa-toggle-on',
     ACTOR: 'fa-solid fa-circle-user',
-    ALL: 'fa-solid fa-circle-check',
+    ALL: 'fa-solid fa-check-double',
     API_KEY: 'fa-solid fa-key',
     BACK: 'fa-solid fa-arrow-left',
     CANCEL: 'fa-solid fa-xmark',

@@ -22,7 +22,7 @@
                                 <span class="sr-only visually-hidden">Preview documentation in PDF report</span>
                             </button>
                             <div id="dropdown-preview-pdf" ngbDropdownMenu aria-labelledby="button-preview-pdf">
-                                <button ngbDropdownItem type="button" (click)="previewPdf.emit()">Preview documentation in PDF report</button>
+                                <button ngbDropdownItem type="button" (click)="previewPdf.emit()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.REPORT_PDF"></i>Preview documentation in PDF report</button>
                             </div>
                         </div>
                     } @else {

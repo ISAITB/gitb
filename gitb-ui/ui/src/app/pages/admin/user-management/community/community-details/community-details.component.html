@@ -57,10 +57,10 @@
                                         <span class="me-2">{{sortByCreationOrderLabel}}</span>
                                     </button>
                                     <div id="dropdown-order" ngbDropdownMenu aria-labelledby="button-order">
-                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone)">Do not apply</button>
+                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.SKIP"></i>Do not apply</button>
                                         <div class="divider dropdown-divider"></div>
-                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc)">{{sortByCreationOrderLabelAsc}}</button>
-                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc)">{{sortByCreationOrderLabelDesc}}</button>
+                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.SORT_ASCENDING"></i>{{sortByCreationOrderLabelAsc}}</button>
+                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.SORT_DESCENDING"></i>{{sortByCreationOrderLabelDesc}}</button>
                                     </div>
                                 </div>
                                 <a class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" [navTarget]="routingService.linkToCreateOrganisation(communityId)">Create {{dataService.labelOrganisationLower()}}</a>
@@ -180,7 +180,7 @@
                                             <span class="sr-only visually-hidden">Reset flag order</span>
                                         </button>
                                         <div id="dropdown-test-flag-order" ngbDropdownMenu aria-labelledby="button-test-flag-order">
-                                            <button ngbDropdownItem type="button" (click)="resetTestFlagOrder()">Reset flag order</button>
+                                            <button ngbDropdownItem type="button" (click)="resetTestFlagOrder()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.RESET"></i>Reset flag order</button>
                                         </div>
                                     </div>
                                     @if (managingTestFlagOrder) {

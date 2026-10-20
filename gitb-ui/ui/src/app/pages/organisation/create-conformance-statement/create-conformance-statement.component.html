@@ -39,7 +39,7 @@
                                     <span class="sr-only visually-hidden">Select all statements</span>
                                 </button>
                                 <div id="dropdown-select" ngbDropdownMenu aria-labelledby="button-select">
-                                    <button ngbDropdownItem type="button" (click)="deselectAllStatements()">Unselect current statements</button>
+                                    <button ngbDropdownItem type="button" (click)="deselectAllStatements()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.NONE"></i>Unselect current statements</button>
                                 </div>
                             </div>
                             <div class="btn-group collapse-group" ngbDropdown>
@@ -49,7 +49,7 @@
                                     <span class="sr-only visually-hidden">Collapse statements</span>
                                 </button>
                                 <div id="dropdown-collapse" ngbDropdownMenu aria-labelledby="button-collapse">
-                                    <button ngbDropdownItem type="button" (click)="toggleCollapse(false)">Expand statements</button>
+                                    <button ngbDropdownItem type="button" (click)="toggleCollapse(false)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.EXPAND"></i>Expand statements</button>
                                 </div>
                             </div>
                         </div>

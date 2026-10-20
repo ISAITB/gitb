@@ -145,7 +145,7 @@
                     <span class="sr-only visually-hidden">XML report</span>
                 </button>
                 <div ngbDropdownMenu aria-labelledby="button-preview-statement-documentation">
-                    <button ngbDropdownItem type="button" (click)="previewXml()">XML report
+                    <button ngbDropdownItem type="button" (click)="previewXml()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.REPORT_XML"></i>XML report
                         <div app-tooltip class="d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="Users can only generate this report in PDF format. The XML report preview is provided to facilitate development when delegating to a custom report generation service (if enabled)."></div>
                     </button>
                 </div>

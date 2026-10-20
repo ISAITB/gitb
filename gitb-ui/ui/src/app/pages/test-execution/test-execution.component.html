@@ -21,8 +21,8 @@
                             <div class="btn-group" ngbDropdown>
                                 <button id="button-stop" [labelIcon]="Constants.BUTTON_ICON.STOP" ngbDropdownToggle type="button" [disabled]="!firstTestStarted || reload" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop"><span class="me-2">Stop</span></button>
                                 <div id="dropdown-stopType" ngbDropdownMenu aria-labelledby="button-stop">
-                                    <button ngbDropdownItem type="button" [class.disabled]="!started || stopped" (click)="stop(session!)">Stop current test</button>
-                                    <button ngbDropdownItem type="button" (click)="stopAll()">Stop all tests</button>
+                                    <button ngbDropdownItem type="button" [class.disabled]="!started || stopped" (click)="stop(session!)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.STOP"></i>Stop current test</button>
+                                    <button ngbDropdownItem type="button" (click)="stopAll()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.STOP"></i>Stop all tests</button>
                                 </div>
                             </div>
                         } @else if (testsToExecute.length == 1) {
@@ -112,9 +112,9 @@
                                                         <span class="sr-only visually-hidden">Download report</span>
                                                     </button>
                                                     <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
-                                                        <button ngbDropdownItem type="button" (click)="exportXml(testCase)">Download report as XML</button>
+                                                        <button ngbDropdownItem type="button" (click)="exportXml(testCase)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.REPORT_XML"></i>Download report as XML</button>
                                                         @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
-                                                            <button ngbDropdownItem type="button" (click)="exportTestData(testCase)">Download test data</button>
+                                                            <button ngbDropdownItem type="button" (click)="exportTestData(testCase)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.REPORT_ZIP"></i>Download test data</button>
                                                         }
                                                     </div>
                                                 </div>

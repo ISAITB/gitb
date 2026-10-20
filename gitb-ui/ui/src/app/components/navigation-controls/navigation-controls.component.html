@@ -10,7 +10,7 @@
                     @if (item.label == undefined) {
                         <div class="divider dropdown-divider"></div>
                     } @else {
-                        <a ngbDropdownItem [navTarget]="item.target!" (click)="recordReturnTarget($event)">{{ item.label }}</a>
+                        <a ngbDropdownItem [navTarget]="item.target!" (click)="recordReturnTarget($event)"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.GO"></i>{{ item.label }}</a>
                     }
                 }
             </div>

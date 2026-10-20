@@ -20,9 +20,9 @@
                         </div>
                     </button>
                     <div id="dropdown-snapshot" ngbDropdownMenu aria-labelledby="button-snapshot">
-                      <button ngbDropdownItem type="button" (click)="viewLatestConformanceSnapshot()">{{latestSnapshotButtonLabel}}</button>
+                      <button ngbDropdownItem type="button" (click)="viewLatestConformanceSnapshot()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.SNAPSHOT"></i>{{latestSnapshotButtonLabel}}</button>
                       <div class="divider dropdown-divider"></div>
-                      <button ngbDropdownItem type="button" (click)="manageConformanceSnapshots()">Manage conformance snapshots</button>
+                      <button ngbDropdownItem type="button" (click)="manageConformanceSnapshots()"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.EDIT"></i>Manage conformance snapshots</button>
                     </div>
                 </div>
                 <div class="extra-control-container">
@@ -97,7 +97,7 @@
                                         <span class="sr-only visually-hidden">Download report</span>
                                     </button>
                                     <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
-                                        <button ngbDropdownItem type="button" (click)="exportOverview('xml')">Download report as XML</button>
+                                        <button ngbDropdownItem type="button" (click)="exportOverview('xml')"><i class="dropdown-icon" [class]="Constants.BUTTON_ICON.REPORT_XML"></i>Download report as XML</button>
                                     </div>
                                 </div>
                             </div>
