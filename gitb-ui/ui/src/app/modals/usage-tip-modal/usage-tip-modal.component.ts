@@ -81,7 +81,7 @@ export class UsageTipModalComponent {
 
   toSystemAdministration() {
     this.closeModal((pending) => this.goToSystemAdministrationPending = pending).subscribe(() => {
-      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
+      void this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.CUSTOM_CONTENT)
     })
   }
 

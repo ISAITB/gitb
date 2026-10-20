@@ -39,17 +39,10 @@ import {
   CreateCommunityAdminComponent
 } from './pages/admin/user-management/community-admin/create-community-admin/create-community-admin.component';
 import {CommunityDetailsComponent} from './pages/admin/user-management/community/community-details/community-details.component';
+import {CreateCustomContentComponent} from './pages/admin/user-management/custom-content/create-custom-content/create-custom-content.component';
+import {CustomContentDetailsComponent} from './pages/admin/user-management/custom-content/custom-content-details/custom-content-details.component';
+import {CustomContentResolver} from './resolvers/custom-content-resolver';
 import {CreateCommunityComponent} from './pages/admin/user-management/community/create-community/create-community.component';
-import {
-  CreateErrorTemplateComponent
-} from './pages/admin/user-management/error-template/create-error-template/create-error-template.component';
-import {
-  ErrorTemplateDetailsComponent
-} from './pages/admin/user-management/error-template/error-template-details/error-template-details.component';
-import {CreateLandingPageComponent} from './pages/admin/user-management/landing-page/create-landing-page/create-landing-page.component';
-import {LandingPageDetailsComponent} from './pages/admin/user-management/landing-page/landing-page-details/landing-page-details.component';
-import {CreateLegalNoticeComponent} from './pages/admin/user-management/legal-notice/create-legal-notice/create-legal-notice.component';
-import {LegalNoticeDetailsComponent} from './pages/admin/user-management/legal-notice/legal-notice-details/legal-notice-details.component';
 import {CreateOrganisationComponent} from './pages/admin/user-management/organisation/create-organisation/create-organisation.component';
 import {OrganisationDetailsComponent} from './pages/admin/user-management/organisation/organisation-details/organisation-details.component';
 import {AdminDetailsComponent} from './pages/admin/user-management/system-admin/admin-details/admin-details.component';
@@ -65,9 +58,6 @@ import {PasswordComponent} from './pages/settings/password/password.component';
 import {ProfileComponent} from './pages/settings/profile/profile.component';
 import {CommunityResolver} from './resolvers/community-resolver';
 import {EditOwnOrganisationResolver} from './resolvers/edit-own-organisation-resolver';
-import {ErrorTemplateResolver} from './resolvers/error-template-resolver';
-import {LandingPageResolver} from './resolvers/landing-page-resolver';
-import {LegalNoticeResolver} from './resolvers/legal-notice-resolver';
 import {ProfileResolver} from './resolvers/profile-resolver';
 import {RouteAuthenticationGuard} from './resolvers/route-authentication.guard';
 import {CommunityPropertiesComponent} from './pages/admin/user-management/community-properties/community-properties.component';
@@ -166,12 +156,12 @@ const routes: Routes = [
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID, component: CommunityDetailsComponent, resolve: { community: CommunityResolver } },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/create', component: CreateCommunityAdminComponent },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: CommunityAdminDetailsComponent },
-          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver, implicitCommunityId: ImplicitCommunityResolver } },
-          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
-          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver, implicitCommunityId: ImplicitCommunityResolver } },
-          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
-          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver, implicitCommunityId: ImplicitCommunityResolver } },
-          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/create', component: CreateCustomContentComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LANDING_PAGE }, resolve: { base: CustomContentResolver, implicitCommunityId: ImplicitCommunityResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/create', component: CreateCustomContentComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LEGAL_NOTICE }, resolve: { base: CustomContentResolver, implicitCommunityId: ImplicitCommunityResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/create', component: CreateCustomContentComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.ERROR_TEMPLATE }, resolve: { base: CustomContentResolver, implicitCommunityId: ImplicitCommunityResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: CustomContentDetailsComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LANDING_PAGE }, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: CustomContentDetailsComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LEGAL_NOTICE }, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: CustomContentDetailsComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.ERROR_TEMPLATE }, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/create', component: TriggerComponent },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/:'+Constants.NAVIGATION_PATH_PARAM.TRIGGER_ID, component: TriggerComponent },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/reports', component: CommunityReportsComponent, resolve: { implicitCommunityId: ImplicitCommunityResolver }},
@@ -195,12 +185,12 @@ const routes: Routes = [
             { path: '' , component: SystemAdministrationComponent },
             { path: 'admin/create' , component: CreateAdminComponent },
             { path: 'admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: AdminDetailsComponent },
-            { path: 'pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
-            { path: 'pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
-            { path: 'notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
-            { path: 'notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
-            { path: 'errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
-            { path: 'errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
+            { path: 'pages/create', component: CreateCustomContentComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LANDING_PAGE }, resolve: { base: CustomContentResolver } },
+            { path: 'notices/create', component: CreateCustomContentComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LEGAL_NOTICE }, resolve: { base: CustomContentResolver } },
+            { path: 'errortemplates/create', component: CreateCustomContentComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.ERROR_TEMPLATE }, resolve: { base: CustomContentResolver } },
+            { path: 'pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: CustomContentDetailsComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LANDING_PAGE } },
+            { path: 'notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: CustomContentDetailsComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.LEGAL_NOTICE } },
+            { path: 'errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: CustomContentDetailsComponent, data: { contentType: Constants.CUSTOM_CONTENT_TYPE.ERROR_TEMPLATE } },
             { path: 'themes/create/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: CreateThemeComponent, resolve: { theme: themeResolver } },
             { path: 'themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: ThemeDetailsComponent, resolve: { theme: themeResolver } },
           ]}

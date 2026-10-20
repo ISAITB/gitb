@@ -17,7 +17,7 @@ import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/co
 import {DataService} from '../../services/data.service';
 import {UserGuideService} from '../../services/user-guide.service';
 import {HtmlService} from '../../services/html.service';
-import {LegalNoticeService} from '../../services/legal-notice.service';
+import {CustomContentService} from '../../services/custom-content.service';
 import {forkJoin, Observable, of, Subscription} from 'rxjs';
 import {AuthProviderService} from '../../services/auth-provider.service';
 import {ContactSupportComponent} from 'src/app/modals/contact-support/contact-support.component';
@@ -64,7 +64,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     public readonly dataService: DataService,
     private readonly userGuideService: UserGuideService,
     private readonly htmlService: HtmlService,
-    private readonly legalNoticeService: LegalNoticeService,
+    private readonly customContentService: CustomContentService,
     private readonly authProviderService: AuthProviderService,
     private readonly modalService: NgbModal,
     public readonly routingService: RoutingService,
@@ -292,9 +292,9 @@ export class IndexComponent implements OnInit, OnDestroy {
       let response: Observable<any>
 			if (vendor) {
 				let communityId = vendor.community
-				response = this.legalNoticeService.getCommunityDefaultLegalNotice(communityId)
+				response = this.customContentService.getCommunityDefaultCustomContent(Constants.CUSTOM_CONTENT_TYPE.LEGAL_NOTICE, communityId)
       } else {
-        response = this.legalNoticeService.getTestBedDefaultLegalNotice()
+        response = this.customContentService.getTestBedDefaultLegalNotice()
       }
       response.subscribe((data) => {
 				if (data.exists == true) {

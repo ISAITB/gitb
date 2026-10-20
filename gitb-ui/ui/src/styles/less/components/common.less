@@ -60,6 +60,24 @@ textarea {
     width: 0.85rem;
 }
 
+/* Toolbars whose buttons and dropdown items have icons of varying width: icons are centered in a fixed-width container so that the labels that follow start at the same position. */
+.icon-aligned {
+    .btn span.label-icon {
+        display: inline-block;
+        width: 1.25rem;
+        text-align: center;
+        i {
+            width: auto;
+        }
+    }
+    .dropdown-item .dropdown-icon {
+        display: inline-block;
+        width: 1.25rem;
+        text-align: center;
+        margin-right: 0.75rem;
+    }
+}
+
 .nav-item {
     .nav-link.tabClass {
         color: var(--itb-tab-link-color) !important;

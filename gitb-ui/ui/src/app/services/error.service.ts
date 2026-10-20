@@ -24,7 +24,7 @@ import {BaseRestService} from './base-rest.service';
 import {ROUTES} from '../common/global';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Organisation} from '../types/organisation.type';
-import {ErrorTemplate} from '../types/error-template';
+import {CustomContent} from '../types/custom-content';
 import {ErrorDescription} from '../types/error-description';
 import {DataService} from './data.service';
 import {CodeEditorModalComponent} from '../components/code-editor-modal/code-editor-modal.component';
@@ -162,10 +162,11 @@ export class ErrorService {
   }
 
   private getCommunityDefaultErrorTemplate(communityId: number) {
-    return this.baseRestService.get<ErrorTemplate>({
-      path: ROUTES.controllers.ErrorTemplateService.getCommunityDefaultErrorTemplate().url,
+    return this.baseRestService.get<CustomContent>({
+      path: ROUTES.controllers.CustomContentService.getCommunityDefaultCustomContent().url,
       authenticate: true,
       params: {
+        type: Constants.CUSTOM_CONTENT_TYPE.ERROR_TEMPLATE,
         community_id: communityId
       }
     })

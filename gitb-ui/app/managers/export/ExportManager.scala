@@ -45,9 +45,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                                testFlagManager: TestFlagManager,
                                communityManager: CommunityManager,
                                testSuiteManager: TestSuiteManager,
-                               landingPageManager: LandingPageManager,
-                               legalNoticeManager: LegalNoticeManager,
-                               errorTemplateManager: ErrorTemplateManager,
+                               customContentManager: CustomContentManager,
                                specificationManager: SpecificationManager,
                                reportManager: ReportManager,
                                userPreferenceManager: UserPreferenceManager,
@@ -922,7 +920,26 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield result
   }
 
-  private def toExportedLandingPage(idToUse: Int, content: models.LandingPages): com.gitb.xml.export.LandingPage = {
+  /**
+   * Loads, in a single query, the custom content of the community for the types that are to be exported. The result
+   * has an entry (possibly empty) for each type to export, and none for the types that are not.
+   */
+  private def loadCustomContent(communityId: Long, landingPages: Boolean, legalNotices: Boolean, errorTemplates: Boolean): Future[Map[Short, List[models.CustomContents]]] = {
+    val types = Set(
+      Option.when(landingPages)(models.Enums.CustomContentType.LandingPage),
+      Option.when(legalNotices)(models.Enums.CustomContentType.LegalNotice),
+      Option.when(errorTemplates)(models.Enums.CustomContentType.ErrorTemplate)
+    ).flatten
+    if (types.isEmpty) {
+      Future.successful(Map.empty)
+    } else {
+      customContentManager.getCustomContentByCommunity(communityId, types).map { results =>
+        types.map(x => x -> results.getOrElse(x, List.empty)).toMap
+      }
+    }
+  }
+
+  private def toExportedLandingPage(idToUse: Int, content: models.CustomContents): com.gitb.xml.export.LandingPage = {
     val exportedContent = new com.gitb.xml.export.LandingPage
     exportedContent.setId(toId(idToUse))
     exportedContent.setName(content.name)
@@ -932,7 +949,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedContent
   }
 
-  private def toExportedLegalNotice(idToUse: Int, content: models.LegalNotices): com.gitb.xml.export.LegalNotice = {
+  private def toExportedLegalNotice(idToUse: Int, content: models.CustomContents): com.gitb.xml.export.LegalNotice = {
     val exportedContent = new com.gitb.xml.export.LegalNotice
     exportedContent.setId(toId(idToUse))
     exportedContent.setName(content.name)
@@ -942,7 +959,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedContent
   }
 
-  private def toExportedErrorTemplate(idToUse: Int, content: models.ErrorTemplates): com.gitb.xml.export.ErrorTemplate = {
+  private def toExportedErrorTemplate(idToUse: Int, content: models.CustomContents): com.gitb.xml.export.ErrorTemplate = {
     val exportedContent = new com.gitb.xml.export.ErrorTemplate
     exportedContent.setId(toId(idToUse))
     exportedContent.setName(content.name)
@@ -1027,12 +1044,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         val fPropertyDocumentation = communityManager.getPropertyDocumentation(communityId)
         val fLabels = loadIfApplicable(exportSettings.customLabels,
           () => communityManager.getCommunityLabels(communityId))
-        val fLandingPages = loadIfApplicable(exportSettings.landingPages,
-          () => landingPageManager.getLandingPagesByCommunity(communityId))
-        val fLegalNotices = loadIfApplicable(exportSettings.legalNotices,
-          () => legalNoticeManager.getLegalNoticesByCommunity(communityId))
-        val fErrorTemplates = loadIfApplicable(exportSettings.errorTemplates,
-          () => errorTemplateManager.getErrorTemplatesByCommunity(communityId))
+        val fCustomContent = loadCustomContent(communityId, exportSettings.landingPages, exportSettings.legalNotices, exportSettings.errorTemplates)
+        val fLandingPages = fCustomContent.map(_.get(models.Enums.CustomContentType.LandingPage))
+        val fLegalNotices = fCustomContent.map(_.get(models.Enums.CustomContentType.LegalNotice))
+        val fErrorTemplates = fCustomContent.map(_.get(models.Enums.CustomContentType.ErrorTemplate))
         val fTriggers = loadIfApplicable(exportSettings.triggers,
           () => triggerManager.getTriggerAndDataByCommunityId(communityId))
         val fTestFlags = loadIfApplicable(exportSettings.testFlags,
@@ -1193,12 +1208,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       () => communityResourceManager.getCommunityResources(Constants.DefaultCommunityId))
     val fThemes = loadIfApplicable(exportSettings.themes,
       () => loadThemes())
-    val fLandingPages = loadIfApplicable(exportSettings.defaultLandingPages,
-      () => landingPageManager.getLandingPagesByCommunity(Constants.DefaultCommunityId))
-    val fLegalNotices = loadIfApplicable(exportSettings.defaultLegalNotices,
-      () => legalNoticeManager.getLegalNoticesByCommunity(Constants.DefaultCommunityId))
-    val fErrorTemplates = loadIfApplicable(exportSettings.defaultErrorTemplates,
-      () => errorTemplateManager.getErrorTemplatesByCommunity(Constants.DefaultCommunityId))
+    val fCustomContent = loadCustomContent(Constants.DefaultCommunityId, exportSettings.defaultLandingPages, exportSettings.defaultLegalNotices, exportSettings.defaultErrorTemplates)
+    val fLandingPages = fCustomContent.map(_.get(models.Enums.CustomContentType.LandingPage))
+    val fLegalNotices = fCustomContent.map(_.get(models.Enums.CustomContentType.LegalNotice))
+    val fErrorTemplates = fCustomContent.map(_.get(models.Enums.CustomContentType.ErrorTemplate))
     val fSystemAdministrators = loadIfApplicable(exportSettings.systemAdministrators,
       () => loadSystemAdministrators())
     val fSystemConfigurations = loadIfApplicable(exportSettings.systemConfigurations,

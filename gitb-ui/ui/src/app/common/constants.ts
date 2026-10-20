@@ -71,6 +71,7 @@ export class Constants {
     CONFIRM: 'fa-solid fa-check',
     COPY: 'fa-solid fa-clone',
     COPY_LINK: 'fa-solid fa-link',
+    CUSTOM_CONTENT: 'fa-solid fa-object-group',
     CUSTOM_TEST_SERVICES: 'fa-solid fa-gears',
     DATE: 'fa-solid fa-calendar',
     DEFAULT: 'fa-solid fa-star',
@@ -529,12 +530,10 @@ export class Constants {
     COMMUNITY: {
       ORGANISATIONS: 0,
       ADMINISTRATORS: 1,
-      LANDING_PAGES: 2,
-      LEGAL_NOTICES: 3,
-      ERROR_TEMPLATES: 4,
-      TRIGGERS: 5,
-      RESOURCES: 6,
-      TEST_FLAGS: 7
+      CUSTOM_CONTENT: 2,
+      TRIGGERS: 3,
+      RESOURCES: 4,
+      TEST_FLAGS: 5
     },
     ORGANISATION: {
       SYSTEMS: 0,
@@ -543,11 +542,9 @@ export class Constants {
     },
     SYSTEM_ADMINISTRATION: {
       ADMINISTRATORS: 0,
-      LANDING_PAGES: 1,
-      LEGAL_NOTICES: 2,
-      ERROR_TEMPLATES: 3,
-      THEMES: 4,
-      RESOURCES: 5
+      CUSTOM_CONTENT: 1,
+      THEMES: 2,
+      RESOURCES: 3
     },
     CONFORMANCE_STATEMENT: {
       TESTS: 0,
@@ -706,6 +703,12 @@ export class Constants {
   public static readonly TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE = {
     DIGEST: 1,
     TEXT: 2
+  }
+
+  public static readonly CUSTOM_CONTENT_TYPE = {
+    LANDING_PAGE: 1,
+    LEGAL_NOTICE: 2,
+    ERROR_TEMPLATE: 3
   }
 
   public static readonly HOME_PAGE_TYPE = {

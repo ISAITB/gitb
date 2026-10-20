@@ -22,9 +22,6 @@ import {CommunityService} from 'src/app/services/community.service';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
-import {ErrorTemplateService} from 'src/app/services/error-template.service';
-import {LandingPageService} from 'src/app/services/landing-page.service';
-import {LegalNoticeService} from 'src/app/services/legal-notice.service';
 import {OrganisationService} from 'src/app/services/organisation.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
@@ -33,9 +30,6 @@ import {TestFlagService} from 'src/app/services/test-flag.service';
 import {UserService} from 'src/app/services/user.service';
 import {Community} from 'src/app/types/community';
 import {Domain} from 'src/app/types/domain';
-import {ErrorTemplate} from 'src/app/types/error-template';
-import {LandingPage} from 'src/app/types/landing-page';
-import {LegalNotice} from 'src/app/types/legal-notice';
 import {Organisation} from 'src/app/types/organisation.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {TableColumns} from 'src/app/common/table-columns';
@@ -54,6 +48,7 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 import {ResourceState} from 'src/app/components/resource-management-tab/resource-state';
 import {UserPreferences} from 'src/app/types/user-preferences';
 import {TagData} from 'src/app/types/tag-data';
+import {CustomContentState} from 'src/app/types/custom-content-state';
 import {DisplayState} from 'src/app/types/display-state';
 import {NavigationTarget} from 'src/app/types/navigation-target';
 import {CreateEditTestFlagModalComponent} from 'src/app/modals/create-edit-test-flag-modal/create-edit-test-flag-modal.component';
@@ -78,9 +73,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   @ViewChild("organisationTable") organisationTable?: TableApi
   @ViewChild("adminsTable") adminsTable?: TableApi
-  @ViewChild("landingPagesTable") landingPagesTable?: TableApi
-  @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
-  @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
   @ViewChild("triggersTable") triggersTable?: TableApi
   @ViewChild("testFlagsTable") testFlagsTable?: TableApi
 
@@ -88,9 +80,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   currentTags?: TagData[]
   adminStatus = {status: Constants.STATUS.NONE}
   organisationStatus = {status: Constants.STATUS.NONE}
-  landingPageStatus = {status: Constants.STATUS.NONE}
-  errorTemplateStatus = {status: Constants.STATUS.NONE}
-  legalNoticeStatus = {status: Constants.STATUS.NONE}
   triggerStatus = {status: Constants.STATUS.NONE}
   testFlagStatus = {status: Constants.STATUS.NONE}
   loaded = false
@@ -103,21 +92,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   organizationColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name', sortable: true, order: 'asc' },
     { field: 'fname', title: 'Full name', sortable: true }
-  ]
-  landingPagesColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'description', title: 'Description' },
-    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default landing page')
-  ]
-  legalNoticesColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'description', title: 'Description' },
-    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default legal notice')
-  ]
-  errorTemplatesColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'description', title: 'Description' },
-    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default error template')
   ]
   triggerColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
@@ -137,25 +111,22 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   domains: Domain[] = []
   admins: User[] = []
   organizations: Organisation[] = []
-  landingPages: LandingPage[] = []
-  legalNotices: LegalNotice[] = []
-  errorTemplates: ErrorTemplate[] = []
   triggers: Trigger[] = []
   testFlags: (TestFlag & {flagDisplay: {colour: string, name: string}})[] = []
   adminsPage = 1
   organizationsPage = 1
-  landingPagesPage = 1
-  legalNoticesPage = 1
-  errorTemplatesPage = 1
   triggersPage = 1
   testFlagsPage = 1
   adminsTotal = 0
   organizationsTotal = 0
-  landingPagesTotal = 0
-  legalNoticesTotal = 0
-  errorTemplatesTotal = 0
   triggersTotal = 0
   testFlagsTotal = 0
+  customContentState: CustomContentState = {
+    content: [],
+    total: 0,
+    page: 1,
+    status: Constants.STATUS.NONE
+  }
   resourceState: ResourceState = {
     resources: [],
     total: 0,
@@ -163,12 +134,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     status: Constants.STATUS.NONE
   }
 
-  testBedLandingPage?: LandingPage
-  testBedLegalNotice?: LegalNotice
-  testBedErrorTemplate?: ErrorTemplate
-  testBedLandingPageLoaded = false
-  testBedLegalNoticeLoaded = false
-  testBedErrorTemplateLoaded = false
 
   organisationFilter?: string
   organisationSortOrder = 'asc'
@@ -185,9 +150,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   organisationsRefreshing = false
   adminsRefreshing = false
-  landingPagesRefreshing = false
-  legalNoticesRefreshing = false
-  errorTemplatesRefreshing = false
   triggersRefreshing = false
   testFlagsRefreshing = false
   selfRegistrationWarningActive = false
@@ -207,9 +169,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     public readonly dataService: DataService,
     public readonly routingService: RoutingService,
     private readonly userService: UserService,
-    private readonly landingPageService: LandingPageService,
-    private readonly legalNoticeService: LegalNoticeService,
-    private readonly errorTemplateService: ErrorTemplateService,
     private readonly triggerService: TriggerService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly organisationService: OrganisationService,
@@ -295,12 +254,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.showOrganisations()
     } else if (tabIndex == Constants.TAB.COMMUNITY.ADMINISTRATORS) {
       this.showAdministrators()
-    } else if (tabIndex == Constants.TAB.COMMUNITY.LANDING_PAGES) {
-      this.showLandingPages()
-    } else if (tabIndex == Constants.TAB.COMMUNITY.LEGAL_NOTICES) {
-      this.showLegalNotices()
-    } else if (tabIndex == Constants.TAB.COMMUNITY.ERROR_TEMPLATES) {
-      this.showErrorTemplates()
+    } else if (tabIndex == Constants.TAB.COMMUNITY.CUSTOM_CONTENT) {
+      this.showCustomContent()
     } else if (tabIndex == Constants.TAB.COMMUNITY.TRIGGERS) {
       this.showTriggers()
     } else if (tabIndex == Constants.TAB.COMMUNITY.TEST_FLAGS) {
@@ -367,30 +322,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
-  showLandingPages() {
-    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
-      this.queryLandingPages({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
-    } else {
-      this.updateLandingPagesPagination(this.landingPagesPage, this.landingPagesTotal)
-    }
-  }
-
-  showLegalNotices() {
-    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
-      this.queryLegalNotices({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
-    } else {
-      this.updateLegalNoticePagination(this.legalNoticesPage, this.legalNoticesTotal)
-    }
-  }
-
-  showErrorTemplates() {
-    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
-      this.queryErrorTemplates({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
-    } else {
-      this.updateErrorTemplatePagination(this.errorTemplatesPage, this.errorTemplatesTotal)
-    }
-  }
-
   showTriggers() {
     if (this.triggerStatus.status == Constants.STATUS.NONE) {
       this.queryTriggers({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
@@ -440,75 +371,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       }).add(() => {
       this.adminsRefreshing = false
       this.adminStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
-  private queryLandingPages(pagingInfo: PagingEvent) {
-    if (this.landingPageStatus.status == Constants.STATUS.FINISHED) {
-      this.landingPagesRefreshing = true
-    } else {
-      this.landingPageStatus.status = Constants.STATUS.PENDING
-    }
-    if (!this.testBedLandingPageLoaded) {
-      this.testBedLandingPageLoaded = true
-      this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
-        .subscribe((data) => {
-          if (data.exists) this.testBedLandingPage = data
-        })
-    }
-    this.landingPageService.searchLandingPagesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
-      .subscribe((data) => {
-        this.landingPages = data.data
-        this.updateLandingPagesPagination(pagingInfo.targetPage, data.count!)
-      }).add(() => {
-      this.landingPagesRefreshing = false
-      this.landingPageStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
-  private queryLegalNotices(pagingInfo: PagingEvent) {
-    if (this.legalNoticeStatus.status == Constants.STATUS.FINISHED) {
-      this.legalNoticesRefreshing = true
-    } else {
-      this.legalNoticeStatus.status = Constants.STATUS.PENDING
-    }
-    if (!this.testBedLegalNoticeLoaded) {
-      this.testBedLegalNoticeLoaded = true
-      this.legalNoticeService.getTestBedDefaultLegalNotice()
-        .subscribe((data) => {
-          if (data.exists) this.testBedLegalNotice = data
-        })
-    }
-    this.legalNoticeService.searchLegalNoticesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
-      .subscribe((data) => {
-        this.legalNotices = data.data
-        this.updateLegalNoticePagination(pagingInfo.targetPage, data.count!)
-      }).add(() => {
-      this.legalNoticesRefreshing = false
-      this.legalNoticeStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
-  private queryErrorTemplates(pagingInfo: PagingEvent) {
-    if (this.errorTemplateStatus.status == Constants.STATUS.FINISHED) {
-      this.errorTemplatesRefreshing = true
-    } else {
-      this.errorTemplateStatus.status = Constants.STATUS.PENDING
-    }
-    if (!this.testBedErrorTemplateLoaded) {
-      this.testBedErrorTemplateLoaded = true
-      this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
-        .subscribe((data) => {
-          if (data.exists) this.testBedErrorTemplate = data
-        })
-    }
-    this.errorTemplateService.searchErrorTemplatesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
-      .subscribe((data) => {
-        this.errorTemplates = data.data
-        this.updateErrorTemplatePagination(pagingInfo.targetPage, data.count!)
-      }).add(() => {
-      this.errorTemplatesRefreshing = false
-      this.errorTemplateStatus.status = Constants.STATUS.FINISHED
     })
   }
 
@@ -600,6 +462,18 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   private tooltipForTestFlagPermission(adminOnly: boolean): string {
     return adminOnly ? 'Flag that can only be set by administrators.' : ''
+  }
+
+  showCustomContent() {
+    // No action needed.
+  }
+
+  customContentTabPageSizeChange() {
+    this.organisationStatus.status = Constants.STATUS.NONE
+    this.adminStatus.status = Constants.STATUS.NONE
+    this.triggerStatus.status = Constants.STATUS.NONE
+    this.testFlagStatus.status = Constants.STATUS.NONE
+    this.resourceState.status = Constants.STATUS.NONE
   }
 
   showResources() {
@@ -756,18 +630,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     return this.routingService.linkToOrganisationDetails(this.communityId, organization.id)
   }
 
-  landingPageRowTarget = (landingPage: LandingPage): NavigationTarget => {
-    return this.routingService.linkToLandingPage(this.communityId, landingPage.id)
-  }
-
-  legalNoticeRowTarget = (legalNotice: LegalNotice): NavigationTarget => {
-    return this.routingService.linkToLegalNotice(this.communityId, legalNotice.id)
-  }
-
-  errorTemplateRowTarget = (errorTemplate: ErrorTemplate): NavigationTarget => {
-    return this.routingService.linkToErrorTemplate(this.communityId, errorTemplate.id)
-  }
-
   triggerRowTarget = (trigger: Trigger): NavigationTarget => {
     return this.routingService.linkToTrigger(this.communityId, trigger.id)
   }
@@ -787,9 +649,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     this.queryOrganisations(event)
     if (event.pageSizeChanged) {
       this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.customContentState.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
       this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
@@ -800,48 +660,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     this.queryAdministrators(event)
     if (event.pageSizeChanged) {
       this.organisationStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
-      this.triggerStatus.status = Constants.STATUS.NONE
-      this.testFlagStatus.status = Constants.STATUS.NONE
-      this.resourceState.status = Constants.STATUS.NONE
-    }
-  }
-
-  doLandingPagePaging(event: PagingEvent) {
-    this.queryLandingPages(event)
-    if (event.pageSizeChanged) {
-      this.organisationStatus.status = Constants.STATUS.NONE
-      this.adminStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
-      this.triggerStatus.status = Constants.STATUS.NONE
-      this.testFlagStatus.status = Constants.STATUS.NONE
-      this.resourceState.status = Constants.STATUS.NONE
-    }
-  }
-
-  doLegalNoticePaging(event: PagingEvent) {
-    this.queryLegalNotices(event)
-    if (event.pageSizeChanged) {
-      this.organisationStatus.status = Constants.STATUS.NONE
-      this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
-      this.triggerStatus.status = Constants.STATUS.NONE
-      this.testFlagStatus.status = Constants.STATUS.NONE
-      this.resourceState.status = Constants.STATUS.NONE
-    }
-  }
-
-  doErrorTemplatePaging(event: PagingEvent) {
-    this.queryErrorTemplates(event)
-    if (event.pageSizeChanged) {
-      this.organisationStatus.status = Constants.STATUS.NONE
-      this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.customContentState.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
       this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
@@ -853,9 +672,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     if (event.pageSizeChanged) {
       this.organisationStatus.status = Constants.STATUS.NONE
       this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.customContentState.status = Constants.STATUS.NONE
       this.testFlagStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
@@ -866,9 +683,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     if (event.pageSizeChanged) {
       this.organisationStatus.status = Constants.STATUS.NONE
       this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.customContentState.status = Constants.STATUS.NONE
       this.triggerStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
@@ -877,9 +692,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   resourceTabPageSizeChange() {
     this.organisationStatus.status = Constants.STATUS.NONE
     this.adminStatus.status = Constants.STATUS.NONE
-    this.landingPageStatus.status = Constants.STATUS.NONE
-    this.legalNoticeStatus.status = Constants.STATUS.NONE
-    this.errorTemplateStatus.status = Constants.STATUS.NONE
+    this.customContentState.status = Constants.STATUS.NONE
     this.triggerStatus.status = Constants.STATUS.NONE
     this.testFlagStatus.status = Constants.STATUS.NONE
   }
@@ -898,24 +711,6 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     this.adminsTable?.getPagingControls()?.updateStatus(page, count)
     this.adminsPage = page
     this.adminsTotal = count
-  }
-
-  private updateLandingPagesPagination(page: number, count: number) {
-    this.landingPagesTable?.getPagingControls()?.updateStatus(page, count)
-    this.landingPagesPage = page
-    this.landingPagesTotal = count
-  }
-
-  private updateLegalNoticePagination(page: number, count: number) {
-    this.legalNoticesTable?.getPagingControls()?.updateStatus(page, count)
-    this.legalNoticesPage = page
-    this.legalNoticesTotal = count
-  }
-
-  private updateErrorTemplatePagination(page: number, count: number) {
-    this.errorTemplatesTable?.getPagingControls()?.updateStatus(page, count)
-    this.errorTemplatesPage = page
-    this.errorTemplatesTotal = count
   }
 
   private updateTriggerPagination(page: number, count: number) {

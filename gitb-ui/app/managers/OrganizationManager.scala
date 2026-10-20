@@ -20,6 +20,7 @@ import exceptions.{AutomationApiException, ErrorCodes}
 import managers.OrganizationManager.{ActorApiKeyInfo, SpecificationApiKeyInfo, TestSuiteApiKeyInfo}
 import managers.triggers.TriggerHelper
 import models.Enums.{OrganizationType, UserRole}
+import models.Enums.CustomContentType
 import models._
 import models.automation._
 import persistence.db.PersistenceSchema
@@ -50,6 +51,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                                      automationApiHelper: AutomationApiHelper,
                                      userPreferenceManager: UserPreferenceManager,
                                      messageManager: MessageManager,
+                                     customContentManager: CustomContentManager,
                                      dbConfigProvider: DatabaseConfigProvider)
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -243,8 +245,30 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     createOrganizationInTrans(organization, checkApiKeyUniqueness = false)
   }
 
+  /**
+   * Ensures that any referenced custom content is of the expected type (e.g. that a legal notice is not a landing page).
+   */
+  private def checkCustomContentReferences(landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long]): DBIO[Unit] = {
+    val references = List(
+      landingPageId -> CustomContentType.LandingPage,
+      legalNoticeId -> CustomContentType.LegalNotice,
+      errorTemplateId -> CustomContentType.ErrorTemplate
+    ).flatMap(x => x._1.map(_ -> x._2))
+    for {
+      typesById <- customContentManager.getTypesById(references.map(_._1))
+      _ <- {
+        if (references.forall(x => typesById.get(x._1).contains(x._2))) {
+          DBIO.successful(())
+        } else {
+          DBIO.failed(new IllegalArgumentException("A referenced landing page, legal notice or error template was not valid."))
+        }
+      }
+    } yield ()
+  }
+
   def createOrganizationInTrans(organization: Organizations, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
     for {
+      _ <- checkCustomContentReferences(organization.landingPage, organization.legalNotice, organization.errorTemplate)
       replaceApiKey <- if (checkApiKeyUniqueness && organization.apiKey.isDefined) {
         PersistenceSchema.organizations.filter(_.apiKey === organization.apiKey).exists.result
       } else {
@@ -451,6 +475,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
   def updateOrganizationInternal(org: Organizations, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], selfRegistrationToken: Option[Option[String]], selfRegistrationDefault: Option[Boolean], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], propertiesAsAdmin: Boolean, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
     val orgId = org.id
     for {
+      _ <- checkCustomContentReferences(landingPageId, legalNoticeId, errorTemplateId)
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         val templateNameToSet = if (template) templateName else None

@@ -113,16 +113,6 @@ import {CreateCommunityComponent} from './pages/admin/user-management/community/
 import {CommunityDetailsComponent} from './pages/admin/user-management/community/community-details/community-details.component';
 import {UserFormComponent} from './pages/admin/user-management/user-form/user-form.component';
 import {CommunityFormComponent} from './pages/admin/user-management/community/community-form/community-form.component';
-import {CreateLegalNoticeComponent} from './pages/admin/user-management/legal-notice/create-legal-notice/create-legal-notice.component';
-import {LegalNoticeDetailsComponent} from './pages/admin/user-management/legal-notice/legal-notice-details/legal-notice-details.component';
-import {LandingPageDetailsComponent} from './pages/admin/user-management/landing-page/landing-page-details/landing-page-details.component';
-import {CreateLandingPageComponent} from './pages/admin/user-management/landing-page/create-landing-page/create-landing-page.component';
-import {
-  CreateErrorTemplateComponent
-} from './pages/admin/user-management/error-template/create-error-template/create-error-template.component';
-import {
-  ErrorTemplateDetailsComponent
-} from './pages/admin/user-management/error-template/error-template-details/error-template-details.component';
 import {TriggerComponent} from './pages/admin/user-management/trigger/trigger.component';
 import {CreateOrganisationComponent} from './pages/admin/user-management/organisation/create-organisation/create-organisation.component';
 import {OrganisationDetailsComponent} from './pages/admin/user-management/organisation/organisation-details/organisation-details.component';
@@ -219,7 +209,10 @@ import {ManageBadgesComponent} from './components/manage-badges/manage-badges.co
 import {ManageBadgeComponent} from './components/manage-badges/manage-badge/manage-badge.component';
 import {PreviewBadgeModalComponent} from './modals/preview-badge-modal/preview-badge-modal.component';
 import {ResultLabelComponent} from './components/result-label/result-label.component';
-import {PreviewLandingPageComponent} from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
+import {PreviewLandingPageComponent} from './pages/admin/user-management/custom-content/preview-landing-page/preview-landing-page.component';
+import {CreateCustomContentComponent} from './pages/admin/user-management/custom-content/create-custom-content/create-custom-content.component';
+import {CustomContentDetailsComponent} from './pages/admin/user-management/custom-content/custom-content-details/custom-content-details.component';
+import {CustomContentTabComponent} from './components/custom-content-tab/custom-content-tab.component';
 import {BreadcrumbComponent} from './components/breadcrumb/breadcrumb.component';
 import {TarReportComponent} from './components/tar-report/tar-report.component';
 import {CreateThemeComponent} from './pages/admin/system-administration/create-theme/create-theme.component';
@@ -415,12 +408,9 @@ import { MessageItemComponent } from './components/message-item/message-item.com
     CommunityDetailsComponent,
     UserFormComponent,
     CommunityFormComponent,
-    CreateLegalNoticeComponent,
-    LegalNoticeDetailsComponent,
-    LandingPageDetailsComponent,
-    CreateLandingPageComponent,
-    CreateErrorTemplateComponent,
-    ErrorTemplateDetailsComponent,
+    CustomContentDetailsComponent,
+    CreateCustomContentComponent,
+    CustomContentTabComponent,
     TriggerComponent,
     CreateOrganisationComponent,
     OrganisationDetailsComponent,

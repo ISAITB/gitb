@@ -36,7 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountService @Inject() (authorizedAction: AuthorizedAction,
                                 cc: ControllerComponents,
                                 accountManager: AccountManager,
-                                legalNoticeManager: LegalNoticeManager,
+                                customContentManager: CustomContentManager,
                                 organisationManager: OrganizationManager,
                                 userPreferenceManager: UserPreferenceManager,
                                 authorizationManager: AuthorizationManager)
@@ -241,7 +241,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
 
   def getConfiguration: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewConfiguration(request).flatMap { _ =>
-      legalNoticeManager.hasTestBedDefaultLegalNotice().map { hasDefaultLegalNotice =>
+      customContentManager.hasTestBedDefaultLegalNotice().map { hasDefaultLegalNotice =>
         val json = JsonUtil.serializeConfigurationProperties(hasDefaultLegalNotice)
         ResponseConstructor.constructJsonResponse(json.toString())
       }

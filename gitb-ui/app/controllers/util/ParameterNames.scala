@@ -69,6 +69,7 @@ object ParameterNames {
   val EMAIL    = "email"
 	val IDS      = "ids"
   val TYPE     = "type"
+  val TYPES    = "types"
   val DESCRIPTION = "description"
   val DOCUMENTATION = "documentation"
   val USE = "use"

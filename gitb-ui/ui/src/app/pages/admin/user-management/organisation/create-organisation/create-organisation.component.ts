@@ -25,12 +25,8 @@ import {OrganisationFormData} from '../organisation-form/organisation-form-data'
 import {Constants} from 'src/app/common/constants';
 import {ValidationState} from 'src/app/types/validation-state';
 import {forkJoin} from 'rxjs';
-import {LandingPage} from 'src/app/types/landing-page';
-import {LegalNotice} from 'src/app/types/legal-notice';
-import {ErrorTemplate} from 'src/app/types/error-template';
-import {LandingPageService} from 'src/app/services/landing-page.service';
-import {LegalNoticeService} from 'src/app/services/legal-notice.service';
-import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {CustomContent} from 'src/app/types/custom-content';
+import {CustomContentService} from 'src/app/services/custom-content.service';
 import {CommunityService} from 'src/app/services/community.service';
 import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
 
@@ -50,9 +46,9 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
     edit: false,
     propertyType: 'organisation'
   }
-  landingPages: LandingPage[] = []
-  legalNotices: LegalNotice[] = []
-  errorTemplates: ErrorTemplate[] = []
+  landingPages: CustomContent[] = []
+  legalNotices: CustomContent[] = []
+  errorTemplates: CustomContent[] = []
   loaded = false
   savePending = false
   validation = new ValidationState()
@@ -66,9 +62,7 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
     private readonly route: ActivatedRoute,
     private readonly organisationService: OrganisationService,
     private readonly popupService: PopupService,
-    private readonly landingPageService: LandingPageService,
-    private readonly legalNoticeService: LegalNoticeService,
-    private readonly errorTemplateService: ErrorTemplateService,
+    private readonly customContentService: CustomContentService,
     private readonly communityService: CommunityService
   ) { super() }
 
@@ -76,16 +70,14 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.routingService.communityChildBreadcrumbs(this.communityId)
     const properties$ = this.communityService.getOrganisationParameters(this.communityId)
-    const landingPages$ = this.landingPageService.getLandingPagesByCommunity(this.communityId)
-    const legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
-    const errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
+    const customContent$ = this.customContentService.getCustomContentByCommunity(this.communityId)
     const documentation$ = this.communityService.getPropertyDocumentation(this.communityId, 'organisation')
-    forkJoin([properties$, landingPages$, legalNotices$, errorTemplates$, documentation$]).subscribe((data) => {
+    forkJoin([properties$, customContent$, documentation$]).subscribe((data) => {
       this.propertyData.properties = data[0]
-      this.landingPages = data[1]
-      this.legalNotices = data[2]
-      this.errorTemplates = data[3]
-      this.propertyData.documentation = data[4].organisation
+      this.landingPages = data[1].filter(x => x.type == Constants.CUSTOM_CONTENT_TYPE.LANDING_PAGE)
+      this.legalNotices = data[1].filter(x => x.type == Constants.CUSTOM_CONTENT_TYPE.LEGAL_NOTICE)
+      this.errorTemplates = data[1].filter(x => x.type == Constants.CUSTOM_CONTENT_TYPE.ERROR_TEMPLATE)
+      this.propertyData.documentation = data[2].organisation
       this.formDataLoaded = true
       this.updateFormData()
     }).add(() => {

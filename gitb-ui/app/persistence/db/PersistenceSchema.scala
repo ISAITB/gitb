@@ -490,17 +490,18 @@ object PersistenceSchema {
 	}
 	val testSuiteHasTestCases = TableQuery[TestSuiteHasTestCasesTable]
 
-  class LandingPagesTable(tag: Tag) extends Table[LandingPages](tag, "LandingPages") {
+  class CustomContentTable(tag: Tag) extends Table[CustomContents](tag, "CustomContent") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name = column[String]("name")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def content = column[String]("content")
     def default = column[Boolean]("default_flag")
     def community = column[Long]("community")
-    def * = (id, name, description, content, default, community) <> (LandingPages.tupled, LandingPages.unapply)
+    def contentType = column[Short]("content_type")
+    def * = (id, name, description, content, default, community, contentType) <> (CustomContents.tupled, CustomContents.unapply)
   }
-  val landingPages = TableQuery[LandingPagesTable]
-  val insertLandingPage = landingPages returning landingPages.map(_.id)
+  val customContents = TableQuery[CustomContentTable]
+  val insertCustomContent = customContents returning customContents.map(_.id)
 
   class SystemConfigurationsTable(tag: Tag) extends Table[SystemConfigurations](tag, "SystemConfigurations") {
     def name = column[String]("name", O.PrimaryKey)
@@ -509,30 +510,6 @@ object PersistenceSchema {
     def * = (name, parameter, description) <> (SystemConfigurations.tupled, SystemConfigurations.unapply)
   }
   val systemConfigurations = TableQuery[SystemConfigurationsTable]
-
-  class LegalNoticesTable(tag: Tag) extends Table[LegalNotices](tag, "LegalNotices") {
-    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def name = column[String]("name")
-    def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def content = column[String]("content")
-    def default = column[Boolean]("default_flag")
-    def community = column[Long]("community")
-    def * = (id, name, description, content, default, community) <> (LegalNotices.tupled, LegalNotices.unapply)
-  }
-  val legalNotices = TableQuery[LegalNoticesTable]
-  val insertLegalNotice = legalNotices returning legalNotices.map(_.id)
-
-  class ErrorTemplatesTable(tag: Tag) extends Table[ErrorTemplates](tag, "ErrorTemplates") {
-    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def name = column[String]("name")
-    def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def content = column[String]("content")
-    def default = column[Boolean]("default_flag")
-    def community = column[Long]("community")
-    def * = (id, name, description, content, default, community) <> (ErrorTemplates.tupled, ErrorTemplates.unapply)
-  }
-  val errorTemplates = TableQuery[ErrorTemplatesTable]
-  val insertErrorTemplate = errorTemplates returning errorTemplates.map(_.id)
 
   class CommunityReportSettingsTable(tag: Tag) extends Table[CommunityReportSettings](tag, "CommunityReportSettings") {
     def reportType = column[Short]("report_type")

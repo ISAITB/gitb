@@ -14,9 +14,7 @@
  */
 
 import { EntityWithId } from "./entity-with-id";
-import { ErrorTemplate } from "./error-template";
-import { LandingPage } from "./landing-page";
-import { LegalNotice } from "./legal-notice";
+import { CustomContent } from "./custom-content";
 
 export interface Organisation extends EntityWithId {
 
@@ -33,9 +31,9 @@ export interface Organisation extends EntityWithId {
     selfRegistrationDefault: boolean
     community: number
 
-    landingPages?: LandingPage
-    legalNotices?: LegalNotice
-    errorTemplates?: ErrorTemplate
+    landingPages?: CustomContent
+    legalNotices?: CustomContent
+    errorTemplates?: CustomContent
     communityLegalNoticeAppliesAndExists?: boolean
 
 }

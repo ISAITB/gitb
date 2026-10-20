@@ -43,9 +43,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   testFlagManager: TestFlagManager,
                                   testResultManager: TestResultManager,
                                   organizationManager: OrganizationManager,
-                                  landingPageManager: LandingPageManager,
-                                  legalNoticeManager: LegalNoticeManager,
-                                  errorTemplateManager: ErrorTemplateManager,
+                                  customContentManager: CustomContentManager,
                                   conformanceManager: ConformanceManager,
                                   accountManager: AccountManager,
                                   domainParameterManager: DomainParameterManager,
@@ -830,9 +828,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     for {
       _ <- conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls)
       _ <- organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls)
-      _ <- landingPageManager.deleteLandingPageByCommunity(communityId)
-      _ <- legalNoticeManager.deleteLegalNoticeByCommunity(communityId)
-      _ <- errorTemplateManager.deleteErrorTemplateByCommunity(communityId)
+      _ <- customContentManager.deleteCustomContentByCommunity(communityId)
       _ <- triggerHelper.deleteTriggersByCommunity(communityId)
       _ <- testFlagManager.deleteTestFlagsByCommunity(communityId)
       _ <- testResultManager.updateForDeletedCommunity(communityId)

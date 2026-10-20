@@ -33,12 +33,8 @@ import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
 import {CommunityService} from 'src/app/services/community.service';
 import {distinctUntilChanged, forkJoin, map, Observable, of, skip} from 'rxjs';
-import {LandingPage} from 'src/app/types/landing-page';
-import {LegalNotice} from 'src/app/types/legal-notice';
-import {ErrorTemplate} from 'src/app/types/error-template';
-import {LandingPageService} from 'src/app/services/landing-page.service';
-import {LegalNoticeService} from 'src/app/services/legal-notice.service';
-import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {CustomContent} from 'src/app/types/custom-content';
+import {CustomContentService} from 'src/app/services/custom-content.service';
 import {NavigationTarget} from 'src/app/types/navigation-target';
 import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
@@ -77,9 +73,9 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   systemsTotal = 0
   usersRefreshing = false
   systemsRefreshing = false
-  landingPages: LandingPage[] = []
-  legalNotices: LegalNotice[] = []
-  errorTemplates: ErrorTemplate[] = []
+  landingPages: CustomContent[] = []
+  legalNotices: CustomContent[] = []
+  errorTemplates: CustomContent[] = []
   usersStatus = {status: Constants.STATUS.NONE}
   systemsStatus = {status: Constants.STATUS.NONE}
   userColumns: TableColumnDefinition[] = []
@@ -119,9 +115,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     protected readonly routingService: RoutingService,
     private readonly systemService: SystemService,
     private readonly communityService: CommunityService,
-    private readonly landingPageService: LandingPageService,
-    private readonly legalNoticeService: LegalNoticeService,
-    private readonly errorTemplateService: ErrorTemplateService,
+    private readonly customContentService: CustomContentService,
     router: Router,
     route: ActivatedRoute
   ) {
@@ -254,18 +248,15 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     // Load form data
     const organisation$ = this.organisationService.getOrganisationById(this.orgId)
     const properties$ = this.communityService.getOrganisationParameterValues(this.organisation.id)
-    let landingPages$: Observable<LandingPage[]> = of([])
-    let legalNotices$: Observable<LegalNotice[]> = of([])
-    let errorTemplates$: Observable<ErrorTemplate[]> = of([])
-    if (this.showAdminInfo || this.showLandingPage) {
-      landingPages$ = this.landingPageService.getLandingPagesByCommunity(this.communityId)
-    }
+    // Landing pages, legal notices and error templates are retrieved together (only landing pages if that is all that is needed).
+    let customContent$: Observable<CustomContent[]> = of([])
     if (this.showAdminInfo) {
-      legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
-      errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
+      customContent$ = this.customContentService.getCustomContentByCommunity(this.communityId)
+    } else if (this.showLandingPage) {
+      customContent$ = this.customContentService.getCustomContentByCommunity(this.communityId, [Constants.CUSTOM_CONTENT_TYPE.LANDING_PAGE])
     }
     const documentation$ = this.communityService.getPropertyDocumentation(this.communityId, 'organisation')
-    forkJoin([organisation$, properties$, landingPages$, legalNotices$, errorTemplates$, documentation$]).subscribe((data) => {
+    forkJoin([organisation$, properties$, customContent$, documentation$]).subscribe((data) => {
       this.organisation = data[0]
       if (this.organisation.landingPage == null) this.organisation.landingPage = undefined
       if (this.organisation.errorTemplate == null) this.organisation.errorTemplate = undefined
@@ -279,10 +270,10 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     }
       this.breadcrumbInit()
       this.propertyData.properties = data[1]
-      this.landingPages = data[2]
-      this.legalNotices = data[3]
-      this.errorTemplates = data[4]
-      this.propertyData.documentation = data[5].organisation
+      this.landingPages = data[2].filter(x => x.type == Constants.CUSTOM_CONTENT_TYPE.LANDING_PAGE)
+      this.legalNotices = data[2].filter(x => x.type == Constants.CUSTOM_CONTENT_TYPE.LEGAL_NOTICE)
+      this.errorTemplates = data[2].filter(x => x.type == Constants.CUSTOM_CONTENT_TYPE.ERROR_TEMPLATE)
+      this.propertyData.documentation = data[3].organisation
       this.formDataLoaded = true
       this.updateFormData()
     }).add(() => {

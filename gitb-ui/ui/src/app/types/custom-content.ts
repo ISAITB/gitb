@@ -13,23 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models
+export interface CustomContent {
 
-case class ErrorTemplates (id:Long, name:String, description: Option[String], content:String, default:Boolean, community:Long) {
+    id: number
+    name: string
+    description?: string
+    content?: string
+    default: boolean
+    /** One of Constants.CUSTOM_CONTENT_TYPE. */
+    type: number
 
-  def toErrorTemplate(): ErrorTemplate = {
-    new ErrorTemplate(id, name, description, Some(content), default)
-  }
-
-}
-
-class ErrorTemplate (_id:Long, _name:String, _description:Option[String], _content: Option[String], _default:Boolean) {
-
-  var id:Long = _id
-  var name:String = _name
-  var description:Option[String] = _description
-  var content: Option[String] = _content
-  var default:Boolean = _default
+    exists?: boolean
 
 }
-

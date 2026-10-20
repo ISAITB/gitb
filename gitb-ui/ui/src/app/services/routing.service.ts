@@ -15,6 +15,7 @@
 
 import {Injectable} from '@angular/core';
 import {NavigationEnd, NavigationExtras, NavigationStart, Router, UrlTree} from '@angular/router';
+import {CustomContentTypes} from '../common/custom-content-types';
 import {Constants} from '../common/constants';
 import {DataService} from './data.service';
 import {MenuItem} from '../types/menu-item.enum';
@@ -620,70 +621,26 @@ export class RoutingService {
     return this.navigate(this.linkToUserManagement())
   }
 
-  linkToCreateErrorTemplate(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number): NavigationTarget {
+  linkToCreateCustomContent(type: number, communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number): NavigationTarget {
     if (communityId == undefined) {
-      return { commands: ['admin', 'system', 'errortemplates', 'create'], extras: this.addCommunityContentExtras(undefined, copySource) }
+      return { commands: ['admin', 'system', CustomContentTypes.pathSegment(type), 'create'], extras: this.addCustomContentExtras(undefined, copySource) }
     } else {
-      return { commands: ['admin', 'users', 'community', communityId, 'errortemplates', 'create'], extras: this.addCommunityContentExtras(addCopyTestBedDefault, copySource) }
+      return { commands: ['admin', 'users', 'community', communityId, CustomContentTypes.pathSegment(type), 'create'], extras: this.addCustomContentExtras(addCopyTestBedDefault, copySource) }
     }
   }
-  toCreateErrorTemplate(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
-    return this.navigate(this.linkToCreateErrorTemplate(communityId, addCopyTestBedDefault, copySource))
+  toCreateCustomContent(type: number, communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
+    return this.navigate(this.linkToCreateCustomContent(type, communityId, addCopyTestBedDefault, copySource))
   }
 
-  linkToErrorTemplate(communityId: number|undefined, templateId: number): NavigationTarget {
+  linkToCustomContent(type: number, communityId: number|undefined, contentId: number): NavigationTarget {
     if (communityId == undefined) {
-      return { commands: ['admin', 'system', 'errortemplates', templateId] }
+      return { commands: ['admin', 'system', CustomContentTypes.pathSegment(type), contentId] }
     } else {
-      return { commands: ['admin', 'users', 'community', communityId, 'errortemplates', templateId] }
+      return { commands: ['admin', 'users', 'community', communityId, CustomContentTypes.pathSegment(type), contentId] }
     }
   }
-  toErrorTemplate(communityId: number|undefined, templateId: number) {
-    return this.navigate(this.linkToErrorTemplate(communityId, templateId))
-  }
-
-  linkToCreateLegalNotice(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number): NavigationTarget {
-    if (communityId == undefined) {
-      return { commands: ['admin', 'system', 'notices', 'create'], extras: this.addCommunityContentExtras(undefined, copySource) }
-    } else {
-      return { commands: ['admin', 'users', 'community', communityId, 'notices', 'create'], extras: this.addCommunityContentExtras(addCopyTestBedDefault, copySource) }
-    }
-  }
-  toCreateLegalNotice(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
-    return this.navigate(this.linkToCreateLegalNotice(communityId, addCopyTestBedDefault, copySource))
-  }
-
-  linkToLegalNotice(communityId: number|undefined, noticeId: number): NavigationTarget {
-    if (communityId == undefined) {
-      return { commands: ['admin', 'system', 'notices', noticeId] }
-    } else {
-      return { commands: ['admin', 'users', 'community', communityId, 'notices', noticeId] }
-    }
-  }
-  toLegalNotice(communityId: number|undefined, noticeId: number) {
-    return this.navigate(this.linkToLegalNotice(communityId, noticeId))
-  }
-
-  linkToCreateLandingPage(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number): NavigationTarget {
-    if (communityId == undefined) {
-      return { commands: ['admin', 'system', 'pages', 'create'], extras: this.addCommunityContentExtras(undefined, copySource) }
-    } else {
-      return { commands: ['admin', 'users', 'community', communityId, 'pages', 'create'], extras: this.addCommunityContentExtras(addCopyTestBedDefault, copySource) }
-    }
-  }
-  toCreateLandingPage(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
-    return this.navigate(this.linkToCreateLandingPage(communityId, addCopyTestBedDefault, copySource))
-  }
-
-  linkToLandingPage(communityId: number|undefined, pageId: number): NavigationTarget {
-    if (communityId == undefined) {
-      return { commands: ['admin', 'system', 'pages', pageId] }
-    } else {
-      return { commands: ['admin', 'users', 'community', communityId, 'pages', pageId] }
-    }
-  }
-  toLandingPage(communityId: number|undefined, pageId: number) {
-    return this.navigate(this.linkToLandingPage(communityId, pageId))
+  toCustomContent(type: number, communityId: number|undefined, contentId: number) {
+    return this.navigate(this.linkToCustomContent(type, communityId, contentId))
   }
 
   linkToCreateOwnOrganisationUser(): NavigationTarget {
@@ -805,17 +762,13 @@ export class RoutingService {
     return extras
   }
 
-  private addCommunityContentExtras(copyTestBedDefault: boolean|undefined, copySourceId?: number) {
-    let extras: NavigationExtras|undefined = undefined
-    if ((copyTestBedDefault != undefined && copyTestBedDefault) || copySourceId != undefined) {
-      extras = {}
-      extras.queryParams = {}
-      if (copyTestBedDefault) {
-        extras.queryParams[Constants.NAVIGATION_QUERY_PARAM.COPY_DEFAULT] = true
-      }
-      if (copySourceId != undefined) {
-        extras.queryParams[Constants.NAVIGATION_QUERY_PARAM.COPY] = copySourceId
-      }
+  private addCustomContentExtras(copyTestBedDefault: boolean|undefined, copySourceId?: number) {
+    const extras: NavigationExtras = { queryParams: {} }
+    if (copyTestBedDefault) {
+      extras.queryParams![Constants.NAVIGATION_QUERY_PARAM.COPY_DEFAULT] = true
+    }
+    if (copySourceId != undefined) {
+      extras.queryParams![Constants.NAVIGATION_QUERY_PARAM.COPY] = copySourceId
     }
     return extras
   }
@@ -868,7 +821,7 @@ export class RoutingService {
     return this.publishBreadcrumbs(this.actorBreadcrumbs(domainId, specificationId, actorId))
   }
 
-  /** For a page nested directly under a community (e.g. "Create organisation", "Create webhook", community-level "Create landing page"/"Create legal notice"/"Create error template", "Create community administrator"). */
+  /** For a page nested directly under a community (e.g. "Create organisation", "Create webhook", community-level "Create custom content", "Create community administrator"). */
   communityChildBreadcrumbs(communityId: number): BreadcrumbItem[] {
     return this.publishBreadcrumbs(this.communityBreadcrumbs(communityId))
   }
@@ -998,23 +951,9 @@ export class RoutingService {
     return crumbs
   }
 
-  landingPageBreadcrumbs(communityId: number, pageId: number, label?: string): BreadcrumbItem[] {
+  customContentBreadcrumbs(type: number, communityId: number, contentId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
-    crumbs.push({ type: BreadcrumbType.landingPage, typeId: pageId, label: label, action: (() => this.toLandingPage(communityId, pageId)), target: this.linkToLandingPage(communityId, pageId) })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
-    return crumbs
-  }
-
-  errorTemplateBreadcrumbs(communityId: number, templateId: number, label?: string): BreadcrumbItem[] {
-    const crumbs = this.communityBreadcrumbs(communityId)
-    crumbs.push({ type: BreadcrumbType.errorTemplate, typeId: templateId, label: label, action: (() => this.toErrorTemplate(communityId, templateId)), target: this.linkToErrorTemplate(communityId, templateId) })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
-    return crumbs
-  }
-
-  legalNoticeBreadcrumbs(communityId: number, noticeId: number, label?: string): BreadcrumbItem[] {
-    const crumbs = this.communityBreadcrumbs(communityId)
-    crumbs.push({ type: BreadcrumbType.legalNotice, typeId: noticeId, label: label, action: (() => this.toLegalNotice(communityId, noticeId)), target: this.linkToLegalNotice(communityId, noticeId) })
+    crumbs.push({ type: BreadcrumbType.customContent, typeId: contentId, label: label, action: (() => this.toCustomContent(type, communityId, contentId)), target: this.linkToCustomContent(type, communityId, contentId) })
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
@@ -1155,23 +1094,9 @@ export class RoutingService {
     return crumbs
   }
 
-  systemLandingPageBreadcrumbs(pageId: number, label?: string): BreadcrumbItem[] {
+  systemCustomContentBreadcrumbs(type: number, contentId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.systemConfigurationBreadcrumbs(true)
-    crumbs.push({ type: BreadcrumbType.systemLandingPage, typeId: pageId, label: label, action: (() => this.toLandingPage(undefined, pageId)), target: this.linkToLandingPage(undefined, pageId) })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
-    return crumbs
-  }
-
-  systemLegalNoticeBreadcrumbs(noticeId: number, label?: string): BreadcrumbItem[] {
-    const crumbs = this.systemConfigurationBreadcrumbs(true)
-    crumbs.push({ type: BreadcrumbType.systemLegalNotice, typeId: noticeId, label: label, action: (() => this.toLegalNotice(undefined, noticeId)), target: this.linkToLegalNotice(undefined, noticeId) })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
-    return crumbs
-  }
-
-  systemErrorTemplateBreadcrumbs(templateId: number, label?: string): BreadcrumbItem[] {
-    const crumbs = this.systemConfigurationBreadcrumbs(true)
-    crumbs.push({ type: BreadcrumbType.systemErrorTemplate, typeId: templateId, label: label, action: (() => this.toErrorTemplate(undefined, templateId)), target: this.linkToErrorTemplate(undefined, templateId) })
+    crumbs.push({ type: BreadcrumbType.systemCustomContent, typeId: contentId, label: label, action: (() => this.toCustomContent(type, undefined, contentId)), target: this.linkToCustomContent(type, undefined, contentId) })
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }

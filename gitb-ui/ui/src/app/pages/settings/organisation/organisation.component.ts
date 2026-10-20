@@ -26,10 +26,8 @@ import {SystemService} from 'src/app/services/system.service';
 import {map} from 'rxjs';
 import {AccountService} from 'src/app/services/account.service';
 import {CommunityService} from 'src/app/services/community.service';
-import {LandingPageService} from 'src/app/services/landing-page.service';
-import {LegalNoticeService} from 'src/app/services/legal-notice.service';
-import {ErrorTemplateService} from 'src/app/services/error-template.service';
-import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {CustomContentService} from 'src/app/services/custom-content.service';
+import {PagingEvent} from 'src/app/components/paging-controls/paging-event';
 
 @Component({
     selector: 'app-organisation',
@@ -48,14 +46,12 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     routingService: RoutingService,
     systemService: SystemService,
     communityService: CommunityService,
-    landingPageService: LandingPageService,
-    legalNoticeService: LegalNoticeService,
-    errorTemplateService: ErrorTemplateService,
+    customContentService: CustomContentService,
     router: Router,
     route: ActivatedRoute,
     private readonly accountService: AccountService
   ) {
-    super(confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, communityService, landingPageService, legalNoticeService, errorTemplateService, router, route)
+    super(confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, communityService, customContentService, router, route)
   }
 
   override getOrganisationId() {

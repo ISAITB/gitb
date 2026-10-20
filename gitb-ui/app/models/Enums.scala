@@ -78,6 +78,22 @@ object Enums {
     val Domain, Specification, Actor, Endpoint, Organisation, System, SpecificationInGroup, SpecificationGroup = Value
   }
 
+  object CustomContentType {
+    val LandingPage: Short = 1
+    val LegalNotice: Short = 2
+    val ErrorTemplate: Short = 3
+    val All: Set[Short] = Set(LandingPage, LegalNotice, ErrorTemplate)
+
+    def label(contentType: Short): String = {
+      contentType match {
+        case LandingPage => "landing page"
+        case LegalNotice => "legal notice"
+        case ErrorTemplate => "error template"
+        case _ => "custom content"
+      }
+    }
+  }
+
   object ImportItemType extends Enumeration(1) {
     type ImportItemType = Value
     val Domain, DomainParameter, Specification, Actor, Endpoint, EndpointParameter, TestSuite,

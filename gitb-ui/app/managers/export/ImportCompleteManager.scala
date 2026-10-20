@@ -66,9 +66,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       endpointManager: EndPointManager,
                                       parameterManager: ParameterManager,
                                       testSuiteManager: TestSuiteManager,
-                                      landingPageManager: LandingPageManager,
-                                      legalNoticeManager: LegalNoticeManager,
-                                      errorTemplateManager: ErrorTemplateManager,
+                                      customContentManager: CustomContentManager,
                                       organisationManager: OrganizationManager,
                                       systemManager: SystemManager,
                                       importPreviewManager: ImportPreviewManager,
@@ -694,16 +692,35 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     ThemeFiles(headerFile, footerFile, faviconFile)
   }
 
-  private def toModelLandingPage(data: com.gitb.xml.export.LandingPage, communityId: Long): models.LandingPages = {
-    models.LandingPages(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId)
+  /**
+   * Loads, in a single query, the IDs of the existing custom content of the community for the types that are applicable.
+   * The result has an entry (possibly empty) for each applicable type, and none for the others.
+   */
+  private def loadCustomContentIds(communityId: Long, landingPages: Boolean, legalNotices: Boolean, errorTemplates: Boolean): Future[Map[Short, List[Long]]] = {
+    val types = Set(
+      Option.when(landingPages)(models.Enums.CustomContentType.LandingPage),
+      Option.when(legalNotices)(models.Enums.CustomContentType.LegalNotice),
+      Option.when(errorTemplates)(models.Enums.CustomContentType.ErrorTemplate)
+    ).flatten
+    if (types.isEmpty) {
+      Future.successful(Map.empty)
+    } else {
+      customContentManager.getIdsByType(communityId, types).map { results =>
+        types.map(x => x -> results.getOrElse(x, List.empty)).toMap
+      }
+    }
   }
 
-  private def toModelLegalNotice(data: com.gitb.xml.export.LegalNotice, communityId: Long): models.LegalNotices = {
-    models.LegalNotices(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId)
+  private def toModelLandingPage(data: com.gitb.xml.export.LandingPage, communityId: Long): models.CustomContents = {
+    models.CustomContents(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId, models.Enums.CustomContentType.LandingPage)
   }
 
-  private def toModelErrorTemplate(data: com.gitb.xml.export.ErrorTemplate, communityId: Long): models.ErrorTemplates = {
-    models.ErrorTemplates(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId)
+  private def toModelLegalNotice(data: com.gitb.xml.export.LegalNotice, communityId: Long): models.CustomContents = {
+    models.CustomContents(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId, models.Enums.CustomContentType.LegalNotice)
+  }
+
+  private def toModelErrorTemplate(data: com.gitb.xml.export.ErrorTemplate, communityId: Long): models.CustomContents = {
+    models.CustomContents(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId, models.Enums.CustomContentType.ErrorTemplate)
   }
 
   private def toModelReportSetting(data: com.gitb.xml.export.CommunityReportSetting, communityId: Long): models.CommunityReportSettings = {
@@ -1179,18 +1196,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       val fThemes = loadIfApplicable(ctx.importTargets.hasThemes,
         () => DB.run(PersistenceSchema.themes.filter(_.custom === true).map(_.id).result)
       )
-      // Default landing pages
-      val fDefaultLandingPages = loadIfApplicable(ctx.importTargets.hasDefaultLandingPages,
-        () => DB.run(PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
-      )
-      // Default legal notices
-      val fDefaultLegalNotices = loadIfApplicable(ctx.importTargets.hasDefaultLegalNotices,
-        () => DB.run(PersistenceSchema.legalNotices.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
-      )
-      // Default error templates
-      val fDefaultErrorTemplates = loadIfApplicable(ctx.importTargets.hasDefaultErrorTemplates,
-        () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
-      )
+      // Default landing pages, legal notices and error templates
+      val fDefaultCustomContent = loadCustomContentIds(Constants.DefaultCommunityId, ctx.importTargets.hasDefaultLandingPages, ctx.importTargets.hasDefaultLegalNotices, ctx.importTargets.hasDefaultErrorTemplates)
+      val fDefaultLandingPages = fDefaultCustomContent.map(_.get(models.Enums.CustomContentType.LandingPage))
+      val fDefaultLegalNotices = fDefaultCustomContent.map(_.get(models.Enums.CustomContentType.LegalNotice))
+      val fDefaultErrorTemplates = fDefaultCustomContent.map(_.get(models.Enums.CustomContentType.ErrorTemplate))
       // System administrators
       val fSystemAdministrators = loadIfApplicable(!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasSystemAdministrators,
         () => exportManager.loadSystemAdministrators()
@@ -1295,10 +1305,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               dbActions += processFromArchive(ImportItemType.DefaultLandingPage, exportedContent, exportedContent.getId, ctx,
                 ImportCallbacks.set(
                   (data: com.gitb.xml.export.LandingPage, _: ImportItem) => {
-                    landingPageManager.createLandingPageInternal(toModelLandingPage(data, Constants.DefaultCommunityId))
+                    customContentManager.createCustomContentInternal(toModelLandingPage(data, Constants.DefaultCommunityId))
                   },
                   (data: com.gitb.xml.export.LandingPage, targetKey: String, _: ImportItem) => {
-                    landingPageManager.updateLandingPageInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
+                    customContentManager.updateCustomContentInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
                   }
                 )
               )
@@ -1309,7 +1319,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         _ <- {
           processRemaining(ImportItemType.DefaultLandingPage, ctx,
             (targetKey: String, _: ImportItem) => {
-              landingPageManager.deleteLandingPageInternal(targetKey.toLong)
+              customContentManager.deleteCustomContentInternal(targetKey.toLong)
             }
           )
         }
@@ -1321,10 +1331,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               dbActions += processFromArchive(ImportItemType.DefaultLegalNotice, exportedContent, exportedContent.getId, ctx,
                 ImportCallbacks.set(
                   (data: com.gitb.xml.export.LegalNotice, _: ImportItem) => {
-                    legalNoticeManager.createLegalNoticeInternal(toModelLegalNotice(data, Constants.DefaultCommunityId))
+                    customContentManager.createCustomContentInternal(toModelLegalNotice(data, Constants.DefaultCommunityId))
                   },
                   (data: com.gitb.xml.export.LegalNotice, targetKey: String, _: ImportItem) => {
-                    legalNoticeManager.updateLegalNoticeInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
+                    customContentManager.updateCustomContentInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
                   }
                 )
               )
@@ -1335,7 +1345,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         _ <- {
           processRemaining(ImportItemType.DefaultLegalNotice, ctx,
             (targetKey: String, _: ImportItem) => {
-              legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
+              customContentManager.deleteCustomContentInternal(targetKey.toLong)
             }
           )
         }
@@ -1347,10 +1357,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               dbActions += processFromArchive(ImportItemType.DefaultErrorTemplate, exportedContent, exportedContent.getId, ctx,
                 ImportCallbacks.set(
                   (data: com.gitb.xml.export.ErrorTemplate, _: ImportItem) => {
-                    errorTemplateManager.createErrorTemplateInternal(toModelErrorTemplate(data, Constants.DefaultCommunityId))
+                    customContentManager.createCustomContentInternal(toModelErrorTemplate(data, Constants.DefaultCommunityId))
                   },
                   (data: com.gitb.xml.export.ErrorTemplate, targetKey: String, _: ImportItem) => {
-                    errorTemplateManager.updateErrorTemplateInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
+                    customContentManager.updateCustomContentInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
                   }
                 )
               )
@@ -1361,7 +1371,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         _ <- {
           processRemaining(ImportItemType.DefaultErrorTemplate, ctx,
             (targetKey: String, _: ImportItem) => {
-              errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
+              customContentManager.deleteCustomContentInternal(targetKey.toLong)
             }
           )
         }
@@ -2134,18 +2144,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     val fSystemProperties = loadIfApplicable(ctx.importTargets.hasSystemProperties,
       () => DB.run(PersistenceSchema.systemParameters.filter(_.community === communityId).map(_.id).result)
     )
-    // Landing pages
-    val fLandingPages = loadIfApplicable(ctx.importTargets.hasLandingPages,
-      () => DB.run(PersistenceSchema.landingPages.filter(_.community === communityId).map(_.id).result)
-    )
-    // Legal notices
-    val fLegalNotices = loadIfApplicable(ctx.importTargets.hasLegalNotices,
-      () => DB.run(PersistenceSchema.legalNotices.filter(_.community === communityId).map(_.id).result)
-    )
-    // Error templates
-    val fErrorTemplates = loadIfApplicable(ctx.importTargets.hasErrorTemplates,
-      () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === communityId).map(_.id).result)
-    )
+    // Landing pages, legal notices and error templates
+    val fCustomContent = loadCustomContentIds(communityId, ctx.importTargets.hasLandingPages, ctx.importTargets.hasLegalNotices, ctx.importTargets.hasErrorTemplates)
+    val fLandingPages = fCustomContent.map(_.get(models.Enums.CustomContentType.LandingPage))
+    val fLegalNotices = fCustomContent.map(_.get(models.Enums.CustomContentType.LegalNotice))
+    val fErrorTemplates = fCustomContent.map(_.get(models.Enums.CustomContentType.ErrorTemplate))
     // Triggers
     val fTriggers = loadIfApplicable(ctx.importTargets.hasTriggers,
       () => DB.run(PersistenceSchema.triggers.filter(_.community === communityId).map(_.id).result)
@@ -2724,10 +2727,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 dbActions += processFromArchive(ImportItemType.LandingPage, exportedContent, exportedContent.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.LandingPage, item: ImportItem) => {
-                      landingPageManager.createLandingPageInternal(toModelLandingPage(data, item.parentItem.get.targetKey.get.toLong))
+                      customContentManager.createCustomContentInternal(toModelLandingPage(data, item.parentItem.get.targetKey.get.toLong))
                     },
                     (data: com.gitb.xml.export.LandingPage, targetKey: String, item: ImportItem) => {
-                      landingPageManager.updateLandingPageInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
+                      customContentManager.updateCustomContentInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
                     }
                   )
                 )
@@ -2738,7 +2741,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           _ <- {
             processRemaining(ImportItemType.LandingPage, ctx,
               (targetKey: String, _: ImportItem) => {
-                landingPageManager.deleteLandingPageInternal(targetKey.toLong)
+                customContentManager.deleteCustomContentInternal(targetKey.toLong)
               }
             )
           }
@@ -2750,10 +2753,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 dbActions += processFromArchive(ImportItemType.LegalNotice, exportedContent, exportedContent.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.LegalNotice, item: ImportItem) => {
-                      legalNoticeManager.createLegalNoticeInternal(toModelLegalNotice(data, item.parentItem.get.targetKey.get.toLong))
+                      customContentManager.createCustomContentInternal(toModelLegalNotice(data, item.parentItem.get.targetKey.get.toLong))
                     },
                     (data: com.gitb.xml.export.LegalNotice, targetKey: String, item: ImportItem) => {
-                      legalNoticeManager.updateLegalNoticeInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
+                      customContentManager.updateCustomContentInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
                     }
                   )
                 )
@@ -2764,7 +2767,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           _ <- {
             processRemaining(ImportItemType.LegalNotice, ctx,
               (targetKey: String, _: ImportItem) => {
-                legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
+                customContentManager.deleteCustomContentInternal(targetKey.toLong)
               }
             )
           }
@@ -2776,10 +2779,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 dbActions += processFromArchive(ImportItemType.ErrorTemplate, exportedContent, exportedContent.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.ErrorTemplate, item: ImportItem) => {
-                      errorTemplateManager.createErrorTemplateInternal(toModelErrorTemplate(data, item.parentItem.get.targetKey.get.toLong))
+                      customContentManager.createCustomContentInternal(toModelErrorTemplate(data, item.parentItem.get.targetKey.get.toLong))
                     },
                     (data: com.gitb.xml.export.ErrorTemplate, targetKey: String, item: ImportItem) => {
-                      errorTemplateManager.updateErrorTemplateInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
+                      customContentManager.updateCustomContentInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
                     }
                   )
                 )
@@ -2790,7 +2793,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           _ <- {
             processRemaining(ImportItemType.ErrorTemplate, ctx,
               (targetKey: String, _: ImportItem) => {
-                errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
+                customContentManager.deleteCustomContentInternal(targetKey.toLong)
               }
             )
           }

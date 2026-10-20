@@ -13,28 +13,33 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from "@angular/core";
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
-import { Observable, Subscriber } from "rxjs";
-import { LegalNoticeService } from "../services/legal-notice.service";
-import { LegalNotice } from "../types/legal-notice";
-import { Constants } from "../common/constants";
+import {Injectable} from '@angular/core';
+import {ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
+import {Observable, Subscriber} from 'rxjs';
+import {Constants} from '../common/constants';
+import {CustomContentService} from '../services/custom-content.service';
+import {CustomContent} from '../types/custom-content';
 
+/**
+ * Resolves the content to copy (if any) when creating custom content: either the Test Bed default of the type
+ * being created, or an existing content item.
+ */
 @Injectable({
     providedIn: "root"
 })
-export class LegalNoticeResolver  {
+export class CustomContentResolver  {
 
     constructor(
-        private readonly legalNoticeService: LegalNoticeService
+        private readonly customContentService: CustomContentService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-        return new Observable<LegalNotice|undefined>((subscriber) => {
+        return new Observable<CustomContent|undefined>((subscriber) => {
             if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY_DEFAULT)) {
-                this.handleResult(subscriber, this.legalNoticeService.getTestBedDefaultLegalNotice())
+                const type = Number(route.data['contentType'])
+                this.handleResult(subscriber, this.customContentService.getTestBedDefaultCustomContent(type))
             } else if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY)) {
-                this.handleResult(subscriber, this.legalNoticeService.getLegalNoticeById(Number(route.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COPY))))
+                this.handleResult(subscriber, this.customContentService.getCustomContentById(Number(route.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COPY))))
             } else {
                 subscriber.next(undefined)
                 subscriber.complete()
@@ -42,7 +47,7 @@ export class LegalNoticeResolver  {
         })
     }
 
-    private handleResult(subscriber: Subscriber<any>, result: Observable<LegalNotice>) {
+    private handleResult(subscriber: Subscriber<any>, result: Observable<CustomContent>) {
         result.subscribe((data) => {
             if (data.exists) {
                 data.name += ' COPY'
@@ -54,5 +59,4 @@ export class LegalNoticeResolver  {
             subscriber.complete()
         })
     }
-
 }

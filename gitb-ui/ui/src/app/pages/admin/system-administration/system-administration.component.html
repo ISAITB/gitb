@@ -866,82 +866,15 @@
                     </div>
                 </ng-template>
             </li>
-            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.LANDING_PAGE" text="Default landing pages"></app-tab-title></button>
+            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.CUSTOM_CONTENT">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CUSTOM_CONTENT" text="Custom content defaults"></app-tab-title></button>
                 <ng-template ngbNavContent>
-                    <!-- Landing pages -->
-                    <div class="tabPanel">
-                        <div class="tabControls">
-                            <div class="btn-toolbar">
-                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLandingPage()">Create landing page</a>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div #landingPagesTable table-directive
-                                 [columns]="landingPagesColumns"
-                                 [data]="landingPages"
-                                 noDataMessage="No landing pages found"
-                                 [loadingStatus]="landingPageStatus"
-                                 [contentRefreshing]="landingPagesRefreshing"
-                                 (pageNavigation)="doLandingPagePaging($event)"
-                                 [allowSelect]="true"
-                                 [rowTarget]="landingPageRowTarget"
-                                 [supportPaging]="true">
-                            </div>
-                        </div>
-                    </div>
-                </ng-template>
-            </li>
-            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.LEGAL_NOTICE" text="Default legal notices"></app-tab-title></button>
-                <ng-template ngbNavContent>
-                    <!-- Legal notices -->
-                    <div class="tabPanel">
-                        <div class="tabControls">
-                            <div class="btn-toolbar">
-                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateLegalNotice()">Create legal notice</a>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div #legalNoticesTable table-directive
-                                 [columns]="legalNoticesColumns"
-                                 [data]="legalNotices"
-                                 noDataMessage="No legal notices found"
-                                 [loadingStatus]="legalNoticeStatus"
-                                 [contentRefreshing]="legalNoticesRefreshing"
-                                 (pageNavigation)="doLegalNoticePaging($event)"
-                                 [allowSelect]="true"
-                                 [rowTarget]="legalNoticeRowTarget"
-                                 [supportPaging]="true">
-                            </div>
-                        </div>
-                    </div>
-                </ng-template>
-            </li>
-            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.ERROR_TEMPLATE" text="Default error templates"></app-tab-title></button>
-                <ng-template ngbNavContent>
-                    <!-- Error templates -->
-                    <div class="tabPanel">
-                        <div class="tabControls">
-                            <div class="btn-toolbar">
-                                <a [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" [navTarget]="routingService.linkToCreateErrorTemplate()">Create error template</a>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div #errorTemplatesTable table-directive
-                                 [columns]="errorTemplatesColumns"
-                                 [data]="errorTemplates"
-                                 noDataMessage="No error templates found"
-                                 [loadingStatus]="errorTemplateStatus"
-                                 [contentRefreshing]="errorTemplatesRefreshing"
-                                 (pageNavigation)="doErrorTemplatePaging($event)"
-                                 [allowSelect]="true"
-                                 [rowTarget]="errorTemplateRowTarget"
-                                 [supportPaging]="true">
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Default custom content -->
+                    <app-custom-content-tab
+                        [state]="customContentState"
+                        [communityId]="Constants.DEFAULT_COMMUNITY_ID"
+                        (pageSizeChanged)="customContentTabPageSizeChange()"
+                    ></app-custom-content-tab>
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.THEMES">

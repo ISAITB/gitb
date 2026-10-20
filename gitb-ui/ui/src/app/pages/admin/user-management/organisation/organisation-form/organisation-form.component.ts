@@ -13,24 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit} from '@angular/core';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import {DataService} from 'src/app/services/data.service';
-import {ErrorTemplate} from 'src/app/types/error-template';
-import {LandingPage} from 'src/app/types/landing-page';
-import {LegalNotice} from 'src/app/types/legal-notice';
+import {CustomContent} from 'src/app/types/custom-content';
 import {Organisation} from 'src/app/types/organisation.type';
 import {OrganisationFormData} from './organisation-form-data';
 import {ValidationState} from 'src/app/types/validation-state';
-import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
-import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {map, Observable, of} from 'rxjs';
-import {OrganisationService} from '../../../../../services/organisation.service';
-import {SystemService} from '../../../../../services/system.service';
-import {PopupService} from '../../../../../services/popup.service';
-import {LegalNoticeService} from '../../../../../services/legal-notice.service';
-import {ConfirmationDialogService} from '../../../../../services/confirmation-dialog.service';
-import {Constants} from '../../../../../common/constants';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {Constants} from 'src/app/common/constants';
 
 @Component({
     selector: 'app-organisation-form',
@@ -48,9 +44,9 @@ export class OrganisationFormComponent implements OnInit {
   @Input() showLandingPage = false
   @Input() readonly = false
   @Input() validation!: ValidationState
-  @Input() landingPages: LandingPage[] = []
-  @Input() legalNotices: LegalNotice[] = []
-  @Input() errorTemplates: ErrorTemplate[] = []
+  @Input() landingPages: CustomContent[] = []
+  @Input() legalNotices: CustomContent[] = []
+  @Input() errorTemplates: CustomContent[] = []
   otherOrganisations?: Organisation[]
 
   selfRegEnabled = false
@@ -58,9 +54,9 @@ export class OrganisationFormComponent implements OnInit {
   selfRegTokenUpdatable = false
   selfRegistrationTokenUpdatePending = false
   selfRegistrationTokenDeletePending = false
-  landingPageSelectionConfig!: MultiSelectConfig<LandingPage>
-  legalNoticeSelectionConfig!: MultiSelectConfig<LegalNotice>
-  errorTemplateSelectionConfig!: MultiSelectConfig<ErrorTemplate>
+  landingPageSelectionConfig!: MultiSelectConfig<CustomContent>
+  legalNoticeSelectionConfig!: MultiSelectConfig<CustomContent>
+  errorTemplateSelectionConfig!: MultiSelectConfig<CustomContent>
   copySelectionConfig!: MultiSelectConfig<Organisation>
   initialLoadComplete = false
 
@@ -212,7 +208,7 @@ export class OrganisationFormComponent implements OnInit {
     }
   }
 
-  landingPageSelected(event: FilterUpdate<LandingPage>) {
+  landingPageSelected(event: FilterUpdate<CustomContent>) {
     if (this.organisation) {
       if (event.values.active.length != 0) {
         this.organisation.landingPage = event.values.active[0].id
@@ -222,7 +218,7 @@ export class OrganisationFormComponent implements OnInit {
     }
   }
 
-  legalNoticeSelected(event: FilterUpdate<LegalNotice>) {
+  legalNoticeSelected(event: FilterUpdate<CustomContent>) {
     if (this.organisation) {
       if (event.values.active.length != 0) {
         this.organisation.legalNotice = event.values.active[0].id
@@ -232,7 +228,7 @@ export class OrganisationFormComponent implements OnInit {
     }
   }
 
-  errorTemplateSelected(event: FilterUpdate<ErrorTemplate>) {
+  errorTemplateSelected(event: FilterUpdate<CustomContent>) {
     if (this.organisation) {
       if (event.values.active.length != 0) {
         this.organisation.errorTemplate = event.values.active[0].id

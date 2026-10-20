@@ -1,0 +1,43 @@
+<div class="tabPanel">
+    <div class="tabControls">
+        <div class="btn-toolbar icon-aligned">
+            <app-checkbox-option-panel
+                #showContentFilter
+                label="Show content..."
+                [labelIcon]="Constants.BUTTON_ICON.FILTER"
+                [options]="typeOptions"
+                (updated)="filterByType($event)"></app-checkbox-option-panel>
+            <div class="btn-group" ngbDropdown>
+                <button id="button-create-content" [labelIcon]="Constants.BUTTON_ICON.NEW" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-create-content"><span class="me-2">Create content</span></button>
+                <div id="dropdown-create-content" ngbDropdownMenu aria-labelledby="button-create-content">
+                    @for (type of CustomContentTypes.ALL; track type) {
+                        <button ngbDropdownItem type="button" (click)="create(type)"><i class="dropdown-icon" [class]="CustomContentTypes.icon(type)"></i>{{CustomContentTypes.label(type)}}</button>
+                    }
+                </div>
+            </div>
+            @if (!testBedDefaultsView) {
+                <div class="btn-group" ngbDropdown>
+                    <button id="button-copy-default" [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="noTestBedDefaults()" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy-default"><span class="me-2">Copy Test Bed default</span></button>
+                    <div id="dropdown-copy-default" ngbDropdownMenu aria-labelledby="button-copy-default">
+                        @for (type of CustomContentTypes.ALL; track type) {
+                            <button ngbDropdownItem type="button" [disabled]="!hasTestBedDefault(type)" (click)="copyTestBedDefault(type)"><i class="dropdown-icon" [class]="CustomContentTypes.icon(type)"></i>{{CustomContentTypes.label(type)}}</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="card">
+        <div #contentTable table-directive
+             [columns]="columns"
+             [data]="state.content"
+             noDataMessage="No custom content found"
+             [loadingStatus]="state"
+             [contentRefreshing]="contentRefreshing"
+             (pageNavigation)="doPageNavigation($event)"
+             [allowSelect]="true"
+             [rowTarget]="rowTarget"
+             [supportPaging]="true">
+        </div>
+    </div>
+</div>

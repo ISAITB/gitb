@@ -15,7 +15,7 @@
 
 import config.Configurations
 import controllers.util.ResponseConstructor
-import managers.LegalNoticeManager
+import managers.CustomContentManager
 import models.{Constants, ErrorPageData}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
@@ -27,7 +27,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager, restApiErrorHandler: RestApiErrorHandler)
+class ErrorHandler @Inject() (customContentManager: CustomContentManager, restApiErrorHandler: RestApiErrorHandler)
                              (implicit ec: ExecutionContext) extends HttpErrorHandler {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -54,7 +54,7 @@ class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager, restApiErr
       val result = ResponseConstructor.constructServerError("Unexpected error", "An unexpected error occurred.", Some(errorIdentifier))
       Future.successful(result)
     } else {
-      legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map { legalNotice =>
+      customContentManager.getCommunityDefaultCustomContent(Constants.DefaultCommunityId, models.Enums.CustomContentType.LegalNotice).map { legalNotice =>
         if (legalNotice.isDefined && !StringUtils.isBlank(legalNotice.get.content)) {
           Some(legalNotice.get.content)
         } else {

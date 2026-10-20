@@ -47,6 +47,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ImportPreviewManager @Inject()(exportManager: ExportManager,
                                      systemConfigurationManager: SystemConfigurationManager,
                                      communityManager: CommunityManager,
+                                     customContentManager: CustomContentManager,
                                      dbConfigProvider: DatabaseConfigProvider)
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -145,58 +146,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
     }
   }
 
-  private def loadDefaultLandingPages(): Future[Map[String, List[Long]]] = {
-    DB.run(
-      PersistenceSchema.landingPages
-        .filter(_.community === Constants.DefaultCommunityId)
-        .map(x => (x.name, x.id))
-        .result
-    ).map { results =>
-      val targetLandingPageMap = mutable.Map[String, ListBuffer[Long]]()
-      results.foreach { x =>
-        if (!targetLandingPageMap.contains(x._1)) {
-          targetLandingPageMap += (x._1 -> new ListBuffer[Long]())
-        }
-        targetLandingPageMap(x._1) += x._2
-      }
-      targetLandingPageMap.view.mapValues(_.toList).toMap
-    }
-  }
-
-  private def loadDefaultLegalNotices(): Future[Map[String, List[Long]]] = {
-    DB.run(
-      PersistenceSchema.legalNotices
-        .filter(_.community === Constants.DefaultCommunityId)
-        .map(x => (x.name, x.id))
-        .result
-    ).map { results =>
-      val targetLegalNoticeMap = mutable.Map[String, ListBuffer[Long]]()
-      results.foreach { x =>
-        if (!targetLegalNoticeMap.contains(x._1)) {
-          targetLegalNoticeMap += (x._1 -> new ListBuffer[Long]())
-        }
-        targetLegalNoticeMap(x._1) += x._2
-      }
-      targetLegalNoticeMap.view.mapValues(_.toList).toMap
-    }
-  }
-
-  private def loadDefaultErrorTemplates(): Future[Map[String, List[Long]]] = {
-    DB.run(
-      PersistenceSchema.errorTemplates
-        .filter(_.community === Constants.DefaultCommunityId)
-        .map(x => (x.name, x.id))
-        .result
-    ).map { results =>
-      val targetErrorTemplateMap = mutable.Map[String, ListBuffer[Long]]()
-      results.foreach { x =>
-        if (!targetErrorTemplateMap.contains(x._1)) {
-          targetErrorTemplateMap += (x._1 -> new ListBuffer[Long]())
-        }
-        targetErrorTemplateMap(x._1) += x._2
-      }
-      targetErrorTemplateMap.view.mapValues(_.toList).toMap
-    }
+  private def loadDefaultCustomContent(): Future[Map[Short, Map[String, List[Long]]]] = {
+    customContentManager.getNameToIdsByType(Constants.DefaultCommunityId)
   }
 
   private def loadSystemSettings(): Future[Set[String]] = {
@@ -213,9 +164,10 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
     val fResourceMap = loadSystemResourceMap()
     val fThemeMap = loadThemeMap()
     val fSystemAdministrators = loadSystemAdministratorMap()
-    val fDefaultLandingPages = loadDefaultLandingPages()
-    val fDefaultLegalNotices = loadDefaultLegalNotices()
-    val fDefaultErrorTemplates = loadDefaultErrorTemplates()
+    val fDefaultCustomContent = loadDefaultCustomContent()
+    val fDefaultLandingPages = fDefaultCustomContent.map(_.getOrElse(models.Enums.CustomContentType.LandingPage, Map.empty[String, List[Long]]))
+    val fDefaultLegalNotices = fDefaultCustomContent.map(_.getOrElse(models.Enums.CustomContentType.LegalNotice, Map.empty[String, List[Long]]))
+    val fDefaultErrorTemplates = fDefaultCustomContent.map(_.getOrElse(models.Enums.CustomContentType.ErrorTemplate, Map.empty[String, List[Long]]))
     val fSystemSettings = loadSystemSettings()
     for {
       resourceMap <- fResourceMap
@@ -529,45 +481,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       }
       targetCustomLabelMap.toMap
     }
-    // Landing pages.
-    val fLandingPages = DB.run(
-      PersistenceSchema.landingPages
-        .filter(_.community === community.id)
-        .map(x => (x.name, x.id))
-        .result
-    ).map { results =>
-      val targetLandingPageMap = mutable.Map[String, ListBuffer[Long]]()
-      results.foreach { x =>
-        targetLandingPageMap.getOrElseUpdate(x._1, new ListBuffer[Long]()) += x._2
-      }
-      targetLandingPageMap.view.mapValues(_.toList).toMap
-    }
-    // Legal notices.
-    val fLegalNotices = DB.run(
-      PersistenceSchema.legalNotices
-        .filter(_.community === community.id)
-        .map(x => (x.name, x.id))
-        .result
-    ).map { results =>
-      val targetLegalNoticeMap = mutable.Map[String, ListBuffer[Long]]()
-      results.foreach { x =>
-        targetLegalNoticeMap.getOrElseUpdate(x._1, new ListBuffer[Long]()) += x._2
-      }
-      targetLegalNoticeMap.view.mapValues(_.toList).toMap
-    }
-    // Error templates.
-    val fErrorTemplates = DB.run(
-      PersistenceSchema.errorTemplates
-        .filter(_.community === community.id)
-        .map(x => (x.name, x.id))
-        .result
-    ).map { results =>
-      val targetErrorTemplateMap = mutable.Map[String, ListBuffer[Long]]()
-      results.foreach { x =>
-        targetErrorTemplateMap.getOrElseUpdate(x._1, new ListBuffer[Long]()) += x._2
-      }
-      targetErrorTemplateMap.view.mapValues(_.toList).toMap
-    }
+    // Landing pages, legal notices and error templates.
+    val fCustomContent = customContentManager.getNameToIdsByType(community.id)
+    val fLandingPages = fCustomContent.map(_.getOrElse(models.Enums.CustomContentType.LandingPage, Map.empty[String, List[Long]]))
+    val fLegalNotices = fCustomContent.map(_.getOrElse(models.Enums.CustomContentType.LegalNotice, Map.empty[String, List[Long]]))
+    val fErrorTemplates = fCustomContent.map(_.getOrElse(models.Enums.CustomContentType.ErrorTemplate, Map.empty[String, List[Long]]))
     // Triggers.
     val fTriggers = DB.run(
       PersistenceSchema.triggers

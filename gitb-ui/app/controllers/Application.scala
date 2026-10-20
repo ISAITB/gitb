@@ -19,7 +19,7 @@ import config.Configurations
 import config.Configurations.versionInfo
 import controllers.util.ResponseConstructor
 import filters.CorsFilter
-import managers.LegalNoticeManager
+import managers.CustomContentManager
 import models.{Constants, PublicConfig}
 import org.apache.commons.lang3.{StringUtils, Strings}
 import play.api.Environment
@@ -33,13 +33,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Application @Inject() (cc: ControllerComponents,
                              defaultAction: DefaultActionBuilder,
-                             legalNoticeManager: LegalNoticeManager,
+                             customContentManager: CustomContentManager,
                              environment: Environment,
                              repositoryUtils: RepositoryUtils)
                             (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   def index(): Action[AnyContent] = defaultAction.async {
-    legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map { legalNotice =>
+    customContentManager.getCommunityDefaultCustomContent(Constants.DefaultCommunityId, models.Enums.CustomContentType.LegalNotice).map { legalNotice =>
       var hasDefaultLegalNotice = false
       var legalNoticeContent = ""
       if (legalNotice.isDefined && !StringUtils.isBlank(legalNotice.get.content)) {

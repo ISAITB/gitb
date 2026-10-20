@@ -15,6 +15,7 @@
 
 import {ChangeDetectionStrategy, Component, EventEmitter, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
+import {CustomContentState} from 'src/app/types/custom-content-state';
 import {Constants} from 'src/app/common/constants';
 import {UserService} from 'src/app/services/user.service';
 import {DataService} from 'src/app/services/data.service';
@@ -22,12 +23,6 @@ import {User} from 'src/app/types/user.type';
 import {RoutingService} from 'src/app/services/routing.service';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {TableColumns} from 'src/app/common/table-columns';
-import {LandingPage} from 'src/app/types/landing-page';
-import {LegalNotice} from 'src/app/types/legal-notice';
-import {ErrorTemplate} from 'src/app/types/error-template';
-import {LandingPageService} from 'src/app/services/landing-page.service';
-import {LegalNoticeService} from 'src/app/services/legal-notice.service';
-import {ErrorTemplateService} from 'src/app/services/error-template.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {SystemConfigurationService} from 'src/app/services/system-configuration.service';
 import {Community} from 'src/app/types/community';
@@ -82,9 +77,6 @@ import {ConfigurationEntryComponentApi} from './configuration-entry/configuratio
 export class SystemAdministrationComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   @ViewChild("adminsTable") adminsTable?: TableApi
-  @ViewChild("landingPagesTable") landingPagesTable?: TableApi
-  @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
-  @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
   @ViewChild("themesTable") themesTable?: TableApi
   @ViewChild("reportSettingsEntry") reportSettingsEntry?: ConfigurationEntryComponentApi
   @ViewChild("demoAccountEntry") demoAccountEntry?: ConfigurationEntryComponentApi
@@ -92,27 +84,9 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   @ViewChild("restApiEntry") restApiEntry?: ConfigurationEntryComponentApi
 
   adminStatus = {status: Constants.STATUS.NONE}
-  landingPageStatus = {status: Constants.STATUS.NONE}
-  errorTemplateStatus = {status: Constants.STATUS.NONE}
-  legalNoticeStatus = {status: Constants.STATUS.NONE}
   themeStatus = {status: Constants.STATUS.NONE}
 
   adminColumns: TableColumnDefinition[] = []
-  landingPagesColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'description', title: 'Description' },
-    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default landing page')
-  ]
-  legalNoticesColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'description', title: 'Description' },
-    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default legal notice')
-  ]
-  errorTemplatesColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'description', title: 'Description' },
-    TableColumns.flag('default', Constants.BUTTON_ICON.DEFAULT, 'Default error template')
-  ]
   themeColumns: TableColumnDefinition[] = [
     { field: 'key', title: 'Key' },
     { field: 'description', title: 'Description' },
@@ -120,24 +94,12 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   ]
 
   admins: User[] = []
-  landingPages: LandingPage[] = []
-  legalNotices: LegalNotice[] = []
-  errorTemplates: ErrorTemplate[] = []
   themes: Theme[] = []
   adminsRefreshing = false
-  landingPagesRefreshing = false
-  legalNoticesRefreshing = false
-  errorTemplatesRefreshing = false
   themesRefreshing = false
   adminsPage = 1
-  landingPagesPage = 1
-  legalNoticesPage = 1
-  errorTemplatesPage = 1
   themesPage = 1
   adminsTotal = 0
-  landingPagesTotal = 0
-  legalNoticesTotal = 0
-  errorTemplatesTotal = 0
   themesTotal = 0
   resourceState: ResourceState = {
     resources: [],
@@ -280,6 +242,14 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   selectedTimeZone?: TimeZoneInfo
   timeZoneSelectConfig!: MultiSelectConfig<TimeZoneInfo>
 
+  // Custom content
+  customContentState: CustomContentState = {
+    content: [],
+    total: 0,
+    page: 1,
+    status: Constants.STATUS.NONE
+  }
+
   // Resources
   resourceActions!: ResourceActions
   prepareForShutdown = false
@@ -291,9 +261,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     private readonly userService: UserService,
     public readonly dataService: DataService,
     public readonly routingService: RoutingService,
-    private readonly landingPageService: LandingPageService,
-    private readonly legalNoticeService: LegalNoticeService,
-    private readonly errorTemplateService: ErrorTemplateService,
     private readonly popupService: PopupService,
     private readonly systemConfigurationService: SystemConfigurationService,
     private readonly communityService: CommunityService,
@@ -308,12 +275,8 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   loadTab(tabIndex: number) {
     if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS) {
       this.showAdministrators()
-    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES) {
-      this.showLandingPages()
-    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES) {
-      this.showLegalNotices()
-    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES) {
-      this.showErrorTemplates()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.CUSTOM_CONTENT) {
+      this.showCustomContent()
     } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.THEMES) {
       this.showThemes()
     } else {
@@ -695,30 +658,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
   }
 
-  showLandingPages() {
-    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
-      this.queryLandingPages({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
-    } else {
-      this.updateLandingPagesPagination(this.landingPagesPage, this.landingPagesTotal)
-    }
-  }
-
-  showLegalNotices() {
-    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
-      this.queryLegalNotices({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
-    } else {
-      this.updateLegalNoticePagination(this.legalNoticesPage, this.legalNoticesTotal)
-    }
-  }
-
-  showErrorTemplates() {
-    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
-      this.queryErrorTemplates({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
-    } else {
-      this.updateErrorTemplatePagination(this.errorTemplatesPage, this.errorTemplatesTotal)
-    }
-  }
-
   showThemes() {
     if (this.themeStatus.status == Constants.STATUS.NONE) {
       this.queryThemes({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
@@ -746,54 +685,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     })
   }
 
-  private queryLandingPages(pagingInfo: PagingEvent) {
-    if (this.landingPageStatus.status == Constants.STATUS.FINISHED) {
-      this.landingPagesRefreshing = true
-    } else {
-      this.landingPageStatus.status = Constants.STATUS.PENDING
-    }
-    this.landingPageService.searchLandingPagesByCommunity(Constants.DEFAULT_COMMUNITY_ID, pagingInfo.targetPage, pagingInfo.targetPageSize)
-      .subscribe((data) => {
-        this.landingPages = data.data
-        this.updateLandingPagesPagination(pagingInfo.targetPage, data.count!)
-      }).add(() => {
-      this.landingPagesRefreshing = false
-      this.landingPageStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
-  private queryLegalNotices(pagingInfo: PagingEvent) {
-    if (this.legalNoticeStatus.status == Constants.STATUS.FINISHED) {
-      this.legalNoticesRefreshing = true
-    } else {
-      this.legalNoticeStatus.status = Constants.STATUS.PENDING
-    }
-    this.legalNoticeService.searchLegalNoticesByCommunity(Constants.DEFAULT_COMMUNITY_ID, pagingInfo.targetPage, pagingInfo.targetPageSize)
-      .subscribe((data) => {
-        this.legalNotices = data.data
-        this.updateLegalNoticePagination(pagingInfo.targetPage, data.count!)
-      }).add(() => {
-      this.legalNoticesRefreshing = false
-      this.legalNoticeStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
-  private queryErrorTemplates(pagingInfo: PagingEvent) {
-    if (this.errorTemplateStatus.status == Constants.STATUS.FINISHED) {
-      this.errorTemplatesRefreshing = true
-    } else {
-      this.errorTemplateStatus.status = Constants.STATUS.PENDING
-    }
-    this.errorTemplateService.searchErrorTemplatesByCommunity(Constants.DEFAULT_COMMUNITY_ID, pagingInfo.targetPage, pagingInfo.targetPageSize)
-      .subscribe((data) => {
-        this.errorTemplates = data.data
-        this.updateErrorTemplatePagination(pagingInfo.targetPage, data.count!)
-      }).add(() => {
-      this.errorTemplatesRefreshing = false
-      this.errorTemplateStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
   private queryThemes(pagingInfo: PagingEvent) {
     if (this.themeStatus.status == Constants.STATUS.FINISHED) {
       this.themesRefreshing = true
@@ -817,24 +708,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.adminsTotal = count
   }
 
-  private updateLandingPagesPagination(page: number, count: number) {
-    this.landingPagesTable?.getPagingControls()?.updateStatus(page, count)
-    this.landingPagesPage = page
-    this.landingPagesTotal = count
-  }
-
-  private updateLegalNoticePagination(page: number, count: number) {
-    this.legalNoticesTable?.getPagingControls()?.updateStatus(page, count)
-    this.legalNoticesPage = page
-    this.legalNoticesTotal = count
-  }
-
-  private updateErrorTemplatePagination(page: number, count: number) {
-    this.errorTemplatesTable?.getPagingControls()?.updateStatus(page, count)
-    this.errorTemplatesPage = page
-    this.errorTemplatesTotal = count
-  }
-
   private updateThemePagination(page: number, count: number) {
     this.themesTable?.getPagingControls()?.updateStatus(page, count)
     this.themesPage = page
@@ -844,41 +717,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   doAdminPaging(event: PagingEvent) {
     this.queryAdministrators(event)
     if (event.pageSizeChanged) {
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
-      this.themeStatus.status = Constants.STATUS.NONE
-      this.resourceState.status = Constants.STATUS.NONE
-    }
-  }
-
-  doLandingPagePaging(event: PagingEvent) {
-    this.queryLandingPages(event)
-    if (event.pageSizeChanged) {
-      this.adminStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
-      this.themeStatus.status = Constants.STATUS.NONE
-    }
-  }
-
-  doLegalNoticePaging(event: PagingEvent) {
-    this.queryLegalNotices(event)
-    if (event.pageSizeChanged) {
-      this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
-      this.themeStatus.status = Constants.STATUS.NONE
-      this.resourceState.status = Constants.STATUS.NONE
-    }
-  }
-
-  doErrorTemplatePaging(event: PagingEvent) {
-    this.queryErrorTemplates(event)
-    if (event.pageSizeChanged) {
-      this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.customContentState.status = Constants.STATUS.NONE
       this.themeStatus.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
@@ -888,18 +727,14 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.queryThemes(event)
     if (event.pageSizeChanged) {
       this.adminStatus.status = Constants.STATUS.NONE
-      this.landingPageStatus.status = Constants.STATUS.NONE
-      this.legalNoticeStatus.status = Constants.STATUS.NONE
-      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.customContentState.status = Constants.STATUS.NONE
       this.resourceState.status = Constants.STATUS.NONE
     }
   }
 
   resourceTabPageSizeChange() {
     this.adminStatus.status = Constants.STATUS.NONE
-    this.landingPageStatus.status = Constants.STATUS.NONE
-    this.legalNoticeStatus.status = Constants.STATUS.NONE
-    this.errorTemplateStatus.status = Constants.STATUS.NONE
+    this.customContentState.status = Constants.STATUS.NONE
     this.themeStatus.status = Constants.STATUS.NONE
   }
 
@@ -907,20 +742,18 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     return this.routingService.linkToTestBedAdmin(admin.id!)
   }
 
-  showResources() {
+  showCustomContent() {
     // No action needed.
   }
 
-  landingPageRowTarget = (landingPage: LandingPage): NavigationTarget => {
-    return this.routingService.linkToLandingPage(undefined, landingPage.id)
+  customContentTabPageSizeChange() {
+    this.adminStatus.status = Constants.STATUS.NONE
+    this.themeStatus.status = Constants.STATUS.NONE
+    this.resourceState.status = Constants.STATUS.NONE
   }
 
-  legalNoticeRowTarget = (legalNotice: LegalNotice): NavigationTarget => {
-    return this.routingService.linkToLegalNotice(undefined, legalNotice.id)
-  }
-
-  errorTemplateRowTarget = (errorTemplate: ErrorTemplate): NavigationTarget => {
-    return this.routingService.linkToErrorTemplate(undefined, errorTemplate.id)
+  showResources() {
+    // No action needed.
   }
 
   /**

@@ -30,9 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
-                               landingPageManager: LandingPageManager,
-                               legalNoticeManager: LegalNoticeManager,
-                               errorTemplateManager: ErrorTemplateManager,
+                               customContentManager: CustomContentManager,
                                userPreferenceManager: UserPreferenceManager)
                               (implicit ec: ExecutionContext)extends BaseManager(dbConfigProvider) {
 
@@ -142,28 +140,28 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .head
       landingPage <- {
         if (organisation.landingPage.isDefined) {
-          landingPageManager.getLandingPageByIdInternal(organisation.landingPage.get)
+          customContentManager.getCustomContentByIdInternal(organisation.landingPage.get)
         } else {
-          landingPageManager.getCommunityDefaultLandingPageInternal(organisation.community)
+          customContentManager.getCommunityDefaultCustomContentWithFallbackInternal(organisation.community, CustomContentType.LandingPage)
         }
       }
       legalNotice <- {
         if (organisation.legalNotice.isDefined) {
-          legalNoticeManager.getLegalNoticeByIdInternal(organisation.legalNotice.get)
+          customContentManager.getCustomContentByIdInternal(organisation.legalNotice.get)
         } else {
           DBIO.successful(None)
         }
       }
       communityLegalNoticeAppliesAndExists <- {
         if (legalNotice.isEmpty) {
-          legalNoticeManager.communityHasDefaultLegalNotice(organisation.community)
+          customContentManager.communityHasDefaultLegalNotice(organisation.community)
         } else {
           DBIO.successful(false)
         }
       }
       errorTemplate <- {
         if (organisation.errorTemplate.isDefined) {
-          errorTemplateManager.getErrorTemplateByIdInternal(organisation.errorTemplate.get)
+          customContentManager.getCustomContentByIdInternal(organisation.errorTemplate.get)
         } else {
           DBIO.successful(None)
         }

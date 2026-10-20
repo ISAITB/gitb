@@ -45,9 +45,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      systemManager: SystemManager,
                                      organizationManager: OrganizationManager,
                                      testCaseManager: TestCaseManager,
-                                     errorTemplateManager: ErrorTemplateManager,
-                                     landingPageManager: LandingPageManager,
-                                     legalNoticeManager: LegalNoticeManager,
+                                     customContentManager: CustomContentManager,
                                      triggerManager: TriggerManager,
                                      testFlagManager: TestFlagManager,
                                      communityResourceManager: CommunityResourceManager,
@@ -1635,33 +1633,18 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot view the requested resource"))
   }
 
-  def canViewDefaultLegalNotice(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+  def canViewDefaultCustomContent(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canViewCommunityBasic(request, communityId)
   }
 
-  def canManageLegalNotice(request: RequestWithAttributes[_], noticeId: Long): Future[Boolean] = {
-    getUser(getRequestUserId(request)).flatMap { userInfo =>
-      val load = () => { legalNoticeManager.getCommunityId(noticeId) }
-      canManageCommunityArtifact(request, userInfo, load)
-    }
-  }
-
-  def canManageLegalNotices(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canViewDefaultLandingPage(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
-    canViewCommunityBasic(request, communityId)
-  }
-
-  def canManageLandingPage(request: RequestWithAttributes[_], pageId: Long): Future[Boolean] = {
-    val load = () => landingPageManager.getCommunityId(pageId)
+  def canManageCustomContent(request: RequestWithAttributes[_], contentId: Long): Future[Boolean] = {
+    val load = () => customContentManager.getCommunityId(contentId)
     getUser(getRequestUserId(request)).flatMap { userInfo =>
       canManageCommunityArtifactAsync(request, userInfo, load)
     }
   }
 
-  def canManageLandingPages(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+  def canManageCustomContents(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
@@ -1737,17 +1720,6 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canViewDefaultErrorTemplate(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
-    canViewCommunityBasic(request, communityId)
-  }
-
-  def canManageErrorTemplate(request: RequestWithAttributes[_], templateId: Long): Future[Boolean] = {
-    getUser(getRequestUserId(request)).flatMap { userInfo =>
-      val load = () => { errorTemplateManager.getCommunityId(templateId) }
-      canManageCommunityArtifact(request, userInfo, load)
-    }
-  }
-
   private def canManageCommunityArtifact(request: RequestWithAttributes[_], userInfo: User, loadFunction: () => Future[Long]): Future[Boolean] = {
     val check = if (isTestBedAdmin(userInfo)) {
       Future.successful(true)
@@ -1772,10 +1744,6 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       Future.successful(false)
     }
     check.map(setAuthResult(request, _, "User cannot manage the requested community"))
-  }
-
-  def canManageErrorTemplates(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
-    canManageCommunity(request, communityId)
   }
 
   private def canManageEndpoints(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]): Future[Boolean] = {
@@ -1984,7 +1952,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         if (landingPageId.isEmpty || landingPageId.get == -1) {
           Future.successful(true)
         } else {
-          canManageLandingPage(request, landingPageId.get)
+          canManageCustomContent(request, landingPageId.get)
         }
       }
     }

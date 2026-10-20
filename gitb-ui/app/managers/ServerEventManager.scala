@@ -109,7 +109,7 @@ object ServerEventManager {
 @Singleton
 class ServerEventManager @Inject() (actorSystem: ActorSystem,
                                     userManager: UserManager,
-                                    legalNoticeManager: LegalNoticeManager,
+                                    customContentManager: CustomContentManager,
                                     testbedClient: TestbedBackendClient)
                                    (implicit ec: ExecutionContext, mat: Materializer) {
 
@@ -176,7 +176,7 @@ class ServerEventManager @Inject() (actorSystem: ActorSystem,
    * (pre-authentication) configuration endpoint (see AccountService.getConfiguration / JsonUtil.serializeConfigurationProperties).
    */
   private def currentConfiguration(): Future[JsObject] = {
-    legalNoticeManager.hasTestBedDefaultLegalNotice().map(JsonUtil.serializeConfigurationProperties)
+    customContentManager.hasTestBedDefaultLegalNotice().map(JsonUtil.serializeConfigurationProperties)
   }
 
   private def bindChannel(user: UserTrackingInfo, accessToken: String, lastEventId: Option[String], configuration: JsObject): Source[ByteString, NotUsed] = {

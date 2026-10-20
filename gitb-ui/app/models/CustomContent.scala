@@ -13,7 +13,23 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { CommunityRichContent } from "./community-rich-content";
+package models
 
-export interface LandingPage extends CommunityRichContent {
+case class CustomContents (id: Long, name: String, description: Option[String], content: String, default: Boolean, community: Long, contentType: Short) {
+
+  def toCustomContent(): CustomContent = {
+    new CustomContent(id, name, description, Some(content), default, contentType)
+  }
+
+}
+
+class CustomContent (_id: Long, _name: String, _description: Option[String], _content: Option[String], _default: Boolean, _contentType: Short) {
+
+  var id: Long = _id
+  var name: String = _name
+  var description: Option[String] = _description
+  var content: Option[String] = _content
+  var default: Boolean = _default
+  var contentType: Short = _contentType
+
 }

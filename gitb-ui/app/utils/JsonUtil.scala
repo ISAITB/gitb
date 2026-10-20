@@ -2891,9 +2891,9 @@ object JsonUtil {
   def serializeOrganization(org:Organization):String = {
     // Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
-    org.landingPageObj.foreach(x => jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(x.toLandingPage())))
-    org.legalNoticeObj.foreach(x => jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(x.toLegalNotice())))
-    org.errorTemplateObj.foreach(x => jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(x.toErrorTemplate())))
+    org.landingPageObj.foreach(x => jOrganization = jOrganization ++ Json.obj("landingPages" -> jsCustomContent(x.toCustomContent())))
+    org.legalNoticeObj.foreach(x => jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsCustomContent(x.toCustomContent())))
+    org.errorTemplateObj.foreach(x => jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsCustomContent(x.toCustomContent())))
     jOrganization = jOrganization ++ Json.obj("communityLegalNoticeAppliesAndExists" -> org.communityLegalNoticeAppliesAndExists)
     // Return JSON String
     jOrganization.toString
@@ -2925,71 +2925,6 @@ object JsonUtil {
     }
     //4) Return JSON String
     jSystem.toString
-  }
-
-  /**
-   * Converts a LandingPage object into Play!'s JSON notation.
-   * Does not support cross object conversion
-   * @param landingPage LandingPage object to be converted
-   * @return JsObject
-   */
-  def jsLandingPage(landingPage: LandingPage):JsObject = {
-    var json = Json.obj(
-      "id"    -> landingPage.id,
-      "name"  -> landingPage.name,
-      "default" -> landingPage.default
-    )
-    landingPage.description.foreach(x => json += ("description" -> JsString(x)))
-    landingPage.content.foreach(x => json += ("content" -> JsString(x)))
-    json
-  }
-
-  /**
-   * Converts a LegalNotice object into Play!'s JSON notation.
-   * Does not support cross object conversion
-   * @param legalNotice LegalNotice object to be converted
-   * @return JsObject
-   */
-  def jsLegalNotice(legalNotice: LegalNotice):JsObject = {
-    var json = Json.obj(
-      "id"    -> legalNotice.id,
-      "name"  -> legalNotice.name,
-      "default" -> legalNotice.default
-    )
-    legalNotice.description.foreach(x => json += ("description" -> JsString(x)))
-    legalNotice.content.foreach(x => json += ("content" -> JsString(x)))
-    json
-  }
-
-  /**
-    * Converts a ErrorTemplate object into Play!'s JSON notation.
-    * Does not support cross object conversion
-    * @param errorTemplate ErrorTemplate object to be converted
-    * @return JsObject
-    */
-  def jsErrorTemplate(errorTemplate:ErrorTemplate):JsObject = {
-    var json = Json.obj(
-      "id"    -> errorTemplate.id,
-      "name"  -> errorTemplate.name,
-      "default" -> errorTemplate.default
-    )
-    errorTemplate.description.foreach(x => json += ("description" -> JsString(x)))
-    errorTemplate.content.foreach(x => json += ("content" -> JsString(x)))
-    json
-  }
-
-  /**
-   * Converts a List of LandingPages into Play!'s JSON notation
-   * Does not support cross object conversion
-   * @param list List of LandingPages to be convert
-   * @return JsArray
-   */
-  def jsLandingPages(list: Iterable[LandingPage]): JsArray = {
-    var json = Json.arr()
-    list.foreach { landingPage =>
-      json = json.append(jsLandingPage(landingPage))
-    }
-    json
   }
 
   /** Full record, for the community details management tab (create/edit form, table listing). */
@@ -3252,64 +3187,57 @@ object JsonUtil {
   }
 
   /**
-   * Converts a List of LegalNotices into Play!'s JSON notation
+   * Converts a CustomContent object into Play!'s JSON notation.
    * Does not support cross object conversion
-   * @param list List of LegalNotices to be convert
+   * @param customContent CustomContent object to be converted
+   * @return JsObject
+   */
+  def jsCustomContent(customContent: CustomContent):JsObject = {
+    var json = Json.obj(
+      "id"    -> customContent.id,
+      "name"  -> customContent.name,
+      "default" -> customContent.default,
+      "type" -> customContent.contentType.toInt
+    )
+    customContent.description.foreach(x => json += ("description" -> JsString(x)))
+    customContent.content.foreach(x => json += ("content" -> JsString(x)))
+    json
+  }
+
+  /**
+   * Converts a List of CustomContent into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of CustomContent to be convert
    * @return JsArray
    */
-  def jsLegalNotices(list: Iterable[LegalNotice]):JsArray = {
+  def jsCustomContents(list: Iterable[CustomContent]): JsArray = {
     var json = Json.arr()
-    list.foreach{ ln =>
-      json = json.append(jsLegalNotice(ln))
+    list.foreach { customContent =>
+      json = json.append(jsCustomContent(customContent))
     }
     json
   }
 
   /**
-    * Converts a List of ErrorTemplates into Play!'s JSON notation
-    * Does not support cross object conversion
-    * @param list List of ErrorTemplates to be convert
-    * @return JsArray
-    */
-  def jsErrorTemplates(list: Iterable[ErrorTemplate]):JsArray = {
-    var json = Json.arr()
-    list.foreach{ et =>
-      json = json.append(jsErrorTemplate(et))
-    }
-    json
-  }
-
-  /**
-   * Converts a LandingPage object into a JSON string with its complex objects
-   * @param landingPage LandingPage object to be converted
+   * Converts a CustomContent object into a JSON string
+   * @param customContent CustomContent object to be converted
    * @return String
    */
-  def serializeLandingPage(landingPage: Option[LandingPages]):String = {
-    var jLandingPage: JsObject = jsExists(landingPage.isDefined)
-    landingPage.foreach(x => jLandingPage = jLandingPage ++ jsLandingPage(x.toLandingPage()))
-    jLandingPage.toString
+  def serializeCustomContent(customContent: Option[CustomContents]):String = {
+    var jCustomContent: JsObject = jsExists(customContent.isDefined)
+    customContent.foreach(x => jCustomContent = jCustomContent ++ jsCustomContent(x.toCustomContent()))
+    jCustomContent.toString
   }
 
   /**
-   * Converts a LegalNotice object into a JSON string with its complex objects
-   * @param legalNotice LegalNotice object to be converted
-   * @return String
+   * The content types for which the Test Bed has a default defined.
    */
-  def serializeLegalNotice(legalNotice: Option[LegalNotices]):String = {
-    var jLegalNotice: JsObject = jsExists(legalNotice.isDefined)
-    legalNotice.foreach(x => jLegalNotice = jLegalNotice ++ jsLegalNotice(x.toLegalNotice()))
-    jLegalNotice.toString
-  }
-
-  /**
-    * Converts a ErrorTemplate object into a JSON string with its complex objects
-    * @param errorTemplate ErrorTemplate object to be converted
-    * @return String
-    */
-  def serializeErrorTemplate(errorTemplate: Option[ErrorTemplates]):String = {
-    var jErrorTemplate: JsObject = jsExists(errorTemplate.isDefined)
-    errorTemplate.foreach(x => jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(x.toErrorTemplate()))
-    jErrorTemplate.toString
+  def serializeTestBedDefaultTypes(types: Set[Short]): String = {
+    Json.obj(
+      "landingPage" -> types.contains(models.Enums.CustomContentType.LandingPage),
+      "legalNotice" -> types.contains(models.Enums.CustomContentType.LegalNotice),
+      "errorTemplate" -> types.contains(models.Enums.CustomContentType.ErrorTemplate)
+    ).toString
   }
 
   def jsConformanceStatementDocumentationReportSettings(settings: ConformanceStatementDocumentationReportSettings): JsObject = {

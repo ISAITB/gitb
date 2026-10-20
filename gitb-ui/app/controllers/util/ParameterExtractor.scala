@@ -22,7 +22,7 @@ import controllers.util.ParameterNames
 import models.automation.TestServiceSearchCriteria
 import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, PropertyKind, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestFlags, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CustomContents, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, FileInfo, NamedFile, OrganisationParameterValues, Organizations, Parameters, PropertyKind, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestFlags, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
@@ -761,13 +761,17 @@ object ParameterExtractor {
     models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
   }
 
-  def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
+  def extractCustomContentInfo(request:Request[AnyContent]):CustomContents = {
     val name = requiredBodyParameter(request, ParameterNames.NAME)
     val desc = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
     val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, ParameterNames.CONTENT))
     val default = requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
     val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
-    LandingPages(0L, name, desc, content, default, communityId)
+    val contentType = requiredBodyParameter(request, ParameterNames.TYPE).toShort
+    if (!Enums.CustomContentType.All.contains(contentType)) {
+      throw new IllegalArgumentException("Unsupported custom content type ["+contentType+"]")
+    }
+    CustomContents(0L, name, desc, content, default, communityId, contentType)
   }
 
   def extractTriggerDataItems(request:Request[AnyContent], parameter: String, triggerId: Option[Long]): Option[List[TriggerData]] = {
@@ -824,24 +828,6 @@ object ParameterExtractor {
       extractTriggerDataItems(request, ParameterNames.DATA, triggerId),
       extractTriggerFireExpressions(request, ParameterNames.EXPRESSIONS, triggerId)
     )
-  }
-
-  def extractLegalNoticeInfo(request:Request[AnyContent]):LegalNotices = {
-    val name = requiredBodyParameter(request, ParameterNames.NAME)
-    val desc = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
-    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, ParameterNames.CONTENT))
-    val default = requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
-    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
-    LegalNotices(0L, name, desc, content, default, communityId)
-  }
-
-  def extractErrorTemplateInfo(request:Request[AnyContent]):ErrorTemplates = {
-    val name = requiredBodyParameter(request, ParameterNames.NAME)
-    val desc = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
-    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, ParameterNames.CONTENT))
-    val default = requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
-    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
-    ErrorTemplates(0L, name, desc, content, default, communityId)
   }
 
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {
