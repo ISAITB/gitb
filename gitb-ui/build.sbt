@@ -106,6 +106,8 @@ dependencyOverrides ++= Seq(
   "org.apache.neethi" % "neethi" % "3.2.4",
   // Override the xmlschema-core version brought in by CXF.
   "org.apache.ws.xmlschema" % "xmlschema-core" % "2.3.3",
+  // Override ASM used in various transitive dependencies.
+  "org.ow2.asm" % "asm" % "9.11.1".
   // Override Jackson and legacy Jackson2 modules brought in by Pac4J and Play.
   "tools.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jackson2Version,
