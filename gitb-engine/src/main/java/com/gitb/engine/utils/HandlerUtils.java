@@ -71,9 +71,22 @@ public class HandlerUtils {
         YAML_WRITER = yamlMapper.writerWithDefaultPrettyPrinter();
     }
 
+    /**
+     * Check whether the provided reference starts with a URI scheme (i.e. has a colon before any slash), meaning
+     * that it cannot be a relative path within the test suite.
+     *
+     * @param reference The reference to check.
+     * @return The check result.
+     */
+    public static boolean hasUriScheme(String reference) {
+        int colonIndex = reference.indexOf(':');
+        int slashIndex = reference.indexOf('/');
+        return colonIndex >= 0 && (slashIndex < 0 || colonIndex < slashIndex);
+    }
+
     public static XPathExpression compileXPathExpression(MapType namespaces, StringType expression, VariableResolver variableResolver) {
         // Compile xpath expression
-        XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
+        XPath xPath = com.gitb.utils.SecureSaxon.newXPathFactory().newXPath();
         if (namespaces != null) {
             var nsMap = new HashMap<String, String>();
             for (var entry: ((Map<String, DataType>)namespaces.getValue()).entrySet()) {

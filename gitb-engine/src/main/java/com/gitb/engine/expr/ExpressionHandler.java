@@ -25,7 +25,7 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.TestSessionNamespaceContext;
-import net.sf.saxon.xpath.XPathFactoryImpl;
+import com.gitb.utils.SecureSaxon;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
@@ -122,7 +122,7 @@ public class ExpressionHandler {
         expression = VariableResolver.toLegalXPath(expression);
         try {
             // Create an XPath processor
-            var factory = new XPathFactoryImpl();
+            var factory = SecureSaxon.newXPathFactory();
             if (variableResolver != null) {
                 factory.setXPathVariableResolver(variableResolver);
             }

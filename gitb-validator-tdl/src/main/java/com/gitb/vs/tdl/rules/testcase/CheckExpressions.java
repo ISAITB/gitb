@@ -29,11 +29,11 @@ import net.sf.saxon.expr.ArithmeticExpression;
 import net.sf.saxon.expr.instruct.DummyNamespaceResolver;
 import net.sf.saxon.pull.NamespaceContextImpl;
 import net.sf.saxon.xpath.XPathExpressionImpl;
-import net.sf.saxon.xpath.XPathFactoryImpl;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import java.util.*;
@@ -477,6 +477,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                             }
                             expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
+                            if (Utils.isRestrictedResourceFailure(e)) {
+                                // The expression refers to a resource that cannot be looked up while checking. It cannot be fully verified but is not considered invalid.
+                                return;
+                            }
                             String cause = "";
                             if (e.getMessage() != null) {
                                 int exceptionIndex = e.getMessage().indexOf("Exception:");
@@ -497,7 +501,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     private XPathExpression createXPathExpression(String expression) throws XPathExpressionException {
-        XPathFactoryImpl factory = new XPathFactoryImpl();
+        XPathFactory factory = Utils.newRestrictedXPathFactory();
         factory.setXPathVariableResolver(variableResolver);
         XPath xPath = factory.newXPath();
         xPath.setNamespaceContext(new NamespaceContextImpl(DummyNamespaceResolver.getInstance()));

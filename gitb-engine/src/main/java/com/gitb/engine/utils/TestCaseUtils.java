@@ -43,9 +43,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
+import com.gitb.utils.XMLUtils;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.namespace.QName;
-import javax.xml.transform.stream.StreamSource;
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -271,8 +272,14 @@ public class TestCaseUtils {
                 if (Files.exists(reportFile)) {
                     try (var in = Files.newInputStream(reportFile)) {
                         Unmarshaller unmarshaller = REPORT_CONTEXT.createUnmarshaller();
-                        return unmarshaller.unmarshal(new StreamSource(in), TAR.class).getValue();
-                    } catch (JAXBException | IOException e) {
+                        // Parse with the hardened parser (no DOCTYPE or external entities).
+                        var reader = XMLUtils.getSecureXMLInputFactory().createXMLStreamReader(in);
+                        try {
+                            return unmarshaller.unmarshal(reader, TAR.class).getValue();
+                        } finally {
+                            reader.close();
+                        }
+                    } catch (JAXBException | IOException | XMLStreamException e) {
                         throw new RuntimeException(e);
                     }
                 }

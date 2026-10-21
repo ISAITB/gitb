@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-expr-env" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TDL expression reading the process environment</name>
+        <version>1.0</version>
+    </metadata>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <!-- HMAC_KEY is set for the engine's process (see the surefire configuration). -->
+        <assign to="key">string(environment-variable('HMAC_KEY'))</assign>
+        <assign to="count">string(count(available-environment-variables()))</assign>
+        <verify handler="StringValidator" desc="Environment variable not visible">
+            <input name="actual">$key</input>
+            <input name="expected">''</input>
+        </verify>
+        <verify handler="StringValidator" desc="No environment variables listed">
+            <input name="actual">$count</input>
+            <input name="expected">'0'</input>
+        </verify>
+    </steps>
+</testcase>

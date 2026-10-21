@@ -135,6 +135,11 @@ srv:
     ## srv.env.HMAC_KEY is the key to use to secure exchanges between itb-ui and itb-srv.
     ## The value set here must match the value set for "ui.env.HMAC_KEY".
     # HMAC_KEY: CHANGE_ME
+    #
+    ## srv.env.ALLOWED_INTERNAL_URIS is a comma-separated list of base URIs of internal addresses (e.g. localhost, private networks)
+    ## that test cases may look up resources from (e.g. schemas, JSON-LD contexts, ontology imports, URIs in expressions).
+    ## Resources on public addresses can always be looked up (only via http/https), whereas internal addresses are blocked unless listed here.
+    # ALLOWED_INTERNAL_URIS: http://internal-schema-server:8080/schemas/
 
 #
 # The user interface component providing the UI and REST API, as well as realising all management and reporting features.

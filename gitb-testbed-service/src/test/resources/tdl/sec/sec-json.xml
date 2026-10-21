@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-json" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>JsonValidator with a schema provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="schema" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="json">'{"name":"Alice"}'</assign>
+        <assign to="schemaList" append="true">$schema</assign>
+        <verify handler="JsonValidator" desc="Validate JSON">
+            <input name="json">$json</input>
+            <input name="schema">$schemaList</input>
+        </verify>
+    </steps>
+</testcase>

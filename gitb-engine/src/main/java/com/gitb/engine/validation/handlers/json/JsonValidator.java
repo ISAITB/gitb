@@ -254,13 +254,14 @@ public class JsonValidator extends AbstractValidator {
                     .locale(Locale.ENGLISH)
                     .messageSource(new ResourceBundleMessageSource("com.gitb.i18n.jsv-messages"))
                     .build();
-            var registry = SchemaRegistry.builder()
+            var registryBuilder = SchemaRegistry.builder()
                     .defaultDialectId(Dialects.getDraft202012().getId())
                     .schemaRegistryConfig(registryConfig)
                     .schemaCacheEnabled(false)
                     .nodeReader(jsonReader)
-                    .resourceLoaders(builder -> builder.add(new LocalSchemaResolver(sharedSchemaInfo, getScope(sessionId).getContext())))
-                    .build();
+                    .resourceLoaders(builder -> builder.add(new LocalSchemaResolver(sharedSchemaInfo, getScope(sessionId).getContext())));
+            // Schemas must not be able to load resources from the engine's classpath (this must be the last customisation of the loaders).
+            var registry = LocalSchemaResolver.blockClasspathResources(registryBuilder).build();
             return registry.getSchema(jsonNode);
         } catch (Exception e) {
             throw new IllegalStateException("Error while parsing JSON schema: %s".formatted(e.getMessage()), e);

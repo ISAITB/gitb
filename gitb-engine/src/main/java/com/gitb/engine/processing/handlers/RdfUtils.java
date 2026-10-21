@@ -20,6 +20,8 @@ import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.processing.ProcessingHandler;
+import com.gitb.engine.utils.rdf.GuardedRdfParser;
+import com.gitb.engine.utils.rdf.RdfSecurity;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
@@ -37,7 +39,6 @@ import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -49,6 +50,11 @@ import java.util.function.Supplier;
 
 @ProcessingHandler(name="RdfUtils")
 public class RdfUtils extends AbstractProcessingHandler {
+
+    static {
+        // Safeguards for JSON-LD contexts and SPARQL SERVICE calls made while parsing content and executing queries.
+        RdfSecurity.install();
+    }
 
     private static final String OPERATION_CONVERT = "convert";
     private static final String OPERATION_MERGE = "merge";
@@ -286,9 +292,7 @@ public class RdfUtils extends AbstractProcessingHandler {
     }
 
     private Model parseModel(StringType modelContent, Lang modeLanguage) {
-        Model model = ModelFactory.createDefaultModel();
-        model.read(new StringReader(modelContent.getValue()), null, modeLanguage.getName());
-        return model;
+        return GuardedRdfParser.readModel(modelContent.getValue(), modeLanguage);
     }
 
     private StringType toStringType(Model model, Lang outputLanguage) {

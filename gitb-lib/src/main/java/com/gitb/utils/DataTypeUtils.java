@@ -25,9 +25,6 @@ import org.apache.commons.codec.binary.Base64;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Map;
 
 /**
@@ -190,22 +187,16 @@ public class DataTypeUtils {
 						}
 						case URI -> {
 							try {
-								var request = HttpRequest
-										.newBuilder()
-										.uri(new URI(anyContent.getValue()))
-										.header("Accept", "*/*")
-										.GET()
-										.build();
-								try (var client = HttpClient.newHttpClient()) {
-									var content = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
-									data.deserialize(content.getBytes());
-									postProcessor.process(data);
+								// The URI is authorized (including any redirects), as it may be provided by a user and could otherwise be used to reach internal resources.
+								var uri = new URI(anyContent.getValue().trim());
+								try (var response = GuardedUriReader.open(uri, "*/*", UriAuthorizer.global())) {
+									data.deserialize(response.stream().readAllBytes());
 								}
+								postProcessor.process(data);
 							} catch (URISyntaxException e) {
 								throw new IllegalStateException("URI had invalid syntax ["+anyContent.getValue()+"]", e);
-							} catch (InterruptedException e) {
-								Thread.currentThread().interrupt();
-								throw new IllegalStateException("Thread interrupted ["+anyContent.getValue()+"]", e);
+							} catch (UriNotAllowedException e) {
+								throw e;
 							} catch (Exception e) {
 								throw new IllegalStateException("Error while calling URI ["+anyContent.getValue()+"]", e);
 							}

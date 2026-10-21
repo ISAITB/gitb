@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-xsd" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator with an XSD provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="xsd" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<root xmlns="urn:test:root"><name>x</name></root>']]></assign>
+        <assign to="xsdDoc" type="schema">$xsd</assign>
+        <verify handler="XmlValidator" desc="Validate XML">
+            <input name="xml">$xmlDoc</input>
+            <input name="xsd">$xsdDoc</input>
+        </verify>
+    </steps>
+</testcase>

@@ -16,12 +16,17 @@
 package com.gitb.engine.validation.handlers.xsd;
 
 import com.gitb.engine.ModuleManager;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
+import com.gitb.utils.GuardedUriReader;
+import com.gitb.utils.UriAuthorizer;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Created by senan on 10/10/14.
@@ -43,22 +48,89 @@ public class XSDResolver implements LSResourceResolver {
         this.testSuiteId = testSuiteId;
     }
 
+    /**
+     * Resolve a resource referenced by a schema (e.g. an import or include).
+     * <p>
+     * The resource can either be an artifact of the test suite (a relative reference), or a remote resource (an absolute
+     * HTTP(S) reference or a reference relative to a schema that was itself loaded remotely). Remote resources are
+     * subject to authorization (internal addresses can only be accessed if whitelisted). References of any other kind
+     * (e.g. a file) are rejected.
+     * <p>
+     * This method never returns null for a reference with a location, as this would make the parser attempt to load the
+     * resource itself.
+     */
     @Override
     public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
-        ModuleManager moduleManager = ModuleManager.getInstance();
-        ITestCaseRepository repository = moduleManager.getTestCaseRepository();
+        if (systemId == null) {
+            // No location was provided (e.g. an import with only a namespace) so there is nothing that could be loaded.
+            return null;
+        }
+        URI remoteUri = determineRemoteUri(systemId, baseURI);
+        if (remoteUri != null) {
+            return loadRemoteResource(publicId, remoteUri);
+        }
+        if (HandlerUtils.hasUriScheme(systemId)) {
+            throw new GITBEngineInternalError("Loading of referenced resource [%s] was blocked. Only http and https resources, or resources of the test suite, can be referenced.".formatted(systemId));
+        }
+        return loadTestSuiteResource(publicId, systemId, baseURI);
+    }
 
+    /**
+     * Determine whether the reference is to a remote resource.
+     *
+     * @param systemId The reference.
+     * @param baseURI The base against which a relative reference is resolved.
+     * @return The URI of the remote resource, or null if the reference is not to a remote resource.
+     */
+    private URI determineRemoteUri(String systemId, String baseURI) {
+        try {
+            if (HandlerUtils.hasUriScheme(systemId)) {
+                URI uri = new URI(systemId);
+                return isHttp(uri) ? uri : null;
+            } else if (baseURI != null) {
+                URI base = new URI(baseURI);
+                if (isHttp(base)) {
+                    // A relative reference from a schema that was loaded remotely.
+                    return base.resolve(systemId);
+                }
+            }
+            return null;
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            throw new GITBEngineInternalError("Referenced resource [%s] is not a valid reference.".formatted(systemId), e);
+        }
+    }
+
+    private boolean isHttp(URI uri) {
+        return "http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme());
+    }
+
+    private LSInput loadRemoteResource(String publicId, URI uri) {
+        // The URI (and any redirects) are authorized, throwing an exception if not allowed.
+        try (var response = GuardedUriReader.open(uri, null, UriAuthorizer.global())) {
+            byte[] content = response.stream().readAllBytes();
+            /*
+             * The final location is set as the system ID to resolve any relative references of this resource against it
+             * (that are expected to also be remote).
+             */
+            String finalLocation = response.uri().toString();
+            return new Input(publicId, finalLocation, finalLocation, new ByteArrayInputStream(content));
+        } catch (IOException e) {
+            throw new GITBEngineInternalError("Unable to read referenced resource [%s]".formatted(uri), e);
+        }
+    }
+
+    private LSInput loadTestSuiteResource(String publicId, String systemId, String baseURI) {
+        ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
         String parentFolder;
-        String artifactPath;
-
-        if(baseURI == null) {
+        if (baseURI == null) {
+            if (resource == null) {
+                throw new GITBEngineInternalError("Referenced resource [%s] cannot be resolved because the schema is not part of the test suite.".formatted(systemId));
+            }
             parentFolder = resource.substring(0, resource.lastIndexOf("/")+1);
         } else {
             parentFolder = baseURI.substring(PROTOCOL.length(), baseURI.lastIndexOf("/")+1);
         }
-
-        artifactPath = parentFolder + systemId;
-
+        String artifactPath = parentFolder + systemId;
         InputStream resource  = repository.getTestArtifact(testSuiteId, testCaseId, artifactPath);
         if(resource != null) {
             // the "/" prevents the system to add the path where mvn command executed.
@@ -68,8 +140,7 @@ public class XSDResolver implements LSResourceResolver {
             }
             return new Input(publicId, systemId, baseUriToSet, resource);
         }
-
-	    return null;
+        throw new GITBEngineInternalError("Referenced resource [%s] could not be found in the test suite.".formatted(artifactPath));
     }
 
     public static class Input implements LSInput {

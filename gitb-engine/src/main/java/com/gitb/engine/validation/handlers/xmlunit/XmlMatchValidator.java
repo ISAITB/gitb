@@ -170,7 +170,7 @@ public class XmlMatchValidator extends AbstractValidator {
             throw new IllegalStateException("Exception while creating XMLGregorianCalendar", e);
         }
         if (diff.hasDifferences()) {
-            XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
+            XPath xPath = com.gitb.utils.SecureSaxon.newXPathFactory().newXPath();
             xPath.setNamespaceContext(nsContext);
             int counter = 0;
             for (Difference difference: diff.getDifferences()) {

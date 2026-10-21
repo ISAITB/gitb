@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-uri-input" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Session input provided by reference (URI)</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="data" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <verify handler="StringValidator" desc="Retrieved content">
+            <input name="actual">$data</input>
+            <input name="expected">'retrieved'</input>
+        </verify>
+    </steps>
+</testcase>

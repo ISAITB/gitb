@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-xsd-import-artifact" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator with an XSD that includes a test suite artifact</name>
+        <version>1.0</version>
+    </metadata>
+    <imports>
+        <artifact type="schema" encoding="UTF-8" name="mainXsd">xsd/main.xsd</artifact>
+    </imports>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<root xmlns="urn:test:root"><name>x</name></root>']]></assign>
+        <verify handler="XmlValidator" desc="Validate XML">
+            <input name="xml">$xmlDoc</input>
+            <input name="xsd">$mainXsd</input>
+        </verify>
+    </steps>
+</testcase>

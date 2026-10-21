@@ -16,6 +16,7 @@
 package com.gitb.engine.validation.handlers.schematron;
 
 import com.gitb.engine.ModuleManager;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.helger.io.resource.IReadableResource;
@@ -68,25 +69,12 @@ public class SchematronResolver implements URIResolver, ISchematronIncludeResolv
     }
 
     /**
-     * Check whether the provided reference starts with a URI scheme (i.e. has a colon before any slash), meaning
-     * that it cannot be a relative path within the test suite.
-     *
-     * @param href The reference to check.
-     * @return The check result.
-     */
-    private static boolean hasUriScheme(String href) {
-        int colonIndex = href.indexOf(':');
-        int slashIndex = href.indexOf('/');
-        return colonIndex >= 0 && (slashIndex < 0 || colonIndex < slashIndex);
-    }
-
-    /**
      * Reject the provided reference if it is not a path within the test suite (e.g. a remote URL).
      *
      * @param href The reference to check.
      */
     private void rejectIfNotTestSuitePath(String href) {
-        if (href != null && hasUriScheme(href)) {
+        if (href != null && HandlerUtils.hasUriScheme(href)) {
             rejectedReference = href;
             throw new GITBEngineInternalError(getRejectionMessage());
         }

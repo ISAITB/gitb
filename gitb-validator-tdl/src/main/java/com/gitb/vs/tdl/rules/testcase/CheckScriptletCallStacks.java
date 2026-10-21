@@ -24,7 +24,6 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Set;
@@ -160,9 +159,11 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
                         // The input has been matched but also needs to resolve to a fixed string.
                         String resolvedActorId = null;
                         try {
-                            resolvedActorId = XPathFactory.newInstance().newXPath().compile(inputValue).evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
+                            resolvedActorId = Utils.newRestrictedXPathFactory().newXPath().compile(inputValue).evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
-                            invalidErrors.add(Triple.of(callData.getRight().getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                            if (!Utils.isRestrictedResourceFailure(e)) {
+                                invalidErrors.add(Triple.of(callData.getRight().getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                            }
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
                         }

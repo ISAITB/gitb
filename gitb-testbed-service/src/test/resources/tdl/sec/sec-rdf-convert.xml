@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-rdf-convert" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RdfUtils conversion of a model provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="model" type="string"/>
+        <var name="modelType" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <process handler="RdfUtils" operation="convert" output="converted">
+            <input name="model">$model</input>
+            <input name="inputContentType">$modelType</input>
+            <input name="outputContentType">'text/turtle'</input>
+        </process>
+        <verify handler="StringValidator" desc="Conversion produced content">
+            <input name="actual">string(contains($converted, 'example.org'))</input>
+            <input name="expected">'true'</input>
+        </verify>
+    </steps>
+</testcase>

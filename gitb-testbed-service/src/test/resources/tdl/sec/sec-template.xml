@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-template" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TemplateProcessor with a FreeMarker template provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="template" type="string"/>
+        <var name="expected" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <process handler="TemplateProcessor" output="result">
+            <input name="template">$template</input>
+            <input name="syntax">'freemarker'</input>
+        </process>
+        <verify handler="StringValidator" desc="Template output">
+            <input name="actual">$result</input>
+            <input name="expected">$expected</input>
+        </verify>
+    </steps>
+</testcase>

@@ -15,16 +15,12 @@
 
 package com.gitb.engine.validation.handlers.rdf;
 
-import com.apicatalog.jsonld.JsonLdOptions;
-import com.apicatalog.jsonld.http.DefaultHttpClient;
-import com.apicatalog.jsonld.http.media.MediaType;
-import com.apicatalog.jsonld.loader.FileLoader;
-import com.apicatalog.jsonld.loader.HttpLoader;
-import com.apicatalog.jsonld.loader.SchemeRouter;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.utils.TestCaseUtils;
+import com.gitb.engine.utils.rdf.GuardedRdfParser;
+import com.gitb.engine.utils.rdf.RdfSecurity;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.tr.*;
@@ -38,10 +34,6 @@ import org.apache.jena.ontology.models.ModelMaker;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
-import org.apache.jena.riot.RDFParserBuilder;
-import org.apache.jena.riot.system.PrefixMap;
-import org.apache.jena.riot.system.PrefixMapStd;
-import org.apache.jena.sparql.util.Context;
 import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,12 +44,17 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static org.apache.jena.riot.lang.LangJSONLD11.JSONLD_OPTIONS;
 
 @ValidationHandler(name="ShaclValidator")
 public class ShaclValidator extends AbstractValidator {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShaclValidator.class);
+
+    static {
+        // Safeguards for JSON-LD contexts and SPARQL SERVICE calls made while parsing content and validating.
+        RdfSecurity.install();
+    }
+
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
     private static final String MODULE_DEFINITION_XML = "/validation/shacl-validator-definition.xml";
 
@@ -208,31 +205,7 @@ public class ShaclValidator extends AbstractValidator {
     }
 
     private Model readModel(String content, Lang language, Map<String, String> nsPrefixes) {
-        var builder = RDFParserBuilder
-                .create()
-                .lang(language)
-                .fromString(content);
-        if (nsPrefixes != null) {
-            // Before parsing set the prefixes of the model to avoid mismatches.
-            PrefixMap prefixes = new PrefixMapStd();
-            prefixes.putAll(nsPrefixes);
-            builder = builder.prefixes(prefixes);
-        }
-        if (Lang.JSONLD11.equals(language) || Lang.JSONLD.equals(language)) {
-            var options = new JsonLdOptions();
-            var httpLoader = new HttpLoader(DefaultHttpClient.defaultInstance());
-            /*
-             * Set fallback type for remote contexts to avoid errors for non JSON/JSON-LD Content Types.
-             * This allows us to proceed if e.g. the Content Type originally returned is "text/plain".
-             */
-            httpLoader.fallbackContentType(MediaType.JSON);
-            options.setDocumentLoader(new SchemeRouter()
-                    .set("http", httpLoader)
-                    .set("https", httpLoader)
-                    .set("file", new FileLoader()));
-            builder = builder.context(Context.create().set(JSONLD_OPTIONS, options));
-        }
-        return builder.build().toModel();
+        return GuardedRdfParser.readModel(content, language, nsPrefixes);
     }
 
     private Lang parseLanguage(String contentTypeString, Supplier<String> messageSupplier) {
@@ -434,6 +407,8 @@ public class ShaclValidator extends AbstractValidator {
         OntModelSpec spec = new OntModelSpec(OntModelSpec.OWL_MEM_RULE_INF);
         spec.setBaseModelMaker(modelMaker);
         spec.setImportModelMaker(modelMaker);
+        // Imports are only looked up from authorized HTTP(S) locations (never files, the classpath or other sources).
+        spec.setDocumentManager(RdfSecurity.newOntDocumentManager());
         addImports(model, ModelFactory.createOntologyModel(spec, model), new HashSet<>());
     }
 
