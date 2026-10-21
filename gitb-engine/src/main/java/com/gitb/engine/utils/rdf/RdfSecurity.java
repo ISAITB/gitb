@@ -15,6 +15,7 @@
 
 package com.gitb.engine.utils.rdf;
 
+import com.gitb.utils.BudgetedHttpClient;
 import com.gitb.utils.UriNotAllowedException;
 import org.apache.jena.ontology.OntDocumentManager;
 import org.apache.jena.query.ARQ;
@@ -24,8 +25,6 @@ import org.apache.jena.sys.JenaSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.ProxySelector;
-import java.net.http.HttpClient;
 import java.time.Duration;
 
 /**
@@ -52,11 +51,8 @@ public final class RdfSecurity {
             GuardedJsonLdReaderFactory.install();
             AuthorizingServiceExecutor.install();
             // Redirects are never followed for SERVICE calls (otherwise an authorized endpoint could redirect to one that is not).
-            ARQ.getContext().set(ARQ.httpQueryClient, HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.NEVER)
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .proxy(ProxySelector.getDefault())
-                    .build());
+            // The calls also count towards the limits of the test step making them (see RemoteResourceBudget).
+            ARQ.getContext().set(ARQ.httpQueryClient, BudgetedHttpClient.newClient(Duration.ofSeconds(10)));
             installed = true;
         }
     }

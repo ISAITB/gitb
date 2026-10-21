@@ -151,7 +151,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 			The response was not triggered by a timeout but we have a timeout flag defined
 			Make sure we have the flag set as false in the response.
 			 */
-			Future<TestStepReportType> future = Futures.future(() -> {
+			Future<TestStepReportType> future = doFutureWork(() -> {
 				if (step.getConfig() != null) {
 					for (Configuration config : step.getConfig()) {
 						if (VariableResolver.isVariableReference(config.getValue())) {
@@ -228,59 +228,57 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 	@Override
 	public void onReceive(Object message) {
-		try {
-            switch (message) {
-                case NotificationReceived notificationMessage -> {
-                    if (promise != null && !promise.isCompleted()) {
-                        if (notificationMessage.getError() != null) {
-                            promise.tryFailure(notificationMessage.getError());
-                        } else {
-                            logger.debug(addMarker(), "Received notification");
-                            resolveReceivedMessage(notificationMessage.getReport());
-                        }
-                    }
-                }
-                case ResultRequested resultRequested -> handleResultRequested(resultRequested);
-                case ResultTimeoutExpired ignored -> {
-                    if (isResultRunning()) {
-                        failResult(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "A timeout occurred while calculating the step's result.")));
-                    }
-                }
-                case TimeoutExpired timeoutExpired -> {
-                    // Once a matching message has arrived (and is being resolved, possibly via 'result'), the
-                    // original "waiting to receive" timeout no longer applies.
-                    if (promise != null && !promise.isCompleted() && resultMode == null) {
-                        VariableResolver resolver = new VariableResolver(scope);
-                        String flagName = null;
-                        if (!StringUtils.isBlank(step.getTimeoutFlag())) {
-                            if (VariableResolver.isVariableReference(step.getTimeoutFlag())) {
-                                flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
-                            } else {
-                                flagName = step.getTimeoutFlag();
-                            }
-                        }
-                        boolean errorIfTimeout = false;
-                        if (!StringUtils.isBlank(step.getTimeoutIsError())) {
-                            if (VariableResolver.isVariableReference(step.getTimeoutIsError())) {
-                                errorIfTimeout = resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
-                            } else {
-                                errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
-                            }
-                        }
-                        if (errorIfTimeout) {
-                            logger.error(addMarker(), "Timeout expired while waiting to receive message");
-                        } else {
-                            logger.debug(addMarker(), "Timeout expired while waiting to receive message");
-                        }
-                        promise.trySuccess(handleMessagingResult(getMessagingReportForTimeout(flagName, errorIfTimeout)));
-                    }
-                }
-                case DeferredTask<?> deferredTask -> handleDeferredTask(deferredTask);
-                case null, default -> super.onReceive(message);
-            }
-		} catch (Exception e) {
-			error(e);
-		}
+		doMessageWork(() -> {
+				switch (message) {
+					case NotificationReceived notificationMessage -> {
+						if (promise != null && !promise.isCompleted()) {
+							if (notificationMessage.getError() != null) {
+								promise.tryFailure(notificationMessage.getError());
+							} else {
+								logger.debug(addMarker(), "Received notification");
+								resolveReceivedMessage(notificationMessage.getReport());
+							}
+						}
+					}
+					case ResultRequested resultRequested -> handleResultRequested(resultRequested);
+					case ResultTimeoutExpired ignored -> {
+						if (isResultRunning()) {
+							failResult(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "A timeout occurred while calculating the step's result.")));
+						}
+					}
+					case TimeoutExpired timeoutExpired -> {
+						// Once a matching message has arrived (and is being resolved, possibly via 'result'), the
+						// original "waiting to receive" timeout no longer applies.
+						if (promise != null && !promise.isCompleted() && resultMode == null) {
+							VariableResolver resolver = new VariableResolver(scope);
+							String flagName = null;
+							if (!StringUtils.isBlank(step.getTimeoutFlag())) {
+								if (VariableResolver.isVariableReference(step.getTimeoutFlag())) {
+									flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
+								} else {
+									flagName = step.getTimeoutFlag();
+								}
+							}
+							boolean errorIfTimeout = false;
+							if (!StringUtils.isBlank(step.getTimeoutIsError())) {
+								if (VariableResolver.isVariableReference(step.getTimeoutIsError())) {
+									errorIfTimeout = resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
+								} else {
+									errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
+								}
+							}
+							if (errorIfTimeout) {
+								logger.error(addMarker(), "Timeout expired while waiting to receive message");
+							} else {
+								logger.debug(addMarker(), "Timeout expired while waiting to receive message");
+							}
+							promise.trySuccess(handleMessagingResult(getMessagingReportForTimeout(flagName, errorIfTimeout)));
+						}
+					}
+					case DeferredTask<?> deferredTask -> handleDeferredTask(deferredTask);
+					case null, default -> super.onReceive(message);
+				}
+		});
 	}
 
 	@SuppressWarnings("resource")

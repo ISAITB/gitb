@@ -29,6 +29,7 @@ import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
+import com.gitb.utils.RemoteResourceBudget;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.Props;
@@ -177,23 +178,26 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             var previousState = context.getCurrentState();
             context.setCurrentState(TestCaseContext.TestCaseStateEnum.OUTPUT);
             try {
-                List<String> outputMessages = null;
-                if (report.getResult() == TestResultType.SUCCESS) {
-                    outputMessages = calculateOutputMessage(testCase.getOutput().getSuccess(), context);
-                } else if (report.getResult() == TestResultType.FAILURE) {
-                    outputMessages = calculateOutputMessage(testCase.getOutput().getFailure(), context);
-                } else if (report.getResult() == TestResultType.UNDEFINED) {
-                    outputMessages = calculateOutputMessage(testCase.getOutput().getUndefined(), context);
-                }
-                if (outputMessages != null && !outputMessages.isEmpty()) {
-                    report.setContext(new AnyContent());
-                    report.getContext().setType("list[string]");
-                    for (var outputMessage: outputMessages) {
-                        var messageItem = new AnyContent();
-                        messageItem.setValue(outputMessage);
-                        report.getContext().getItem().add(messageItem);
+                // The calculation of the output messages has its own limits on the remote resources it can load.
+                RemoteResourceBudget.create().run(() -> {
+                    List<String> outputMessages = null;
+                    if (report.getResult() == TestResultType.SUCCESS) {
+                        outputMessages = calculateOutputMessage(testCase.getOutput().getSuccess(), context);
+                    } else if (report.getResult() == TestResultType.FAILURE) {
+                        outputMessages = calculateOutputMessage(testCase.getOutput().getFailure(), context);
+                    } else if (report.getResult() == TestResultType.UNDEFINED) {
+                        outputMessages = calculateOutputMessage(testCase.getOutput().getUndefined(), context);
                     }
-                }
+                    if (outputMessages != null && !outputMessages.isEmpty()) {
+                        report.setContext(new AnyContent());
+                        report.getContext().setType("list[string]");
+                        for (var outputMessage: outputMessages) {
+                            var messageItem = new AnyContent();
+                            messageItem.setValue(outputMessage);
+                            report.getContext().getItem().add(messageItem);
+                        }
+                    }
+                });
             } catch (Exception e) {
                 // Error while calculating output message - report log and fail the test session.
                 logger.error(MarkerFactory.getDetachedMarker(sessionId), "Error calculating output message", e);

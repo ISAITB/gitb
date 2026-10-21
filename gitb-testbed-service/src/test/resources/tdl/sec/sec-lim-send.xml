@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-lim-send" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>Remote lookups in the input of a send step</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="url" type="string"/>
+    </variables>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <send handler="SimulatedMessaging" desc="Send">
+            <input name="value">string(count((1 to 5) ! unparsed-text(concat($url, '?i=', .))))</input>
+        </send>
+    </steps>
+</testcase>

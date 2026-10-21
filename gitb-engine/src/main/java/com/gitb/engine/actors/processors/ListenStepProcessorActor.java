@@ -104,7 +104,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
         waiting();
 
         if(messagingHandler != null) {
-            Future<TestStepReportType> future = Futures.future(() -> {
+            Future<TestStepReportType> future = doFutureWork(() -> {
                 if (step.getConfig() != null) {
                     for (Configuration config : step.getConfig()) {
                         if (VariableResolver.isVariableReference(config.getValue())) {

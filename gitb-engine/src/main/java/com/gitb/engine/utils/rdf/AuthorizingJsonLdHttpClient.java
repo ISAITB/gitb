@@ -19,11 +19,10 @@ import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.http.DefaultHttpClient;
 import com.apicatalog.jsonld.http.HttpClient;
 import com.apicatalog.jsonld.http.HttpResponse;
+import com.gitb.utils.BudgetedHttpClient;
 import com.gitb.utils.UriAuthorizer;
 
-import java.net.ProxySelector;
 import java.net.URI;
-import java.net.http.HttpClient.Redirect;
 import java.time.Duration;
 
 /**
@@ -48,11 +47,8 @@ public class AuthorizingJsonLdHttpClient implements HttpClient {
      */
     public AuthorizingJsonLdHttpClient(UriAuthorizer uriAuthorizer) {
         this.uriAuthorizer = uriAuthorizer;
-        this.delegate = new DefaultHttpClient(java.net.http.HttpClient.newBuilder()
-                .followRedirects(Redirect.NEVER)
-                .connectTimeout(CONNECT_TIMEOUT)
-                .proxy(ProxySelector.getDefault())
-                .build()).timeout(REQUEST_TIMEOUT);
+        // Requests count towards the limits of the test step doing the lookup (each redirect or link followed by the processor is a new request).
+        this.delegate = new DefaultHttpClient(BudgetedHttpClient.newClient(CONNECT_TIMEOUT)).timeout(REQUEST_TIMEOUT);
     }
 
     @Override

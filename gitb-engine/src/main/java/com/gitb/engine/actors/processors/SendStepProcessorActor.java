@@ -96,7 +96,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 		if (messagingHandler != null) {
 			//id parameter must be set for Send steps, so that sent message
 			//is saved to scope
-			Future<TestStepReportType> future = Futures.future(() -> {
+			Future<TestStepReportType> future = doFutureWork(() -> {
 				if (step.getConfig() != null) {
 					for (Configuration config : step.getConfig()) {
 						if (VariableResolver.isVariableReference(config.getValue())) {
@@ -133,7 +133,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 				}
 			}, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
-		attachFutureCallbacks(future, promise, getContext().dispatcher());
+			attachFutureCallbacks(future, promise, getContext().dispatcher());
 		} else {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
 		}
@@ -163,15 +163,13 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 
 	@Override
 	public void onReceive(Object message) {
-		try {
+		doMessageWork(() -> {
 			if (message instanceof NotificationReceived) {
 				signalStepStatus(buildReport(((NotificationReceived) message).getReport(), null));
 			} else {
 				super.onReceive(message);
 			}
-		} catch (Exception e) {
-			error(e);
-		}
+		});
 	}
 
 	@Override

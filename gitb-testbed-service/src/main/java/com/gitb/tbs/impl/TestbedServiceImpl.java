@@ -27,6 +27,7 @@ import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
 import com.gitb.tpl.TestCase;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.RemoteResourceBudget;
 import jakarta.annotation.Resource;
 import jakarta.xml.ws.WebServiceContext;
 import jakarta.xml.ws.soap.Addressing;
@@ -53,12 +54,14 @@ public class TestbedServiceImpl implements TestbedService {
     @Override
     public GetTestCaseDefinitionResponse getTestCaseDefinition(GetTestCaseDefinitionRequest parameters) throws Error {
         try {
-            TestCase testCase;
-            if (parameters.getTcInstanceId() != null) {
-                testCase = TestCaseManager.getTestCasePresentationBySessionId(parameters.getTcInstanceId(), parameters.getConfigs());
-            } else {
-                testCase = TestCaseManager.getTestCasePresentationByTestCaseId(parameters.getTcId(), parameters.getConfigs());
-            }
+            // The preparation of the presentation (that evaluates expressions) has its own limits on the remote resources it can load.
+            TestCase testCase = RemoteResourceBudget.create().call(() -> {
+                if (parameters.getTcInstanceId() != null) {
+                    return TestCaseManager.getTestCasePresentationBySessionId(parameters.getTcInstanceId(), parameters.getConfigs());
+                } else {
+                    return TestCaseManager.getTestCasePresentationByTestCaseId(parameters.getTcId(), parameters.getConfigs());
+                }
+            });
             //Construct Response
             GetTestCaseDefinitionResponse response = new GetTestCaseDefinitionResponse();
             response.setTestcase(testCase);

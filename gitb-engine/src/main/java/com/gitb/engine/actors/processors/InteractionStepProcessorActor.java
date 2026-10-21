@@ -91,6 +91,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     @Override
     public void onReceive(Object message) {
+        doMessageWork(() -> processMessage(message));
+    }
+
+    private void processMessage(Object message) {
         if (message instanceof NotificationReceived notificationMessage) {
             /*
              * This case occurs if we have an asynchronous response delivered by a messaging handler in case the
@@ -183,7 +187,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         ExpressionHandler expressionHandler = new ExpressionHandler(scope);
         final ActorContext context = getContext();
         //If it is a request
-        Future<TestStepReportType> future = Futures.future(() -> {
+        Future<TestStepReportType> future = doFutureWork(() -> {
             // Add a timeout if this is configured for the step.
             long timeout = 0;
             if (!StringUtils.isBlank(step.getTimeout())) {

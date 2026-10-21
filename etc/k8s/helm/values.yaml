@@ -140,6 +140,18 @@ srv:
     ## that test cases may look up resources from (e.g. schemas, JSON-LD contexts, ontology imports, URIs in expressions).
     ## Resources on public addresses can always be looked up (only via http/https), whereas internal addresses are blocked unless listed here.
     # ALLOWED_INTERNAL_URIS: http://internal-schema-server:8080/schemas/
+    #
+    ## The following limit the remote resources (e.g. schemas, JSON-LD contexts, ontology imports, URIs in expressions or inputs)
+    ## that a single test step can load. A test step that exceeds a limit fails.
+    ##
+    ## srv.env.REMOTE_LIMITS_MAX_RESOURCE_SIZE is the maximum size of a single remote resource (e.g. 512KB, 50MB, 1GB).
+    # REMOTE_LIMITS_MAX_RESOURCE_SIZE: 50MB
+    ## srv.env.REMOTE_LIMITS_MAX_REQUESTS is the maximum number of remote requests (including redirects).
+    # REMOTE_LIMITS_MAX_REQUESTS: 200
+    ## srv.env.REMOTE_LIMITS_MAX_TOTAL_SIZE is the maximum total size of all the remote resources loaded.
+    # REMOTE_LIMITS_MAX_TOTAL_SIZE: 250MB
+    ## srv.env.REMOTE_LIMITS_REQUEST_TIMEOUT is the maximum time (in milliseconds) for a single remote request, including reading its response.
+    # REMOTE_LIMITS_REQUEST_TIMEOUT: 60000
 
 #
 # The user interface component providing the UI and REST API, as well as realising all management and reporting features.

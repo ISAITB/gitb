@@ -77,21 +77,21 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 	protected void start() {
 		final IProcessor processor = getProcessor();
 
-		if(processor != null) {
-			Future<TestStepReportType> future = Futures.future(() -> {
-				processing();
+		if (processor != null) {
 
+			Future<TestStepReportType> future = doFutureWork(() -> {
+				processing();
 				return processor.process(step);
 			}, stepDispatcher());
 
-		future.onComplete(result -> {
-			if (result.isSuccess()) {
-				promise.trySuccess(result.get());
-			} else {
-				promise.tryFailure(result.failed().get());
-			}
-			return BoxedUnit.UNIT;
-		}, getContext().dispatcher());
+			future.onComplete(result -> {
+				if (result.isSuccess()) {
+					promise.trySuccess(result.get());
+				} else {
+					promise.tryFailure(result.failed().get());
+				}
+				return BoxedUnit.UNIT;
+			}, getContext().dispatcher());
 		}
 	}
 
