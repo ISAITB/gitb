@@ -107,6 +107,7 @@
         <version.jaxbImplLegacy>2.3.9</version.jaxbImplLegacy>
         <version.swaggerUi>5.32.15</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
         <version.owaspHtmlSanitizer>20261011.1</version.owaspHtmlSanitizer>
+        <version.asm>9.11.1</version.asm>
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
         <engineVersion>${project.version}</engineVersion>
@@ -789,6 +790,11 @@
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libthrift</artifactId>
                 <version>${version.libthrift}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${version.asm}</version>
             </dependency>
             <!-- JAXB BOM to align JAXB-related APIs and implementations. -->
             <dependency>
