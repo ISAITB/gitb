@@ -19,10 +19,13 @@ import com.gitb.engine.ModuleManager;
 import com.gitb.engine.testcase.ResourceInfo;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.repository.ITestCaseRepository;
+import com.gitb.utils.GuardedUriReader;
+import com.gitb.utils.UriAuthorizer;
 import com.google.gson.JsonParser;
 import com.networknt.schema.AbsoluteIri;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.utils.AbsoluteIris;
 import com.networknt.schema.resource.InputStreamSource;
-import com.networknt.schema.resource.IriResourceLoader;
 import com.networknt.schema.resource.ResourceLoader;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
@@ -31,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -57,7 +61,15 @@ public class LocalSchemaResolver implements ResourceLoader {
         Optional<ResourceInfo> schemaInfo = testCaseContext.getCachedResource(idToCheck, cacheLoader);
         if (schemaInfo.isEmpty()) {
             LOG.debug("Schema with URI {} not found locally. Looking up remotely.", absoluteIri);
-            return IriResourceLoader.getInstance().getResource(absoluteIri);
+            /*
+             * Only HTTP(S) lookups are permitted, subject to authorization of every request (including redirects). Any other
+             * type of reference (e.g. file:, jar: or ftp:) is rejected.
+             */
+            var uriToResolve = URI.create(AbsoluteIris.toUri(absoluteIri));
+            var authorizer = UriAuthorizer.global();
+            authorizer.check(uriToResolve);
+            // The stream is handed over to the schema loader, that closes it once read.
+            return () -> GuardedUriReader.open(uriToResolve, null, authorizer).stream();
         } else {
             LOG.debug("Schema with URI {} found locally.", absoluteIri);
             return () -> repository.getTestArtifact(schemaInfo.get().testSuiteId().orElse(null), sharedSchemaInfo.testCaseId(), schemaInfo.get().resourcePath());
@@ -103,6 +115,22 @@ public class LocalSchemaResolver implements ResourceLoader {
 
     private String testSuiteReferenceForError(Optional<String> fromTestSuite) {
         return fromTestSuite.map(" from test suite [%s]"::formatted).orElse("");
+    }
+
+    /**
+     * Prevent schemas from referring to resources on the engine's classpath (via "classpath:" and "resource:" IRIs), which
+     * the library attempts to load before any other loader.
+     * <p>
+     * This must be the last customisation of the loaders as the restriction is not carried over by further customisations.
+     *
+     * @param builder The schema registry builder to restrict.
+     * @return The restricted builder.
+     */
+    static SchemaRegistry.Builder blockClasspathResources(SchemaRegistry.Builder builder) {
+        return builder.schemaLoader(loaderBuilder -> loaderBuilder.block(iri -> {
+            var iriAsString = iri.toString();
+            return iriAsString.startsWith("classpath:") || iriAsString.startsWith("resource:");
+        }));
     }
 
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-schematron" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator with Schematron rules provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="schematron" type="string"/>
+        <var name="schematronType" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<invoice><total>100</total></invoice>']]></assign>
+        <assign to="schList" append="true">$schematron</assign>
+        <verify handler="XmlValidator" desc="Validate XML">
+            <input name="xml">$xmlDoc</input>
+            <input name="schematron">$schList</input>
+            <input name="schematronType">$schematronType</input>
+        </verify>
+    </steps>
+</testcase>

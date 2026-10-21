@@ -21,6 +21,11 @@ import com.gitb.vs.tdl.Context;
 import jakarta.xml.bind.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import net.sf.saxon.Configuration;
+import net.sf.saxon.lib.EnvironmentVariableResolver;
+import net.sf.saxon.lib.Feature;
+import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.xpath.XPathFactoryImpl;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
@@ -35,6 +40,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
+import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,6 +127,60 @@ public class Utils {
         docBuilderFactory.setXIncludeAware(false);
         docBuilderFactory.setExpandEntityReferences(false);
         return docBuilderFactory;
+    }
+
+    /**
+     * Create an XPath factory to use for the expressions found in test cases, that are checked but must never be able
+     * to reach resources (e.g. via doc(), unparsed-text() or collection()) or read the environment.
+     *
+     * @return The factory.
+     */
+    public static XPathFactory newRestrictedXPathFactory() {
+        Configuration configuration = Configuration.newConfiguration();
+        configuration.setConfigurationProperty(Feature.ALLOW_EXTERNAL_FUNCTIONS, false);
+        configuration.setResourceResolver(request -> {
+            throw new RestrictedResourceException("Resources cannot be looked up when checking expressions.");
+        });
+        configuration.setCollectionFinder((context, collectionUri) -> {
+            throw new RestrictedResourceException("Collections cannot be looked up when checking expressions.");
+        });
+        configuration.setConfigurationProperty(Feature.ENVIRONMENT_VARIABLE_RESOLVER, new EnvironmentVariableResolver() {
+            @Override
+            public Set<String> getAvailableEnvironmentVariables() {
+                return Set.of();
+            }
+
+            @Override
+            public String getEnvironmentVariable(String name) {
+                return null;
+            }
+        });
+        return new XPathFactoryImpl(configuration);
+    }
+
+    /**
+     * Check whether the provided failure to evaluate an expression is due to the restriction of lookups of resources (i.e.
+     * the expression is not necessarily invalid but cannot be fully checked).
+     *
+     * @param error The failure.
+     * @return The check result.
+     */
+    public static boolean isRestrictedResourceFailure(Throwable error) {
+        for (Throwable current = error; current != null; current = current.getCause()) {
+            if (current instanceof RestrictedResourceException) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Failure raised when an expression attempts to look up a resource that is never permitted when checking expressions.
+     */
+    private static class RestrictedResourceException extends XPathException {
+        RestrictedResourceException(String message) {
+            super(message);
+        }
     }
 
     public static Document readAsXML(InputStream is) {

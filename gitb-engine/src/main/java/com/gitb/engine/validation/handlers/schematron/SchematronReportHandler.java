@@ -230,7 +230,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
      */
     private XPathFactory getXPathFactory() {
         if (xpathFactory == null) {
-            xpathFactory = new net.sf.saxon.xpath.XPathFactoryImpl();
+            xpathFactory = com.gitb.utils.SecureSaxon.newXPathFactory();
         }
         return xpathFactory;
     }

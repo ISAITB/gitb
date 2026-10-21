@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-xsd-hint" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XmlValidator with content that carries a schema location hint</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="hint" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xsdDoc" type="schema"><![CDATA['<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:test:root" targetNamespace="urn:test:root" elementFormDefault="qualified"><xs:element name="root"><xs:complexType><xs:sequence><xs:any namespace="##other" processContents="strict"/></xs:sequence></xs:complexType></xs:element></xs:schema>']]></assign>
+        <assign to="xmlText">concat('&lt;root xmlns="urn:test:root" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:o="urn:test:other" xsi:schemaLocation="', $hint, '"&gt;&lt;o:x&gt;v&lt;/o:x&gt;&lt;/root&gt;')</assign>
+        <assign to="xmlDoc" type="object">$xmlText</assign>
+        <verify handler="XmlValidator" desc="Validate XML">
+            <input name="xml">$xmlDoc</input>
+            <input name="xsd">$xsdDoc</input>
+        </verify>
+    </steps>
+</testcase>

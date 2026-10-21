@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-expr-unparsed-text" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TDL expression reading a resource with unparsed-text()</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="url" type="string"/>
+        <var name="expected" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="content">unparsed-text($url)</assign>
+        <verify handler="StringValidator" desc="Content read">
+            <input name="actual">$content</input>
+            <input name="expected">$expected</input>
+        </verify>
+    </steps>
+</testcase>

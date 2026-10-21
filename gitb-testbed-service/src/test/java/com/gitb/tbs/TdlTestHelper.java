@@ -84,6 +84,18 @@ public class TdlTestHelper {
     }
 
     /**
+     * Configures a session (with the provided inputs) without starting it, returning the outcome of the configuration.
+     * A failed configuration (e.g. due to an input that could not be processed) is reported with an error code and description.
+     */
+    public static ConfigurationCompleteRequest configureOnly(String testCaseId, List<AnyContent> inputs) throws Exception {
+        TestCapturingClient client = new TestCapturingClient();
+        String sessionId = TestbedService.initiate(testCaseId, null);
+        TestbedServiceCallbackHandler.getInstance().registerForTest(sessionId, client);
+        TestbedService.configure(sessionId, buildConfigurations(null), inputs);
+        return client.configurationResult().get(10, TimeUnit.SECONDS);
+    }
+
+    /**
      * A session started via {@link #runAsync} without blocking for its outcome, paired with its session ID so
      * that the caller can interact with it (e.g. issue calls against its configured system API key, or stop it
      * explicitly) while it is still executing.

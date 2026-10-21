@@ -30,12 +30,14 @@ public class TestCapturingClient implements TestbedClient {
 
     private volatile Function<InteractWithUsersRequest, List<UserInput>> interactionResponder;
     private final CompletableFuture<Void> configComplete = new CompletableFuture<>();
+    private final CompletableFuture<ConfigurationCompleteRequest> configurationResult = new CompletableFuture<>();
     private final CompletableFuture<TestStepStatus> sessionResult = new CompletableFuture<>();
     private final List<TestStepStatus> allStatuses = Collections.synchronizedList(new ArrayList<>());
     private final List<String> logMessages = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     public Void configurationComplete(ConfigurationCompleteRequest request) {
+        configurationResult.complete(request);
         configComplete.complete(null);
         return new Void();
     }
@@ -83,6 +85,13 @@ public class TestCapturingClient implements TestbedClient {
      */
     public void respondToInteractionsWith(Function<InteractWithUsersRequest, List<UserInput>> responder) {
         this.interactionResponder = responder;
+    }
+
+    /**
+     * The outcome of the session's configuration (carrying an error code and description if it failed).
+     */
+    public CompletableFuture<ConfigurationCompleteRequest> configurationResult() {
+        return configurationResult;
     }
 
     public CompletableFuture<Void> configComplete() {

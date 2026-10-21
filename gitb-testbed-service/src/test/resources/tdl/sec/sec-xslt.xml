@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-xslt" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XsltProcessor with a stylesheet provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="xslt" type="string"/>
+        <var name="expected" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlIn"><![CDATA['<root><item>hello</item></root>']]></assign>
+        <process handler="XsltProcessor" operation="process" output="transformed">
+            <input name="xml">$xmlIn</input>
+            <input name="xslt">$xslt</input>
+        </process>
+        <verify handler="StringValidator" desc="Transformed output">
+            <input name="actual">normalize-space($transformed)</input>
+            <input name="expected">$expected</input>
+        </verify>
+    </steps>
+</testcase>

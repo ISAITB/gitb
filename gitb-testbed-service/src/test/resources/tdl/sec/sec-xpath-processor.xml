@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-xpath-processor" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>XPathProcessor with an XPath expression provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="xpath" type="string"/>
+        <var name="expected" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="xmlDoc" type="object"><![CDATA['<root><name>value</name></root>']]></assign>
+        <process handler="XPathProcessor" output="result">
+            <input name="input">$xmlDoc</input>
+            <input name="expression">$xpath</input>
+        </process>
+        <verify handler="StringValidator" desc="Result">
+            <input name="actual">$result</input>
+            <input name="expected">$expected</input>
+        </verify>
+    </steps>
+</testcase>

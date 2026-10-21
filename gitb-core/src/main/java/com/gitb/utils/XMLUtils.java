@@ -17,7 +17,6 @@ package com.gitb.utils;
 
 import com.gitb.XmlSchemaVersion;
 import jakarta.xml.bind.*;
-import net.sf.saxon.jaxp.SaxonTransformerFactory;
 import org.apache.xerces.impl.Constants;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.apache.xerces.jaxp.SAXParserFactoryImpl;
@@ -434,10 +433,7 @@ public class XMLUtils {
     }
 
     public static TransformerFactory getSecureTransformerFactory() {
-        var factory = new SaxonTransformerFactory();
-        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-        return factory;
+        return SecureSaxon.newTransformerFactory();
     }
 
     public static XMLInputFactory getSecureXMLInputFactory() {

@@ -28,6 +28,7 @@ import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
 import com.gitb.types.StringType;
+import com.gitb.utils.SecureSaxon;
 import com.helger.io.resource.IReadableResource;
 import com.helger.schematron.CSchematron;
 import com.helger.schematron.ISchematronErrorHandler;
@@ -35,6 +36,7 @@ import com.helger.schematron.ISchematronResource;
 import com.helger.schematron.SchematronHelper;
 import com.helger.schematron.api.xslt.AbstractSchematronXSLTBasedResource;
 import com.helger.schematron.pure.SchematronResourcePureXPath;
+import com.helger.schematron.pure.xpath.XPathConfigBuilder;
 import com.helger.schematron.svrl.jaxb.SchematronOutputType;
 import com.helger.schematron.xslt.SchematronResourceXSLT;
 import com.helger.xml.microdom.IMicroDocument;
@@ -124,12 +126,16 @@ public class SchematronValidator extends AbstractValidator {
                 resolvedPureResource = new TempFileSchematronResource(resolveIncludes(pureResource, uriResolver, errorHandler), sch.getImportPath(), tempFolder);
                 schematron = SchematronResourcePureXPath.builder(resolvedPureResource)
                         .errorHandler(errorHandler)
+                        // Use a Saxon processor that cannot reach local files, collections or environment variables (e.g. via doc()).
+                        .xpathConfig(new XPathConfigBuilder().setProcessor(SecureSaxon.newProcessor()).build())
                         .useCache(false)
                         .build();
                 convertXPathExpressions = true;
             } else {
                 schematron = SchematronResourceXSLT.builder(new StringResource(sch.toString(), sch.getImportPath()))
                         .uriResolver(uriResolver)
+                        // Collections, environment variables and result documents are not resolved via the URI resolver so we restrict them separately.
+                        .transformerFactoryCustomizer(SecureSaxon::restrict)
                         .validateSVRL(false)
                         .useCache(false)
                         .build();

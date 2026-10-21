@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-rdf-ask" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>RdfUtils ASK query provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="query" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="model"><![CDATA['@prefix ex: <http://example.org/> . ex:a ex:p ex:b .']]></assign>
+        <process handler="RdfUtils" operation="ask" output="answer">
+            <input name="model">$model</input>
+            <input name="inputContentType">'text/turtle'</input>
+            <input name="query">$query</input>
+        </process>
+        <verify handler="StringValidator" desc="Answer">
+            <input name="actual">string($answer)</input>
+            <input name="expected">'true'</input>
+        </verify>
+    </steps>
+</testcase>

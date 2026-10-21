@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-expr-doc" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>TDL expression loading a document with doc()</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="url" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="rootName">name(doc($url)/*)</assign>
+        <verify handler="StringValidator" desc="Root element name">
+            <input name="actual">$rootName</input>
+            <input name="expected">'root'</input>
+        </verify>
+    </steps>
+</testcase>

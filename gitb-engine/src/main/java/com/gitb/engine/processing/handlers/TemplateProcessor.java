@@ -28,6 +28,7 @@ import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.*;
 import freemarker.cache.TemplateLoader;
+import freemarker.core.TemplateClassResolver;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -81,6 +82,9 @@ public class TemplateProcessor extends AbstractProcessingHandler {
         DataType outputValue;
         if (templateSyntax == Syntax.FREEMARKER) {
             var configuration = new Configuration(Configuration.VERSION_2_3_31);
+            // Templates may be provided by users: prevent them from instantiating arbitrary classes (e.g. to run commands) or accessing the Java API.
+            configuration.setNewBuiltinClassResolver(TemplateClassResolver.ALLOWS_NOTHING_RESOLVER);
+            configuration.setAPIBuiltinEnabled(false);
             configuration.setTemplateLoader(new InMemoryTemplateLoader(templateContent));
             Template template;
             try {

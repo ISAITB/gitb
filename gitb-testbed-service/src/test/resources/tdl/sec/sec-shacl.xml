@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-shacl" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>ShaclValidator with a model and shapes provided as data</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="model" type="string"/>
+        <var name="modelType" type="string"/>
+        <var name="shapes" type="string"/>
+        <var name="shapesType" type="string"/>
+        <var name="loadImports" type="boolean"/>
+        <var name="shape" type="map"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="shape{content}">$shapes</assign>
+        <assign to="shape{contentType}">$shapesType</assign>
+        <assign to="shapeList" append="true">$shape</assign>
+        <verify handler="ShaclValidator" desc="Validate model">
+            <input name="model">$model</input>
+            <input name="contentType">$modelType</input>
+            <input name="shapes">$shapeList</input>
+            <input name="loadImports">$loadImports</input>
+        </verify>
+    </steps>
+</testcase>
