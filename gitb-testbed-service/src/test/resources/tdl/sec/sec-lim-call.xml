@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-lim-call" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>Remote lookups in the input of a call step</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="url" type="string"/>
+    </variables>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <scriptlets>
+        <scriptlet id="lookup">
+            <params>
+                <var name="result" type="string"/>
+            </params>
+            <steps>
+                <log>$result</log>
+            </steps>
+        </scriptlet>
+    </scriptlets>
+    <steps stopOnError="true">
+        <call path="lookup" output="callOut">
+            <!-- The inputs of call steps are also evaluated when the session is configured, when the URL is not yet known. -->
+            <input name="result">if ($url = '') then 'not yet known' else string(count((1 to 5) ! unparsed-text(concat($url, '?i=', .))))</input>
+        </call>
+    </steps>
+</testcase>

@@ -50,11 +50,18 @@ public class TdlTestHelper {
      * Runs a test case containing interact steps, submitting the inputs returned by the responder whenever one is reached.
      */
     public static TestRunResult runWithInteractions(String testCaseId, Function<InteractWithUsersRequest, List<UserInput>> responder) throws Exception {
+        return runWithInteractions(testCaseId, List.of(), responder);
+    }
+
+    /**
+     * Runs a test case with the provided inputs and containing interact steps, submitting the inputs returned by the responder whenever one is reached.
+     */
+    public static TestRunResult runWithInteractions(String testCaseId, List<AnyContent> inputs, Function<InteractWithUsersRequest, List<UserInput>> responder) throws Exception {
         TestCapturingClient client = new TestCapturingClient();
         client.respondToInteractionsWith(responder);
         String sessionId = TestbedService.initiate(testCaseId, null);
         TestbedServiceCallbackHandler.getInstance().registerForTest(sessionId, client);
-        TestbedService.configure(sessionId, buildConfigurations(null), List.of());
+        TestbedService.configure(sessionId, buildConfigurations(null), inputs);
         TestbedService.start(sessionId);
         TestStepStatus status = client.sessionResult().get(30, TimeUnit.SECONDS);
         return new TestRunResult(status, client.logMessages(), client.allStatuses());

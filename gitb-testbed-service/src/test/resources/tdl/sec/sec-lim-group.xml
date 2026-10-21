@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-lim-group" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>Remote lookups in the steps of nested groups</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="url" type="string"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <group desc="Outer group">
+            <assign to="a">string(count((1 to 3) ! unparsed-text(concat($url, '?a=', .))))</assign>
+            <group desc="Inner group">
+                <assign to="b">string(count((1 to 3) ! unparsed-text(concat($url, '?b=', .))))</assign>
+                <verify handler="StringValidator" desc="Lookups in the inner group">
+                    <input name="actual">string(count((1 to 3) ! unparsed-text(concat($url, '?c=', .))))</input>
+                    <input name="expected">'3'</input>
+                </verify>
+                <if>
+                    <cond>count((1 to 3) ! unparsed-text(concat($url, '?d=', .))) = 3</cond>
+                    <then>
+                        <assign to="e">string(count((1 to 3) ! unparsed-text(concat($url, '?e=', .))))</assign>
+                    </then>
+                </if>
+            </group>
+            <verify handler="StringValidator" desc="Lookups in the outer group">
+                <input name="actual">string(count((1 to 3) ! unparsed-text(concat($url, '?f=', .))))</input>
+                <input name="expected">'3'</input>
+            </verify>
+        </group>
+    </steps>
+</testcase>

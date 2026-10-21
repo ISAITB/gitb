@@ -34,6 +34,7 @@ import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.utils.RemoteResourceBudget;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;
@@ -162,14 +163,18 @@ public class SessionActor extends AbstractActor {
                 // We do this as a fail-safe to avoid cases where the test engine did not receive the settings earlier
                 // or lost it's state due to a restart.
                 CallbackAuthorizer.getInstance().updateSettings(ctx.message().getSettings());
-                List<SUTConfiguration> sutConfigurations = context.configure(
-                        ctx.message().getActorConfigurations(),
-                        ctx.message().getDomainConfiguration(),
-                        ctx.message().getOrganisationConfiguration(),
-                        ctx.message().getSystemConfiguration(),
-                        ctx.message().getTestServiceConfigurations()
-                );
-                context.addInputs(ctx.message().getInputs());
+                // The configuration (including the retrieval of inputs provided by reference) has its own limits on the remote resources it can load.
+                List<SUTConfiguration> sutConfigurations = RemoteResourceBudget.create().call(() -> {
+                    List<SUTConfiguration> configurations = context.configure(
+                            ctx.message().getActorConfigurations(),
+                            ctx.message().getDomainConfiguration(),
+                            ctx.message().getOrganisationConfiguration(),
+                            ctx.message().getSystemConfiguration(),
+                            ctx.message().getTestServiceConfigurations()
+                    );
+                    context.addInputs(ctx.message().getInputs());
+                    return configurations;
+                });
                 if (context.getTestCase().getPreliminary() != null) {
                     context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
                 } else {

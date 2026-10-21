@@ -40,6 +40,9 @@ import com.gitb.tdl.Process;
 import com.gitb.tr.*;
 import com.gitb.tr.ObjectFactory;
 import com.gitb.types.MapType;
+import com.gitb.utils.RemoteResourceBudget;
+import com.gitb.utils.RemoteResourceLimitException;
+import com.gitb.utils.ThrowingRunnable;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
@@ -47,16 +50,20 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.PoisonPill;
 import org.apache.pekko.actor.Props;
+import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.japi.Creator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+import scala.concurrent.ExecutionContext;
+import scala.concurrent.Future;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import static com.gitb.engine.utils.TestCaseUtils.createReportForException;
@@ -77,12 +84,68 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	private ExitScopeType exitScopeToReport;
 	protected boolean receivedPrepareForStop = false;
 	protected boolean receivedStop = false;
+	// The limits on the remote resources loaded by the work of this step (shared by all of its messages and futures).
+	private final RemoteResourceBudget remoteBudget = RemoteResourceBudget.create();
 
 	public AbstractTestStepActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
 		this.scope = scope;
 		this.stepId = stepId;
 		this.step = step;
 		this.stepContext = stepContext;
+	}
+
+	/**
+	 * Carry out synchronous work within this actor.
+	 * <p>
+	 * This method is a central placeholder for all subclasses to use to apply specific additional behaviours. It must be
+	 * used for all work of the actor that evaluates expressions or invokes handlers, i.e. the processing of messages and of
+	 * futures (with {@link #doFutureWork(Callable, ExecutionContext)}), as these are processed on different threads. Work
+	 * that bypasses these methods (e.g. by calling {@code Futures.future} directly) is not subject to the behaviours below.
+	 * <p>
+	 * The current behaviour applied is to limit the remote resources that this actor can load. The limits apply to the
+	 * work of this actor only, and not to that of the child actors it creates.
+	 * <p>
+	 * If further behaviours are added they should be composed within this method (and the future variant), so that the
+	 * order in which they apply is defined in a single place.
+	 *
+	 * @param work The work to perform.
+	 * @throws Exception If the work fails.
+	 * @throws RemoteResourceLimitException If a remote resource lookup limit was reached resulting in a failure.
+	 */
+	protected void doWork(ThrowingRunnable work) throws Exception {
+		remoteBudget.run(work);
+	}
+
+	/**
+	 * Carry out synchronous work within this actor to process a message (see {@link #doWork(ThrowingRunnable)}).
+	 * <p>
+	 * All implementations of {@code onReceive} must use this method. A failure of the processing, including one caused
+	 * by an applied limit, is reported as a failure of the step. It must not escape from {@code onReceive}: the default
+	 * supervision restarts the actor, losing the state of the step (e.g. its promise), which would leave the step stuck.
+	 *
+	 * @param work The work to perform.
+	 */
+	protected void doMessageWork(ThrowingRunnable work) {
+		try {
+			doWork(work);
+		} catch (Exception e) {
+			error(e);
+		}
+	}
+
+	/**
+	 * Carry out asynchronous work within this actor.
+	 * <p>
+	 * This method is the equivalent of {@link #doWork(ThrowingRunnable)} for work carried out in a future, and the same
+	 * considerations apply.
+	 *
+	 * @param work The work.
+	 * @param executor The executor to use to carry out the work.
+	 * @return The future of the work's result.
+	 * @param <R> The result type.
+	 */
+	protected <R> Future<R> doFutureWork(Callable<R> work, ExecutionContext executor) {
+		return Futures.future(() -> remoteBudget.call(work), executor);
 	}
 
 	protected void setExitScopeToReport(ExitScopeType exitScopeToReport) {
@@ -156,7 +219,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	public void preStart() {
 		try {
 			super.preStart();
-			init();
+			doWork(this::init);
 		} catch (Exception e) {
 			error(e);
 		}
@@ -168,33 +231,33 @@ public abstract class AbstractTestStepActor<T> extends Actor {
      */
 	@Override
 	public void onReceive(Object message) {
-		try {
-			super.onReceive(message);
-			if (message instanceof ErrorStatusEvent) {
-				handleStatusEvent((StatusEvent) message);
-			} else if (message instanceof StatusEvent) {
-				handleStatusEvent((StatusEvent) message);
-			} else if (message instanceof InputEvent) {
-				handleInputEvent((InputEvent) message);
-			} else if (message instanceof StartCommand) {
-				if (skipStep()) {
-					skipped();
-				} else {
-					start();
-				}
-			} else if (message instanceof StopCommand) {
-				stop();
-			} else if (message instanceof PrepareForStopCommand) {
-				prepareForStop((PrepareForStopCommand)message);
-			} else if (message instanceof RestartCommand) {
-				stop();
-				init();
-				start();
+		doMessageWork(() -> processMessage(message));
+	}
+
+	private void processMessage(Object message) throws Exception {
+		super.onReceive(message);
+		if (message instanceof ErrorStatusEvent) {
+			handleStatusEvent((StatusEvent) message);
+		} else if (message instanceof StatusEvent) {
+			handleStatusEvent((StatusEvent) message);
+		} else if (message instanceof InputEvent) {
+			handleInputEvent((InputEvent) message);
+		} else if (message instanceof StartCommand) {
+			if (skipStep()) {
+				skipped();
 			} else {
-				throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
+				start();
 			}
-		} catch (Exception e) {
-			error(e);
+		} else if (message instanceof StopCommand) {
+			stop();
+		} else if (message instanceof PrepareForStopCommand) {
+			prepareForStop((PrepareForStopCommand)message);
+		} else if (message instanceof RestartCommand) {
+			stop();
+			init();
+			start();
+		} else {
+			throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
 		}
 	}
 

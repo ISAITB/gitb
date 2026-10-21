@@ -20,7 +20,6 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -53,11 +52,8 @@ public final class GuardedUriReader {
      * The client is created lazily and shared (a client holds on to resources until it is garbage collected).
      */
     private static final class ClientHolder {
-        private static final HttpClient CLIENT = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .connectTimeout(CONNECT_TIMEOUT)
-                .proxy(ProxySelector.getDefault())
-                .build();
+        // Requests count towards the limits of the test step doing the lookup (see RemoteResourceBudget).
+        private static final HttpClient CLIENT = BudgetedHttpClient.newClient(CONNECT_TIMEOUT);
     }
 
     /**

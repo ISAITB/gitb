@@ -119,7 +119,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             context = Objects.requireNonNull(this.scope.getContext().getProcessingContext(step.getTxnId()), () -> "No context could be retrieved for processing transaction [%s]".formatted(step.getTxnId()));
         }
 
-        Future<Future<TestStepReportType>> future = Futures.future(() -> {
+        Future<Future<TestStepReportType>> future = doFutureWork(() -> {
             IProcessingHandler handler = context.getHandler();
             String operation = null;
             if (step.getOperation() != null) {

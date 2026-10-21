@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="sec-lim-steps" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <name>Several steps each with remote lookups</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="url" type="string"/>
+    </variables>
+    <actors>
+        <gitb:actor id="SUT" role="SUT"/>
+        <gitb:actor id="SIMULATED"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="a">string(count((1 to 3) ! unparsed-text(concat($url, '?i=', .))))</assign>
+        <assign to="b">string(count((1 to 3) ! unparsed-text(concat($url, '?i=', .))))</assign>
+        <verify handler="StringValidator" desc="Lookups">
+            <input name="actual">string(count((1 to 3) ! unparsed-text(concat($url, '?i=', .))))</input>
+            <input name="expected">'3'</input>
+        </verify>
+    </steps>
+</testcase>

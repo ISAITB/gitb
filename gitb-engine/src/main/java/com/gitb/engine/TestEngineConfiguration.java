@@ -18,6 +18,7 @@ package com.gitb.engine;
 import com.gitb.CoreConfiguration;
 import com.gitb.engine.messaging.handlers.server.Configuration;
 import com.gitb.utils.HmacUtils;
+import com.gitb.utils.RemoteResourceLimits;
 import com.gitb.utils.UriAuthorizer;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.Jackson3JsonProvider;
@@ -117,6 +118,8 @@ public class TestEngineConfiguration {
 			ITERATION_LIMIT = config.getInt("gitb.engine.iteration-limit", 1000);
 			// Determine (and log) the internal addresses that resources referenced by artefacts and inputs may be looked up from.
 			UriAuthorizer.global();
+			// Determine (and log) the limits on the remote resources that a test step can load.
+			RemoteResourceLimits.global();
 			// Determine callback URLs - start.
 			var rootCallbackUrl = config.getString(ENV_CALLBACK_ROOT_URL, "");
 			var messagingCallbackUrl = config.getString(ENV_CALLBACK_MESSAGING_URL, "");
