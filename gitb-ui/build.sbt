@@ -2,9 +2,9 @@ import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
 val pekkoVersion = "1.7.1"
-val jacksonVersion = "3.2.3"
-val jackson2Version = "2.22.3"
-val jackson2ScalaVersion = "2.22.3.1"
+val jacksonVersion = "3.2.4"
+val jackson2Version = "2.22.4"
+val jackson2ScalaVersion = "2.22.4"
 val jacksonAnnotationsVersion = "2.22"
 val cxfVersion = "4.2.4" // Should match neethi and xmlschema-core versions (specifically set to replace CXF transitive versions).
 val gitbCommonsVersion = "1.30.1"
