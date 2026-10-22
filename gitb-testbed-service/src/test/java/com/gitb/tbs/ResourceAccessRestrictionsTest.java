@@ -17,6 +17,8 @@ package com.gitb.tbs;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.engine.TestEngineConfiguration;
+import com.gitb.engine.utils.rdf.RdfContentRestrictions;
 import com.gitb.utils.UriAuthorizer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -75,6 +77,7 @@ class ResourceAccessRestrictionsTest extends BaseIntegrationTest {
     @AfterEach
     void restoreAuthorizer() {
         UriAuthorizer.setGlobal(null);
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.NONE;
     }
 
     // Helpers - start.
@@ -659,6 +662,78 @@ class ResourceAccessRestrictionsTest extends BaseIntegrationTest {
     @Test
     void rdfProcessorQueryStillWorks() throws Exception {
         run("sec-rdf-ask", null, inputs("query", "ASK { ?s ?p ?o }")).assertSuccess();
+    }
+
+    private static final String MODEL_JSONLD = "{\"@context\":{\"ex\":\"http://example.org/\"},\"@id\":\"ex:alice\",\"@type\":\"ex:Person\"}";
+
+    @Test
+    void rdfProcessorRejectsBlacklistedInputContentType() throws Exception {
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of(null, "application/ld+json");
+        assertBlocked(run("sec-rdf-convert", null, inputs("model", MODEL_JSONLD, "modelType", "application/ld+json")), "is not allowed by the test engine's configuration");
+        // Equivalent content types are covered.
+        assertBlocked(run("sec-rdf-convert", null, inputs("model", MODEL_JSONLD, "modelType", "application/json")), "is not allowed by the test engine's configuration");
+        // Positive control.
+        run("sec-rdf-convert", null, inputs("model", MODEL_TTL, "modelType", "text/turtle")).assertSuccess();
+    }
+
+    @Test
+    void rdfProcessorRejectsContentTypeOutsideWhitelist() throws Exception {
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of("text/turtle", null);
+        assertBlocked(run("sec-rdf-convert", null, inputs("model", MODEL_JSONLD, "modelType", "application/ld+json")), "is not allowed by the test engine's configuration");
+        run("sec-rdf-convert", null, inputs("model", MODEL_TTL, "modelType", "text/turtle")).assertSuccess();
+    }
+
+    @Test
+    void rdfProcessorOutputContentTypeIsNotRestricted() throws Exception {
+        // The (fixed) output content type of the test case is text/turtle, which is blacklisted for parsing.
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of(null, "text/turtle");
+        run("sec-rdf-convert", null, inputs("model", MODEL_JSONLD, "modelType", "application/ld+json")).assertSuccess();
+    }
+
+    @Test
+    void rdfProcessorQueryRejectsBlacklistedModelContentType() throws Exception {
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of(null, "text/turtle");
+        assertBlocked(run("sec-rdf-ask", null, inputs("query", "ASK { ?s ?p ?o }")), "is not allowed by the test engine's configuration");
+    }
+
+    @Test
+    void shaclRejectsBlacklistedModelContentType() throws Exception {
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of(null, "application/ld+json");
+        assertBlocked(run("sec-shacl", null, shaclInputs(MODEL_JSONLD, "application/ld+json", SHAPES_TTL, "text/turtle", false)), "is not allowed by the test engine's configuration");
+        run("sec-shacl", null, shaclInputs(MODEL_TTL, "text/turtle", SHAPES_TTL, "text/turtle", false)).assertSuccess();
+    }
+
+    @Test
+    void shaclRejectsBlacklistedShapesContentType() throws Exception {
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of(null, "application/rdf+xml");
+        String shapes = "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:sh=\"http://www.w3.org/ns/shacl#\"><sh:NodeShape rdf:about=\"http://example.org/Shape\"/></rdf:RDF>";
+        assertBlocked(run("sec-shacl", null, shaclInputs(MODEL_TTL, "text/turtle", shapes, "application/rdf+xml", false)), "is not allowed by the test engine's configuration");
+    }
+
+    @Test
+    void shaclRejectsModelContentTypeWhenThereAreNoShapes() throws Exception {
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of("text/turtle", null);
+        assertBlocked(run("sec-shacl", null, shaclInputs(MODEL_JSONLD, "application/ld+json", "", "text/turtle", false)), "is not allowed by the test engine's configuration");
+    }
+
+    @Test
+    void shaclImportWithContentTypeOutsideWhitelistIsBlocked() throws Exception {
+        whitelistExternalResources();
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of("text/turtle", null);
+        String path = serve("application/rdf+xml", "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"/>");
+        String model = "@prefix owl: <http://www.w3.org/2002/07/owl#> . <http://example.org/onto> a owl:Ontology ; owl:imports <" + base() + path + "> .";
+        assertBlocked(run("sec-shacl", null, shaclInputs(model, "text/turtle", SHAPES_TTL, "text/turtle", true)), "is not allowed by the test engine's configuration");
+    }
+
+    @Test
+    void shaclImportWithWhitelistedContentTypeIsLoaded() throws Exception {
+        whitelistExternalResources();
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of("text/turtle", null);
+        String path = serve("text/turtle", "@prefix ex: <http://example.org/> . ex:bob a ex:Person .");
+        String model = "@prefix owl: <http://www.w3.org/2002/07/owl#> . <http://example.org/onto> a owl:Ontology ; owl:imports <" + base() + path + "> .";
+        // The imported person has no name, which makes the validation fail.
+        run("sec-shacl", null, shaclInputs(model, "text/turtle", SHAPES_TTL, "text/turtle", true)).assertFailed();
+        assertEquals(1, requestCount(path));
     }
 
     // RDF - end.

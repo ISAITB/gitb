@@ -15,11 +15,13 @@
 
 package com.gitb.engine.utils.rdf;
 
+import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.utils.GuardedUriReader;
 import com.gitb.utils.UriAuthorizer;
 import com.gitb.utils.UriNotAllowedException;
 import org.apache.jena.atlas.web.ContentType;
 import org.apache.jena.atlas.web.TypedInputStream;
+import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.WebContent;
 import org.apache.jena.riot.system.streammgr.Locator;
@@ -40,6 +42,22 @@ public class GuardedHttpLocator implements Locator {
                 ContentType contentType = response.contentType()
                         .map(ContentType::create)
                         .orElseGet(() -> RDFLanguages.guessContentType(uri));
+                var restrictions = TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS;
+                if (restrictions.isRestricted()) {
+                    // Check the syntax Jena will parse the document with, and have it use exactly that syntax.
+                    Lang lang = RdfContentRestrictions.toLanguage(contentType);
+                    if (lang == null || WebContent.contentTypeTextPlain.equals(contentType.getContentTypeStr())) {
+                        // Fall back on the resource name if the response content type is not informative.
+                        Lang guessed = RDFLanguages.resourceNameToLang(uri);
+                        if (guessed != null) {
+                            lang = guessed;
+                        }
+                    }
+                    restrictions.check(lang);
+                    if (lang != null) {
+                        contentType = lang.getContentType();
+                    }
+                }
                 // The stream is handed over to Jena, that closes it once read.
                 return new TypedInputStream(response.stream(), contentType);
             } catch (RuntimeException e) {

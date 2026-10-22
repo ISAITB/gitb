@@ -152,6 +152,15 @@ srv:
     # REMOTE_LIMITS_MAX_TOTAL_SIZE: 250MB
     ## srv.env.REMOTE_LIMITS_REQUEST_TIMEOUT is the maximum time (in milliseconds) for a single remote request, including reading its response.
     # REMOTE_LIMITS_REQUEST_TIMEOUT: 60000
+    #
+    ## The following restrict the RDF content types (mime types, comma-separated) that are accepted when parsing RDF content
+    ## (e.g. models and shapes processed by RdfUtils and ShaclValidator, and ontologies loaded via owl:imports). Output content types are not restricted.
+    ## If a whitelist is set only its content types are accepted (and the blacklist is ignored). Invalid values prevent startup.
+    ##
+    ## srv.env.RDF_CONTENT_WHITELIST is the only RDF content types to accept.
+    # RDF_CONTENT_WHITELIST: text/turtle,application/rdf+xml
+    ## srv.env.RDF_CONTENT_BLACKLIST is the RDF content types to reject.
+    # RDF_CONTENT_BLACKLIST: application/ld+json
 
 #
 # The user interface component providing the UI and REST API, as well as realising all management and reporting features.

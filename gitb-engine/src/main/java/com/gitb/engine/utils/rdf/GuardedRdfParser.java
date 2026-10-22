@@ -15,6 +15,7 @@
 
 package com.gitb.engine.utils.rdf;
 
+import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.utils.UriAuthorizer;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.Lang;
@@ -50,12 +51,13 @@ public final class GuardedRdfParser {
      * Parse the provided content into a new model.
      *
      * @param content The content.
-     * @param language The syntax of the content.
+     * @param language The syntax of the content (must be accepted by the configured {@link RdfContentRestrictions}).
      * @param nsPrefixes The namespace prefixes to set before parsing, to avoid mismatches (may be null).
      * @return The parsed model.
      */
     public static Model readModel(String content, Lang language, Map<String, String> nsPrefixes) {
         RdfSecurity.install();
+        TestEngineConfiguration.RDF_CONTENT_RESTRICTIONS.check(language);
         var builder = RDFParserBuilder
                 .create()
                 .lang(language)

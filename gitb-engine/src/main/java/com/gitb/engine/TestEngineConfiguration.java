@@ -17,6 +17,7 @@ package com.gitb.engine;
 
 import com.gitb.CoreConfiguration;
 import com.gitb.engine.messaging.handlers.server.Configuration;
+import com.gitb.engine.utils.rdf.RdfContentRestrictions;
 import com.gitb.utils.HmacUtils;
 import com.gitb.utils.RemoteResourceLimits;
 import com.gitb.utils.UriAuthorizer;
@@ -73,6 +74,7 @@ public class TestEngineConfiguration {
 	public static String TEMP_LOCATION;
 	public static Boolean TEMP_CALLBACK_STORAGE_ENABLED;
 	public static String TEMP_CALLBACK_STORAGE_LOCATION;
+	public static RdfContentRestrictions RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.NONE;
 
 	public static final String HANDLER_API_SEGMENT = "api";
 	private static final String ENV_CALLBACK_ROOT_URL = "CALLBACK_ROOT_URL";
@@ -102,6 +104,8 @@ public class TestEngineConfiguration {
 	private static final String ENV_TEMP_LOCATION = "GITB_ENGINE_TEMP_LOCATION";
 	private static final String ENV_TEMP_CALLBACK_STORAGE_ENABLED = "GITB_ENGINE_CALLBACK_STORAGE_ENABLED";
 	private static final String ENV_TEMP_CALLBACK_STORAGE_LOCATION = "GITB_ENGINE_CALLBACK_STORAGE_LOCATION";
+	public static final String ENV_RDF_CONTENT_WHITELIST = "RDF_CONTENT_WHITELIST";
+	public static final String ENV_RDF_CONTENT_BLACKLIST = "RDF_CONTENT_BLACKLIST";
 	private static final String ENV_FILE_SUFFIX = "_FILE";
 	private static final String ENV_DEV_FILE_SUFFIX = "_FILE_DEV";
 	private static final Path DEFAULT_EXTRA_CONFIGS_PATH = Path.of("/itbsrv/extra-configs");
@@ -120,6 +124,8 @@ public class TestEngineConfiguration {
 			UriAuthorizer.global();
 			// Determine (and log) the limits on the remote resources that a test step can load.
 			RemoteResourceLimits.global();
+			// Determine (and log) the restrictions on the RDF content types that are accepted when parsing RDF content.
+			RDF_CONTENT_RESTRICTIONS = RdfContentRestrictions.of(config.getString(ENV_RDF_CONTENT_WHITELIST, null), config.getString(ENV_RDF_CONTENT_BLACKLIST, null));
 			// Determine callback URLs - start.
 			var rootCallbackUrl = config.getString(ENV_CALLBACK_ROOT_URL, "");
 			var messagingCallbackUrl = config.getString(ENV_CALLBACK_MESSAGING_URL, "");
