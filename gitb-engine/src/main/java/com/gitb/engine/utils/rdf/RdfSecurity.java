@@ -71,10 +71,13 @@ public final class RdfSecurity {
         streamManager.addLocator(new GuardedHttpLocator());
         var documentManager = new OntDocumentManager(new AdapterFileManager(streamManager), (String) null);
         documentManager.setReadFailureHandler((url, model, e) -> {
-            // Imports that cannot be read are ignored, unless they were not permitted.
+            // Imports that cannot be read are ignored, unless they were not permitted (address or RDF content type).
             Throwable current = e;
             while (current != null) {
                 if (current instanceof UriNotAllowedException blocked) {
+                    throw blocked;
+                }
+                if (current instanceof RdfSyntaxNotAllowedException blocked) {
                     throw blocked;
                 }
                 current = current.getCause();

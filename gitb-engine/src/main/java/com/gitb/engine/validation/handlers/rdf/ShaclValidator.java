@@ -20,6 +20,7 @@ import com.gitb.core.Configuration;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.utils.rdf.GuardedRdfParser;
+import com.gitb.engine.utils.rdf.RdfContentRestrictions;
 import com.gitb.engine.utils.rdf.RdfSecurity;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
@@ -83,12 +84,6 @@ public class ShaclValidator extends AbstractValidator {
     private static final ContentType APPLICATION_XML =  ContentType.create("application/xml");
     private static final ContentType TEXT_XML =  ContentType.create("text/xml");
     private static final ContentType APPLICATION_JSON =  ContentType.create("application/json");
-
-    private static final Map<String, Lang> EQUIVALENT_CONTENT_TYPES = Map.of(
-            APPLICATION_XML.getContentTypeStr(), RDFLanguages.RDFXML,
-            TEXT_XML.getContentTypeStr(), RDFLanguages.RDFXML,
-            APPLICATION_JSON.getContentTypeStr(), RDFLanguages.JSONLD
-    );
 
     private static final Map<Lang, String> CONTENT_TYPES_FOR_REPORT = Map.of(
             RDFLanguages.RDFXML, APPLICATION_XML.getContentTypeStr(),
@@ -209,13 +204,9 @@ public class ShaclValidator extends AbstractValidator {
     }
 
     private Lang parseLanguage(String contentTypeString, Supplier<String> messageSupplier) {
-        ContentType contentType = ContentType.create(contentTypeString);
-        Lang rdfLanguage = RDFLanguages.contentTypeToLang(contentType);
+        Lang rdfLanguage = RdfContentRestrictions.toLanguage(contentTypeString);
         if (rdfLanguage == null) {
-            rdfLanguage = EQUIVALENT_CONTENT_TYPES.get(contentType.getContentTypeStr());
-            if (rdfLanguage == null) {
-                throw new IllegalArgumentException(messageSupplier.get());
-            }
+            throw new IllegalArgumentException(messageSupplier.get());
         }
         return rdfLanguage;
     }

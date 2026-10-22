@@ -21,6 +21,7 @@ import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.engine.utils.rdf.GuardedRdfParser;
+import com.gitb.engine.utils.rdf.RdfContentRestrictions;
 import com.gitb.engine.utils.rdf.RdfSecurity;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
@@ -36,14 +37,12 @@ import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFLanguages;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -77,12 +76,6 @@ public class RdfUtils extends AbstractProcessingHandler {
     private static final ContentType APPLICATION_SPARQL_RESULTS_JSON = ContentType.create("application/sparql-results+json");
     private static final ContentType TEXT_CSV =  ContentType.create("text/csv");
     private static final ContentType TEXT_TSV =  ContentType.create("text/tab-separated-values");
-
-    private static final Map<String, Lang> EQUIVALENT_CONTENT_TYPES = Map.of(
-            APPLICATION_XML.getContentTypeStr(), RDFLanguages.RDFXML,
-            TEXT_XML.getContentTypeStr(), RDFLanguages.RDFXML,
-            APPLICATION_JSON.getContentTypeStr(), RDFLanguages.JSONLD
-    );
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -280,13 +273,9 @@ public class RdfUtils extends AbstractProcessingHandler {
     }
 
     private Lang parseLanguage(StringType syntax, Supplier<String> messageSupplier) {
-        var contentType = ContentType.create(syntax.getValue());
-        Lang rdfLanguage = RDFLanguages.contentTypeToLang(contentType);
+        Lang rdfLanguage = RdfContentRestrictions.toLanguage(syntax.getValue());
         if (rdfLanguage == null) {
-            rdfLanguage = EQUIVALENT_CONTENT_TYPES.get(contentType.getContentTypeStr());
-            if (rdfLanguage == null) {
-                throw new IllegalArgumentException(messageSupplier.get());
-            }
+            throw new IllegalArgumentException(messageSupplier.get());
         }
         return rdfLanguage;
     }
