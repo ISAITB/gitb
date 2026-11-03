@@ -27,12 +27,12 @@
         -->
         <!-- Plugin versions -->
         <version.plugin.dependencyCheckMaven>12.2.2</version.plugin.dependencyCheckMaven>
-        <version.plugin.mavenDeployPlugin>3.1.4</version.plugin.mavenDeployPlugin>
-        <version.plugin.mavenCompilerPlugin>3.15.0</version.plugin.mavenCompilerPlugin>
-        <version.plugin.jaxb2MavenPlugin>4.1.0</version.plugin.jaxb2MavenPlugin>
+        <version.plugin.mavenDeployPlugin>3.2.0</version.plugin.mavenDeployPlugin>
+        <version.plugin.mavenCompilerPlugin>3.16.0</version.plugin.mavenCompilerPlugin>
+        <version.plugin.jaxb2MavenPlugin>4.2.0</version.plugin.jaxb2MavenPlugin>
         <version.plugin.licenseMavenPlugin>2.7.1</version.plugin.licenseMavenPlugin>
         <version.plugin.antrunPlugin>3.2.0</version.plugin.antrunPlugin>
-        <version.plugin.versionsMavenPlugin>2.21.0</version.plugin.versionsMavenPlugin>
+        <version.plugin.versionsMavenPlugin>2.23.0</version.plugin.versionsMavenPlugin>
         <version.plugin.mavenSitePlugin>3.22.0</version.plugin.mavenSitePlugin>
         <version.plugin.projectInfoReports>3.9.0</version.plugin.projectInfoReports>
         <version.plugin.cycloneDxPlugin>2.9.3</version.plugin.cycloneDxPlugin>
