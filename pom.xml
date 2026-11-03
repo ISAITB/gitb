@@ -106,7 +106,7 @@
         -->
         <version.jaxbImplLegacy>2.3.9</version.jaxbImplLegacy>
         <version.swaggerUi>5.34.1</version.swaggerUi> <!-- When upgrading, also update the version in class SwaggerConfig -->
-        <version.owaspHtmlSanitizer>20261011.1</version.owaspHtmlSanitizer>
+        <version.owaspHtmlSanitizer>20261102.2</version.owaspHtmlSanitizer>
         <version.asm>9.11.1</version.asm>
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
