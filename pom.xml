@@ -92,7 +92,7 @@
         <version.jackson2>2.22.4</version.jackson2> <!-- Used for libraries that have not upgraded to Jackson 3 (the package is different so no conflicts) -->
         <version.jacksonAnnotations>2.22</version.jacksonAnnotations>
         <version.pdfbox>3.0.8</version.pdfbox>
-        <version.verapdf>1.30.2</version.verapdf>
+        <version.verapdf>1.30.3</version.verapdf>
         <!--
             veraPDF's profile loading (org.verapdf.pdfa.validation.profiles.Profiles) unmarshals its
             bundled PDF/A and PDF/UA profile XMLs using the legacy javax.xml.bind (JAXB 2) API, for
