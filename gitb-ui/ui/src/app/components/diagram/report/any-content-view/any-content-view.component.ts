@@ -150,7 +150,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       .subscribe((data) => {
         if (data.dataAsBytes) {
           const bb = new Blob([data.dataAsBytes], {type: data.mimeType})
-          if (this.fileNameDownload != undefined && this.preserveName) {
+          if (this.fileNameDownload != undefined) {
             saveAs(bb, this.fileNameDownload)
           } else {
             saveAs(bb, 'file'+this.extension(data.mimeType))
