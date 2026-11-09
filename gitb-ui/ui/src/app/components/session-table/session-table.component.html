@@ -6,7 +6,11 @@
         <thead>
             <tr>
                 @if (checkboxEnabled) {
-                    <th class="th-min centered"></th>
+                    <th class="th-min centered">
+                        <div class="cell-content">
+                            <input type="checkbox" class="form-check-input" [checked]="allChecked" [indeterminate]="someChecked" (change)="toggleAllChecked()">
+                        </div>
+                    </th>
                 }
                 <th class="th-min centered"></th>
                 @for (column of columnsLeft; track column) {
