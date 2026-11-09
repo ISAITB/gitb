@@ -100,6 +100,19 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
     private renderer: Renderer2
   ) { super() }
 
+  get allChecked(): boolean {
+    return this.data != undefined && this.data.length > 0 && this.data.every((r) => r.checked === true)
+  }
+
+  get someChecked(): boolean {
+    return !this.allChecked && this.data != undefined && this.data.some((r) => r.checked === true)
+  }
+
+  toggleAllChecked() {
+    const target = !this.allChecked
+    this.data?.forEach((r) => r.checked = target)
+  }
+
   ngOnInit(): void {
     this.processColumns()
     if (this.refreshComplete) {
