@@ -107,8 +107,8 @@ export class ErrorService {
                 }
               }
             } catch (e) {
-              if (error.statusText) {
-                errorInfoToUse.error_description = `An unexpected error occurred [${error.statusText}].`
+              if (error.status > 0) {
+                errorInfoToUse.error_description = `An unexpected error occurred while communicating with the server (HTTP status ${error.status}).`
               } else {
                 errorInfoToUse.error_description = "An unexpected error occurred."
               }
