@@ -833,8 +833,12 @@ export abstract class BaseSessionDashboardComponent extends BaseComponent implem
       .subscribe(() => {
         this.deleteSessionsPending = true
         this.conformanceService.deleteTestResults(testsToDelete)
-          .subscribe(() => {
-            this.popupService.success('Test results deleted.')
+          .subscribe((result) => {
+            if (result?.scheduled) {
+              this.popupService.success('Test results scheduled for deletion.')
+            } else {
+              this.popupService.success('Test results deleted.')
+            }
             this.getCompletedTests(this.currentCompletedPagingInfo())
           }).add(() => {
           this.deleteSessionsPending = false
