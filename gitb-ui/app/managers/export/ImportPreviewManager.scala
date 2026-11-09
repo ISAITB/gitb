@@ -61,7 +61,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
   to be an XSLT schema/export/migrations/from_[FROM_VERSION]_to_[TO_VERSION].xslt.
    */
   private val MIGRATIONS: List[(Version, Version)] = List(
-    (new Version(1, 9, 1), new Version(1, 10, 0))
+    (new Version(1, 9, 1), new Version(1, 10, 0)),
+    (new Version(1, 10, 0), new Version(1, 29, 0)),
+    (new Version(1, 29, 0), new Version(1, 30, 0))
   )
 
 
