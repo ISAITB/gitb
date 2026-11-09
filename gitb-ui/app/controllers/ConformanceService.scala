@@ -957,7 +957,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteAllObsoleteTestResults(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canDeleteAllObsoleteTestResults(request).map { _ =>
-      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteAllObsoleteSessions
+      actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteAllObsoleteSessions()
       ResponseConstructor.constructEmptyResponse
     }
   }
