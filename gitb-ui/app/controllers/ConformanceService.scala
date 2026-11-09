@@ -17,6 +17,7 @@ package controllers
 
 import actors.BulkTaskActor
 import actors.events.obsolete.{DeleteAllObsoleteSessions, DeleteObsoleteSessionsForCommunity, DeleteObsoleteSessionsForOrganisation}
+import actors.events.sessions.DeleteTestSessions
 import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.ConformanceService.{KeystoreInfo, TestSuiteUploadInfo}
@@ -47,6 +48,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
 
 object ConformanceService {
+
+  // Number of test sessions from which a deletion is processed asynchronously.
+  private val ASYNC_SESSION_DELETE_THRESHOLD = 10
 
   case class KeystoreInfo(failure: Option[Result], keystorePassword: Option[String], keyPassword: Option[String], keystoreFile: Option[File])
 
@@ -939,8 +943,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     val communityId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.COMMUNITY_ID)
     authorizationManager.canDeleteTestResults(request, communityId).flatMap { _ =>
       val sessionIds = JsonUtil.parseStringArray(ParameterExtractor.requiredBodyParameter(request, ParameterNames.SESSION_IDS))
-      testResultManager.deleteTestSessions(sessionIds).map { _ =>
-        ResponseConstructor.constructEmptyResponse
+      if (sessionIds.size >= ConformanceService.ASYNC_SESSION_DELETE_THRESHOLD) {
+        // Large deletions can exceed request timeouts (e.g. of a reverse proxy) so are processed in the background.
+        actorSystem.actorSelection(s"/user/${BulkTaskActor.actorName}") ! DeleteTestSessions(sessionIds)
+        Future.successful(ResponseConstructor.constructJsonResponse("""{"scheduled":true}"""))
+      } else {
+        testResultManager.deleteTestSessions(sessionIds).map { _ =>
+          ResponseConstructor.constructJsonResponse("""{"scheduled":false}""")
+        }
       }
     }
   }

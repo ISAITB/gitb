@@ -291,7 +291,7 @@ export class ConformanceService {
     if (this.dataService.isCommunityAdmin) {
       data.community_id = this.dataService.community!.id
     }
-    return this.restService.post<void>({
+    return this.restService.post<{scheduled?: boolean}|undefined>({
       path: ROUTES.controllers.ConformanceService.deleteTestResults().url,
       authenticate: true,
       data: data
