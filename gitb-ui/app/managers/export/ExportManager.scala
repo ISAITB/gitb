@@ -676,7 +676,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedTestSuite.setOriginalDate(testSuite.originalDate.orNull)
     exportedTestSuite.setSpecification(specificationToSet.orNull)
     exportedTestSuite.setSpecReference(testSuite.specReference.orNull)
-    exportedTestSuite.setSpecDescription(testSuite.specReference.orNull)
+    exportedTestSuite.setSpecDescription(testSuite.specDescription.orNull)
     exportedTestSuite.setSpecReference(testSuite.specReference.orNull)
     // Zip the test suite's resources to a temporary archive and convert it to a BASE64 string.
     val testTestSuitePath = testSuiteManager.extractTestSuite(testSuite, None)
@@ -728,7 +728,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         exportedTestCase.setDisabled(testCase.isDisabled)
         exportedTestCase.setTags(testCase.tags.orNull)
         exportedTestCase.setSpecReference(testCase.specReference.orNull)
-        exportedTestCase.setSpecDescription(testCase.specReference.orNull)
+        exportedTestCase.setSpecDescription(testCase.specDescription.orNull)
         exportedTestCase.setSpecReference(testCase.specReference.orNull)
         exportedTestCase.setGroup(testCase.group.flatMap(exportedGroupMap.get).orNull)
         // Test case path - remove first part which represents the test suite
@@ -1478,7 +1478,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                     exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.DOMAIN)
                     if (message.domain.isDefined) {
                       if (domainExportInfo.isDefined && domainExportInfo.get.exportedDomain.isDefined) {
-                        exportedMessage.setIdentifier(domainExportInfo.get.exportedDomain.get.getId)
+                        exportedMessage.setIdentifier(domainExportInfo.get.exportedDomain.get)
                         includeInExport = true
                       }
                     } else {
@@ -1510,7 +1510,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 }
               }
               if (!messages.getMessage.isEmpty) {
-                communityData.getConformanceOverviewCertificateSettings.setMessages(new ConformanceOverviewCertificateMessages)
+                communityData.getConformanceOverviewCertificateSettings.setMessages(messages)
               }
             }
           }
