@@ -19,7 +19,7 @@ import com.gitb.core.StepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import managers.TestResultManager.logger
+import managers.TestResultManager.{OBSOLETE_SESSION_PROGRESS_INTERVAL, ObsoleteSessionOutcome, logger}
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.io.FileUtils
@@ -47,6 +47,11 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 object TestResultManager {
 
   private val logger = LoggerFactory.getLogger(classOf[TestResultManager])
+  private val OBSOLETE_SESSION_PROGRESS_INTERVAL = 100
+
+  private object ObsoleteSessionOutcome extends Enumeration {
+    val Deleted, Skipped, Failed = Value
+  }
 
 }
 
@@ -289,15 +294,29 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
   }
 
   def deleteObsoleteTestResultsForOrganisationWrapper(organisationId: Long): Future[Int] = {
-    val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val action = deleteObsoleteTestResultsForOrganisation(organisationId, onSuccessCalls)
-    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(x => x.organizationId === organisationId &&
+          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.communityId.isEmpty || x.sutId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        )
+        .map(_.testSessionId)
+        .result
+    ).flatMap { ids =>
+      deleteObsoleteTestSessionsSequentially(ids, s" for organisation $organisationId")
+    }
   }
 
   def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Future[Int] = {
-    val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val action = deleteObsoleteTestResultsForCommunity(communityId, onSuccessCalls)
-    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(x => x.communityId === communityId &&
+          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.sutId.isEmpty || x.organizationId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        )
+        .map(_.testSessionId)
+        .result
+    ).flatMap { ids =>
+      deleteObsoleteTestSessionsSequentially(ids, s" for community $communityId")
+    }
   }
 
   def deleteSessionDataFromFileSystem(testResult: TestResult): Unit = {
@@ -393,63 +412,91 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     toDBIO(actions)
   }
 
-  def deleteObsoleteTestResultsForOrganisation(organisationId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Int] = {
-    for  {
-      sessions <- PersistenceSchema.testResults
-        .filter(x => x.organizationId === organisationId &&
-          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.communityId.isEmpty || x.sutId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
-        ).result
-      _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
-    } yield sessions.size
-  }
-
-  def deleteObsoleteTestResultsForCommunity(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Int] = {
-    for {
-      sessions <- PersistenceSchema.testResults
-        .filter(x => x.communityId === communityId &&
-          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.sutId.isEmpty || x.organizationId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
-        )
-        .result
-      _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
-    } yield sessions.size
-  }
-
-  private def deleteObsoleteTestSessions(sessions: Iterable[TestResult], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
-    logger.info("Starting deletion of {} obsolete test sessions", sessions.size)
-    val actions = ListBuffer[DBIO[_]]()
-    sessions.foreach { session =>
-      actions += (
-        for {
-          // Make sure we don't delete obsolete sessions that may be actively linked to a shared test suite.
-          linkedToSharedTestSuite <- {
-            if (session.testSuiteId.isEmpty || session.testCaseId.isEmpty) {
-              DBIO.successful(false)
-            } else {
-              PersistenceSchema.testSuites.filter(_.id === session.testSuiteId.get).map(_.shared).result.head
-            }
-          }
-          _ <- if (linkedToSharedTestSuite) {
-            // Skip the delete.
-            DBIO.successful(())
-          } else {
-            // Proceed.
-            deleteTestSession(session, onSuccessCalls)
-          }
-        } yield ()
-      )
+  /*
+   * Deletes the (snapshot of) obsolete sessions one after the other, each in its own transaction. Sessions are
+   * processed strictly sequentially to avoid flooding the DB executor queue and connection pool. The session's
+   * folder is deleted only after its transaction has committed. Returns the number of sessions actually deleted.
+   */
+  private def deleteObsoleteTestSessionsSequentially(sessionIds: Seq[String], scope: String): Future[Int] = {
+    val total = sessionIds.size
+    logger.info("Starting deletion of {} obsolete test sessions{}", total, scope)
+    var deleted = 0
+    var skipped = 0
+    var failed = 0
+    def logProgress(processed: Int): Unit = {
+      logger.info("Delete {} of {} obsolete test sessions{} ({} deleted, {} skipped as linked to shared test suites or no longer present, {} failed)",
+        processed, total, scope, deleted, skipped, failed)
     }
-    toDBIO(actions)
+    def deleteOne(sessionId: String): Future[ObsoleteSessionOutcome.Value] = {
+      val onSuccessCalls = mutable.ListBuffer[() => _]()
+      val action = for {
+        // Re-read the session as it may have changed since the list of sessions was loaded.
+        sessionOption <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
+        outcome <- sessionOption match {
+          case None => DBIO.successful(ObsoleteSessionOutcome.Skipped)
+          case Some(session) =>
+            for {
+              // Make sure we don't delete obsolete sessions that may be actively linked to a shared test suite.
+              linkedToSharedTestSuite <- {
+                if (session.testSuiteId.isEmpty || session.testCaseId.isEmpty) {
+                  DBIO.successful(false)
+                } else {
+                  PersistenceSchema.testSuites.filter(_.id === session.testSuiteId.get).map(_.shared).result.headOption.map(_.getOrElse(false))
+                }
+              }
+              outcome <- if (linkedToSharedTestSuite) {
+                DBIO.successful(ObsoleteSessionOutcome.Skipped)
+              } else {
+                deleteTestSession(session, onSuccessCalls).map(_ => ObsoleteSessionOutcome.Deleted)
+              }
+            } yield outcome
+        }
+      } yield outcome
+      DB.run(action.transactionally).map { outcome =>
+        // The transaction was committed: remove the file system data.
+        if (outcome == ObsoleteSessionOutcome.Deleted) {
+          onSuccessCalls.foreach(_.apply())
+        }
+        outcome
+      }.recover {
+        case e: Exception =>
+          logger.warn("Unable to delete obsolete test session [" + sessionId + "]", e)
+          ObsoleteSessionOutcome.Failed
+      }
+    }
+    def process(remaining: List[String], processed: Int): Future[Int] = {
+      remaining match {
+        case Nil => Future.successful(deleted)
+        case sessionId :: rest =>
+          deleteOne(sessionId).flatMap { outcome =>
+            outcome match {
+              case ObsoleteSessionOutcome.Deleted => deleted += 1
+              case ObsoleteSessionOutcome.Skipped => skipped += 1
+              case ObsoleteSessionOutcome.Failed => failed += 1
+            }
+            val newProcessed = processed + 1
+            if (newProcessed % OBSOLETE_SESSION_PROGRESS_INTERVAL == 0 && newProcessed < total) {
+              logProgress(newProcessed)
+            }
+            process(rest, newProcessed)
+          }
+      }
+    }
+    process(sessionIds.toList, 0).map { count =>
+      logger.info("Finished deletion of obsolete test sessions{}: {} deleted, {} skipped, {} failed, out of {}", scope, deleted, skipped, failed, total)
+      count
+    }
   }
 
   def deleteAllObsoleteTestResults(): Future[Int] = {
-    val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val action = for {
-      sessions <- PersistenceSchema.testResults
+    DB.run(
+      PersistenceSchema.testResults
         .filter(x => x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        .map(_.testSessionId)
         .result
-      _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
-    } yield sessions.size
-    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    ).flatMap { ids =>
+      deleteObsoleteTestSessionsSequentially(ids, "")
+    }
   }
 
   def testSessionsExistForSystemAndActors(systemId: Long, actorIds: List[Long]): Future[Boolean] = {
