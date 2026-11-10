@@ -71,21 +71,16 @@ class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageMana
   }
 
   private def handleDeleteAllObsoleteSessions(): Future[Unit] = {
-    testResultManager.deleteAllObsoleteTestResults().map { count =>
-      logger.info("Deleted {} obsolete test sessions", count)
-    }
+    // The summary is logged by the manager.
+    testResultManager.deleteAllObsoleteTestResults().map(_ => ())
   }
 
   private def handleDeleteObsoleteSessionsForCommunity(msg: DeleteObsoleteSessionsForCommunity): Future[Unit] = {
-    testResultManager.deleteObsoleteTestResultsForCommunityWrapper(msg.communityId).map { count =>
-      logger.info("Deleted {} obsolete test sessions for community {}", count, msg.communityId)
-    }
+    testResultManager.deleteObsoleteTestResultsForCommunityWrapper(msg.communityId).map(_ => ())
   }
 
   private def handleDeleteObsoleteSessionsForOrganisation(msg: DeleteObsoleteSessionsForOrganisation): Future[Unit] = {
-    testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(msg.organisationId).map { count =>
-      logger.info("Deleted {} obsolete test sessions for organisation {}", count, msg.organisationId)
-    }
+    testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(msg.organisationId).map(_ => ())
   }
 
   private def handleDeleteTestSessions(msg: DeleteTestSessions): Future[Unit] = {
