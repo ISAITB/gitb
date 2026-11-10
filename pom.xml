@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.30.2</version>
+    <version>1.30.3</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -352,8 +352,8 @@
                         <execution>
                             <phase>none</phase>
                             <!--
-                                Run manually with `mvn versions:set -DnewVersion=1.30.2`
-                                For a new development cycle run `mvn versions:set -DnewVersion=1.30.2-SNAPSHOT`
+                                Run manually with `mvn versions:set -DnewVersion=1.30.3`
+                                For a new development cycle run `mvn versions:set -DnewVersion=1.30.3-SNAPSHOT`
                                 The version number should be aligned with the gitb-types-jakarta dependency.
                             -->
                         </execution>
