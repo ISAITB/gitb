@@ -26,7 +26,12 @@
                             }
                         } @else {
                             @if (withName) {
-                                <div class="content-label" [class.break-texts]="breakNameText">{{ name }}</div>
+                                @if (withValue && !showValueInline) {
+                                    <!-- The value is not displayed inline (it is accessed via the controls): the name is shown as the value, not as a label over nothing. -->
+                                    <div class="content-value" [class.break-texts]="breakNameText">{{ name }}</div>
+                                } @else {
+                                    <div class="content-label" [class.break-texts]="breakNameText">{{ name }}</div>
+                                }
                             }
                             @if (withValue) {
                                 @if (showValueInline) {
@@ -36,7 +41,7 @@
                                         <div class="content-value no-margin-on-last-p"
                                              [class.break-texts]="breakValueText" [innerHtml]="value | sanitizeHtml"></div>
                                     }
-                                } @else {
+                                } @else if (!withName) {
                                     <div class="content-value not-inline-help-text">Download or view in editor</div>
                                 }
                             } @else if (withName) {

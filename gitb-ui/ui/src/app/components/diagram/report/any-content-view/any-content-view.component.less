@@ -53,6 +53,10 @@
     & > .content-value {
         padding-top: 0;
         padding-bottom: 3px;
+        // Without a label above it the value needs the same spacing on both sides.
+        &:first-child {
+            padding-top: 3px;
+        }
         &.break-texts {
             word-break: break-all;
         }
