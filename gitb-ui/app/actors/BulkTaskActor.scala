@@ -18,6 +18,7 @@ package actors
 import actors.BulkTaskActor.{TaskComplete, logger}
 import actors.events.messaging.CreateMessageUnreadStatus
 import actors.events.obsolete.{DeleteAllObsoleteSessions, DeleteObsoleteSessionsForCommunity, DeleteObsoleteSessionsForOrganisation}
+import actors.events.sessions.DeleteTestSessions
 import managers.{MessageManager, TestResultManager}
 import org.apache.pekko.actor.{Actor, Stash}
 import org.slf4j.LoggerFactory
@@ -43,6 +44,7 @@ class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageMana
     case _: DeleteAllObsoleteSessions               => startTask(handleDeleteAllObsoleteSessions())
     case msg: DeleteObsoleteSessionsForCommunity    => startTask(handleDeleteObsoleteSessionsForCommunity(msg))
     case msg: DeleteObsoleteSessionsForOrganisation => startTask(handleDeleteObsoleteSessionsForOrganisation(msg))
+    case msg: DeleteTestSessions                    => startTask(handleDeleteTestSessions(msg))
     case msg: CreateMessageUnreadStatus             => startTask(handleCreateMessageUnreadStatus(msg))
     case msg => logger.warn("Unexpected event type received [{}]", msg.getClass.getName)
   }
@@ -68,20 +70,21 @@ class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageMana
   }
 
   private def handleDeleteAllObsoleteSessions(): Future[Unit] = {
-    testResultManager.deleteAllObsoleteTestResults().map { count =>
-      logger.info("Deleted {} obsolete test sessions", count)
-    }
+    // The summary is logged by the manager.
+    testResultManager.deleteAllObsoleteTestResults().map(_ => ())
   }
 
   private def handleDeleteObsoleteSessionsForCommunity(msg: DeleteObsoleteSessionsForCommunity): Future[Unit] = {
-    testResultManager.deleteObsoleteTestResultsForCommunityWrapper(msg.communityId).map { count =>
-      logger.info("Deleted {} obsolete test sessions for community {}", count, msg.communityId)
-    }
+    testResultManager.deleteObsoleteTestResultsForCommunityWrapper(msg.communityId).map(_ => ())
   }
 
   private def handleDeleteObsoleteSessionsForOrganisation(msg: DeleteObsoleteSessionsForOrganisation): Future[Unit] = {
-    testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(msg.organisationId).map { count =>
-      logger.info("Deleted {} obsolete test sessions for organisation {}", count, msg.organisationId)
+    testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(msg.organisationId).map(_ => ())
+  }
+
+  private def handleDeleteTestSessions(msg: DeleteTestSessions): Future[Unit] = {
+    testResultManager.deleteTestSessions(msg.sessionIds).map { _ =>
+      logger.info("Deleted {} test sessions", msg.sessionIds.size)
     }
   }
 

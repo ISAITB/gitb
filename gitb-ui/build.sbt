@@ -7,12 +7,12 @@ val jackson2Version = "2.22.4"
 val jackson2ScalaVersion = "2.22.4"
 val jacksonAnnotationsVersion = "2.22"
 val cxfVersion = "4.2.4" // Should match neethi and xmlschema-core versions (specifically set to replace CXF transitive versions).
-val gitbCommonsVersion = "1.30.2"
-val gitbTypesVersion = "1.30.2"
+val gitbCommonsVersion = "1.30.3"
+val gitbTypesVersion = "1.30.3"
 val bouncyCastleVersion = "1.86"
 val commonsTextVersion = "1.15.0"
-val mySqlConnectorVersion = "26.7.0"
-val pac4jVersion = "6.5.9"
+val mySqlConnectorVersion = "26.10.0"
+val pac4jVersion = "6.6.0"
 val nettyVersion = "4.2.18.Final"
 val pdfBoxVersion = "3.0.8"
 val jaxbVersion = "4.0.9"
@@ -70,7 +70,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.3.2",
   "org.webjars" % "jquery" % "4.0.0",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.33.1",
+  "org.webjars" % "swagger-ui" % "5.34.1",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
   "org.glassfish.jaxb"  % "jaxb-runtime" % jaxbVersion,
@@ -87,12 +87,12 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "xmpbox" % pdfBoxVersion,
   "org.flywaydb" %% "flyway-play" % "9.1.0",
   "org.flywaydb" % "flyway-mysql" % "12.10.0",
-  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20261011.1",
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20261102.2",
   "net.lingala.zip4j" % "zip4j" % "2.11.6",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.10",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
-  "com.bucket4j" % "bucket4j_jdk17-core" % "8.21.0",
-  "com.github.ben-manes.caffeine" % "caffeine" % "3.3.0"
+  "com.bucket4j" % "bucket4j_jdk17-core" % "8.22.0",
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.3.1"
 )
 
 // Overrides for transitive dependencies to apply patches.

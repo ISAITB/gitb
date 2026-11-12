@@ -36,10 +36,11 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
     PersistenceSchema.organizations
       .join(PersistenceSchema.communities).on(_.community === _.id)
       .filter(_._1.apiKey === organisationKey)
-      .map(x => (x._1.id, x._1.community, x._2.domain, x._2.allowAutomationApi))
+      .map(x => (x._1.id, x._1.community, x._2.domain, x._2.allowAutomationApi, x._1.adminOrganization))
       .result
       .headOption
-      .map(_.map(x => OrganisationIdsForApi(x._1, x._2, x._3, x._4)))
+      // Admin organisations (of the Test Bed or of a community) can always use the API with their own key.
+      .map(_.map(x => OrganisationIdsForApi(x._1, x._2, x._3, x._4 || x._5)))
   }
 
   def checkOrganisationForAutomationApiUse(organisationData: Option[OrganisationIdsForApi]): DBIO[_] = {

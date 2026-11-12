@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.xml.namespace.QName;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -36,6 +37,13 @@ import java.util.*;
 import static com.gitb.CoreConfiguration.TEST_ENGINE_VERSION;
 
 public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
+
+    /*
+     * A single, self-seeded and thread-safe generator shared by all calls. Nonces must never be seeded from the current
+     * time: concurrent calls within the same millisecond would otherwise receive identical nonces and be rejected by the
+     * receiving service as replay attacks.
+     */
+    private static final SecureRandom NONCE_RANDOM = new SecureRandom();
 
     private static final String WSS_URI_BASE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-";
     private static final String WSS_URI_CORE = WSS_URI_BASE + "wssecurity-secext-1.0.xsd";
@@ -181,16 +189,9 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
     }
 
     private String createNonce() {
-        java.security.SecureRandom random;
-        try {
-            random = java.security.SecureRandom.getInstance("SHA1PRNG");
-            random.setSeed(System.currentTimeMillis());
-            byte[] nonceBytes = new byte[16];
-            random.nextBytes(nonceBytes);
-            return new String(Base64.encodeBase64(nonceBytes), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new IllegalStateException("Unable to make nonce", e);
-        }
+        byte[] nonceBytes = new byte[16];
+        NONCE_RANDOM.nextBytes(nonceBytes);
+        return new String(Base64.encodeBase64(nonceBytes), StandardCharsets.UTF_8);
     }
 
     private String calculatePasswordDigest(String nonce, String created, String password) {

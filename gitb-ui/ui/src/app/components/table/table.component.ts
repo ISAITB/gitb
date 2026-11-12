@@ -27,7 +27,6 @@ import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 export class TableComponent extends BaseTableComponent implements OnInit {
 
   columnCount = 0
-  allChecked = false
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
 
   constructor() { super() }
@@ -53,8 +52,9 @@ export class TableComponent extends BaseTableComponent implements OnInit {
     if (this.clearSelection) {
       this.clearSelection.subscribe(() => {
         if (this.checkboxEnabled) {
-          this.allChecked = false
-          this.checkAll()
+          this.data?.forEach((row) => {
+            if (row.checked != undefined) row.checked = false
+          })
         }
         if (this.data) {
           for (let row of this.data) {
@@ -67,19 +67,17 @@ export class TableComponent extends BaseTableComponent implements OnInit {
     }
   }
 
-  checkAll() {
-    if (this.data) {
-      if (this.allChecked) {
-        for (let row of this.data) {
-          row.checked = true
-        }
-      } else {
-        for (let row of this.data) {
-          if (row.checked != undefined) row.checked = false
-        }
-      }
+  get allChecked(): boolean {
+    return this.data != undefined && this.data.length > 0 && this.data.every((r) => r.checked === true)
+  }
 
-    }
+  get someChecked(): boolean {
+    return !this.allChecked && this.data != undefined && this.data.some((r) => r.checked === true)
+  }
+
+  toggleAllChecked() {
+    const target = !this.allChecked
+    this.data?.forEach((r) => r.checked = target)
   }
 
   rowClass(selectedIndex: number): string {

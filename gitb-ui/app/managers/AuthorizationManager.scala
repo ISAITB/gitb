@@ -166,7 +166,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         organizationManager.getByApiKey(apiKey.get).flatMap { organisation =>
           if (organisation.isDefined) {
             communityManager.getById(organisation.get.community).map { community =>
-              community.isDefined && community.get.allowAutomationApi
+              // Admin organisations (of the Test Bed or of a community) can always use the API with their own key.
+              community.isDefined && (community.get.allowAutomationApi || organisation.get.adminOrganization)
             }
           } else {
             Future.successful(false)

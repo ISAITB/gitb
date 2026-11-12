@@ -23,11 +23,11 @@ import managers._
 import models.Enums.LabelType.LabelType
 import models.Enums.{ImportItemMatch, ImportItemType, LabelType}
 import models._
-import net.sf.saxon.xpath.XPathFactoryImpl
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
-import org.xml.sax.InputSource
+import org.xml.sax.helpers.DefaultHandler
+import org.xml.sax.{Attributes, SAXException}
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{ClamAVClient, ZipArchiver}
@@ -38,10 +38,10 @@ import java.util.UUID
 import java.util.regex.Pattern
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.{StreamResult, StreamSource}
-import javax.xml.xpath.XPathFactory
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 
 @Singleton
 class ImportPreviewManager @Inject()(exportManager: ExportManager,
@@ -60,7 +60,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
   to be an XSLT schema/export/migrations/from_[FROM_VERSION]_to_[TO_VERSION].xslt.
    */
   private val MIGRATIONS: List[(Version, Version)] = List(
-    (new Version(1, 9, 1), new Version(1, 10, 0))
+    (new Version(1, 9, 1), new Version(1, 10, 0)),
+    (new Version(1, 10, 0), new Version(1, 29, 0)),
+    (new Version(1, 29, 0), new Version(1, 30, 0))
   )
 
 
@@ -1758,14 +1760,29 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
     } yield result
   }
 
-  private def getXPathFactory():XPathFactory = {
-    new XPathFactoryImpl
-  }
-
   private def getDataFileVersion(xmlFile: Path): Version = {
-    val xPath = getXPathFactory().newXPath()
-    val expression: String = "string(/*:export/@version)"
-    val versionNumber = xPath.evaluate(expression, new InputSource(Files.newInputStream(xmlFile)))
+    // Only the root element's start tag is needed: stream it (SAX) and stop right after, without loading the (potentially
+    // large) archive in memory. The archive is user-provided content, so use a secure source that rejects any DOCTYPE.
+    class RootElementRead extends SAXException
+    var versionNumber = ""
+    val handler = new DefaultHandler {
+      override def startElement(uri: String, localName: String, qName: String, attributes: Attributes): Unit = {
+        if (localName == "export") {
+          versionNumber = Option(attributes.getValue("version")).getOrElse("")
+        }
+        throw new RootElementRead
+      }
+    }
+    Using.resource(Files.newInputStream(xmlFile)) { stream =>
+      val source = XMLUtils.getSecureSaxSource(stream)
+      val reader = source.getXMLReader
+      reader.setContentHandler(handler)
+      try {
+        reader.parse(source.getInputSource)
+      } catch {
+        case _: RootElementRead => // Expected: the root element was read.
+      }
+    }
     val matcher = VERSION_NUMBER_PATTERN.matcher(versionNumber)
     if (matcher.matches() && matcher.groupCount() == 3) {
       val fileVersion = new Version(matcher.group(1).toInt, matcher.group(2).toInt, matcher.group(3).toInt)
@@ -1800,7 +1817,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
           logger.info("Applying migration from ["+fromVersion+"] to ["+toVersion+"]")
           val outputFile = new File(xmlFileToUse.getParent.toFile, UUID.randomUUID().toString + "_"+fromVersion+"_"+toVersion+".xml")
           val transformer = factory.newTransformer(new StreamSource(Thread.currentThread.getContextClassLoader.getResourceAsStream("schema/export/migrations/from_"+fromVersion+"_to_"+toVersion+".xslt")))
-          transformer.transform(new StreamSource(xmlFileToUse.toFile), new StreamResult(outputFile))
+          Using.resource(Files.newInputStream(xmlFileToUse)) { stream =>
+            transformer.transform(XMLUtils.getSecureSaxSource(stream), new StreamResult(outputFile))
+          }
           // Delete the previous file - this is important given that to complete the import we need to have a single XML file in the pending import folder. If the delete fails we don't proceed.
           FileUtils.forceDelete(xmlFileToUse.toFile)
           xmlFileToUse = outputFile.toPath

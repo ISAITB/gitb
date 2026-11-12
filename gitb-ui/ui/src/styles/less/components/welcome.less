@@ -133,9 +133,11 @@
 
 	/* Single rounded info panel: one shared icon (same slot/size as a card's
 	 * icon) on the left, and one title+rule+text column per active message
-	 * on the right, separated by a vertical rule. Icon and columns are
-	 * top-aligned, so a short message (e.g. only the privacy note) leaves
-	 * empty space beside it rather than stretching to fill the row. */
+	 * on the right, separated by a gap (a column gap, not per-message padding,
+	 * so that messages wrapped onto further lines stay aligned with the first).
+	 * Icon and columns are top-aligned, so a short message (e.g. only the
+	 * privacy note) leaves empty space beside it rather than stretching to
+	 * fill the row. */
 	.msg-panel {
 		display: flex;
 		gap: 22px;
@@ -163,14 +165,10 @@
 			display: flex;
 			flex-wrap: wrap;
 			flex: 1 1 auto;
-			gap: 22px 0;
+			gap: 22px 48px;
 		}
 		.msg-seg {
 			flex: 1 1 200px;
-			padding: 0 24px;
-			&:first-child {
-				padding-left: 0;
-			}
 			.seg-title {
 				display: block;
 				font-weight: 700;
