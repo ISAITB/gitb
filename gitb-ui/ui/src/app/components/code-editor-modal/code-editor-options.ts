@@ -20,6 +20,8 @@ export interface EditorOptions {
     lineNumbers: boolean
     copy?: boolean
     mode?: string
+    /** Offer a "Pretty-print" button (effective only if the content type given as the mode can be formatted). */
+    prettyPrint?: boolean
     styleClass?: string
     download?: {
         fileName: string

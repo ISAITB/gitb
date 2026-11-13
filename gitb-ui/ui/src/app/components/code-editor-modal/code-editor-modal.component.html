@@ -11,6 +11,13 @@
     <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
 	<div class="btn-toolbar">
 		<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
+		@if (isPrettyPrintVisible) {
+			@if (prettyPrinted) {
+				<button type="button" [labelIcon]="Constants.BUTTON_ICON.PRETTY_PRINT" class="btn btn-secondary" (click)="togglePrettyPrint()">Show original</button>
+			} @else {
+				<button type="button" [labelIcon]="Constants.BUTTON_ICON.PRETTY_PRINT" class="btn btn-secondary" (click)="togglePrettyPrint()">Pretty-print</button>
+			}
+		}
 		@if (isCopyVisible) {
 			<button type="button" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" class="btn btn-secondary" (click)="copyToClipboard()">Copy to clipboard</button>
 		}

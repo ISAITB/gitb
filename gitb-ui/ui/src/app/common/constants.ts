@@ -126,6 +126,7 @@ export class Constants {
     PENDING: 'fa-solid fa-spinner fa-spin-override fa-lg',
     PENDING_SMALL: 'fa-solid fa-spinner fa-spin-override',
     PLAY: 'fa-solid fa-play',
+    PRETTY_PRINT: 'fa-solid fa-indent',
     PREVIEW: 'fa-solid fa-magnifying-glass',
     PROCESS: 'fa-solid fa-gear',
     PROCESSING_SERVICE: 'fa-solid fa-gear',

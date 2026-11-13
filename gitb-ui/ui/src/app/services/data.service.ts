@@ -746,9 +746,14 @@ export class DataService {
     let prefix = content.trimStart()
     if (prefix.length > 256) prefix = prefix.substring(0, 256)
     const lowerPrefix = prefix.toLowerCase()
-    if (prefix.startsWith('{') || prefix.startsWith('[')) return 'application/json'
+    if (prefix.startsWith('{') || prefix.startsWith('[')) {
+      return /"@context"\s*:/.test(prefix) ? 'application/ld+json' : 'application/json'
+    }
     if (lowerPrefix.startsWith('<!doctype html') || lowerPrefix.startsWith('<html')) return 'text/html'
-    if (prefix.startsWith('<')) return 'application/xml'
+    if (prefix.startsWith('<')) {
+      return /^(<\?xml[^>]*\?>\s*)?(<!--[\s\S]*?-->\s*)*<rdf:RDF[\s>]/.test(prefix) ? 'application/rdf+xml' : 'application/xml'
+    }
+    if (/^(@prefix|@base)\s/.test(prefix) || /^(prefix\s+[\w.-]*:\s*<|base\s+<)/i.test(prefix)) return 'text/turtle'
     return undefined
   }
 

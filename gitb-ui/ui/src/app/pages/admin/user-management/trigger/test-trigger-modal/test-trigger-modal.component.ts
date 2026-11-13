@@ -22,6 +22,7 @@ import {Subscription} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from '../../../../base-component.component';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {formatterTypeFor, prettyPrint} from 'src/app/components/code-editor/code-formatter';
 
 @Component({
     selector: 'app-test-trigger-modal',
@@ -45,6 +46,8 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
   editStep = true
   responseSuccess = false
   response?: string
+  originalResponse?: string
+  prettyPrintedResponse = false
 
   constructor(
     private readonly modalRef: NgbActiveModal,
@@ -102,6 +105,8 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
               this.responseSuccess = false
               this.response = this.dataService.errorArrayToString(data.texts)
             }
+            this.prettyPrintedResponse = false
+            this.originalResponse = undefined
             this.editStep = false
           }
         })
@@ -113,6 +118,38 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
 
   reset() {
     this.request = this.initialRequest
+  }
+
+  get canPrettyPrint(): boolean {
+    if (this.editStep) {
+      return formatterTypeFor(this.editorOptionsRequest?.mode) != undefined && this.request != undefined && this.request.trim().length > 0
+    } else {
+      return this.responseSuccess && formatterTypeFor(this.editorOptionsResponse?.mode) != undefined && this.response != undefined && this.response.trim().length > 0
+    }
+  }
+
+  togglePrettyPrint() {
+    if (this.editStep) {
+      // The request is editable so it is formatted once (use "Reset sample payload" to restore the initial payload).
+      const formatted = prettyPrint(this.request, this.editorOptionsRequest.mode)
+      if (formatted == undefined) {
+        this.popupService.warning('The content could not be formatted.')
+      } else {
+        this.request = formatted
+      }
+    } else if (this.prettyPrintedResponse) {
+      this.response = this.originalResponse
+      this.prettyPrintedResponse = false
+    } else if (this.response != undefined) {
+      const formatted = prettyPrint(this.response, this.editorOptionsResponse.mode)
+      if (formatted == undefined) {
+        this.popupService.warning('The content could not be formatted.')
+      } else {
+        this.originalResponse = this.response
+        this.response = formatted
+        this.prettyPrintedResponse = true
+      }
+    }
   }
 
   copyToClipboard() {

@@ -22,6 +22,7 @@ import {PopupService} from 'src/app/services/popup.service';
 import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
 import {Alert} from '../../types/alert.type';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {formatterTypeFor, prettyPrint} from '../code-editor/code-formatter';
 
 @Component({
     selector: 'app-code-editor-modal',
@@ -43,7 +44,12 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
   isNameVisible = false
   isDownloadVisible = false
   isCopyVisible = false
+  isPrettyPrintVisible = false
+  prettyPrinted = false
   styleClass = 'editor-normal'
+  private originalValue?: string
+  private prettyValue?: string
+  private indicatorsAlert?: Alert
 
   constructor(
     modalRef: NgbActiveModal,
@@ -59,11 +65,47 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
     } else {
       this.isCopyVisible = this.editorOptions.copy
     }
+    this.isPrettyPrintVisible = this.editorOptions.prettyPrint == true
+      && this.editorOptions.value != undefined && this.editorOptions.value.trim().length > 0
+      && formatterTypeFor(this.editorOptions.mode) != undefined
     if (this.editorOptions.styleClass != undefined) {
       this.styleClass = this.editorOptions.styleClass
     }
     if (this.alert) {
       this.addAlert(this.alert)
+    }
+  }
+
+  /**
+   * Switch between the original content and its pretty-printed form. Line indicators refer to the original lines, so
+   * they are only shown with the original content.
+   */
+  togglePrettyPrint() {
+    if (!this.codeEditor?.view) return
+    if (this.prettyPrinted) {
+      this.codeEditor.setValue(this.originalValue ?? '')
+      this.prettyPrinted = false
+      if (this.indicatorsAlert) {
+        this.alerts = this.alerts.filter(alert => alert !== this.indicatorsAlert)
+        this.indicatorsAlert = undefined
+      }
+      this.applyLineStyles()
+    } else {
+      this.originalValue = this.codeEditor.getValue()
+      if (this.prettyValue == undefined) {
+        this.prettyValue = prettyPrint(this.originalValue, this.editorOptions.mode)
+      }
+      if (this.prettyValue == undefined) {
+        this.isPrettyPrintVisible = false
+        this.addAlertWarning('The content could not be formatted.')
+        return
+      }
+      this.codeEditor.setValue(this.prettyValue)
+      this.prettyPrinted = true
+      if (this.indicators != undefined && this.indicators.length > 0) {
+        this.indicatorsAlert = {type: 'info', msg: 'Line indicators are not displayed with pretty-printing enabled.'}
+        this.addAlert(this.indicatorsAlert)
+      }
     }
   }
 

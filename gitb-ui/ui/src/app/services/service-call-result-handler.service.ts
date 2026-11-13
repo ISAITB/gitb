@@ -58,7 +58,8 @@ export class ServiceCallResultHandlerService {
         value: valueToShow,
         readOnly: true,
         lineNumbers: true,
-        mode: result.contentType
+        mode: result.contentType,
+        prettyPrint: true
       }
     } else {
       const alert: Alert = {

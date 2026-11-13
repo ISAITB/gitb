@@ -30,24 +30,33 @@ const XQUERY = StreamLanguage.define(xQuery)
 const YAML = StreamLanguage.define(yaml)
 const TURTLE = StreamLanguage.define(turtle)
 
-const XML_MIME_TYPES = new Set(['text/xml', 'application/xml', 'application/rdf+xml'])
-const JSON_MIME_TYPES = new Set(['application/json', 'application/ld+json', 'text/javascript'])
+export const XML_MIME_TYPES = new Set(['text/xml', 'application/xml', 'application/rdf+xml'])
+export const JSON_MIME_TYPES = new Set(['application/json', 'application/ld+json', 'text/javascript'])
 const YAML_MIME_TYPES = new Set(['application/x-yaml', 'text/yaml'])
-const TURTLE_MIME_TYPES = new Set(['application/turtle', 'application/x-turtle', 'text/turtle'])
+export const TURTLE_MIME_TYPES = new Set(['application/turtle', 'application/x-turtle', 'text/turtle'])
 const HTML_MIME_TYPES = new Set(['text/html', 'application/x-ejs', 'application/x-aspx', 'application/x-jsp', 'application/x-erb'])
-const XML_SUFFIX = /^[\w-]+\/[\w-]+\+xml$/
+export const XML_SUFFIX = /^[\w-]+\/[\w-]+\+xml$/
+export const JSON_SUFFIX = /^[\w-]+\/[\w-]+\+json$/
+
+/**
+ * Lower-case the MIME type and drop its parameters (e.g. the charset).
+ */
+export function normalizeMimeType(mimeType?: string): string|undefined {
+  const mime = mimeType?.split(';')[0].trim().toLowerCase()
+  return mime ? mime : undefined
+}
 
 /**
  * Map a MIME type to the highlighting language to use. Types without a supported language are shown as plain text.
  */
 export function languageForMimeType(mimeType?: string): Extension {
-  const mime = mimeType?.trim().toLowerCase()
+  const mime = normalizeMimeType(mimeType)
   if (mime) {
     if (XML_MIME_TYPES.has(mime) || XML_SUFFIX.test(mime)) return XML
     if (HTML_MIME_TYPES.has(mime)) return HTML
     if (mime == 'message/http') return HTTP
     if (mime == 'application/xquery') return XQUERY
-    if (JSON_MIME_TYPES.has(mime)) return JSON
+    if (JSON_MIME_TYPES.has(mime) || JSON_SUFFIX.test(mime)) return JSON
     if (YAML_MIME_TYPES.has(mime)) return YAML
     if (TURTLE_MIME_TYPES.has(mime)) return TURTLE
   }

@@ -26,6 +26,8 @@ import {ValueType} from 'src/app/types/value-type';
 import {ValueWithMetadata} from 'src/app/types/value-with-metadata';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {formatterTypeFor} from '../../code-editor/code-formatter';
+import {normalizeMimeType} from '../../code-editor/code-editor-language';
 
 export abstract class ReportSupport extends BaseComponent {
 
@@ -121,9 +123,13 @@ export abstract class ReportSupport extends BaseComponent {
       modalInstance.indicators = indicators
       modalInstance.lineNumber = lineNumber
       let mimeTypeToUse = value.mimeType
-      if (mimeTypeToUse == undefined) {
-        mimeTypeToUse = this.dataService.refineTextMimeType(valueToUse)
+      const declaredMimeType = normalizeMimeType(mimeTypeToUse)
+      if (declaredMimeType == undefined || declaredMimeType == 'text/plain' || declaredMimeType == 'application/octet-stream') {
+        // Best guess from the content if no specific type was declared.
+        mimeTypeToUse = this.dataService.refineTextMimeType(valueToUse) ?? mimeTypeToUse
       }
+      // Pretty-printing is only offered if the type was declared or guessed (not for the highlighting fallback).
+      const prettyPrint = mimeTypeToUse != undefined && formatterTypeFor(mimeTypeToUse) != undefined
       if (mimeTypeToUse == undefined) {
         mimeTypeToUse = 'application/xml'
       }
@@ -131,7 +137,8 @@ export abstract class ReportSupport extends BaseComponent {
         value: valueToUse,
         readOnly: true,
         lineNumbers: true,
-        mode: mimeTypeToUse
+        mode: mimeTypeToUse,
+        prettyPrint: prettyPrint
       }
     }
   }
