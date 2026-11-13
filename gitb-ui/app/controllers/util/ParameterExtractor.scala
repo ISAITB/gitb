@@ -678,7 +678,7 @@ object ParameterExtractor {
     val communityId:Long = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
-    val inExports:Boolean = (kind == PropertyKind.SIMPLE) && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
+    val inExports:Boolean = PropertyKind.isSimpleLike(kind) && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
     val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_SELFREG).toBoolean
     var hidden: Boolean = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
     val allowedValues:Option[String] = allowedValuesForKind(kind, ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES))
@@ -708,20 +708,30 @@ object ParameterExtractor {
   }
 
   private def allowedValuesForKind(kind: String, allowedValues: Option[String]): Option[String] = {
-    if (kind == PropertyKind.SIMPLE) allowedValues else None
+    if (PropertyKind.isSimpleLike(kind)) allowedValues else None
   }
 
   private def determineDefaultParameterValue(defaultValue: Option[String], kind: String, allowedValues: Option[String]): Option[String] = {
     var defaultValueToUse = defaultValue
     if (defaultValueToUse.isDefined) {
-      if (!kind.equals(PropertyKind.SIMPLE)) {
+      if (!PropertyKind.isSimpleLike(kind)) {
         defaultValueToUse = None
       }
     }
-    if (defaultValueToUse.isDefined && allowedValues.isDefined) {
-      val allowed = JsonUtil.parseAllowedParameterValues(allowedValues.get)
-      if (!allowed.keySet.contains(defaultValueToUse.get)) {
-        defaultValueToUse = None
+    if (defaultValueToUse.isDefined) {
+      if (allowedValues.isDefined) {
+        val allowed = JsonUtil.parseAllowedParameterValues(allowedValues.get).keySet
+        if (PropertyKind.isMultiValue(kind)) {
+          // Checkboxes can have multiple (comma-separated) values selected.
+          val values = defaultValueToUse.get.split(',').map(_.trim).filter(_.nonEmpty).toList
+          defaultValueToUse = if (values.nonEmpty && values.forall(allowed.contains)) Some(values.mkString(",")) else None
+        } else if (!allowed.contains(defaultValueToUse.get)) {
+          defaultValueToUse = None
+        }
+      } else if (PropertyKind.isMultiValue(kind)) {
+        // A checkbox without preset values is a true/false value.
+        val value = defaultValueToUse.get.trim.toLowerCase
+        defaultValueToUse = if (value == "true" || value == "false") Some(value) else None
       }
     }
     defaultValueToUse
@@ -740,7 +750,7 @@ object ParameterExtractor {
     val communityId:Long = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
-    val inExports = (kind == PropertyKind.SIMPLE) && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
+    val inExports = PropertyKind.isSimpleLike(kind) && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
     var hidden = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
     val allowedValues:Option[String] = allowedValuesForKind(kind, ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES))
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)

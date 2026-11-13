@@ -1042,9 +1042,9 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def getSystemParameterValues(systemId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): Future[List[SystemParametersWithValue]] = {
-    var typeToCheck: Option[String] = None
+    var typesToCheck: Option[Set[String]] = None
     if (onlySimple.isDefined && onlySimple.get) {
-      typeToCheck = Some(PropertyKind.SIMPLE)
+      typesToCheck = Some(PropertyKind.SIMPLE_LIKE)
     }
     val action = for {
       communityId <- getCommunityIdOfSystemInternal(systemId)
@@ -1052,7 +1052,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
         .filter(_._1.community === communityId)
         .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
-        .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
+        .filterOpt(typesToCheck)((table, propertyTypes)=> table._1.kind inSet propertyTypes)
         .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
         .map(x => (x._1, x._2))
         .result

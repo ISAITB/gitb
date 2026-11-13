@@ -47,7 +47,14 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                     if (ir instanceof UserRequest ur) {
                         hasInputRequests = true;
                         boolean hasNoOptions = StringUtils.isBlank(ur.getOptions());
+                        boolean radioOrCheckbox = ur.getInputType() == InputRequestInputType.RADIO_BUTTON || ur.getInputType() == InputRequestInputType.CHECKBOX;
+                        if (radioOrCheckbox && StringUtils.isNotBlank(ur.getMultiple())) {
+                            addReportItem(ErrorCode.INVALID_MULTIPLE_ATTRIBUTE_FOR_CHOICE, currentTestCase.getId());
+                        }
                         if (hasNoOptions) {
+                            if (ur.getInputType() == InputRequestInputType.RADIO_BUTTON) {
+                                addReportItem(ErrorCode.RADIO_BUTTON_WITHOUT_OPTIONS, currentTestCase.getId());
+                            }
                             if (StringUtils.isNotBlank(ur.getOptionLabels())) {
                                 addReportItem(ErrorCode.MISSING_INTERACTION_OPTIONS, currentTestCase.getId(), "optionLabels", "optionLabels");
                             }
@@ -71,7 +78,8 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                                         }
                                     }
                                 }
-                                if (optionCount == 1) {
+                                // A single checkbox option is valid (e.g. a consent).
+                                if (optionCount == 1 && ur.getInputType() != InputRequestInputType.CHECKBOX) {
                                     addReportItem(ErrorCode.INTERACTION_OPTIONS_SINGLE_OPTION, currentTestCase.getId());
                                 }
                             }

@@ -16,6 +16,7 @@
 package managers
 
 import managers.CommunityHelper.MemberIds
+import models.PropertyKind
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -66,14 +67,27 @@ class CommunityHelper @Inject() (dbConfigProvider: DatabaseConfigProvider)
   }
 
   private def organisationIdsForParameterValues(organisationIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Future[Set[Long]] = {
+    val valueSet = values.toSet
     DB.run(
-      PersistenceSchema.organisationParameterValues
-        .filterOpt(organisationIds)((table, ids) => table.organisation inSet ids)
-        .filter(_.parameter === parameterId)
-        .filter(_.value inSet values)
-        .map(x => x.organisation)
-        .result
+      for {
+        kind <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).map(_.kind).result.headOption
+        ids <- {
+          val query = PersistenceSchema.organisationParameterValues
+            .filterOpt(organisationIds)((table, ids) => table.organisation inSet ids)
+            .filter(_.parameter === parameterId)
+          if (kind.exists(PropertyKind.isMultiValue)) {
+            // Checkboxes record their selected values as a comma-separated list, of which any one may match.
+            query.map(x => (x.organisation, x.value)).result.map(_.filter(x => anyValueMatches(x._2, valueSet)).map(_._1))
+          } else {
+            query.filter(_.value inSet valueSet).map(x => x.organisation).result
+          }
+        }
+      } yield ids
     ).map(_.toSet)
+  }
+
+  private def anyValueMatches(commaSeparatedValue: String, expectedValues: Set[String]): Boolean = {
+    commaSeparatedValue.split(',').exists(value => expectedValues.contains(value.trim))
   }
 
   private[managers] def systemIdsToUse(systemIds: Option[Iterable[Long]], sysParameters: Option[Map[Long, Set[String]]]): Future[Option[Iterable[Long]]] = {
@@ -102,13 +116,22 @@ class CommunityHelper @Inject() (dbConfigProvider: DatabaseConfigProvider)
   }
 
   private def systemIdsForParameterValues(systemIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Future[Set[Long]] = {
+    val valueSet = values.toSet
     DB.run(
-      PersistenceSchema.systemParameterValues
-        .filterOpt(systemIds)((table, ids) => table.system inSet ids)
-        .filter(_.parameter === parameterId)
-        .filter(_.value inSet values)
-        .map(x => x.system)
-        .result
+      for {
+        kind <- PersistenceSchema.systemParameters.filter(_.id === parameterId).map(_.kind).result.headOption
+        ids <- {
+          val query = PersistenceSchema.systemParameterValues
+            .filterOpt(systemIds)((table, ids) => table.system inSet ids)
+            .filter(_.parameter === parameterId)
+          if (kind.exists(PropertyKind.isMultiValue)) {
+            // Checkboxes record their selected values as a comma-separated list, of which any one may match.
+            query.map(x => (x.system, x.value)).result.map(_.filter(x => anyValueMatches(x._2, valueSet)).map(_._1))
+          } else {
+            query.filter(_.value inSet valueSet).map(x => x.system).result
+          }
+        }
+      } yield ids
     ).map(_.toSet)
   }
 

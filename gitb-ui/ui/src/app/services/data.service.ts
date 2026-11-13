@@ -645,9 +645,15 @@ export class DataService {
       if (properties != undefined) {
         for (let property of properties) {
           if (property.use == 'R' ) {
-            const hasValue = property.kind == 'RICH_TEXT'
-              ? Utils.hasRichTextContent(property.value)
-              : (property.value != undefined && property.value.trim().length > 0)
+            let hasValue: boolean
+            if (property.kind == 'RICH_TEXT') {
+              hasValue = Utils.hasRichTextContent(property.value)
+            } else if (Utils.isLoneCheckboxProperty(property.kind, property.allowedValues)) {
+              // A single checkbox needs to be checked (e.g. a consent).
+              hasValue = property.value == 'true'
+            } else {
+              hasValue = property.value != undefined && property.value.trim().length > 0
+            }
             if (property.prerequisiteOk && !hasValue) {
               valid = false
             }
@@ -688,6 +694,11 @@ export class DataService {
         } else if (property.kind == 'RICH_TEXT') {
           if (Utils.hasRichTextContent(property.value)) {
             propValue.value = property.value
+          }
+        } else if (Utils.isLoneCheckboxProperty(property.kind, property.allowedValues)) {
+          // A single checkbox is recorded as true or false (not recorded if it is not currently applicable).
+          if (property.prerequisiteOk != false) {
+            propValue.value = property.value == 'true' ? 'true' : 'false'
           }
         } else if (property.kind == 'MULTILINE_TEXT' || property.kind == 'CODE') {
           // Leading/trailing whitespace (e.g. code indentation) is kept as-is.

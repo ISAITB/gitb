@@ -294,6 +294,7 @@ import {DataManagementComponent} from './pages/admin/data-management/data-manage
 import {StartupWizardModalComponent} from './modals/startup-wizard-modal/startup-wizard-modal.component';
 import {MergeOrganisationModalComponent} from './modals/merge-organisation-modal/merge-organisation-modal.component';
 import {RadioCardComponent} from './components/radio-card/radio-card.component';
+import {OptionGroupComponent} from './components/option-group/option-group.component';
 import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.component';
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
 import {NavTargetDirective} from './directives/nav-target.directive';
@@ -537,6 +538,7 @@ import { MessageItemComponent } from './components/message-item/message-item.com
     StartupWizardModalComponent,
     MergeOrganisationModalComponent,
     RadioCardComponent,
+    OptionGroupComponent,
     UsageTipModalComponent,
     DateRangeComponent,
     StartRedirectComponent,

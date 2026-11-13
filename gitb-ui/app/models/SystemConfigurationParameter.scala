@@ -24,6 +24,8 @@ class SystemConfigurationParameter(_parameter: Parameters, _configured: Boolean,
 
   override def prerequisiteKey(): Option[String] = parameter.dependsOn
   override def prerequisiteValue(): Option[String] = parameter.dependsOnValue
-  override def currentKey(): String = parameter.name
+  // Dependencies refer to the key of a property (not its name, i.e. its label).
+  override def currentKey(): String = parameter.testKey
   override def currentValue(): Option[String] = if (config.isDefined) Some(config.get.value) else None
+  override def currentKind(): Option[String] = Some(parameter.kind)
 }

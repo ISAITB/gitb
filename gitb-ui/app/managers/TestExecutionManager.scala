@@ -161,7 +161,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       parameterData.foreach{ p =>
         if (p.parameterUse == "R" && p.parameterValue.isEmpty) {
           throw MissingRequiredParameterException(p.parameterName, "Missing required conformance statement parameter ["+p.parameterName+"]")
-        } else if (!p.notForTests && p.parameterValue.isDefined && (!onlySimple || p.parameterKind == PropertyKind.SIMPLE)) {
+        } else if (!p.notForTests && p.parameterValue.isDefined && (!onlySimple || PropertyKind.isSimpleLike(p.parameterKind))) {
           var actorConfigEntry = actorMap.get(p.endpointName)
           if (actorConfigEntry.isEmpty) {
             val actorConfigData = (result._1, p.endpointName, new ListBuffer[TypedConfiguration])

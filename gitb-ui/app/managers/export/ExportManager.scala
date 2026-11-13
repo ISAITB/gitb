@@ -114,6 +114,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       PropertyType.CODE
     } else if (PropertyKind.RICH_TEXT.equals(modelType)) {
       PropertyType.RICH_TEXT
+    } else if (PropertyKind.RADIO_BUTTON.equals(modelType)) {
+      PropertyType.RADIO_BUTTON
+    } else if (PropertyKind.CHECKBOX.equals(modelType)) {
+      PropertyType.CHECKBOX
     } else {
       throw new IllegalStateException("Unknown property type ["+modelType+"]")
     }

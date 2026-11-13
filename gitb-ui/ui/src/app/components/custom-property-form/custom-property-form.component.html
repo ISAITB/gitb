@@ -28,9 +28,9 @@
         @for (property of tbProperties; track $index) {
             @if ((isAdmin || (!property.hidden && (!tbSelfRegistration || property.inSelfRegistration))) && property.prerequisiteOk) {
                 @let renderAsReadonly = isReadonly || (property.adminOnly && !isAdmin && (!tbSelfRegistration || !property.inSelfRegistration));
-                @let showTooltip = (!renderAsReadonly || (property.kind == 'CODE' || property.kind == 'RICH_TEXT' || property.kind == 'MULTILINE_TEXT')) && property.desc;
+                @let showTooltip = (!renderAsReadonly || (property.kind == 'CODE' || property.kind == 'RICH_TEXT' || property.kind == 'MULTILINE_TEXT')) && property.desc && property.kind != 'RADIO_BUTTON' && property.kind != 'CHECKBOX';
                 <div class="row pt-3">
-                    <label class="col-3 col-form-label text-end" [attr.for]="'prop-'+property.id">
+                    <label class="col-3 col-form-label text-end" [class.pt-0]="property.kind == 'RADIO_BUTTON' || property.kind == 'CHECKBOX'" [attr.for]="(property.kind == 'RADIO_BUTTON' || property.kind == 'CHECKBOX') ? 'prop-'+tbPropertyType+'-'+property.id : 'prop-'+property.id" [attr.id]="'prop-label-'+tbPropertyType+'-'+property.id">
                         @if (property.use == 'R' && tbShowRequiredAsterisks) {
                             <span>* </span>
                         }
@@ -71,6 +71,27 @@
                                            class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)"
                                            type="text"/>
                                 }
+                            }
+                        </div>
+                    } @else if (property.kind == 'RADIO_BUTTON') {
+                        <div [class]="fieldClass">
+                            <app-option-group mode="radio" [name]="'prop-'+tbPropertyType+'-'+property.id" [inputId]="'prop-'+tbPropertyType+'-'+property.id" [labelledBy]="'prop-label-'+tbPropertyType+'-'+property.id" [tooltip]="property.desc"
+                                              [options]="property.presetValues" [disabled]="renderAsReadonly"
+                                              [ngModel]="property.value" (ngModelChange)="radioChanged(property, $event)" [ngModelOptions]="{standalone: true}"
+                                              [invalid]="validation?.get(tbPropertyType+property.id)"></app-option-group>
+                        </div>
+                    } @else if (property.kind == 'CHECKBOX') {
+                        <div [class]="fieldClass">
+                            @if (isLoneCheckbox(property)) {
+                                <app-option-group mode="checkbox" [name]="'prop-'+tbPropertyType+'-'+property.id" [inputId]="'prop-'+tbPropertyType+'-'+property.id" [labelledBy]="'prop-label-'+tbPropertyType+'-'+property.id" [tooltip]="property.desc"
+                                                  [disabled]="renderAsReadonly"
+                                                  [ngModel]="property.checked" (ngModelChange)="loneCheckboxChanged(property, $event)" [ngModelOptions]="{standalone: true}"
+                                                  [invalid]="validation?.get(tbPropertyType+property.id)"></app-option-group>
+                            } @else {
+                                <app-option-group mode="checkbox" [name]="'prop-'+tbPropertyType+'-'+property.id" [inputId]="'prop-'+tbPropertyType+'-'+property.id" [labelledBy]="'prop-label-'+tbPropertyType+'-'+property.id" [tooltip]="property.desc"
+                                                  [options]="property.presetValues" [disabled]="renderAsReadonly"
+                                                  [ngModel]="property.selectedValues" (ngModelChange)="checkboxChanged(property, $event)" [ngModelOptions]="{standalone: true}"
+                                                  [invalid]="validation?.get(tbPropertyType+property.id)"></app-option-group>
                             }
                         </div>
                     } @else if (property.kind == 'SECRET') {

@@ -416,13 +416,28 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
     }
   }
 
-  def propertyDefaultValue(defaultValue: Option[String], allowedValues: Option[List[KeyValueRequired]]): Option[String] = {
+  def propertyDefaultValue(defaultValue: Option[String], allowedValues: Option[List[KeyValueRequired]], kind: String = PropertyKind.SIMPLE): Option[String] = {
     if (defaultValue.isDefined) {
       if (allowedValues.isDefined) {
-        if (allowedValues.get.exists(kv => kv.key == defaultValue.get)) {
+        if (PropertyKind.isMultiValue(kind)) {
+          // Checkboxes can have multiple (comma-separated) values selected by default.
+          val values = defaultValue.get.split(',').map(_.trim).filter(_.nonEmpty).toList
+          if (values.nonEmpty && values.forall(value => allowedValues.get.exists(kv => kv.key == value))) {
+            Some(values.mkString(","))
+          } else {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The default value must be one or more (comma-separated) of the defined allowed values")
+          }
+        } else if (allowedValues.get.exists(kv => kv.key == defaultValue.get)) {
           defaultValue
         } else {
           throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The default value must be one of the defined allowed values")
+        }
+      } else if (PropertyKind.isMultiValue(kind)) {
+        // A checkbox without allowed values is a true/false value.
+        if (defaultValue.get.trim.equalsIgnoreCase("true") || defaultValue.get.trim.equalsIgnoreCase("false")) {
+          Some(defaultValue.get.trim.toLowerCase)
+        } else {
+          throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The default value of a checkbox without allowed values must be true or false")
         }
       } else {
         defaultValue

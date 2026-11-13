@@ -150,13 +150,13 @@ class SessionLaunchState {
       // Include only the configuration values that are simple texts
       SessionConfigurationData(
         statementParameters = Some(data.get.statementParameters.map { x =>
-          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == PropertyKind.SIMPLE))
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(config => PropertyKind.isSimpleLike(config.kind)))
         }),
         domainParameters = data.get.domainParameters.map { x =>
-          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == PropertyKind.SIMPLE))
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(config => PropertyKind.isSimpleLike(config.kind)))
         },
-        organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == PropertyKind.SIMPLE))),
-        systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == PropertyKind.SIMPLE))),
+        organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(config => PropertyKind.isSimpleLike(config.kind)))),
+        systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(config => PropertyKind.isSimpleLike(config.kind)))),
         testServiceParameters = data.get.testServiceParameters,
         predefinedVariables = if (includeInputs) testCaseInputs(testCaseId).map(x => TypedActorConfiguration.fromAnyContent(x)) else None,
         settings = Some(TypedActorConfiguration.fromSettings())

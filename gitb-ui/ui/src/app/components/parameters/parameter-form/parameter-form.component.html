@@ -64,6 +64,18 @@
                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A text value provided as rich text through a rich text editor."></div>
             </label>
         </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" [ngModelOptions]="{standalone: true}" id="kind_7" value="RADIO_BUTTON" (change)="radioButtonSelected()">
+            <label class="form-check-label" for="kind_7">Radio buttons
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A selection of one value from a list of preset values, displayed as radio buttons."></div>
+            </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" [ngModelOptions]="{standalone: true}" id="kind_8" value="CHECKBOX">
+            <label class="form-check-label" for="kind_8">Checkboxes
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" tbTooltip="A selection of one or more values from a list of preset values, displayed as checkboxes. Without preset values this is a single checkbox with a true or false value."></div>
+            </label>
+        </div>
     </div>
 </div>
 <div class="row mt-3 pt-1">
@@ -81,7 +93,7 @@
             <input class="form-check-input" type="checkbox" id="notForTests" name="notForTests" [(ngModel)]="parameter.notForTests" [ngModelOptions]="{standalone: true}" appTrueFalseValue [trueValue]="false" [falseValue]="true">
             <label class="form-check-label" for="notForTests">Included in tests</label>
         </div>
-        @if (!hideInExport && parameter.kind == 'SIMPLE') {
+        @if (!hideInExport && Utils.isSimpleLikeKind(parameter.kind)) {
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" id="inExports" name="inExports" [(ngModel)]="parameter.inExports" [ngModelOptions]="{standalone: true}">
                 <label class="form-check-label" for="inExports">Included in exports</label>
@@ -115,7 +127,14 @@
         <div class="col-4 ps-0">
             @if (parameter.dependsOn && parameter.dependsOn != '') {
                 <div>
-                    @if (!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues) {
+                    @if (isLoneCheckboxTarget(dependsOnTargetsMap[parameter.dependsOn])) {
+                        <div>
+                            <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" [ngModelOptions]="{standalone: true}" class="form-select">
+                                <option value="true">Checked (true)</option>
+                                <option value="false">Not checked (false)</option>
+                            </select>
+                        </div>
+                    } @else if (!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues) {
                         <div>
                             <input type="text" class="form-control" name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" [ngModelOptions]="{standalone: true}" placeholder="Property value"/>
                         </div>
@@ -139,14 +158,16 @@
         <div app-tooltip class="col-auto" tbTooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
     </div>
 }
-<div [ngbCollapse]="parameter.kind != 'SIMPLE'" [animation]="true">
+<div [ngbCollapse]="!Utils.isSimpleLikeKind(parameter.kind)" [animation]="true">
     <div class="pt-3">
         <div class="row pt-1">
-            <label class="col-3 col-form-label text-end pt-0" for="hasPresetValues">Preset values:</label>
+            <label class="col-3 col-form-label text-end pt-0" [attr.for]="parameter.kind == 'RADIO_BUTTON' ? null : 'hasPresetValues'">@if (parameter.kind == 'RADIO_BUTTON') {* }Preset values:</label>
             <div class="col-8">
-                <div class="form-check">
-                    <input class="form-check-input" id="hasPresetValues" name="hasPresetValues" type="checkbox" [(ngModel)]="parameter.hasPresetValues" [ngModelOptions]="{standalone: true}">
-                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to define a set of allowed values for this property. The configured values will be displayed in the defined order as a single-selection dropdown list."></div>
+                <div [class.form-check]="parameter.kind != 'RADIO_BUTTON'">
+                    @if (parameter.kind != 'RADIO_BUTTON') {
+                        <input class="form-check-input" id="hasPresetValues" name="hasPresetValues" type="checkbox" [(ngModel)]="parameter.hasPresetValues" [ngModelOptions]="{standalone: true}">
+                    }
+                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="presetValuesTooltip()"></div>
                 </div>
             </div>
         </div>
@@ -202,9 +223,22 @@
         </div>
     </div>
     <div class="row mt-3">
-        <label class="col-3 col-form-label text-end" for="defaultValue">Default value:</label>
+        <label class="col-3 col-form-label text-end" [class.pt-0]="loneCheckbox" for="defaultValue">Default value:</label>
         <div class="col-7">
-            @if (!parameter.hasPresetValues) {
+            @if (loneCheckbox) {
+                <div class="form-check">
+                    <input class="form-check-input" id="defaultValue" name="defaultValue" type="checkbox" [ngModel]="parameter.defaultValue == 'true'" (ngModelChange)="loneCheckboxDefaultChanged($event)" [ngModelOptions]="{standalone: true}">
+                    <label class="form-check-label" for="defaultValue">Checked
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="defaultValueTooltip"></div>
+                    </label>
+                </div>
+            } @else if (parameter.kind == 'CHECKBOX') {
+                <select multiple id="defaultValue" name="defaultValue" class="form-select" [attr.size]="defaultValuesListSize" [ngModel]="defaultValues" (ngModelChange)="checkboxDefaultsChanged($event)" [ngModelOptions]="{standalone: true}">
+                    @for (v of parameter.presetValues; track $index) {
+                        <option [value]="v.value">{{v.label}}</option>
+                    }
+                </select>
+            } @else if (!parameter.hasPresetValues) {
                 <input id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" [ngModelOptions]="{standalone: true}" class="form-control" type="text">
             } @else {
                 <select name="defaultValue" [(ngModel)]="parameter.defaultValue" [ngModelOptions]="{standalone: true}" class="form-select">
@@ -215,6 +249,8 @@
                 </select>
             }
         </div>
-        <div app-tooltip class="col-auto" tbTooltip="The default value to assign for this property for new instances if no value is provided."></div>
+        @if (!loneCheckbox) {
+            <div app-tooltip class="col-auto" [tbTooltip]="defaultValueTooltipText"></div>
+        }
     </div>
 </div>

@@ -29,13 +29,16 @@ export interface UserInteraction {
   optionData?: ValueLabel[];
   selectedOption?: ValueLabel;
   selectedOptions?: ValueLabel[];
+  selectedValue?: string;
+  selectedValues?: string[];
+  checked?: boolean;
   file?: FileData[];
   name?: string;
   variableType?: string;
   contentType?: string;
   multiple?: boolean;
   value?: string;
-  inputType: 'TEXT' | 'MULTILINE_TEXT' | 'SECRET' | 'CODE' | 'SELECT_SINGLE' | 'SELECT_MULTIPLE' | 'UPLOAD' | 'RICH_TEXT';
+  inputType: 'TEXT' | 'MULTILINE_TEXT' | 'SECRET' | 'CODE' | 'SELECT_SINGLE' | 'SELECT_MULTIPLE' | 'UPLOAD' | 'RICH_TEXT' | 'RADIO_BUTTON' | 'CHECKBOX';
   mimeType?: string;
   forceDisplay?: boolean;
   required?: boolean;

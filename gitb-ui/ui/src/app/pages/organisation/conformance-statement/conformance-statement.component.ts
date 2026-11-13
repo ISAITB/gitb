@@ -768,8 +768,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       property.configured = property.configured || property.file != undefined
     } else if (property.kind == "RICH_TEXT") {
       property.configured = Utils.hasRichTextContent(property.value)
+    } else if (Utils.isLoneCheckboxProperty(property.kind, property.allowedValues) && property.use == 'R') {
+      // A required single checkbox needs to be checked (e.g. a consent).
+      property.configured = property.value == 'true'
     } else {
-      // SIMPLE, MULTILINE_TEXT, CODE - all hold a plain string value.
+      // SIMPLE, MULTILINE_TEXT, CODE, RADIO_BUTTON, CHECKBOX - all hold a plain string value.
       property.configured = this.textProvided(property.value)
     }
   }

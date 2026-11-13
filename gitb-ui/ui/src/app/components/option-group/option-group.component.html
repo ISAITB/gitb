@@ -1,0 +1,27 @@
+<div #container class="option-group" [class.stacked]="stacked" [class.bordered]="bordered" [attr.role]="lone ? null : (mode == 'radio' ? 'radiogroup' : 'group')" [attr.aria-labelledby]="labelledBy">
+    @if (lone) {
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" [attr.id]="inputId" [name]="name" [checked]="checked" [disabled]="disabled" (change)="loneChanged($event)">
+            @if (tooltip) {
+                <label class="form-check-label" [attr.for]="inputId">
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="tooltip"></div>
+                </label>
+            }
+        </div>
+    } @else {
+        @for (option of options; track $index; let index = $index; let last = $last) {
+            <div class="form-check">
+                @if (mode == 'radio') {
+                    <input class="form-check-input" type="radio" [attr.id]="inputId + '-' + index" [name]="name" [value]="option.value" [checked]="isSelected(option.value)" [disabled]="disabled" (change)="optionChanged(option.value, $event)">
+                } @else {
+                    <input class="form-check-input" type="checkbox" [attr.id]="inputId + '-' + index" [name]="name + '-' + index" [value]="option.value" [checked]="isSelected(option.value)" [disabled]="disabled" (change)="optionChanged(option.value, $event)">
+                }
+                <label class="form-check-label" [attr.for]="inputId + '-' + index">{{ option.label ?? option.value }}
+                    @if (tooltip && (stacked ? index == 0 : last)) {
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="tooltip"></div>
+                    }
+                </label>
+            </div>
+        }
+    }
+</div>

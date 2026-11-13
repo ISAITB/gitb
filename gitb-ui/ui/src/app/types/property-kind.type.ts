@@ -15,9 +15,11 @@
 
 /**
  * The kinds ("kind") supported for organisation, system and actor endpoint configuration properties.
- * SIMPLE, MULTILINE_TEXT, CODE and RICH_TEXT all hold a plain string value and are transported
- * identically - they only differ in how the value is captured/rendered in the UI (a text input, a
- * textarea, a code editor and a rich text editor, respectively). BINARY is held as a file and SECRET
- * is held encrypted.
+ * SIMPLE, MULTILINE_TEXT, CODE, RICH_TEXT, RADIO_BUTTON and CHECKBOX all hold a plain string value and are
+ * transported identically - they only differ in how the value is captured/rendered in the UI (a text input
+ * or dropdown, a textarea, a code editor, a rich text editor, radio buttons and checkboxes, respectively).
+ * RADIO_BUTTON and CHECKBOX behave as SIMPLE properties with preset values: a RADIO_BUTTON selects one of
+ * them, a CHECKBOX selects one or more of them (recorded as a comma-separated list), or is a true/false
+ * value if it has no preset values. BINARY is held as a file and SECRET is held encrypted.
  */
-export type PropertyKind = 'SIMPLE'|'BINARY'|'SECRET'|'MULTILINE_TEXT'|'CODE'|'RICH_TEXT'
+export type PropertyKind = 'SIMPLE'|'BINARY'|'SECRET'|'MULTILINE_TEXT'|'CODE'|'RICH_TEXT'|'RADIO_BUTTON'|'CHECKBOX'

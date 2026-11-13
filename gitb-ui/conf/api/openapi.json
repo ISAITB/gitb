@@ -6341,9 +6341,9 @@
             "type": "string"
           },
           "kind": {
-            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
+            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE, RADIO_BUTTON and CHECKBOX. A RADIO_BUTTON property requires presets and is set to one of their values. A CHECKBOX property is set to one or more of its presets as a comma-separated list, or to true or false if it has no presets. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
             "type": "string",
-            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT"]
+            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT", "RADIO_BUTTON", "CHECKBOX"]
           }
         },
         "required": [
@@ -6416,9 +6416,9 @@
             "type": "string"
           },
           "kind": {
-            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
+            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE, RADIO_BUTTON and CHECKBOX. A RADIO_BUTTON property requires presets and is set to one of their values. A CHECKBOX property is set to one or more of its presets as a comma-separated list, or to true or false if it has no presets. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
             "type": "string",
-            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT"]
+            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT", "RADIO_BUTTON", "CHECKBOX"]
           }
         },
         "required": [
@@ -6491,9 +6491,9 @@
             "type": "string"
           },
           "kind": {
-            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
+            "description": "The property's value type. Presets (allowedValues) and defaultValue only apply to properties of type SIMPLE, RADIO_BUTTON and CHECKBOX. A RADIO_BUTTON property requires presets and is set to one of their values. A CHECKBOX property is set to one or more of its presets as a comma-separated list, or to true or false if it has no presets. Defaults to SIMPLE when creating a property, and is left unchanged when omitted on an update.",
             "type": "string",
-            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT"]
+            "enum": ["SIMPLE", "BINARY", "SECRET", "MULTILINE_TEXT", "CODE", "RICH_TEXT", "RADIO_BUTTON", "CHECKBOX"]
           }
         },
         "required": [

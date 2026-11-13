@@ -94,7 +94,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       for {
         parameter <- checkParameterExistence(endpointId, dependsOn.get, expectedToExist = true, parameterIdToIgnore)
         _ <- {
-          if (parameter.get.kind != PropertyKind.SIMPLE) {
+          if (!PropertyKind.isSimpleLike(parameter.get.kind)) {
             throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Property [%s] upon which this property depends on must be of simple type".formatted(dependsOn.get))
           } else {
             DBIO.successful(())
@@ -137,11 +137,11 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
           !input.editableByUsers.getOrElse(true),
           !input.inTests.getOrElse(false),
           input.hidden.getOrElse(false),
-          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten) else None,
+          if (PropertyKind.isSimpleLike(kind)) automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten) else None,
           input.displayOrder.getOrElse(0),
           dependsOnStatus._1.flatten,
           dependsOnStatus._2.flatten,
-          if (kind == PropertyKind.SIMPLE) automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten) else None,
+          if (PropertyKind.isSimpleLike(kind)) automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten, kind) else None,
           endpointIdToUse
         ))
       }
@@ -164,7 +164,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- {
         val kind = automationApiHelper.propertyKind(input.kind, parameter.get.kind)
         val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
-        val allowedValues = if (kind == PropertyKind.SIMPLE) {
+        val allowedValues = if (PropertyKind.isSimpleLike(kind)) {
           input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(parameter.get.allowedValues)
         } else {
           None
@@ -182,10 +182,11 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
           allowedValues,
           dependsOnStatus._1.getOrElse(parameter.get.dependsOn),
           dependsOnStatus._2.getOrElse(parameter.get.dependsOnValue),
-          if (kind == PropertyKind.SIMPLE) {
+          if (PropertyKind.isSimpleLike(kind)) {
             automationApiHelper.propertyDefaultValue(
               input.defaultValue.getOrElse(parameter.get.defaultValue),
-              input.allowedValues.getOrElse(parameter.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
+              input.allowedValues.getOrElse(parameter.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x))),
+              kind
             )
           } else {
             None
@@ -243,7 +244,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         .map(x => (x._1._1.endpoint, x._1._1.testKey, x._1._1.kind, x._2.domain)) // Endpoint ID, Parameter key, Parameter kind, Domain ID
         .result.head
       _ <- {
-        if (PropertyKind.SIMPLE.equals(existingParameterData._3)) {
+        if (PropertyKind.isSimpleLike(existingParameterData._3)) {
           setParameterPrerequisitesForKey(existingParameterData._1, existingParameterData._2, None)
         } else {
           DBIO.successful(())
@@ -324,7 +325,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         if (!existingParameter._2.equals(testKey)) {
           // Update the dependsOn of other properties.
           setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(testKey))
-        } else if (existingParameter._3.equals(PropertyKind.SIMPLE) && !existingParameter._3.equals(kind)) {
+        } else if (PropertyKind.isSimpleLike(existingParameter._3) && !PropertyKind.isSimpleLike(kind)) {
           // Remove the dependsOn of other properties.
           setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
         } else {

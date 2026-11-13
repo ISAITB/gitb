@@ -19,6 +19,7 @@ import {ParameterReference} from 'src/app/types/parameter-reference';
 import {ParameterModalOptions} from './parameter-modal-options';
 import {Parameter} from 'src/app/types/parameter';
 import {Constants} from 'src/app/common/constants';
+import {Utils} from 'src/app/common/utils';
 import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {ValidationState} from 'src/app/types/validation-state';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
@@ -67,7 +68,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
   }
 
 	presetValuesValid() {
-		if (this.parameter.kind == 'SIMPLE' && this.parameter.hasPresetValues) {
+		if (Utils.isSimpleLikeKind(this.parameter.kind) && (this.parameter.hasPresetValues || this.parameter.kind == 'RADIO_BUTTON')) {
       if (this.parameter.presetValues == undefined || this.parameter.presetValues.length == 0) {
         return false
       } else {

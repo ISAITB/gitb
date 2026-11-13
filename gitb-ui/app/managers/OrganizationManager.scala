@@ -23,6 +23,7 @@ import models.Enums.{OrganizationType, UserRole}
 import models.Enums.CustomContentType
 import models._
 import models.automation._
+import models.prerequisites.PrerequisiteUtil
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, HtmlUtil, MimeUtil, RepositoryUtils}
@@ -670,8 +671,8 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     for {
       communityId <- getById(orgId).map(_.get.community)
       result <- {
-        val typeToCheck = if (onlySimple.isDefined && onlySimple.get) {
-          Some(PropertyKind.SIMPLE)
+        val typesToCheck = if (onlySimple.isDefined && onlySimple.get) {
+          Some(PropertyKind.SIMPLE_LIKE)
         } else {
           None
         }
@@ -679,7 +680,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
           .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
           .filter(_._1.community === communityId)
           .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
-          .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
+          .filterOpt(typesToCheck)((table, propertyTypes)=> table._1.kind inSet propertyTypes)
           .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
           .map(x => (x._1, x._2))
           .result
@@ -707,7 +708,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                 if (parentValue.isEmpty && !isAdmin && parentParameter.adminOnly && parentParameter.hidden && existingValueMap.isDefined) {
                   parentValue = existingValueMap.get.get(parentParameter.id)
                 }
-                if (parentValue.isDefined && parentValue.get.value != null && parentValue.get.value.equals(parameterToCheck.dependsOnValue.get)) {
+                if (parentValue.isDefined && parentValue.get.value != null && PrerequisiteUtil.valueMatches(Some(parentParameter.kind), parameterToCheck.dependsOnValue.get, parentValue.get.value)) {
                   satisfied = true
                 }
               }
@@ -737,7 +738,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
             simpleValueList <- PersistenceSchema.organisationParameterValues
               .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
               .filter(_._1.organisation === orgId)
-              .filter(_._2.kind === PropertyKind.SIMPLE)
+              .filter(_._2.kind inSet PropertyKind.SIMPLE_LIKE)
               .map(x => x._1)
               .result
           } yield Some(simpleValueList.map(x => (x.parameter, x)).toMap)

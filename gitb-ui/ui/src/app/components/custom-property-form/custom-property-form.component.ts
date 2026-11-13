@@ -23,6 +23,7 @@ import { SystemService } from 'src/app/services/system.service';
 import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ValidationState } from 'src/app/types/validation-state';
+import { Utils } from 'src/app/common/utils';
 
 @Component({
     selector: 'app-custom-property-form',
@@ -91,7 +92,7 @@ export class CustomPropertyFormComponent implements OnInit {
     }
     if (this.tbProperties) {
       for (let prop of this.tbProperties) {
-        if (this.tbSetDefaults && this.tbProperties != undefined && prop.kind == 'SIMPLE') {
+        if (this.tbSetDefaults && this.tbProperties != undefined && Utils.isSimpleLikeKind(prop.kind)) {
           if (prop.defaultValue != undefined) {
             prop.value = prop.defaultValue
           }
@@ -114,13 +115,50 @@ export class CustomPropertyFormComponent implements OnInit {
   checkPrerequisite(property: CustomProperty): boolean {
     if (!property.checkedPrerequisites) {
       if (property.dependsOn) {
-        property.prerequisiteOk = this.checkPrerequisite(this.propertyMap[property.dependsOn]) && this.propertyMap[property.dependsOn].value == property.dependsOnValue
+        const target = this.propertyMap[property.dependsOn]
+        property.prerequisiteOk = this.checkPrerequisite(target) && this.prerequisiteValueMatches(target, property.dependsOnValue)
       } else {
         property.prerequisiteOk = true
       }
       property.checkedPrerequisites = true
     }
     return property.prerequisiteOk!
+  }
+
+  /**
+   * An exact match of the property's value, except for checkboxes: if these have options any one of the selected
+   * values may match, and if they don't (a single checkbox) the value is true or false (false if not checked).
+   */
+  private prerequisiteValueMatches(target: CustomProperty, expectedValue: string|undefined): boolean {
+    if (target.kind == 'CHECKBOX') {
+      if (Utils.isLoneCheckboxProperty(target.kind, target.allowedValues)) {
+        return (target.value ?? 'false') == expectedValue
+      } else {
+        return Utils.checkboxPropertyValues(target.value).some(value => value == expectedValue)
+      }
+    }
+    return target.value == expectedValue
+  }
+
+  isLoneCheckbox(property: CustomProperty): boolean {
+    return Utils.isLoneCheckboxProperty(property.kind, property.allowedValues)
+  }
+
+  radioChanged(property: CustomProperty, value: string|undefined) {
+    property.value = value
+    this.checkPrerequisites(property, true)
+  }
+
+  checkboxChanged(property: CustomProperty, values: string[]) {
+    property.selectedValues = values
+    property.value = values.length > 0 ? values.join(',') : undefined
+    this.checkPrerequisites(property, true)
+  }
+
+  loneCheckboxChanged(property: CustomProperty, checked: boolean) {
+    property.checked = checked
+    property.value = checked ? 'true' : 'false'
+    this.checkPrerequisites(property, true)
   }
 
   checkPrerequisites(property?: CustomProperty, callInit?: boolean): void {
@@ -140,6 +178,12 @@ export class CustomPropertyFormComponent implements OnInit {
   }
 
   presetValueLabel(property: CustomProperty): string|undefined {
+    if (property.kind == 'CHECKBOX' && property.presetValues) {
+      // The labels of all selected values.
+      return Utils.checkboxPropertyValues(property.value)
+        .map(selected => property.presetValues!.find(v => v.value == selected)?.label ?? selected)
+        .join(', ')
+    }
     if (property.presetValues) {
       for (let v of property.presetValues) {
         if (v.value == property.value)
@@ -242,12 +286,19 @@ export class CustomPropertyFormComponent implements OnInit {
         } else {
           property.prerequisiteOk = true
         }
-        if (property.kind == 'SIMPLE') {
+        if (Utils.isSimpleLikeKind(property.kind)) {
           property.hasPresetValues = false
           if (property.allowedValues !== undefined) {
             property.presetValues = JSON.parse(property.allowedValues)
             if (property.presetValues && property.presetValues.length > 0) {
               property.hasPresetValues = true
+            }
+          }
+          if (property.kind == 'CHECKBOX') {
+            if (property.hasPresetValues) {
+              property.selectedValues = Utils.checkboxPropertyValues(property.value)
+            } else {
+              property.checked = property.value == 'true'
             }
           }
         }

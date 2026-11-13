@@ -27,4 +27,5 @@ class SystemParametersWithValue(_parameter: SystemParameters, _value: Option[Sys
   override def prerequisiteValue(): Option[String] = parameter.dependsOnValue
   override def currentKey(): String = parameter.testKey
   override def currentValue(): Option[String] = if (value.isDefined) Some(value.get.value) else None
+  override def currentKind(): Option[String] = Some(parameter.kind)
 }

@@ -418,6 +418,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       case PropertyType.MULTILINE_TEXT => PropertyKind.MULTILINE_TEXT
       case PropertyType.CODE => PropertyKind.CODE
       case PropertyType.RICH_TEXT => PropertyKind.RICH_TEXT
+      case PropertyType.RADIO_BUTTON => PropertyKind.RADIO_BUTTON
+      case PropertyType.CHECKBOX => PropertyKind.CHECKBOX
       case PropertyType.SECRET =>
         if (isDomainParameter) {
           "HIDDEN"

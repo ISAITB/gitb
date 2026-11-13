@@ -11,7 +11,7 @@
 						<!-- request interaction: server asks operator to send inputs -->
 						 @if (interaction.type == 'request') {
 							 <div>
-								 <label [attr.for]="'input-'+index" class="form-label">
+								 <label [attr.for]="'input-'+index" [attr.id]="'input-label-'+index" class="form-label">
                                      @if (interaction.required) {
                                          <span class="me-1 fw-bold">*</span>
                                      }
@@ -34,6 +34,18 @@
 												<option [ngValue]="option">{{option.label}}</option>
 											}
 										</select>
+									}
+									@case ("RADIO_BUTTON") {
+										<!-- Radio buttons. -->
+										<app-option-group [bordered]="true" mode="radio" [name]="'input-'+index" [inputId]="'input-'+index" [labelledBy]="'input-label-'+index" [options]="interaction.optionData" [(ngModel)]="interaction.selectedValue" [invalid]="validation.get('input_'+index)"></app-option-group>
+									}
+									@case ("CHECKBOX") {
+										<!-- Checkboxes (or a single checkbox if there are no options). -->
+										@if (isLoneCheckbox(interaction)) {
+											<app-option-group [bordered]="true" mode="checkbox" [name]="'input-'+index" [inputId]="'input-'+index" [labelledBy]="'input-label-'+index" [(ngModel)]="interaction.checked" [invalid]="validation.get('input_'+index)"></app-option-group>
+										} @else {
+											<app-option-group [bordered]="true" mode="checkbox" [name]="'input-'+index" [inputId]="'input-'+index" [labelledBy]="'input-label-'+index" [options]="interaction.optionData" [(ngModel)]="interaction.selectedValues" [invalid]="validation.get('input_'+index)"></app-option-group>
+										}
 									}
 									@case ("UPLOAD") {
 										 <!-- Upload -->

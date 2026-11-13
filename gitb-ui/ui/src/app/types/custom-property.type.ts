@@ -22,5 +22,8 @@ export interface CustomProperty extends Parameter {
     showValue?: boolean
     file?: FileData
     showAsInvalid?: boolean
+    // Working state of CHECKBOX properties (derived from and kept in sync with the property's value).
+    selectedValues?: string[]
+    checked?: boolean
 
 }

@@ -21,6 +21,8 @@ class SystemConfigurationParameterMinimal(var parameterId: Long, var endpointNam
 
   override def prerequisiteKey(): Option[String] = dependsOn
   override def prerequisiteValue(): Option[String] = dependsOnValue
-  override def currentKey(): String = parameterName
+  // Dependencies refer to the key of a property (not its name, i.e. its label).
+  override def currentKey(): String = parameterKey
   override def currentValue(): Option[String] = if (parameterValue.isDefined) Some(parameterValue.get) else None
+  override def currentKind(): Option[String] = Some(parameterKind)
 }

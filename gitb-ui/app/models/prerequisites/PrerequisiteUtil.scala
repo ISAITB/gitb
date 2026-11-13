@@ -15,10 +15,24 @@
 
 package models.prerequisites
 
+import models.PropertyKind
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object PrerequisiteUtil {
+
+  /**
+   * Check whether a property's actual value matches an expected value. This is an exact match, except for checkboxes
+   * (that record their selected values as a comma-separated list) for which any one of the selected values may match.
+   */
+  def valueMatches(kind: Option[String], expectedValue: String, actualValue: String): Boolean = {
+    if (kind.exists(PropertyKind.isMultiValue)) {
+      actualValue.split(',').map(_.trim).contains(expectedValue.trim)
+    } else {
+      expectedValue.equals(actualValue)
+    }
+  }
 
   def withValidPrerequisites[A <: WithPrerequisite](allValues: Iterable[A]): List[A] = {
     val checkMap = mutable.Map[String, Boolean]()
@@ -44,7 +58,7 @@ object PrerequisiteUtil {
           val prerequisiteCheckOk = checkPrerequisites(checkMap, valueMap, prerequisite.get)
           if (prerequisiteCheckOk) {
             // Ok if the prerequisite's value matches the current one's expected value.
-            checkResult = Some(value.prerequisiteValue().isDefined && prerequisite.get.currentValue().isDefined && value.prerequisiteValue().get.equals(prerequisite.get.currentValue().get))
+            checkResult = Some(value.prerequisiteValue().isDefined && prerequisite.get.currentValue().isDefined && valueMatches(prerequisite.get.currentKind(), value.prerequisiteValue().get, prerequisite.get.currentValue().get))
           } else {
             // Prerequisite is lacking itself prerequisites.
             checkResult = Some(false)

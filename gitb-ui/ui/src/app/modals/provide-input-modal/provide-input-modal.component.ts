@@ -56,7 +56,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     this.needsInput = this.interactionNeedsInput()
 		for (let interaction of this.interactions) {
 			if (interaction.type == "request") {
-        if (interaction.inputType == 'SELECT_SINGLE' || interaction.inputType == 'SELECT_MULTIPLE') {
+        if (interaction.inputType == 'SELECT_SINGLE' || interaction.inputType == 'SELECT_MULTIPLE' || interaction.inputType == 'RADIO_BUTTON' || interaction.inputType == 'CHECKBOX') {
           if (interaction.options != undefined) {
             const optionValues = interaction.options.split(',').map((item) =>
               item.trim()
@@ -80,7 +80,20 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
             }
           }
           // Handle default value(s).
-          if (interaction.default != undefined && interaction.optionData) {
+          if (interaction.inputType == 'RADIO_BUTTON') {
+            if (interaction.selectedValue == undefined && interaction.default != undefined && interaction.optionData?.some((option) => option.value == interaction.default)) {
+              interaction.selectedValue = interaction.default
+            }
+          } else if (interaction.inputType == 'CHECKBOX') {
+            if (this.isLoneCheckbox(interaction)) {
+              if (interaction.checked == undefined) {
+                interaction.checked = interaction.default?.trim().toLowerCase() == 'true'
+              }
+            } else if (interaction.selectedValues == undefined) {
+              const defaultValues = (interaction.default ?? '').split(',').map((item) => item.trim())
+              interaction.selectedValues = interaction.optionData!.map((option) => option.value).filter((value) => defaultValues.includes(value))
+            }
+          } else if (interaction.default != undefined && interaction.optionData) {
             if (interaction.inputType == 'SELECT_SINGLE') {
               const defaultOption = interaction.optionData.find((option) => {
                 return option.value == interaction.default
@@ -143,7 +156,14 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     if (target == undefined) {
       return true
     }
-    if (target.inputType == 'SELECT_MULTIPLE') {
+    if (target.inputType == 'CHECKBOX') {
+      if (this.isLoneCheckbox(target)) {
+        return (target.checked == true) == (interaction.dependsOnValue?.trim().toLowerCase() == 'true')
+      }
+      return target.selectedValues?.some((value) => value == interaction.dependsOnValue) ?? false
+    } else if (target.inputType == 'RADIO_BUTTON') {
+      return target.selectedValue == interaction.dependsOnValue
+    } else if (target.inputType == 'SELECT_MULTIPLE') {
       return target.selectedOptions?.some((option) => option.value == interaction.dependsOnValue) ?? false
     } else if (target.inputType == 'SELECT_SINGLE') {
       return target.selectedOption?.value == interaction.dependsOnValue
@@ -152,6 +172,17 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     } else {
       return false
     }
+  }
+
+  /**
+   * A checkbox without options, the value of which is whether it was checked.
+   */
+  protected isLoneCheckbox(interaction: UserInteraction): boolean {
+    return interaction.inputType == 'CHECKBOX' && interaction.options == undefined
+  }
+
+  protected isChoiceGroup(interaction: UserInteraction): boolean {
+    return interaction.inputType == 'RADIO_BUTTON' || interaction.inputType == 'CHECKBOX'
   }
 
   ngAfterViewInit(): void {
@@ -234,7 +265,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     this.validation.clearErrors()
     let index = 0
     for (let interaction of this.interactions) {
-      if (interaction.inputType != 'SELECT_SINGLE' && interaction.inputType != 'SELECT_MULTIPLE' && interaction.inputType != 'UPLOAD') {
+      if (interaction.inputType != 'SELECT_SINGLE' && interaction.inputType != 'SELECT_MULTIPLE' && interaction.inputType != 'UPLOAD' && !this.isChoiceGroup(interaction)) {
         // Text inputs, code editors and rich text editors - cleared to a single empty value.
         this.resetTempValues(interaction, false)
       }
@@ -243,6 +274,9 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       }
       delete interaction.selectedOption
       delete interaction.selectedOptions
+      delete interaction.selectedValue
+      delete interaction.selectedValues
+      delete interaction.checked
       delete interaction.file
       this.resetTempFiles(interaction)
       index += 1
@@ -270,7 +304,15 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           type: interaction.variableType,
           embeddingMethod: interaction.contentType
         }
-        if (interaction.optionData != undefined) {
+        if (interaction.inputType == 'RADIO_BUTTON') {
+          inputData.value = interaction.selectedValue
+        } else if (interaction.inputType == 'CHECKBOX') {
+          if (this.isLoneCheckbox(interaction)) {
+            inputData.value = String(interaction.checked == true)
+          } else if (interaction.selectedValues != undefined && interaction.selectedValues.length > 0) {
+            inputData.value = interaction.selectedValues.join()
+          }
+        } else if (interaction.optionData != undefined) {
           if (interaction.multiple) {
             if (interaction.selectedOptions) {
               const values = interaction.selectedOptions.map((item) => { return item.value })
@@ -296,7 +338,8 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
             }
           }
         }
-        const hasValue = this.hasValue(interaction, inputData.value) || inputData.values != undefined || inputData.file != undefined
+        // A checkbox without options needs to be checked to count as a provided value (e.g. a consent).
+        const hasValue = this.isLoneCheckbox(interaction) ? (inputData.value == 'true') : (this.hasValue(interaction, inputData.value) || inputData.values != undefined || inputData.file != undefined)
         const inputValid = !interaction.required || hasValue || !this.isVisible(interaction)
         if (!inputValid) {
           inputsValid = false

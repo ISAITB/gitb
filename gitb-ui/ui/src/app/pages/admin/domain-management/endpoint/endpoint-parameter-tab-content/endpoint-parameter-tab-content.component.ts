@@ -205,7 +205,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
 
 	private preparePresetValues(parameter: Parameter) {
 		parameter.allowedValues = undefined
-		if (parameter.kind == 'SIMPLE' && parameter.hasPresetValues) {
+		if (Utils.isSimpleLikeKind(parameter.kind) && parameter.hasPresetValues) {
 			const checkedValues: ParameterPresetValue[] = []
 			for (let value of parameter.presetValues!) {
 				const existingValue = checkedValues.find((v) => v.value == value.value)
@@ -214,6 +214,11 @@ export class EndpointParameterTabContentComponent implements OnInit {
         }
       }
 			parameter.allowedValues = JSON.stringify(checkedValues)
+			if (parameter.kind == 'CHECKBOX' && parameter.defaultValue != undefined) {
+				// Keep only the default selections that are still defined as preset values.
+				const defaults = Utils.checkboxPropertyValues(parameter.defaultValue).filter(d => checkedValues.some(v => v.value == d))
+				parameter.defaultValue = defaults.length > 0 ? defaults.join(',') : undefined
+			}
     }
   }
 

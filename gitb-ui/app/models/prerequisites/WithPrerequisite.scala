@@ -21,5 +21,10 @@ trait WithPrerequisite {
   def prerequisiteValue(): Option[String]
   def currentKey(): String
   def currentValue(): Option[String]
+  /**
+   * The kind of the property (if known), used to determine how its value is matched against an expected value (see
+   * PrerequisiteUtil.valueMatches).
+   */
+  def currentKind(): Option[String] = None
 
 }

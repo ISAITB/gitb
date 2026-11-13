@@ -180,7 +180,10 @@ public enum ErrorCode {
     INTERACTION_DEPENDENCY_INVALID_REFERENCE(           "TDL-143", "%s [%s] defines a user interaction element with a [dependsOn] attribute value [%s] that doesn't match the name of a request defined in the same interact step.", ERROR, true),
     RESULT_NOT_SUPPORTED_ON_LISTEN(                     "TDL-144", "%s [%s] defines a listen step with a 'result' element. This is currently only supported for 'receive' steps.", ERROR, true),
     ACTOR_ENDPOINT_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT("TDL-145", "Actor [%s] defines for its endpoint documentation both a value and a resource import.", WARNING),
-    ACTOR_ENDPOINT_DOCUMENTATION_REFERENCE_INVALID(     "TDL-146", "Actor [%s] defines its endpoint documentation via import [%s] that cannot be resolved.", ERROR)
+    ACTOR_ENDPOINT_DOCUMENTATION_REFERENCE_INVALID(     "TDL-146", "Actor [%s] defines its endpoint documentation via import [%s] that cannot be resolved.", ERROR),
+    RADIO_BUTTON_WITHOUT_OPTIONS(                       "TDL-147", "%s [%s] defines a user interaction request with an [inputType] of RADIO_BUTTON but no [options] attribute. Radio buttons require a list of options to select from.", ERROR, true),
+    INVALID_MULTIPLE_ATTRIBUTE_FOR_CHOICE(              "TDL-148", "%s [%s] defines a user interaction request with a [multiple] attribute and an [inputType] of RADIO_BUTTON or CHECKBOX. The [multiple] attribute will be ignored.", WARNING, true),
+    PARAMETER_RADIO_BUTTON_WITHOUT_ALLOWED_VALUES(      "TDL-149", "The test suite defines parameter [%s] with a kind of RADIO_BUTTON but no allowed values. Radio buttons require a list of values to select from.", ERROR)
     ;
 
     private final String code;

@@ -36,6 +36,7 @@ class ParametersWithValue(_parameter: Parameters, _value: Option[Configs]) exten
 	override def prerequisiteValue(): Option[String] = parameter.dependsOnValue
 	override def currentKey(): String = parameter.testKey
 	override def currentValue(): Option[String] = if (value.isDefined) Some(value.get.value) else None
+	override def currentKind(): Option[String] = Some(parameter.kind)
 }
 
 /**
@@ -53,11 +54,29 @@ object PropertyKind {
 	val MULTILINE_TEXT = "MULTILINE_TEXT"
 	val CODE = "CODE"
 	val RICH_TEXT = "RICH_TEXT"
+	val RADIO_BUTTON = "RADIO_BUTTON"
+	val CHECKBOX = "CHECKBOX"
 
-	private val ALL = Set(SIMPLE, BINARY, SECRET, MULTILINE_TEXT, CODE, RICH_TEXT)
-	private val TEXT_KINDS = Set(SIMPLE, MULTILINE_TEXT, CODE, RICH_TEXT)
+	private val ALL = Set(SIMPLE, BINARY, SECRET, MULTILINE_TEXT, CODE, RICH_TEXT, RADIO_BUTTON, CHECKBOX)
+	private val TEXT_KINDS = Set(SIMPLE, MULTILINE_TEXT, CODE, RICH_TEXT, RADIO_BUTTON, CHECKBOX)
+	/**
+	 * The kinds that behave as SIMPLE properties: a plain string value that may define preset values (a RADIO_BUTTON
+	 * selects one of them, a CHECKBOX one or more, comma-separated, or is a true/false value if it has no preset
+	 * values), a default value, a dependency, inclusion in exports, and use in filters, snapshots and test sessions.
+	 */
+	val SIMPLE_LIKE: Set[String] = Set(SIMPLE, RADIO_BUTTON, CHECKBOX)
 
 	def isValid(kind: String): Boolean = ALL.contains(kind)
+
+	/**
+	 * True for SIMPLE and the kinds (RADIO_BUTTON, CHECKBOX) that behave as SIMPLE properties.
+	 */
+	def isSimpleLike(kind: String): Boolean = SIMPLE_LIKE.contains(kind)
+
+	/**
+	 * True for the kind that records one or more selected preset values as a comma-separated list.
+	 */
+	def isMultiValue(kind: String): Boolean = CHECKBOX.equals(kind)
 
 	/**
 	 * True for the kinds that hold a plain string value (as opposed to BINARY, held as a file, and

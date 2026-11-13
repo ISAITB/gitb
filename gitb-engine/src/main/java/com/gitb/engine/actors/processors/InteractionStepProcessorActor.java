@@ -386,6 +386,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
                     }
                     instructionOrRequest.setType(targetVariable.getType());
+                } else if (isLoneCheckbox(instructionOrRequest)) {
+                    // A checkbox without options records whether it was checked.
+                    instructionOrRequest.setType(DataType.BOOLEAN_DATA_TYPE);
                 } else {
                     // Set "string" if no other type can be determined.
                     instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
@@ -641,7 +644,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "The number of options ("+optionCount+") doesn't match the number of option labels ("+labelCount+")"));
                 }
                 inputRequest.setMultiple(Boolean.FALSE);
-                if (request.getMultiple() == null) {
+                if (inputRequest.getInputType() == InputRequestInputType.RADIO_BUTTON) {
+                    // Radio buttons are always a single selection (the "multiple" attribute is ignored).
+                    inputRequest.setMultiple(Boolean.FALSE);
+                } else if (inputRequest.getInputType() == InputRequestInputType.CHECKBOX) {
+                    // Checkboxes are always a multiple selection (the "multiple" attribute is ignored).
+                    inputRequest.setMultiple(Boolean.TRUE);
+                } else if (request.getMultiple() == null) {
                     if (inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
                         inputRequest.setMultiple(Boolean.TRUE);
                     }
@@ -657,12 +666,15 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         inputRequest.setInputType(InputRequestInputType.SELECT_SINGLE);
                     }
                 }
+            } else if (isLoneCheckbox(request)) {
+                // A single checkbox without options (its value is true or false).
+                inputRequest.setMultiple(Boolean.FALSE);
             }
             if (inputRequest.getInputType() == null) {
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
-            // Multiple values for the same input (not applicable to dropdowns, for which "multiple" defines the selection mode).
-            if (!isDropdown(request) && request.getMultiple() != null) {
+            // Multiple values for the same input (not applicable to choices, for which "multiple" defines the selection mode or is ignored).
+            if (!isChoice(request) && request.getMultiple() != null) {
                 inputRequest.setMultiple(multipleValuesExpected(request, variableResolver));
             }
             // Rows for multiline text, code editors, select multiple and the rich text editor's height.
@@ -833,13 +845,19 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         if (expectedValue == null || event.getUserInputs() == null) {
             return true;
         }
-        // The selected values of a multiple selection list are submitted as a single comma-separated value.
-        boolean multipleSelection = targetRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE;
+        // The selected values of a multiple selection list (or of checkboxes) are submitted as a single comma-separated value.
+        boolean multipleSelection = targetRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE
+                || (targetRequest.getInputType() == InputRequestInputType.CHECKBOX && !isLoneCheckbox(targetRequest));
+        // A checkbox without options is compared as a boolean.
+        boolean loneCheckbox = isLoneCheckbox(targetRequest);
         // Rich text values are recorded in sanitized form (see processUserInput), so match against that.
         boolean richText = targetRequest.getInputType() == InputRequestInputType.RICH_TEXT;
         return event.getUserInputs().stream()
                 .filter(userInput -> target.id().equals(userInput.getId()))
                 .anyMatch(userInput -> {
+                    if (loneCheckbox && userInput.getValue() != null) {
+                        return String.valueOf(Boolean.parseBoolean(expectedValue.trim())).equals(String.valueOf(Boolean.parseBoolean(userInput.getValue().trim())));
+                    }
                     if (multipleSelection && userInput.getValue() != null) {
                         return Arrays.stream(StringUtils.split(userInput.getValue(), ',')).anyMatch(selected -> expectedValue.equals(selected.trim()));
                     }
@@ -860,20 +878,32 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     }
 
     /**
-     * Whether the request is a dropdown, for which the "multiple" attribute selects between a single and a multiple
-     * selection list (a single, comma-separated value) rather than allowing the control to be repeated.
+     * Whether the request is a choice among options (dropdown, radio buttons or checkboxes), for which the "multiple"
+     * attribute selects between a single and a multiple selection (a single, comma-separated value) or is ignored,
+     * rather than allowing the control to be repeated.
      */
-    private boolean isDropdown(UserRequest request) {
+    private boolean isChoice(UserRequest request) {
         return request.getOptions() != null
                 || request.getInputType() == InputRequestInputType.SELECT_SINGLE
-                || request.getInputType() == InputRequestInputType.SELECT_MULTIPLE;
+                || request.getInputType() == InputRequestInputType.SELECT_MULTIPLE
+                || request.getInputType() == InputRequestInputType.RADIO_BUTTON
+                || request.getInputType() == InputRequestInputType.CHECKBOX;
+    }
+
+    /**
+     * Whether the element is a checkbox without options, for which the value is a boolean (checked or not).
+     */
+    private boolean isLoneCheckbox(InstructionOrRequest instructionOrRequest) {
+        return instructionOrRequest instanceof UserRequest request
+                && request.getInputType() == InputRequestInputType.CHECKBOX
+                && request.getOptions() == null;
     }
 
     /**
      * Whether multiple distinct values (recorded as a list) are expected for the request.
      */
     private boolean multipleValuesExpected(UserRequest request, VariableResolver variableResolver) {
-        if (request.getMultiple() == null || isDropdown(request)) {
+        if (request.getMultiple() == null || isChoice(request)) {
             return false;
         }
         if (VariableResolver.isVariableReference(request.getMultiple())) {
@@ -897,6 +927,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         .filter(userInput -> userInput.getValue() != null)
                         .forEach(userInput -> userInput.setValue(TestCaseUtils.sanitizeRichTextValue(userInput.getValue())));
             }
+            boolean loneCheckbox = isLoneCheckbox(targetRequest);
+            if (loneCheckbox) {
+                // Normalise the value of a checkbox without options to true or false.
+                matchingInputs.stream()
+                        .filter(userInput -> userInput.getValue() != null)
+                        .forEach(userInput -> userInput.setValue(String.valueOf(Boolean.parseBoolean(userInput.getValue().trim()))));
+            }
             if (!matchingInputs.isEmpty()) {
                 boolean multipleExpected = multipleValuesExpected(targetRequest, variableResolver);
                 boolean recordFileNames = StringUtils.isNotBlank(targetRequest.getFileName());
@@ -906,7 +943,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 if (!multipleExpected) {
                     UserInput userInput = matchingInputs.getFirst();
                     if (StringUtils.isNotBlank(userInput.getValue())) {
-                        requiredInputIndexes.remove(requestIndex);
+                        if (!loneCheckbox || "true".equals(userInput.getValue())) {
+                            // An unchecked checkbox without options does not satisfy a requirement (e.g. a consent).
+                            requiredInputIndexes.remove(requestIndex);
+                        }
                         if (targetRequest.isReport() && dependencySatisfied) {
                             // Construct the value to return for the step's report.
                             report.getContext().getItem().add(getAnyContent(userInput, targetRequest));

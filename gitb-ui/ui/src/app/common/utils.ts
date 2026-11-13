@@ -115,8 +115,47 @@ export class Utils {
             case 'MULTILINE_TEXT': return 'Multiline text'
             case 'CODE': return 'Code'
             case 'RICH_TEXT': return 'Rich text'
+            case 'RADIO_BUTTON': return 'Radio buttons'
+            case 'CHECKBOX': return 'Checkboxes'
             default: return kind
         }
+    }
+
+    /**
+     * Whether the kind behaves as a SIMPLE property: a plain string value that can define preset values, a default
+     * value, a dependency, and inclusion in exports.
+     */
+    public static isSimpleLikeKind(kind: PropertyKind|string|undefined): boolean {
+        return kind == 'SIMPLE' || kind == 'RADIO_BUTTON' || kind == 'CHECKBOX'
+    }
+
+    /**
+     * Whether the property is a checkbox without preset values, i.e. a single checkbox the value of which is
+     * "true" or "false".
+     */
+    public static isLoneCheckboxProperty(kind: PropertyKind|string|undefined, allowedValues: string|undefined): boolean {
+        if (kind != 'CHECKBOX') {
+            return false
+        }
+        if (allowedValues == undefined || allowedValues.trim().length == 0) {
+            return true
+        }
+        try {
+            const values = JSON.parse(allowedValues)
+            return !Array.isArray(values) || values.length == 0
+        } catch (e) {
+            return true
+        }
+    }
+
+    /**
+     * The values recorded for a checkbox property (a comma-separated list).
+     */
+    public static checkboxPropertyValues(value: string|undefined): string[] {
+        if (value == undefined) {
+            return []
+        }
+        return value.split(',').map(item => item.trim()).filter(item => item.length > 0)
     }
 
     /**

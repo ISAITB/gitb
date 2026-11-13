@@ -16,6 +16,7 @@
 package com.gitb.vs.tdl.rules;
 
 import com.gitb.core.Actor;
+import com.gitb.core.ConfigurationType;
 import com.gitb.core.Endpoint;
 import com.gitb.core.EndpointParameter;
 import com.gitb.tdl.TestSuite;
@@ -47,16 +48,21 @@ public class CheckTestSuiteEndpointParameters extends AbstractCheck {
                         if (endpoint.getConfig() != null) {
                             Set<String> parameterNames = new HashSet<>();
                             Map<String, Map<String, String>> parameterValueMap = new HashMap<>();
+                            Map<String, EndpointParameter> parametersByName = new HashMap<>();
                             // First make a pass to check record the information on the parameters.
                             for (EndpointParameter parameter: endpoint.getConfig()) {
                                 if (parameterNames.contains(parameter.getName())) {
                                     report.addItem(ErrorCode.DUPLICATE_PARAMETER_NAME, getTestSuiteLocation(context), actor.getId(), endpoint.getName(), parameter.getName());
                                 } else {
                                     parameterNames.add(parameter.getName());
+                                    parametersByName.put(parameter.getName(), parameter);
                                 }
                                 Map<String, String> allowedValues = validateAndGetAllowedValues(parameter, context, report);
                                 if (allowedValues != null && !allowedValues.isEmpty()) {
                                     parameterValueMap.put(parameter.getName(), allowedValues);
+                                }
+                                if (parameter.getKind() == ConfigurationType.RADIO_BUTTON && StringUtils.isBlank(parameter.getAllowedValues())) {
+                                    report.addItem(ErrorCode.PARAMETER_RADIO_BUTTON_WITHOUT_ALLOWED_VALUES, getTestSuiteLocation(context), parameter.getName());
                                 }
                             }
                             for (EndpointParameter parameter: endpoint.getConfig()) {
@@ -68,6 +74,12 @@ public class CheckTestSuiteEndpointParameters extends AbstractCheck {
                                             Map<String, String> otherValues = parameterValueMap.get(parameter.getDependsOn());
                                             if (otherValues != null && parameter.getDependsOnValue() != null && !otherValues.containsKey(parameter.getDependsOnValue())) {
                                                 report.addItem(ErrorCode.PARAMETER_PREREQUISITE_VALUE_NOT_ALLOWED, getTestSuiteLocation(context), parameter.getName(), parameter.getDependsOn(), parameter.getDependsOnValue());
+                                            } else if (otherValues == null && parameter.getDependsOnValue() != null && !parameter.getDependsOnValue().isBlank()) {
+                                                // A checkbox without allowed values holds a true/false value.
+                                                EndpointParameter target = parametersByName.get(parameter.getDependsOn());
+                                                if (target != null && target.getKind() == ConfigurationType.CHECKBOX && !"true".equals(parameter.getDependsOnValue()) && !"false".equals(parameter.getDependsOnValue())) {
+                                                    report.addItem(ErrorCode.PARAMETER_PREREQUISITE_VALUE_NOT_ALLOWED, getTestSuiteLocation(context), parameter.getName(), parameter.getDependsOn(), parameter.getDependsOnValue());
+                                                }
                                             }
                                         } else {
                                             report.addItem(ErrorCode.INVALID_PARAMETER_PREREQUISITE, getTestSuiteLocation(context), parameter.getName(), parameter.getDependsOn());

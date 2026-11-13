@@ -48,7 +48,10 @@ class SupportStepsTest extends BaseIntegrationTest {
                 "sup-interact-dependency-multiple",
                 "sup-interact-multiple-values",
                 "sup-interact-dependency-values",
-                "sup-interact-required-values"
+                "sup-interact-required-values",
+                "sup-interact-radio-checkbox",
+                "sup-interact-radio-checkbox-required",
+                "sup-interact-dependency-radio-checkbox"
         }) {
             stubTdl(id, "tdl/sup/" + id + ".xml");
         }
@@ -242,6 +245,129 @@ class SupportStepsTest extends BaseIntegrationTest {
     void interactRequiredInputWithMultipleValuesIsNotSatisfiedByWhitespaceOnlyValues() throws Exception {
         assertFailed(runWithInteractions("sup-interact-required-values", request -> List.of(
                 userInput(1, "single", "x"), userInput(2, "multiple", " "), userInput(2, "multiple", "	")
+        )));
+    }
+
+    @Test
+    void interactRadioButtonsAndCheckboxesRecordSelectedValues() throws Exception {
+        // Radio buttons record a single value, checkboxes a comma-separated string (the "multiple" attribute is ignored for
+        // both), and a checkbox without options a boolean (unless a type is set).
+        assertSuccess(runWithInteractions("sup-interact-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "b"),
+                userInput(2, "radioMultiple", "c"),
+                userInput(3, "checkboxes", "a,c"),
+                userInput(4, "checkboxesMultiple", "a,b"),
+                userInput(5, "loneChecked", "True"),
+                userInput(6, "loneUnchecked", "false"),
+                userInput(7, "loneString", "true"),
+                userInput(8, "bound", "b,c")
+        )));
+    }
+
+    @Test
+    void interactRequiredRadioButtonsAndCheckboxesAreSatisfiedBySelections() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-radio-checkbox-required", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(2, "checkboxes", "a,b"),
+                userInput(3, "consent", "true")
+        )));
+    }
+
+    @Test
+    void interactRequiredSingleCheckboxIsNotSatisfiedWhenUnchecked() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-radio-checkbox-required", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(2, "checkboxes", "a,b"),
+                userInput(3, "consent", "false")
+        )));
+    }
+
+    @Test
+    void interactRequiredRadioButtonIsNotSatisfiedWithoutSelection() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-radio-checkbox-required", request -> List.of(
+                userInput(2, "checkboxes", "a,b"),
+                userInput(3, "consent", "true")
+        )));
+    }
+
+    @Test
+    void interactRequiredCheckboxesAreNotSatisfiedWithoutSelection() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-radio-checkbox-required", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(2, "checkboxes", ""),
+                userInput(3, "consent", "true")
+        )));
+    }
+
+    @Test
+    void interactDependenciesOnRadioButtonsAndCheckboxesApplyWhenMatching() throws Exception {
+        // All the dependencies are satisfied (a matching radio value, any matching checkbox value, and a checked single checkbox).
+        assertSuccess(runWithInteractions("sup-interact-dependency-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "b"),
+                userInput(2, "radioDependent", "x"),
+                userInput(3, "checkboxes", "a,b"),
+                userInput(4, "checkboxesDependent", "y"),
+                userInput(5, "lone", "true"),
+                userInput(6, "loneCheckedDependent", "z")
+        )));
+    }
+
+    @Test
+    void interactDependenciesOnRadioButtonsAndCheckboxesAreIgnoredWhenNotMatching() throws Exception {
+        // The dependents are not applicable so their (required) inputs can be omitted.
+        assertSuccess(runWithInteractions("sup-interact-dependency-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(3, "checkboxes", "a,c"),
+                userInput(5, "lone", "true"),
+                userInput(6, "loneCheckedDependent", "z")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnRadioButtonRequiresDependentInput() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-dependency-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "b"),
+                userInput(3, "checkboxes", "a"),
+                userInput(5, "lone", "true"),
+                userInput(6, "loneCheckedDependent", "z")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnCheckboxesMatchesAnySelectedValue() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-dependency-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(3, "checkboxes", "b,c"),
+                userInput(5, "lone", "true"),
+                userInput(6, "loneCheckedDependent", "z")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnCheckedSingleCheckboxRequiresDependentInput() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-dependency-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(3, "checkboxes", "a"),
+                userInput(5, "lone", "true")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnUncheckedSingleCheckboxRequiresDependentInput() throws Exception {
+        assertFailed(runWithInteractions("sup-interact-dependency-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(3, "checkboxes", "a"),
+                userInput(5, "lone", "false")
+        )));
+    }
+
+    @Test
+    void interactDependencyOnUncheckedSingleCheckboxIsSatisfied() throws Exception {
+        assertSuccess(runWithInteractions("sup-interact-dependency-radio-checkbox", request -> List.of(
+                userInput(1, "radio", "a"),
+                userInput(3, "checkboxes", "a"),
+                userInput(5, "lone", "false"),
+                userInput(7, "loneUncheckedDependent", "w")
         )));
     }
 }
