@@ -315,6 +315,12 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
               readClasspathResource("health/tsa/error.md").formatted(errors, Configurations.TSA_SERVER_URL)
             )
         }
+      } else if (Configurations.SIGNATURE_LT_ENABLED) {
+        // Long-term validation data (PAdES B-LT) is configured but cannot be added without trusted timestamps.
+        ServiceHealthInfo(ServiceHealthStatusType.Warning,
+          "The trusted timestamp service is disabled but long-term validation data is configured for signatures.",
+          readClasspathResource("health/tsa/warning_lt_without_tsa.md")
+        )
       } else {
         ServiceHealthInfo(ServiceHealthStatusType.Info,
           "The trusted timestamp service is disabled.",

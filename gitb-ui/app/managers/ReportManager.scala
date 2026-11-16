@@ -941,17 +941,25 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       communityKeystore.keystorePassword.toCharArray
     )
     val signer = new CreateSignature(keystore, communityKeystore.keyPassword.toCharArray)
+    var validationTempFile: Option[Path] = None
     try {
+      var tsaUrl: String = null
+      if (Configurations.TSA_SERVER_ENABLED) {
+        tsaUrl = Configurations.TSA_SERVER_URL
+      }
+      // Long-term validation data (PAdES B-LT) builds on the timestamp, so it is only added if the TSA is enabled.
+      val addValidationInformation = Configurations.TSA_SERVER_ENABLED && Configurations.SIGNATURE_LT_ENABLED
+      if (addValidationInformation) {
+        // Holds the signed document while the validation data is added (so that it is never held in memory).
+        validationTempFile = Some(repositoryUtils.createTempFile("signature_", Some(".pdf")))
+      }
       Using.resource(Files.newOutputStream(finalPdfPath)) { output =>
-        var tsaUrl: String = null
-        if (Configurations.TSA_SERVER_ENABLED) {
-          tsaUrl = Configurations.TSA_SERVER_URL
-        }
-        signer.signDetached(tempPdfPath, output, tsaUrl)
+        signer.signDetached(tempPdfPath, output, tsaUrl, addValidationInformation, validationTempFile.orNull)
         output.flush()
       }
     } finally {
       FileUtils.deleteQuietly(tempPdfPath.toFile)
+      validationTempFile.foreach(file => FileUtils.deleteQuietly(file.toFile))
     }
     finalPdfPath
   }

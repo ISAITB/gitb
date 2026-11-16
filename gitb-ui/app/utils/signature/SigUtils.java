@@ -121,7 +121,6 @@ public class SigUtils {
         COSDictionary referenceDict = new COSDictionary();
         referenceDict.setItem(COSName.TYPE, COSName.getPDFName("SigRef"));
         referenceDict.setItem("TransformMethod", COSName.DOCMDP);
-        referenceDict.setItem("DigestMethod", COSName.getPDFName("SHA1"));
         referenceDict.setItem("TransformParams", transformParameters);
         referenceDict.setNeedToBeUpdated(true);
 

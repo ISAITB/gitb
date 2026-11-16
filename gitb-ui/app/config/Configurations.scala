@@ -133,6 +133,7 @@ object Configurations {
 
   var TSA_SERVER_ENABLED = false
   var TSA_SERVER_URL = ""
+  var SIGNATURE_LT_ENABLED = false
 
   var VALIDATION_TDL_EXTERNAL_ENABLED = false
   var VALIDATION_TDL_EXTERNAL_URL = ""
@@ -572,6 +573,11 @@ object Configurations {
       TSA_SERVER_ENABLED = fromEnv("TSA_SERVER_ENABLED", conf.getString("signature.tsa.enabled")).toBoolean
       if (TSA_SERVER_ENABLED) {
         TSA_SERVER_URL = fromEnv("TSA_SERVER_URL", conf.getString("signature.tsa.url"))
+      }
+      SIGNATURE_LT_ENABLED = fromEnv("SIGNATURE_LT_ENABLED", conf.getString("signature.lt.enabled")).toBoolean
+      if (SIGNATURE_LT_ENABLED && !TSA_SERVER_ENABLED) {
+        // The value is kept as configured so that this can be reported by the service health check.
+        LOGGER.warn("SIGNATURE_LT_ENABLED is set but the TSA server is not enabled (TSA_SERVER_ENABLED). Long-term validation data will not be added to signatures.")
       }
 
       VALIDATION_TDL_EXTERNAL_ENABLED = fromEnv("VALIDATION_TDL_EXTERNAL_ENABLED", conf.getString("validation.tdl.external.enabled")).toBoolean
