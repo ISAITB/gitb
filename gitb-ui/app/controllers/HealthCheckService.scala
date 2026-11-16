@@ -295,24 +295,37 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
   private def checkTrustedTimestampServiceInternal(): Future[ServiceHealthInfo] = {
     Future.successful{
       if (Configurations.TSA_SERVER_ENABLED) {
+        // The settings are shown in the texts (never the credentials).
+        val timeout = Configurations.TSA_SERVER_TIMEOUT.toString
+        val authentication = if (Configurations.TSA_SERVER_AUTH_ENABLED) "enabled" else "disabled"
+        val policy = Configurations.TSA_SERVER_POLICY_OID.map(oid => s"`$oid`").getOrElse("not set (the default policy of the service is applied)")
         try {
-          val tsaClient = new ValidationTimeStamp(Configurations.TSA_SERVER_URL)
-          Using.resource(new ByteArrayInputStream("TEST".getBytes(StandardCharsets.UTF_8))) { stream =>
+          val tsaClient = new ValidationTimeStamp(Configurations.tsaSettings())
+          val tokenBytes = Using.resource(new ByteArrayInputStream("TEST".getBytes(StandardCharsets.UTF_8))) { stream =>
             val signatureBytes = tsaClient.getTimeStampToken(stream)
             if (signatureBytes == null || signatureBytes.isEmpty) {
               throw new IllegalStateException("The TSA server returned an empty timestamp")
             }
+            signatureBytes
           }
-          ServiceHealthInfo(ServiceHealthStatusType.Ok,
-            "The trusted timestamp service is enabled and working correctly.",
-            readClasspathResource("health/tsa/ok.md").formatted(Configurations.TSA_SERVER_URL)
-          )
+          if (Configurations.SIGNATURE_LT_ENABLED && !ValidationTimeStamp.containsSignerCertificate(tokenBytes)) {
+            // Working but, without the certificate of the TSA, long-term validation data cannot be added for the timestamp.
+            ServiceHealthInfo(ServiceHealthStatusType.Warning,
+              "The trusted timestamp service does not provide its certificate in the timestamps.",
+              readClasspathResource("health/tsa/warning_no_tsa_certificate.md").formatted(Configurations.TSA_SERVER_URL, timeout, authentication, policy)
+            )
+          } else {
+            ServiceHealthInfo(ServiceHealthStatusType.Ok,
+              "The trusted timestamp service is enabled and working correctly.",
+              readClasspathResource("health/tsa/ok.md").formatted(Configurations.TSA_SERVER_URL, timeout, authentication, policy)
+            )
+          }
         } catch {
           case e: Exception =>
             val errors = errorsToString(systemConfigurationManager.extractFailureDetails(e))
             ServiceHealthInfo(ServiceHealthStatusType.Error,
               "The trusted timestamp service is not working correctly.",
-              readClasspathResource("health/tsa/error.md").formatted(errors, Configurations.TSA_SERVER_URL)
+              readClasspathResource("health/tsa/error.md").formatted(errors, Configurations.TSA_SERVER_URL, timeout, authentication, policy)
             )
         }
       } else if (Configurations.SIGNATURE_LT_ENABLED) {

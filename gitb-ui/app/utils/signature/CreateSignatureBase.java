@@ -63,7 +63,7 @@ public abstract class CreateSignatureBase implements SignatureInterface {
 
     private PrivateKey privateKey;
     private Certificate[] certificateChain;
-    private String tsaUrl;
+    private TsaSettings tsa;
     private volatile boolean timestamped = false;
 
     /**
@@ -112,8 +112,11 @@ public abstract class CreateSignatureBase implements SignatureInterface {
         this.certificateChain = certificateChain;
     }
 
-    public void setTsaUrl(String tsaUrl) {
-        this.tsaUrl = tsaUrl;
+    /**
+     * @param tsa The settings of the timestamp authority to use (null for no timestamps).
+     */
+    public void setTsa(TsaSettings tsa) {
+        this.tsa = tsa;
     }
 
     /**
@@ -144,8 +147,8 @@ public abstract class CreateSignatureBase implements SignatureInterface {
             CMSProcessableInputStream msg = new CMSProcessableInputStream(content);
             CMSSignedData signedData = gen.generate(msg, false);
             timestamped = false;
-            if (tsaUrl != null && !tsaUrl.isEmpty()) {
-                ValidationTimeStamp validation = new ValidationTimeStamp(tsaUrl);
+            if (tsa != null) {
+                ValidationTimeStamp validation = new ValidationTimeStamp(tsa);
                 try {
                     signedData = validation.addSignedTimeStamp(signedData);
                     timestamped = true;

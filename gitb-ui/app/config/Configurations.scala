@@ -21,9 +21,11 @@ import com.typesafe.config.{Config, ConfigFactory}
 import models.{Constants, ReportSettings, UsageTipsConfiguration, WelcomeTexts}
 import models.Enums.ReportType
 import org.apache.commons.lang3.{StringUtils, Strings}
+import org.bouncycastle.asn1.ASN1ObjectIdentifier
 import org.slf4j.LoggerFactory
+import utils.signature.TsaSettings
 
-import java.time.ZoneId
+import java.time.{Duration, ZoneId}
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import scala.collection.mutable
@@ -133,6 +135,11 @@ object Configurations {
 
   var TSA_SERVER_ENABLED = false
   var TSA_SERVER_URL = ""
+  var TSA_SERVER_TIMEOUT = 30
+  var TSA_SERVER_AUTH_ENABLED = false
+  var TSA_SERVER_USERNAME = ""
+  var TSA_SERVER_PASSWORD = ""
+  var TSA_SERVER_POLICY_OID: Option[String] = None
   var SIGNATURE_LT_ENABLED = false
 
   var VALIDATION_TDL_EXTERNAL_ENABLED = false
@@ -281,6 +288,23 @@ object Configurations {
 
   def mainVersionNumber(): String = {
     Strings.CS.removeEnd(Constants.VersionNumber.toLowerCase(Locale.getDefault), "-snapshot")
+  }
+
+  /**
+   * The settings to use for trusted timestamps, or null if the trusted timestamp service is not enabled.
+   */
+  def tsaSettings(): TsaSettings = {
+    if (TSA_SERVER_ENABLED) {
+      new TsaSettings(
+        TSA_SERVER_URL,
+        if (TSA_SERVER_AUTH_ENABLED) TSA_SERVER_USERNAME else null,
+        if (TSA_SERVER_AUTH_ENABLED) TSA_SERVER_PASSWORD else null,
+        TSA_SERVER_POLICY_OID.orNull,
+        Duration.ofSeconds(TSA_SERVER_TIMEOUT)
+      )
+    } else {
+      null
+    }
   }
 
   /**
@@ -573,6 +597,21 @@ object Configurations {
       TSA_SERVER_ENABLED = fromEnv("TSA_SERVER_ENABLED", conf.getString("signature.tsa.enabled")).toBoolean
       if (TSA_SERVER_ENABLED) {
         TSA_SERVER_URL = fromEnv("TSA_SERVER_URL", conf.getString("signature.tsa.url"))
+        TSA_SERVER_TIMEOUT = fromEnv("TSA_SERVER_TIMEOUT", conf.getString("signature.tsa.timeout")).toInt
+        if (TSA_SERVER_TIMEOUT <= 0) {
+          throw new IllegalArgumentException("The configured TSA_SERVER_TIMEOUT [%s] must be a positive number of seconds".formatted(TSA_SERVER_TIMEOUT))
+        }
+        TSA_SERVER_AUTH_ENABLED = fromEnv("TSA_SERVER_AUTH_ENABLED", conf.getString("signature.tsa.auth.enabled")).toBoolean
+        if (TSA_SERVER_AUTH_ENABLED) {
+          TSA_SERVER_USERNAME = fromEnv("TSA_SERVER_USERNAME", conf.getString("signature.tsa.auth.username"))
+          TSA_SERVER_PASSWORD = fromEnv("TSA_SERVER_PASSWORD", conf.getString("signature.tsa.auth.password"))
+        }
+        TSA_SERVER_POLICY_OID = Option(fromEnv("TSA_SERVER_POLICY_OID", conf.getString("signature.tsa.policy"))).map(_.trim).filter(_.nonEmpty)
+        TSA_SERVER_POLICY_OID.foreach { oid =>
+          if (ASN1ObjectIdentifier.tryFromID(oid) == null) {
+            throw new IllegalArgumentException("The configured TSA_SERVER_POLICY_OID [%s] is not a valid object identifier (expected a dotted format such as 1.2.3.4)".formatted(oid))
+          }
+        }
       }
       SIGNATURE_LT_ENABLED = fromEnv("SIGNATURE_LT_ENABLED", conf.getString("signature.lt.enabled")).toBoolean
       if (SIGNATURE_LT_ENABLED && !TSA_SERVER_ENABLED) {

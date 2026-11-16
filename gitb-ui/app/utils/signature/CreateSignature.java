@@ -65,8 +65,8 @@ public class CreateSignature extends CreateSignatureBase {
      * @param out output PDF file
      * @throws IOException if the input file could not be read
      */
-    public void signDetached(Path in, OutputStream out, String tsaUrl) throws IOException {
-        signDetached(in, out, tsaUrl, false, null);
+    public void signDetached(Path in, OutputStream out, TsaSettings tsa) throws IOException {
+        signDetached(in, out, tsa, false, null);
     }
 
     /**
@@ -78,16 +78,16 @@ public class CreateSignature extends CreateSignatureBase {
      *
      * @param in input PDF file
      * @param out output PDF file
-     * @param tsaUrl the URL of the timestamp authority (optional)
+     * @param tsa the settings of the timestamp authority (null for no timestamp)
      * @param addValidationInformation whether to add the validation information (requires a timestamp).
      * @param tempFile a temporary file (that the caller is responsible to delete) to hold the signed document while
      *                 the validation information is added. Required if the validation information is to be added.
      * @throws IOException if the input file could not be read
      */
-    public void signDetached(Path in, OutputStream out, String tsaUrl, boolean addValidationInformation, Path tempFile) throws IOException {
+    public void signDetached(Path in, OutputStream out, TsaSettings tsa, boolean addValidationInformation, Path tempFile) throws IOException {
         if (!addValidationInformation) {
             try (PDDocument doc = Loader.loadPDF(new RandomAccessReadBufferedFile(in))) {
-                signDetached(doc, out, tsaUrl);
+                signDetached(doc, out, tsa);
             }
             return;
         }
@@ -97,7 +97,7 @@ public class CreateSignature extends CreateSignatureBase {
         // The validation information is added to the signed document, which is first written to the temporary file.
         try (PDDocument doc = Loader.loadPDF(new RandomAccessReadBufferedFile(in));
              OutputStream signed = Files.newOutputStream(tempFile)) {
-            signDetached(doc, signed, tsaUrl);
+            signDetached(doc, signed, tsa);
         }
         if (!isTimestamped()) {
             logger.warn("Validation information requires a timestamped signature. The signature will be of PAdES level B-B.");
@@ -113,8 +113,8 @@ public class CreateSignature extends CreateSignatureBase {
         }
     }
 
-    private void signDetached(PDDocument document, OutputStream output, String tsaUrl) throws IOException {
-        setTsaUrl(tsaUrl);
+    private void signDetached(PDDocument document, OutputStream output, TsaSettings tsa) throws IOException {
+        setTsa(tsa);
         int accessPermissions = SigUtils.getMDPPermission(document);
         if (accessPermissions == 1) {
             throw new IllegalStateException("No changes to the document are permitted due to DocMDP transform parameters dictionary");

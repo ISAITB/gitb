@@ -26,8 +26,19 @@ services:
      - TSA_SERVER_ENABLED = true
      # The host address at which the timestamp service can be reached by gitb-ui.
      - TSA_SERVER_URL = https://freetsa.org/tsr
+     # Optional: the maximum time (in seconds) to wait for the timestamp service (default 30).
+     - TSA_SERVER_TIMEOUT = 30
+     # Optional: set to true if the timestamp service requires authentication (HTTP basic authentication).
+     - TSA_SERVER_AUTH_ENABLED = true
+     - TSA_SERVER_USERNAME = username
+     - TSA_SERVER_PASSWORD = password
+     # Optional: the object identifier of the timestamp policy to request, if the service requires a specific one.
+     - TSA_SERVER_POLICY_OID = 1.2.3.4
   ...
 ```
+
+Only `TSA_SERVER_ENABLED` and `TSA_SERVER_URL` are required. The remaining settings are optional and only needed if your
+timestamp service requires them.
 
 More information is available in the [timestamp-related section](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html#conformance-certificate-timestamps)
 of the [production installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/).

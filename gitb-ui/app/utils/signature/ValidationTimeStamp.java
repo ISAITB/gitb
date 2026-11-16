@@ -21,9 +21,14 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.Attributes;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.tsp.TSPException;
+import org.bouncycastle.tsp.TimeStampToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,18 +47,41 @@ import java.util.List;
  * Adapted from the PDFBox examples: https://pdfbox.apache.org/2.0/examples.html
  */
 public class ValidationTimeStamp {
+
+    private static final Logger logger = LoggerFactory.getLogger(ValidationTimeStamp.class);
+
     private TSAClient tsaClient;
 
     /**
-     * @param tsaUrl The url where TS-Request will be done.
+     * @param settings The settings of the TSA where TS-Requests will be done.
      * @throws NoSuchAlgorithmException
      * @throws MalformedURLException
      */
-    public ValidationTimeStamp(String tsaUrl) throws NoSuchAlgorithmException, MalformedURLException {
-        if (tsaUrl != null)
+    public ValidationTimeStamp(TsaSettings settings) throws NoSuchAlgorithmException, MalformedURLException {
+        if (settings != null)
         {
+            // Fail early for an invalid address.
+            URI.create(settings.url()).toURL();
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            this.tsaClient = new TSAClient(URI.create(tsaUrl).toURL(), null, null, digest);
+            this.tsaClient = new TSAClient(settings, digest);
+        }
+    }
+
+    /**
+     * Check whether a timestamp token includes the certificate of the TSA that issued it. Without it a validator cannot
+     * validate the timestamp unless it can retrieve the certificate otherwise, and long-term validation data cannot be
+     * added for it.
+     *
+     * @param token The encoded timestamp token.
+     * @return The check result.
+     * @throws IOException If the token cannot be read.
+     */
+    public static boolean containsSignerCertificate(byte[] token) throws IOException {
+        try {
+            TimeStampToken timeStampToken = new TimeStampToken(new CMSSignedData(token));
+            return !timeStampToken.getCertificates().getMatches(timeStampToken.getSID()).isEmpty();
+        } catch (CMSException | TSPException e) {
+            throw new IOException("Unable to read the timestamp token", e);
         }
     }
 
@@ -84,7 +112,7 @@ public class ValidationTimeStamp {
                 newSigners.add(signTimeStamp(signer));
             }
         } catch (Exception e) {
-            throw new TimestampingException("Error generating timestamp", e);
+            throw new TimestampingException("Error generating timestamp: " + e.getMessage(), e);
         }
 
         // Because new SignerInformation is created, new SignerInfoStore has to be created
@@ -109,6 +137,9 @@ public class ValidationTimeStamp {
         }
 
         byte[] token = tsaClient.getTimeStampToken(signer.getSignature());
+        if (!containsSignerCertificate(token)) {
+            logger.warn("The timestamp token provided by the TSA does not include the TSA's certificate. Validators that cannot retrieve it otherwise may not be able to verify the timestamp, and no long-term validation data can be added for it.");
+        }
         ASN1ObjectIdentifier oid = PKCSObjectIdentifiers.id_aa_signatureTimeStampToken;
         ASN1Encodable signatureTimeStamp = new Attribute(oid,
                 new DERSet(ASN1Primitive.fromByteArray(token)));
