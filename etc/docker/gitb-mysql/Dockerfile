@@ -1,4 +1,4 @@
-FROM mysql:8.4.8
+FROM mysql:8.4.13
 
 # Passwords set at build-time or overriden by user configuration.
 # Passwords can also be set via secret files in which case the
