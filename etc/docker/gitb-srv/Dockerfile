@@ -12,4 +12,4 @@ WORKDIR /itbsrv
 # JDK_JAVA_OPTIONS is the JVM standard environment variable for passing arguments to the JVM
 # This can be set when creating a container to override the defaults.
 ENV JDK_JAVA_OPTIONS="-Xmx2048m"
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/itbsrv/itbsrv.war"]
+ENTRYPOINT ["java","-XX:-UseBASE64Intrinsics","-Djava.security.egd=file:/dev/./urandom","-jar","/itbsrv/itbsrv.war"]
