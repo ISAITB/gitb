@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="val-shacl-labels" xmlns="http://www.gitb.com/tdl/v1/">
+    <metadata>
+        <name>ShaclValidator result messages list IRIs consistently with the model's prefixes</name>
+        <version>1.0</version>
+    </metadata>
+    <variables>
+        <var name="shape" type="map"/>
+    </variables>
+    <actors>
+        <actor id="SUT" role="SUT"/>
+    </actors>
+    <steps stopOnError="true">
+        <assign to="model"><![CDATA['@prefix ex: <http://example.org/ns/> .
+ex:alice a ex:Person ; ex:knows ex:bob .']]></assign>
+        <assign to="shapes"><![CDATA['@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <http://example.org/ns/> .
+ex:PersonShape a sh:NodeShape ;
+    sh:targetClass ex:Person ;
+    sh:property [
+        sh:path ex:knows ;
+        sh:class ex:7e7f-class ;
+        sh:qualifiedValueShape ex:fff9-shape ;
+        sh:qualifiedMinCount 1
+    ] .
+ex:fff9-shape a sh:NodeShape ;
+    sh:property [ sh:path ex:name ; sh:minCount 1 ] .']]></assign>
+        <assign to="shape{content}">$shapes</assign>
+        <assign to="shape{contentType}">'text/turtle'</assign>
+        <assign to="shapeList" append="true">$shape</assign>
+        <verify handler="ShaclValidator" desc="Validate model">
+            <input name="model">$model</input>
+            <input name="contentType">'text/turtle'</input>
+            <input name="shapes">$shapeList</input>
+        </verify>
+    </steps>
+</testcase>

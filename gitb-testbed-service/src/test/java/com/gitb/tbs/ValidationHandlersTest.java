@@ -84,7 +84,8 @@ class ValidationHandlersTest extends BaseIntegrationTest {
                 "val-pdf-core-content-lenient",
                 "val-pdf-core-content-strict",
                 "val-pdf-core-object-lenient",
-                "val-pdf-core-object-strict"
+                "val-pdf-core-object-strict",
+                "val-shacl-labels"
         }) {
             stubTdl(id, "tdl/val/" + id + ".xml");
         }
@@ -231,6 +232,16 @@ class ValidationHandlersTest extends BaseIntegrationTest {
         List<BAR> findings = reportFindings(result);
         assertEquals(1, findings.size());
         assertEquals("Invoice must have a total element (from included rules)", findings.getFirst().getDescription());
+    }
+
+    @Test
+    void shaclMessagesUsePrefixesConsistently() throws Exception {
+        TestRunResult result = run("val-shacl-labels");
+        assertFailed(result);
+        List<String> descriptions = reportFindings(result).stream().map(BAR::getDescription).toList();
+        assertTrue(descriptions.contains("Value must be an instance of ex:7e7f-class"), descriptions.toString());
+        assertTrue(descriptions.contains("Less than 1 values have shape ex:fff9-shape"), descriptions.toString());
+        assertTrue(descriptions.stream().noneMatch(d -> d.contains("<http://example.org")), descriptions.toString());
     }
 
     /**

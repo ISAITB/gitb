@@ -38,6 +38,8 @@ import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.topbraid.shacl.validation.ValidationEngine;
+import org.topbraid.shacl.validation.ValidationEngineConfiguration;
 import org.topbraid.shacl.validation.ValidationUtil;
 
 import java.io.StringWriter;
@@ -145,7 +147,7 @@ public class ShaclValidator extends AbstractValidator {
             } else {
                 shapesModel = getShapesModel(shapes);
                 inputModel = getInputModel(new ContentInfo(modelContent, modelLanguage), shapesModel, loadImports, mergeModelsBeforeValidation);
-                reportModel = ValidationUtil.validateModel(inputModel, shapesModel, false).getModel();
+                reportModel = validateModelWithConsistentLabels(inputModel, shapesModel).getModel();
             }
             reportModel.setNsPrefix("sh", NS_SHACL);
             // Produce report.
@@ -165,6 +167,31 @@ public class ShaclValidator extends AbstractValidator {
             closeModel(inputModel);
             closeModel(shapesModel);
             closeModel(reportModel);
+        }
+    }
+
+    /**
+     * Validate a data model against a shapes model, ensuring that URIs in result messages are rendered consistently.
+     * <p>
+     * This is equivalent to {@link ValidationUtil#validateModel(Model, Model, boolean)} (without validating the shapes),
+     * but replaces the engine's label function so that URIs are consistently abbreviated using the prefixes of the
+     * data model.
+     *
+     * @param dataModel The data to validate.
+     * @param shapesModel The shapes to validate against.
+     * @return The validation report resource.
+     */
+    private static Resource validateModelWithConsistentLabels(Model dataModel, Model shapesModel) {
+        var configuration = new ValidationEngineConfiguration().setValidateShapes(false);
+        ValidationEngine engine = ValidationUtil.createValidationEngine(dataModel, shapesModel, configuration);
+        engine.setConfiguration(configuration);
+        engine.setLabelFunction(new ResultMessageLabelFunction(dataModel));
+        try {
+            engine.applyEntailments();
+            return engine.validateAll();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while validating against SHACL shapes", e);
         }
     }
 
