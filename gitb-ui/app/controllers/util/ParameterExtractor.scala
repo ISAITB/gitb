@@ -368,6 +368,14 @@ object ParameterExtractor {
     }
   }
 
+  /**
+   * Whether the request is part of a session started through the demo option of the welcome page (the header is
+   * set by the AuthenticationFilter from the server-side access token record).
+   */
+  def isDemoSession(request:RequestHeader):Boolean = {
+    request.headers.get(ParameterNames.DEMO_SESSION).contains("true")
+  }
+
   def extractUserId(request:RequestHeader):Long = {
     request.headers.get(ParameterNames.USER_ID).get.toLong
   }

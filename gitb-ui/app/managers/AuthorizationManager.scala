@@ -506,18 +506,23 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkHasPrincipal(request, skipForNonSSO = false)
   }
 
+  /**
+   * The explicit demo login (demo option of the welcome page), which results in a restricted demo session of the
+   * configured demo account. Selecting the demo account by its ID is only possible for a user it is linked to
+   * (see canSelectFunctionalAccount), and gives a normal session.
+   */
+  def canSelectDemoAccount(request: RequestWithAttributes[AnyContent]): Future[Boolean] = {
+    Future.successful(Configurations.DEMOS_ENABLED).map(setAuthResult(request, _, "Demo login not allowed"))
+  }
+
   def canSelectFunctionalAccount(request: RequestWithAttributes[AnyContent], id: Long): Future[Boolean] = {
-    val check = if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == id) {
-      Future.successful(true)
-    } else {
-      getPrincipal(request).flatMap { principal =>
-        if (principal != null) {
-          userManager.getUserByIdAsync(id).map { user =>
-            user.isDefined && user.get.ssoUid.isDefined && user.get.ssoUid.get == principal.uid
-          }
-        } else {
-          Future.successful(false)
+    val check = getPrincipal(request).flatMap { principal =>
+      if (principal != null) {
+        userManager.getUserByIdAsync(id).map { user =>
+          user.isDefined && user.get.ssoUid.isDefined && user.get.ssoUid.get == principal.uid
         }
+      } else {
+        Future.successful(false)
       }
     }
     check.map(setAuthResult(request, _, "You cannot access the requested account"))
@@ -624,7 +629,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
           canManageOrganisationFull(request, userInfo, user.organization)
         }
       } else if (isOrganisationAdmin(userInfo)) {
-        if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
+        if (!isDemoSession(request)) {
           userManager.getById(userId).flatMap { user =>
             if (userInfo.organization.isDefined && user.organization == userInfo.organization.get.id) {
               canUpdateOwnOrganisationUsers(userInfo)
@@ -669,7 +674,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       } else if (isCommunityAdmin(userInfo)) {
         canManageOrganisationFull(request, userInfo, orgId)
       } else if (isOrganisationAdmin(userInfo)) {
-        if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
+        if (!isDemoSession(request)) {
           canUpdateOwnOrganisationUsers(userInfo)
         } else {
           Future.successful(false)
@@ -1904,9 +1909,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def canUpdateOwnProfile(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = checkIsAuthenticated(request).flatMap { authenticated =>
       if (authenticated) {
-        val userId = getRequestUserId(request)
         Future.successful {
-          !Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT
+          !isDemoSession(request)
         }
       } else {
         Future.successful(false)
@@ -1961,7 +1965,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canUpdateOwnOrganisation(request: RequestWithAttributes[_], ignoreExistingTests: Boolean): Future[Boolean] = {
     val userId = getRequestUserId(request)
-    val check = if (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT) {
+    val check = if (!isDemoSession(request)) {
       getUser(userId).flatMap { userInfo =>
         if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
           Future.successful(true)
@@ -2021,12 +2025,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewMessage(request: RequestWithAttributes[_], messageId: Long, requireTestBedAdmin: Boolean, requireCommunityAdmin: Boolean, sentMessage: Option[Boolean]): Future[(Boolean, Long, Long)] = {
     val userId = getRequestUserId(request)
-    val check = if (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT) {
+    val check = if (!isDemoSession(request)) {
       getUser(userId).flatMap { userInfo =>
         canViewMessage(userInfo, messageId, requireTestBedAdmin, requireCommunityAdmin, sentMessage)
       }
     } else {
-      // User is the demo account.
+      // Demo session.
       Future.successful((false, -1L, -1L))
     }
     check.map { case (check, orgId, userId) =>
@@ -2037,20 +2041,20 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   /** Every message read is scoped to the requester's own organisation inside MessageManager, so no
    * per-message ownership check is needed here - only that the caller is authenticated, and (as for any
-   * other messaging endpoint) is not the configured demo account. */
+   * other messaging endpoint) is not in a demo session. */
   def canViewOwnMessages(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = checkIsAuthenticated(request).map { authenticated =>
-      authenticated && (!Configurations.DEMOS_ENABLED || getRequestUserId(request) != Configurations.DEMOS_ACCOUNT)
+      authenticated && !isDemoSession(request)
     }
     check.map(setAuthResult(request, _, "User cannot view messages"))
   }
 
   /** Read/unread and delete mutations are scoped to the requester's own organisation in the manager's
    * WHERE clauses, so a forged message id can never affect another organisation's data - only
-   * authentication (and not being the configured demo account) is checked here. */
+   * authentication (and not being in a demo session) is checked here. */
   def canManageOwnMessages(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = checkIsAuthenticated(request).map { authenticated =>
-      authenticated && (!Configurations.DEMOS_ENABLED || getRequestUserId(request) != Configurations.DEMOS_ACCOUNT)
+      authenticated && !isDemoSession(request)
     }
     check.map(setAuthResult(request, _, "User cannot manage messages"))
   }
@@ -2063,7 +2067,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
    * expands these (already-authorised) descriptors into concrete organisation ids. */
   def canSendMessage(request: RequestWithAttributes[_], targets: List[MessageTarget], parentMessageId: Option[Long]): Future[Boolean] = {
     val userId = getRequestUserId(request)
-    val check = if (targets.isEmpty || (Configurations.DEMOS_ENABLED && userId == Configurations.DEMOS_ACCOUNT)) {
+    val check = if (targets.isEmpty || isDemoSession(request)) {
       Future.successful(false)
     } else {
       for {
@@ -2699,6 +2703,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def isTestEngineCall(request: RequestWithAttributes[_]): Boolean = {
     request.headers.get(HmacUtils.HMAC_HEADER_TOKEN).isDefined && request.headers.get(HmacUtils.HMAC_HEADER_TIMESTAMP).isDefined
+  }
+
+  /**
+   * Whether the request belongs to a session started through the demo option of the welcome page. Sessions of the
+   * demo account started with its credentials are normal sessions.
+   */
+  private def isDemoSession(request: RequestHeader): Boolean = {
+    Configurations.DEMOS_ENABLED && ParameterExtractor.isDemoSession(request)
   }
 
   private def getRequestUserId(request: RequestHeader): Long = {

@@ -129,9 +129,18 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def selectFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
-    val userId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ID).toLong
-    authorizationManager.canSelectFunctionalAccount(request, userId).map { _ =>
-      completeAccessTokenLogin(userId, request)
+    if (ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.DEMO).getOrElse(false)) {
+      // Explicit demo login (the demo option of the welcome page): the configured demo account is assigned to a
+      // restricted demo session. Selecting the demo account as a regular (linked) functional account, or logging
+      // in with its credentials, results in a normal session.
+      authorizationManager.canSelectDemoAccount(request).map { _ =>
+        completeAccessTokenLogin(Configurations.DEMOS_ACCOUNT, request, demoSession = true)
+      }
+    } else {
+      val userId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ID).toLong
+      authorizationManager.canSelectFunctionalAccount(request, userId).map { _ =>
+        completeAccessTokenLogin(userId, request)
+      }
     }
   }
 
@@ -159,8 +168,8 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
-  private def completeAccessTokenLogin(userId: Long, request: RequestWithAttributes[AnyContent]): Result = {
-    val tokens = authManager.generateTokens(userId)
+  private def completeAccessTokenLogin(userId: Long, request: RequestWithAttributes[AnyContent], demoSession: Boolean = false): Result = {
+    val tokens = authManager.generateTokens(userId, demoSession)
     disableDataBootstrap()
     // Add the access token to the session cookie - this is the key recorded in Redis that allows session timeout enforcement and role resolution
     ResponseConstructor.constructOauthResponse(tokens, userId).withSession(request.session + (Constants.AccessTokenKey -> tokens.accessToken))

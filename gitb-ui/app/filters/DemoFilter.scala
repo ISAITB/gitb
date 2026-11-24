@@ -103,18 +103,21 @@ class DemoFilter @Inject() (implicit val mat: Materializer,
     requestHeader.method == "GET" && requestHeader.path == "%sapp".formatted(Configurations.WEB_CONTEXT_ROOT_WITH_SLASH)
   }
 
-  /** True if the current session (access token and/or pac4j profile) belongs to the configured demo account. */
+  /**
+   * True if the current session (access token and/or pac4j profile) was started through the demo option. A session
+   * of the demo account started with its credentials is not a demo session.
+   */
   private def isDemoSession(requestHeader: RequestHeader): Boolean = {
     val demoViaAccessToken = requestHeader.session.get(Constants.AccessTokenKey).exists { token =>
-      TokenCache.checkAccessToken(token).contains(Configurations.DEMOS_ACCOUNT)
+      TokenCache.checkAccessTokenInfo(token).exists(_._2)
     }
     demoViaAccessToken || isDemoProfile(requestHeader)
   }
 
-  /** True if the current session (access token and/or pac4j profile) belongs to an account other than the demo one. */
+  /** True if the current session (access token and/or pac4j profile) is not a demo session. */
   private def isNonDemoSession(requestHeader: RequestHeader): Boolean = {
     val nonDemoViaAccessToken = requestHeader.session.get(Constants.AccessTokenKey).exists { token =>
-      TokenCache.checkAccessToken(token).exists(_ != Configurations.DEMOS_ACCOUNT)
+      TokenCache.checkAccessTokenInfo(token).exists(!_._2)
     }
     nonDemoViaAccessToken || isNonDemoProfile(requestHeader)
   }

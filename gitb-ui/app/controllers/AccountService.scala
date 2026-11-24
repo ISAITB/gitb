@@ -148,12 +148,12 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewOwnProfile(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
       accountManager.getUserProfileWithPreferences(userId).map { user =>
-        val json:String = JsonUtil.serializeUser(user)
+        val json:String = JsonUtil.serializeUser(user, demoSession = Configurations.DEMOS_ENABLED && ParameterExtractor.isDemoSession(request))
         ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
-  
+
   /**
    * Updates the user profile of the authenticated user
    */

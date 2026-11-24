@@ -91,7 +91,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     }
     if (this.dataService.configuration.ssoEnabled) {
       if (this.dataService.configuration.ssoWithNativeLogin && this.loginOption == Constants.LOGIN_OPTION.DEMO) {
-        this.loginViaSelection(this.dataService.configuration.demosAccount)
+        this.loginAsDemo()
       } else if (this.dataService.configuration.ssoWithNativeLogin && !this.dataService.actualUser) {
         this.formType = LoginFormType.Login
       } else {
@@ -101,7 +101,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
       if (this.loginOption == Constants.LOGIN_OPTION.REGISTER || this.loginOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL) {
         this.formType = LoginFormType.SelfRegister
       } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
-        this.loginViaSelection(this.dataService.configuration.demosAccount)
+        this.loginAsDemo()
       } else {
         this.formType = LoginFormType.Login
       }
@@ -123,7 +123,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     } else if (this.loginOption == Constants.LOGIN_OPTION.MIGRATE || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL) {
       this.createAccount(this.loginOption)
     } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
-      this.loginViaSelection(this.dataService.configuration.demosAccount)
+      this.loginAsDemo()
     } else if (this.loginOption != Constants.LOGIN_OPTION.FORCE_CHOICE && this.dataService.actualUser && this.dataService.actualUser.accounts) {
       // Check to see if we can automate the functional account selection.
       let userIdToConnectWith: number|undefined
@@ -211,6 +211,22 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
       headers: Utils.createHttpHeaders()
     }
 		this.loginInternal(config)
+  }
+
+  /**
+   * Explicit demo login (demo option of the welcome page): the server assigns the configured demo account to a
+   * restricted demo session. Selecting the demo account as a regular (linked) account is a normal session.
+   */
+  loginAsDemo() {
+    this.loginInProgress = true
+    let config: HttpRequestConfig = {
+      path: ROUTES.controllers.AuthenticationService.selectFunctionalAccount().url,
+      data: {
+        demo: true
+      },
+      headers: Utils.createHttpHeaders()
+    }
+    this.loginInternal(config)
   }
 
 	loginViaCredentials(userEmail: string, userPassword: string) {

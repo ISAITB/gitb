@@ -2748,8 +2748,11 @@ object JsonUtil {
    * @param user User object to be converted
    * @return String
    */
-  def serializeUser(user:User):String = {
+  def serializeUser(user:User, demoSession: Boolean = false):String = {
     var jUser:JsObject = jsUser(user.toCaseObject)
+    if (demoSession) {
+      jUser = jUser ++ Json.obj("demoSession" -> true)
+    }
     if (user.organization.isDefined){
       jUser = jUser ++ Json.obj("organization" -> jsOrganization(user.organization.get))
     }

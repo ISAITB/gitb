@@ -42,12 +42,16 @@ class AuthenticationFilter @Inject() (router: Router)
 
   private def downstreamHeaderFromAccessToken(accessToken: String, originalRequest: RequestHeader): RequestHeader = {
     // Check if access token exists for any user
-    val userId = TokenCache.checkAccessToken(accessToken)
-    if (userId.isEmpty) {
+    val tokenInfo = TokenCache.checkAccessTokenInfo(accessToken)
+    if (tokenInfo.isEmpty) {
       throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Invalid access token")
     }
-    // A workaround of customizing request headers to add our userId data, so that controllers can process it
-    val customHeaders = originalRequest.headers.add((ParameterNames.USER_ID, "" + userId.get))
+    // A workaround of customizing request headers to add our userId data, so that controllers can process it.
+    // Any client-provided demo session header is dropped: it is only set from the server-side token record.
+    var customHeaders = originalRequest.headers.remove(ParameterNames.DEMO_SESSION).add((ParameterNames.USER_ID, "" + tokenInfo.get._1))
+    if (tokenInfo.get._2) {
+      customHeaders = customHeaders.add((ParameterNames.DEMO_SESSION, "true"))
+    }
     val customRequestHeader = originalRequest.withHeaders(customHeaders)
     customRequestHeader
   }

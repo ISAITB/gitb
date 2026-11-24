@@ -23,12 +23,19 @@ object TokenCache {
 
   private val sessionMaxAgeMillis = Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME * 1000
 
-  def saveOAuthTokens(userId:Long, tokens:Token): Unit = {
+  private val DEMO_SESSION_MARKER = "demo"
+
+  /**
+   * Record an access token. The stored value is "userId:creationTime" and, for sessions started through the demo
+   * option of the welcome page, "userId:creationTime:demo". The marker is only ever set server-side.
+   */
+  def saveOAuthTokens(userId:Long, tokens:Token, demoSession: Boolean = false): Unit = {
     val accessTokenKey =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + tokens.accessToken
     val redisClient = Redis.getClient()
     try {
       val currentTime = System.currentTimeMillis()
-      redisClient.setex(accessTokenKey, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, s"$userId:$currentTime")
+      val value = if (demoSession) s"$userId:$currentTime:$DEMO_SESSION_MARKER" else s"$userId:$currentTime"
+      redisClient.setex(accessTokenKey, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, value)
     } finally {
       Redis.releaseClient(redisClient)
     }
@@ -62,6 +69,14 @@ object TokenCache {
   }
 
   def checkAccessToken(accessToken:String): Option[Long] = {
+    checkAccessTokenInfo(accessToken).map(_._1)
+  }
+
+  /**
+   * Check the given access token (extending its idle expiry) and return the user ID and whether the session was
+   * started through the demo option of the welcome page.
+   */
+  def checkAccessTokenInfo(accessToken:String): Option[(Long, Boolean)] = {
     val act_key =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + accessToken
     val redisClient = Redis.getClient()
     try {
@@ -78,8 +93,8 @@ object TokenCache {
           } else {
             // Reset the token expiry.
             redisClient.expire(act_key, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME)
-            // Return user ID.
-            Some(userDataParts(0).toLong)
+            // Return user ID and demo session flag.
+            Some((userDataParts(0).toLong, userDataParts.length > 2 && userDataParts(2) == DEMO_SESSION_MARKER))
           }
         } else {
           None

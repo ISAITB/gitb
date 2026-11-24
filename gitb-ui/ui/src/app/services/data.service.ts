@@ -254,8 +254,12 @@ export class DataService {
     return this.configuration != undefined && this.configuration.mode == 'development'
   }
 
+  /**
+   * True if the session was started through the demo option of the welcome page (set by the server). A login with
+   * the demo account's credentials is a normal session.
+   */
   isDemoAccount(): boolean {
-    return this.user != undefined && this.configuration.demosEnabled && this.configuration.demosAccount == this.user.id
+    return this.user != undefined && this.configuration.demosEnabled && this.user.demoSession == true
   }
 
   setConfiguration(config: AppConfigurationProperties) {

@@ -117,13 +117,13 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider)
   }
 
 
-  def generateTokens(userId:Long): Token = {
+  def generateTokens(userId:Long, demoSession: Boolean = false): Token = {
     //1) Create access and refresh tokens
     val accessToken  = RandomStringUtils.secure().nextAlphanumeric(Configurations.TOKEN_LENGTH)
     val tokens = Token(accessToken)
 
     //2) Persist new access & refresh token information
-    TokenCache.saveOAuthTokens(userId, tokens)
+    TokenCache.saveOAuthTokens(userId, tokens, demoSession)
     tokens
   }
 

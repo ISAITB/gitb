@@ -28,6 +28,7 @@ export interface User {
   ssoStatusText?: string,
   password?: string,
   organization?: Organisation,
-  preferences?: UserPreferences
+  preferences?: UserPreferences,
+  demoSession?: boolean
 
 }

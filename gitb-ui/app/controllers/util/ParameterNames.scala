@@ -18,6 +18,8 @@ package controllers.util
 object ParameterNames {
 
   val USER_ID = "GITB-USER-ID"
+  val DEMO_SESSION = "GITB-DEMO-SESSION"
+  val DEMO = "demo"
   val ID      = "id"
   val ADMIN   = "admin"
   val LABEL   = "label"
