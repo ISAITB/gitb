@@ -101,12 +101,6 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
             Future.successful {
               ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials match an already migrated account.", Some("username"))
             }
-          } else if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == result.get.id) {
-            // Attempt to migrate the demo account. Return message as if the user doesn't exist.
-            authorizationManager.getPrincipal(request).map { principal =>
-              logger.warn("Attempt made by ["+principal.uid+"] to migrate the demo account ["+Configurations.DEMOS_ACCOUNT+"]")
-              ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account.", Some("username"))
-            }
           } else {
             // Link the account.
             authorizationManager.getPrincipal(request).flatMap { principal =>
