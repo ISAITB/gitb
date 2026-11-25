@@ -48,4 +48,4 @@ append_override "email.smtp.auth.password" "$(resolve_secret_value "EMAIL_SMTP_A
 append_override "authentication.sso.clientSecret" "$(resolve_secret_value "AUTHENTICATION_SSO_CLIENT_SECRET")"
 append_override "authentication.sso.connectionPassword" "$(resolve_secret_value "AUTHENTICATION_SSO_CONNECTION_PASSWORD")"
 
-exec gitb -J-XX:-UseBASE64Intrinsics -Dconfig.file=/usr/local/gitb-ui/conf/overrides.conf
+exec gitb -Dconfig.file=/usr/local/gitb-ui/conf/overrides.conf
