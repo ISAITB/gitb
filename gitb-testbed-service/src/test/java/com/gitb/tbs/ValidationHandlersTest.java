@@ -57,6 +57,8 @@ class ValidationHandlersTest extends BaseIntegrationTest {
                 "val-xml-schematron-multiple",
                 "val-xml-schematron-include-remote",
                 "val-xml-schematron-include-artifact",
+                "val-xml-schematron-xslt-document",
+                "val-xml-schematron-xslt-include",
                 "val-json-valid",
                 "val-json-invalid",
                 "val-xmlmatch-match",
@@ -231,6 +233,30 @@ class ValidationHandlersTest extends BaseIntegrationTest {
         List<BAR> findings = reportFindings(result);
         assertEquals(1, findings.size());
         assertEquals("Invoice must have a total element (from included rules)", findings.getFirst().getDescription());
+    }
+
+    @Test
+    void xmlSchematronXsltLoadsTestSuiteArtifactViaDocument() throws Exception {
+        // Only the exact artifact paths (relative to the test suite) are served: a lookup of a wrongly derived path fails.
+        stubTestResource("/resources/val-xml-schematron-xslt-document/schematron%2Frules\\.xslt", "tdl/val/schematron-xslt/rules.xslt");
+        stubTestResource("/resources/val-xml-schematron-xslt-document/schematron%2Fvaluesets\\.xml", "tdl/val/schematron-xslt/valuesets.xml");
+        TestRunResult result = run("val-xml-schematron-xslt-document");
+        assertFailed(result);
+        List<BAR> findings = reportFindings(result);
+        assertEquals(1, findings.size());
+        assertEquals("Code must be part of the value set", findings.getFirst().getDescription());
+        assertEquals(List.of("xml:3:0"), findings.stream().map(BAR::getLocation).toList());
+    }
+
+    @Test
+    void xmlSchematronXsltIncludesTestSuiteArtifact() throws Exception {
+        stubTestResource("/resources/val-xml-schematron-xslt-include/schematron%2Frules-include\\.xslt", "tdl/val/schematron-xslt/rules-include.xslt");
+        stubTestResource("/resources/val-xml-schematron-xslt-include/schematron%2Fcommon\\.xslt", "tdl/val/schematron-xslt/common.xslt");
+        TestRunResult result = run("val-xml-schematron-xslt-include");
+        assertFailed(result);
+        List<BAR> findings = reportFindings(result);
+        assertEquals(1, findings.size());
+        assertEquals("Code must be A or B (from included module)", findings.getFirst().getDescription());
     }
 
     /**
