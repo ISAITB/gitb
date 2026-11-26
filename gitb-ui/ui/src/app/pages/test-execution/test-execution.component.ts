@@ -124,6 +124,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   columnCount = 4
   currentInteractionStepId?: string
   currentInteractionModal?: NgbModalRef
+  interactionLoad?: { stepId: string, subscription?: Subscription }
   testCaseFinishing = false
 
   private ws?: WebSocketSubject<any>
@@ -228,6 +229,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   private initialiseState() {
+    this.cancelInteractionLoad()
     this.started = false
     this.nextWaitingToStart = false
     this.stopped = false
@@ -621,6 +623,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   displayPendingInteraction(stepId?: string) {
+    if (this.interactionLoad) {
+      return
+    }
     const testInteractions = this.interactionStepsOfTests[this.currentTest!.id]
     let interaction: TestInteractionData|undefined
     if (testInteractions) {
@@ -641,8 +646,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     const isInteraction = response.interactions != undefined
     if (isInteraction) {
       // Prompt for an interaction.
-      if (this.currentInteractionModal) {
-        // We already have an interaction open - park the new one.
+      if (this.currentInteractionModal || this.interactionLoad) {
+        // We already have an interaction open (or about to open) - park the new one.
         if (!response.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
           this.recordInteraction(response.stepId, response.interactions!, response.inputTitle, response.admin, response.desc)
         }
@@ -655,6 +660,12 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
         this.removeInteraction(response.stepId)
         if (this.currentInteractionModal && this.currentInteractionStepId == response.stepId) {
           this.markInteractionAsIgnored(response.stepId)
+        }
+        if (this.interactionLoad?.stepId == response.stepId) {
+          this.cancelInteractionLoad()
+          if (this.testCaseFinishing && !this.hasPendingInteractions()) {
+            this.testCaseFinalised()
+          }
         }
       }
     }
@@ -967,35 +978,55 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   private interact(interactions: UserInteraction[], inputTitle: string|undefined, stepId: string, admin: boolean|undefined, desc: string|undefined) {
     if (!admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-      this.currentInteractionStepId = stepId
-      this.currentInteractionModal = this.modalService.open(ProvideInputModalComponent, { size: 'lg'})
-      const modalInstance = this.currentInteractionModal.componentInstance as ProvideInputModalComponent
-      modalInstance.interactions = interactions
-      modalInstance.inputTitle = inputTitle
-      modalInstance.sessionId = this.session!
-      this.currentInteractionModal.dismissed.subscribe(() => {
+      if (this.reportService.hasForcedInstructionsToLoad(interactions)) {
+        // Load the content to display before presenting the popup. Until then the interaction is listed as pending.
         this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
-      })
-      this.currentInteractionModal.closed.subscribe((result: UserInteractionInput[]|undefined) => {
-        this.currentInteractionStepId = undefined
-        this.currentInteractionModal = undefined
-        if (result == undefined) {
-          this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
-        } else {
-          if (this.isIgnoredInteraction(stepId)) {
-            this.interactionsToIgnore[this.currentTest!.id].delete(stepId)
-            this.removeInteraction(stepId)
-          } else {
-            this.testService.provideInput(this.session!, stepId, result, admin).subscribe(() => {
-              this.removeInteraction(stepId)
-            })
-          }
-          if (this.testCaseFinishing && !this.hasPendingInteractions()) {
-            this.testCaseFinalised()
-          }
-        }
-      })
+        const load: { stepId: string, subscription?: Subscription } = { stepId: stepId }
+        this.interactionLoad = load
+        load.subscription = this.reportService.loadForcedInstructionContents(this.session!, interactions).subscribe(() => {
+          this.interactionLoad = undefined
+          this.openInteractionModal(interactions, inputTitle, stepId, admin, desc)
+        })
+      } else {
+        this.openInteractionModal(interactions, inputTitle, stepId, admin, desc)
+      }
     }
+  }
+
+  private cancelInteractionLoad() {
+    this.interactionLoad?.subscription?.unsubscribe()
+    this.interactionLoad = undefined
+  }
+
+  private openInteractionModal(interactions: UserInteraction[], inputTitle: string|undefined, stepId: string, admin: boolean|undefined, desc: string|undefined) {
+    this.currentInteractionStepId = stepId
+    this.currentInteractionModal = this.modalService.open(ProvideInputModalComponent, { size: 'lg'})
+    const modalInstance = this.currentInteractionModal.componentInstance as ProvideInputModalComponent
+    modalInstance.interactions = interactions
+    modalInstance.inputTitle = inputTitle
+    modalInstance.sessionId = this.session!
+    this.currentInteractionModal.dismissed.subscribe(() => {
+      this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
+    })
+    this.currentInteractionModal.closed.subscribe((result: UserInteractionInput[]|undefined) => {
+      this.currentInteractionStepId = undefined
+      this.currentInteractionModal = undefined
+      if (result == undefined) {
+        this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
+      } else {
+        if (this.isIgnoredInteraction(stepId)) {
+          this.interactionsToIgnore[this.currentTest!.id].delete(stepId)
+          this.removeInteraction(stepId)
+        } else {
+          this.testService.provideInput(this.session!, stepId, result, admin).subscribe(() => {
+            this.removeInteraction(stepId)
+          })
+        }
+        if (this.testCaseFinishing && !this.hasPendingInteractions()) {
+          this.testCaseFinalised()
+        }
+      }
+    })
   }
 
   initiatePreliminary(session: string): Observable<void> {
@@ -1046,6 +1077,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   private testCaseFinalised() {
+    this.cancelInteractionLoad()
     if (this.currentInteractionModal != undefined) {
       this.currentInteractionModal.dismiss('test-finished')
     }
@@ -1211,6 +1243,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   leavingTestExecutionPage() {
     if (!this.cleanupComplete) {
       this.cleanupComplete = true
+      this.cancelInteractionLoad()
       this.popupService.closeAll(true)
       this.dataService.clearTestsToExecute()
       if (this.firstTestStarted && !this.allStopped) {

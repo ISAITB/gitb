@@ -32,12 +32,14 @@
                                     <div class="content-value no-margin-on-last-p" [class.with-name]="withName"
                                          [class.break-texts]="breakValueText" [innerHtml]="value | sanitizeHtml"></div>
                                 }
+                            } @else if (loadingValue) {
+                                <div class="content-value" [class.with-name]="withName"><app-pending-block [icon]="true"></app-pending-block></div>
                             } @else if (!withName) {
                                 <div class="content-value not-inline-help-text">Download or view in editor</div>
                             }
                         }
                     </div>
-                    @if (withValue && showControls) {
+                    @if (withValue && showControls && !loadingValue) {
                         <div class="any-content-view-controls">
                             <div class="btn-toolbar">
                                 @if (showValueInline) {

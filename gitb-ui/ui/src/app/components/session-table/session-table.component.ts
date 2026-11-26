@@ -85,6 +85,8 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
   columnCount = 0
   diagramCollapsedFinished: {[key: string]: boolean} = {}
   viewLogPending: {[key: string]: boolean} = {}
+  interactionPending: {[key: string]: boolean} = {}
+  private readonly interactionLoads = new Subscription()
   sessionBeingRefreshed?: TestResultForDisplay
   pageSizeChangeSubscription?: Subscription;
   rowsAnimated = true
@@ -141,6 +143,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
     if (this.pageSizeChangeSubscription) {
       this.pageSizeChangeSubscription.unsubscribe();
     }
+    this.interactionLoads.unsubscribe()
   }
 
   private setRowsAnimated(): void {
@@ -361,7 +364,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
   }
 
   displayPendingInteraction(row: TestResultForDisplay, stepId?: string) {
-    if (row.diagramState?.interactions) {
+    if (!this.interactionPending[row.session] && row.diagramState?.interactions) {
       const interactionCount = row.diagramState?.interactions.length
       if (interactionCount > 0) {
         let interactionData: TestInteractionData|undefined
@@ -371,22 +374,32 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit,
           interactionData = row.diagramState.interactions.find((interaction) => interaction.stepId == stepId)
         }
         if (interactionData) {
-          const modalRef = this.modalService.open(ProvideInputModalComponent, { size: 'lg' })
-          const modalInstance = modalRef.componentInstance as ProvideInputModalComponent
-          modalInstance.interactions = interactionData.interactions
-          modalInstance.inputTitle = interactionData.inputTitle!
-          modalInstance.sessionId = row.session
-          modalRef.closed.subscribe((result: UserInteractionInput[]) => {
-            if (result != undefined) {
-              this.testService.provideInput(row.session, interactionData!.stepId, result, interactionData!.admin)
-                .subscribe(() => {
-                  this.refresh(row)
-                })
-            }
-          })
+          // Load the content to display before presenting the popup.
+          const data = interactionData
+          this.interactionPending[row.session] = true
+          this.interactionLoads.add(this.reportService.loadForcedInstructionContents(row.session, data.interactions).subscribe(() => {
+            this.interactionPending[row.session] = false
+            this.openInteractionModal(row, data)
+          }))
         }
       }
     }
+  }
+
+  private openInteractionModal(row: TestResultForDisplay, interactionData: TestInteractionData) {
+    const modalRef = this.modalService.open(ProvideInputModalComponent, { size: 'lg' })
+    const modalInstance = modalRef.componentInstance as ProvideInputModalComponent
+    modalInstance.interactions = interactionData.interactions
+    modalInstance.inputTitle = interactionData.inputTitle!
+    modalInstance.sessionId = row.session
+    modalRef.closed.subscribe((result: UserInteractionInput[]) => {
+      if (result != undefined) {
+        this.testService.provideInput(row.session, interactionData.stepId, result, interactionData.admin)
+          .subscribe(() => {
+            this.refresh(row)
+          })
+      }
+    })
   }
 
   showTestSessionLog(row: TestResultForDisplay) {
