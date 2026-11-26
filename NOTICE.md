@@ -86,9 +86,9 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache Commons Logging | commons-logging:commons-logging | 1.3.6 | https://commons.apache.org/proper/commons-logging/ |
 | Apache License, Version 2.0 | PDFBox-Graphics2d | de.rototor.pdfbox:graphics2d | 3.0.1 | https://github.com/rototor/pdfbox-graphics2d/graphics2d |
 | The 3-Clause BSD License | dnsjava | dnsjava:dnsjava | 3.6.5 | https://github.com/dnsjava/dnsjava |
-| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-jakarta | eu.europa.ec.itb:gitb-types-jakarta | 1.30.4 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-jakarta |
-| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-model | eu.europa.ec.itb:gitb-types-model | 1.30.4 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-model |
-| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-specs | eu.europa.ec.itb:gitb-types-specs | 1.30.4 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-specs |
+| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-jakarta | eu.europa.ec.itb:gitb-types-jakarta | 1.30.5 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-jakarta |
+| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-model | eu.europa.ec.itb:gitb-types-model | 1.30.5 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-model |
+| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-specs | eu.europa.ec.itb:gitb-types-specs | 1.30.5 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-specs |
 | CUP Parser Generator Copyright Notice, License, and Disclaimer | cupv10k-runtime | eu.europa.ec.itb.xerces:cupv10k-runtime | 2.12.2-xsd11 | no url defined |
 | ICU License - ICU 1.8.1 and later | icu4j | eu.europa.ec.itb.xerces:icu4j | 2.12.2-xsd11 | no url defined |
 | Eclipse Public License - v1.0 | org.eclipse.wst.xml.xpath2.processor_1.2.1 | eu.europa.ec.itb.xerces:org.eclipse.wst.xml.xpath2.processor_1.2.1 | 2.12.2-xsd11 | no url defined |
@@ -99,8 +99,8 @@ Library licences are organised in three sections:
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf PDF Rendering (Apache PDF-BOX 3) | io.github.openhtmltopdf:openhtmltopdf-pdfbox | 1.1.108 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-pdfbox |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf slf4j Support | io.github.openhtmltopdf:openhtmltopdf-slf4j | 1.1.108 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-slf4j |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf SVG Support | io.github.openhtmltopdf:openhtmltopdf-svg-support | 1.1.108 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-svg-support |
-| Apache License, Version 2.0 | micrometer-commons | io.micrometer:micrometer-commons | 1.17.2 | https://github.com/micrometer-metrics/micrometer |
-| Apache License, Version 2.0 | micrometer-observation | io.micrometer:micrometer-observation | 1.17.2 | https://github.com/micrometer-metrics/micrometer |
+| Apache License, Version 2.0 | micrometer-commons | io.micrometer:micrometer-commons | 1.17.3 | https://github.com/micrometer-metrics/micrometer |
+| Apache License, Version 2.0 | micrometer-observation | io.micrometer:micrometer-observation | 1.17.3 | https://github.com/micrometer-metrics/micrometer |
 | Eclipse Distribution License - v1.0 | Jakarta Activation API | jakarta.activation:jakarta.activation-api | 2.1.4 | https://github.com/jakartaee/jaf-api |
 | Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Jakarta Annotations API | jakarta.annotation:jakarta.annotation-api | 3.0.0 | https://projects.eclipse.org/projects/ee4j.ca |
 | Eclipse Distribution License - v1.0 | Jakarta Web Services Metadata API | jakarta.jws:jakarta.jws-api | 3.0.0 | https://github.com/eclipse-ee4j/jws-api |
@@ -112,8 +112,8 @@ Library licences are organised in three sections:
 | GNU General Public License (GPL), Version 2 (with Classpath Exception) | JavaBeans Activation Framework API jar | javax.activation:javax.activation-api | 1.2.0 | http://java.net/all/javax.activation-api/ |
 | CDDL 1.1, GNU General Public License (GPL), Version 2 (with Classpath Exception) | jaxb-api | javax.xml.bind:jaxb-api | 2.4.0-b180830.0359 | https://github.com/javaee/jaxb-spec/jaxb-api |
 | The 0-Clause BSD License | StAX Utilities Project | net.java.dev.stax-utils:stax-utils | 20070216 | http://java.net/projects/stax-utils/ |
-| Apache License, Version 2.0 | ASM based accessors helper used by json-smart | net.minidev:accessors-smart | 2.6.0 | https://urielch.github.io/ |
-| Apache License, Version 2.0 | JSON Small and Fast Parser | net.minidev:json-smart | 2.6.0 | https://urielch.github.io/ |
+| Apache License, Version 2.0 | ASM based accessors helper used by json-smart | net.minidev:accessors-smart | 2.6.1 | https://urielch.github.io/ |
+| Apache License, Version 2.0 | JSON Small and Fast Parser | net.minidev:json-smart | 2.6.1 | https://urielch.github.io/ |
 | Mozilla Public License Version 2.0 | Saxon-HE | net.sf.saxon:Saxon-HE | 12.10 | http://www.saxonica.com/ |
 | Apache License, Version 2.0 | Apache Commons Collections | org.apache.commons:commons-collections4 | 4.6.0 | https://commons.apache.org/proper/commons-collections/ |
 | Apache License, Version 2.0 | Apache Commons Compress | org.apache.commons:commons-compress | 1.28.0 | https://commons.apache.org/proper/commons-compress/ |
@@ -180,7 +180,7 @@ Library licences are organised in three sections:
 | Eclipse Distribution License - v1.0 | JAXB Core | org.glassfish.jaxb:jaxb-core | 4.0.9 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | JAXB Runtime | org.glassfish.jaxb:jaxb-runtime | 4.0.9 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | TXW2 Runtime | org.glassfish.jaxb:txw2 | 4.0.9 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Apache License, Version 2.0 | Hibernate Validator Engine | org.hibernate.validator:hibernate-validator | 9.1.5.Final | https://hibernate.org/validator |
+| Apache License, Version 2.0 | Hibernate Validator Engine | org.hibernate.validator:hibernate-validator | 9.1.6.Final | https://hibernate.org/validator |
 | Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1, Mozilla Public License Version 1.1 | Javassist | org.javassist:javassist | 3.28.0-GA | http://www.javassist.org/ |
 | Apache License, Version 2.0 | JBoss Logging 3 | org.jboss.logging:jboss-logging | 3.6.3.Final | https://www.jboss.org |
 | MIT License | jsoup Java HTML Parser | org.jsoup:jsoup | 1.24.1 | https://jsoup.org/ |
@@ -196,29 +196,29 @@ Library licences are organised in three sections:
 | MIT License | JUL to SLF4J bridge | org.slf4j:jul-to-slf4j | 2.0.20 | http://www.slf4j.org |
 | MIT License | SLF4J API Module | org.slf4j:slf4j-api | 2.0.20 | http://www.slf4j.org |
 | Apache License, Version 2.0 | SnakeYAML Engine | org.snakeyaml:snakeyaml-engine | 3.0.1 | https://bitbucket.org/snakeyaml/snakeyaml-engine |
-| Apache License, Version 2.0 | Spring AOP | org.springframework:spring-aop | 7.0.10 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Beans | org.springframework:spring-beans | 7.0.10 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Context | org.springframework:spring-context | 7.0.10 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Core | org.springframework:spring-core | 7.0.10 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Expression Language (SpEL) | org.springframework:spring-expression | 7.0.10 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Web | org.springframework:spring-web | 7.0.10 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Web MVC | org.springframework:spring-webmvc | 7.0.10 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | spring-boot | org.springframework.boot:spring-boot | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-autoconfigure | org.springframework.boot:spring-boot-autoconfigure | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-http-converter | org.springframework.boot:spring-boot-http-converter | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-jackson | org.springframework.boot:spring-boot-jackson | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-servlet | org.springframework.boot:spring-boot-servlet | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter | org.springframework.boot:spring-boot-starter | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-jackson | org.springframework.boot:spring-boot-starter-jackson | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-logging | org.springframework.boot:spring-boot-starter-logging | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-tomcat | org.springframework.boot:spring-boot-starter-tomcat | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-tomcat-runtime | org.springframework.boot:spring-boot-starter-tomcat-runtime | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-validation | org.springframework.boot:spring-boot-starter-validation | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-web | org.springframework.boot:spring-boot-starter-web | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-tomcat | org.springframework.boot:spring-boot-tomcat | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-validation | org.springframework.boot:spring-boot-validation | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-web-server | org.springframework.boot:spring-boot-web-server | 4.1.2 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-webmvc | org.springframework.boot:spring-boot-webmvc | 4.1.2 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | Spring AOP | org.springframework:spring-aop | 7.0.11 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Beans | org.springframework:spring-beans | 7.0.11 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Context | org.springframework:spring-context | 7.0.11 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Core | org.springframework:spring-core | 7.0.11 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Expression Language (SpEL) | org.springframework:spring-expression | 7.0.11 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Web | org.springframework:spring-web | 7.0.11 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Web MVC | org.springframework:spring-webmvc | 7.0.11 | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | spring-boot | org.springframework.boot:spring-boot | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-autoconfigure | org.springframework.boot:spring-boot-autoconfigure | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-http-converter | org.springframework.boot:spring-boot-http-converter | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-jackson | org.springframework.boot:spring-boot-jackson | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-servlet | org.springframework.boot:spring-boot-servlet | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter | org.springframework.boot:spring-boot-starter | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-jackson | org.springframework.boot:spring-boot-starter-jackson | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-logging | org.springframework.boot:spring-boot-starter-logging | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-tomcat | org.springframework.boot:spring-boot-starter-tomcat | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-tomcat-runtime | org.springframework.boot:spring-boot-starter-tomcat-runtime | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-validation | org.springframework.boot:spring-boot-starter-validation | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-web | org.springframework.boot:spring-boot-starter-web | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-tomcat | org.springframework.boot:spring-boot-tomcat | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-validation | org.springframework.boot:spring-boot-validation | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-web-server | org.springframework.boot:spring-boot-web-server | 4.1.3 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-webmvc | org.springframework.boot:spring-boot-webmvc | 4.1.3 | https://spring.io/projects/spring-boot |
 | Apache License, Version 2.0 | TopBraid SHACL API | org.topbraid:shacl | 1.5.0 | https://github.com/TopQuadrant/shacl |
 | GNU General Public License, version 3 (GPL-3.0), Mozilla Public License Version 2.0 | veraPDF Library core | org.verapdf:core | 1.30.3 | http://nexus.sonatype.org/oss-repository-hosting.html/verapdf-parent/verapdf-library/core |
 | GNU General Public License, version 3 (GPL-3.0), Mozilla Public License Version 2.0 | veraPDF Feature Reporting | org.verapdf:feature-reporting | 1.30.3 | http://nexus.sonatype.org/oss-repository-hosting.html/verapdf-parent/validation/feature-reporting |
