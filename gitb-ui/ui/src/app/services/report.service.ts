@@ -15,6 +15,8 @@
 
 import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { catchError, forkJoin, map, Observable, of, throwError } from 'rxjs';
+import { UserInteraction } from '../types/user-interaction';
 import { ROUTES } from '../common/global';
 import { StepReport } from '../components/diagram/report/step-report';
 import { TestCase } from '../types/test-case';
@@ -285,14 +287,48 @@ export class ReportService {
     })
   }
 
-  getTestStepReportData(sessionId: string, dataId: string, mimeType: string|undefined) {
+  getTestStepReportData(sessionId: string, dataId: string, mimeType: string|undefined, errorHandler?: (_:any) => Observable<any>) {
     return this.restService.get<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.getTestStepReportData(sessionId, dataId).url,
+      errorHandler: errorHandler,
       authenticate: true,
       arrayBuffer: true,
       accept: mimeType,
       httpResponse: true
     })
+  }
+
+  /**
+   * Large instruction values are replaced by file references. For instructions whose display is forced we load their
+   * content before presenting them. If loading fails for an instruction its file reference is left in place.
+   */
+  loadForcedInstructionContents(sessionId: string, interactions: UserInteraction[]): Observable<void> {
+    const loads = this.forcedInstructionsToLoad(interactions).map((instruction) => {
+      const dataId = instruction.value!.slice(5, instruction.value!.length - 5)
+      // No error popup at this point: the display of the interaction retries the load and reports a failure on top of it.
+      return this.getTestStepReportData(sessionId, dataId, instruction.mimeType, (error) => throwError(() => error)).pipe(
+        map((response) => {
+          instruction.value = new TextDecoder('utf-8').decode(response.body as ArrayBuffer)
+        }),
+        catchError(() => of(undefined))
+      )
+    })
+    if (loads.length == 0) {
+      return of(undefined)
+    } else {
+      return forkJoin(loads).pipe(map(() => undefined))
+    }
+  }
+
+  hasForcedInstructionsToLoad(interactions: UserInteraction[]) {
+    return this.forcedInstructionsToLoad(interactions).length > 0
+  }
+
+  private forcedInstructionsToLoad(interactions: UserInteraction[]) {
+    return interactions.filter((interaction) => interaction.type == 'instruction'
+      && interaction.forceDisplay == true
+      && interaction.variableType != 'binary' && interaction.variableType != 'schema' && interaction.variableType != 'object'
+      && interaction.value != undefined && interaction.value.startsWith('___[[') && interaction.value.endsWith(']]___'))
   }
 
   createTestReport(sessionId: string, systemId: number, actorId: number, testId: number) {

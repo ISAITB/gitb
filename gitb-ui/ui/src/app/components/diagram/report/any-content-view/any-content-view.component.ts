@@ -63,6 +63,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   breakValueText = true
   collapsed = true
   escapeValue = true
+  loadingValue = false
 
   constructor(
     private readonly testService: TestService,
@@ -112,8 +113,23 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       && !(this.context.embeddingMethod == 'BASE64' && this.textProvided(this.context.valueToUse))
     if (this.showValueInline) {
       this.breakValueText = this.value!.indexOf(" ") < 0
+    } else if (this.withValue && this.forceDisplay && this.sessionId && this.isFileReference(this.context) && this.context.embeddingMethod != 'BASE64') {
+      this.loadReferencedValue(this.sessionId)
     }
     this.breakNameText = this.name != undefined && this.name.indexOf(" ") < 0
+  }
+
+  private loadReferencedValue(sessionId: string) {
+    // Large values are replaced by file references. If their display is forced we need to load their content.
+    this.loadingValue = true
+    this.downloadFileReference(sessionId, this.context, false)
+    .subscribe((data) => {
+      this.value = new TextDecoder('utf-8').decode(data.dataAsBytes)
+      this.breakValueText = this.value.indexOf(" ") < 0
+      this.showValueInline = true
+    }).add(() => {
+      this.loadingValue = false
+    })
   }
 
   open(lineNumber?: number) {

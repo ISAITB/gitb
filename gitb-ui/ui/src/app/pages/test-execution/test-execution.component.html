@@ -92,10 +92,10 @@
                                         <div class="session-table-operations btn-toolbar">
                                             @if (interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0) {
                                                 @if (interactionStepsOfTests[testCase.id].length == 1) {
-                                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
+                                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [pending]="interactionLoad != undefined" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
                                                 } @else {
                                                     <div class="btn-group" ngbDropdown>
-                                                        <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" ngbDropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
+                                                        <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [pending]="interactionLoad != undefined" ngbDropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
                                                         <div id="dropdown-interactions" ngbDropdownMenu aria-labelledby="button-interactions">
                                                             @for (interaction of interactionStepsOfTests[testCase.id]; track interaction.stepId; let index = $index) {
                                                                 <button ngbDropdownItem type="button" (click)="displayPendingInteraction(interaction.stepId)">{{labelForPendingInteraction(interaction, index)}}</button>

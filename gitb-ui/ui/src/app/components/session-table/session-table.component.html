@@ -131,10 +131,10 @@
                                         }
                                         @if (supportRefresh && row.diagramState?.interactions != undefined && row.diagramState.interactions.length > 0) {
                                             @if (row.diagramState.interactions.length == 1) {
-                                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [disable]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
+                                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [disable]="sessionBeingRefreshed?.session == row.session" [pending]="interactionPending[row.session]" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
                                             } @else {
                                                 <div class="btn-group" ngbDropdown>
-                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" ngbDropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
+                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [pending]="interactionPending[row.session]" ngbDropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
                                                     <div id="dropdown-interactions" ngbDropdownMenu aria-labelledby="button-interactions">
                                                         @for (interaction of row.diagramState.interactions; let index = $index; track interaction) {
                                                             <button ngbDropdownItem type="button" (click)="displayPendingInteraction(row, interaction.stepId)">{{labelForPendingInteraction(interaction, index)}}</button>

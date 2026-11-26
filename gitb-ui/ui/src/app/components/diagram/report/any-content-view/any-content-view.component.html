@@ -26,7 +26,7 @@
                             }
                         } @else {
                             @if (withName) {
-                                @if (withValue && !showValueInline) {
+                                @if (withValue && !showValueInline && !loadingValue) {
                                     <!-- The value is not displayed inline (it is accessed via the controls): the name is shown as the value, not as a label over nothing. -->
                                     <div class="content-value" [class.break-texts]="breakNameText">{{ name }}</div>
                                 } @else {
@@ -41,6 +41,8 @@
                                         <div class="content-value no-margin-on-last-p"
                                              [class.break-texts]="breakValueText" [innerHtml]="value | sanitizeHtml"></div>
                                     }
+                                } @else if (loadingValue) {
+                                    <div class="content-value"><app-pending-block [icon]="true"></app-pending-block></div>
                                 } @else if (!withName) {
                                     <div class="content-value not-inline-help-text">Download or view in editor</div>
                                 }
@@ -49,7 +51,7 @@
                             }
                         }
                     </div>
-                    @if (withValue && showControls) {
+                    @if (withValue && showControls && !loadingValue) {
                         <div class="any-content-view-controls">
                             <div class="btn-toolbar">
                                 @if (showValueInline) {
