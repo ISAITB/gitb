@@ -28,6 +28,8 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -40,6 +42,10 @@ import java.nio.charset.StandardCharsets;
 public class SchematronResolver implements URIResolver, ISchematronIncludeResolver {
 
     private static final String PROTOCOL = "file:///";
+    /**
+     * Path used for the system ID of Schematron rules that are not part of the test suite.
+     */
+    private static final String DEFAULT_SYSTEM_ID_PATH = "schematron.xslt";
 
     /**
      * Path to the folder that contains root resource (i.e. and XSD schema or Schematron file, etc)
@@ -114,24 +120,59 @@ public class SchematronResolver implements URIResolver, ISchematronIncludeResolv
         }
     }
 
+    /**
+     * Get the system ID to set on the XSLT-based Schematron when compiling it, so that the references it makes
+     * (e.g. via {@code document()} or {@code xsl:include}) are resolved relative to its location within the test suite.
+     * <p/>
+     * The system ID must be absolute and independent of the environment. If a relative one is set, Saxon makes it
+     * absolute against the working directory of the process, which is then used as the base of all references.
+     *
+     * @return The system ID.
+     */
+    public String getSystemId() {
+        String path = (this.resource == null || this.resource.isBlank()) ? DEFAULT_SYSTEM_ID_PATH : this.resource;
+        try {
+            // The path is encoded as needed (e.g. for spaces) and decoded again in resolve.
+            return new URI("file", "", "/" + path, null).toString();
+        } catch (URISyntaxException e) {
+            return PROTOCOL + path;
+        }
+    }
+
+    /**
+     * Get the folder within the test suite against which a reference is resolved.
+     *
+     * @param baseURI The base URI of the reference (as given by the XSLT processor).
+     * @return The folder path (with a trailing slash if not empty).
+     */
+    private String baseFolder(String baseURI) {
+        if (baseURI != null && baseURI.startsWith(PROTOCOL)) {
+            // A base that we set (see getSystemId), directly or via a module that was resolved relative to it.
+            try {
+                String path = new URI(baseURI).getPath();
+                if (path != null && path.startsWith("/")) {
+                    return path.substring(1, path.lastIndexOf("/") + 1);
+                }
+            } catch (URISyntaxException e) {
+                // Use the root folder.
+            }
+        }
+        return rootFolder();
+    }
+
     @Override
     public Source resolve(String href, String baseURI) {
         rejectIfNotTestSuitePath(href);
-        ModuleManager moduleManager = ModuleManager.getInstance();
-        ITestCaseRepository repository = moduleManager.getTestCaseRepository();
-        String parentFolder;
-        if (baseURI == null || baseURI.isBlank()) {
-            parentFolder = rootFolder();
-        } else {
-            parentFolder = baseURI.substring(PROTOCOL.length(), baseURI.lastIndexOf("/")+1);
+        if (this.resource == null) {
+            throw new GITBEngineInternalError("Referenced resource [%s] cannot be resolved because the Schematron rules are not part of the test suite.".formatted(href));
         }
-
-        String artifactPath = parentFolder + href;
-
-        InputStream resource  = repository.getTestArtifact(testSuiteId, testCaseId, artifactPath);
-        if(resource != null) {
-            return new StreamSource(resource);
+        ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
+        String artifactPath = baseFolder(baseURI) + href;
+        InputStream stream = repository.getTestArtifact(testSuiteId, testCaseId, artifactPath);
+        if (stream == null) {
+            // Never return null as the XSLT processor would then try to resolve the reference by itself (e.g. from the file system).
+            throw new GITBEngineInternalError("Referenced artifact [%s] could not be found in the test suite.".formatted(artifactPath));
         }
-        return null;
+        return new StreamSource(stream);
     }
 }

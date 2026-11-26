@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValueSets>
+    <ValueSet id="urn:test:codes">
+        <ConceptList>
+            <Concept code="A"/>
+            <Concept code="B"/>
+        </ConceptList>
+    </ValueSet>
+</ValueSets>

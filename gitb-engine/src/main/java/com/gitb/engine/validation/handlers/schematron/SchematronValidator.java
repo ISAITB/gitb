@@ -132,7 +132,13 @@ public class SchematronValidator extends AbstractValidator {
                         .build();
                 convertXPathExpressions = true;
             } else {
-                schematron = SchematronResourceXSLT.builder(new StringResource(sch.toString(), sch.getImportPath()))
+                /*
+                 * The system ID of the XSLT is the base against which its references (document(), xsl:include, etc.) are
+                 * resolved by our resolver. It must be set explicitly: since ph-schematron 10.3.0 the XSLT is compiled
+                 * from the resource (rather than from a DOM without a system ID) so a relative system ID, such as the
+                 * path of the artifact within the test suite, is made absolute against the process' working directory.
+                 */
+                schematron = SchematronResourceXSLT.builder(new StringResource(sch.toString(), uriResolver.getSystemId()))
                         .uriResolver(uriResolver)
                         // Collections, environment variables and result documents are not resolved via the URI resolver so we restrict them separately.
                         .transformerFactoryCustomizer(SecureSaxon::restrict)
