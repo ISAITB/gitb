@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.2</version>
+        <version>4.1.3</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -38,7 +38,7 @@
         <version.plugin.cycloneDxPlugin>2.9.3</version.plugin.cycloneDxPlugin>
         <!-- Dependency versions -->
         <version.gitbTypes>1.30.4</version.gitbTypes>
-        <version.springBoot>4.1.2</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
+        <version.springBoot>4.1.3</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
         <tomcat.version>11.0.27</tomcat.version>
         <version.bouncycastle>1.86</version.bouncycastle>
         <version.helgerSchematron>10.3.0</version.helgerSchematron>
@@ -63,11 +63,10 @@
         <version.serializer>2.7.3</version.serializer>
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
-        <version.jaxb>4.0.8</version.jaxb>
+        <version.jaxb>4.0.9</version.jaxb> <!-- Keep aligned with the JAXB version managed by Spring Boot (glassfish-jaxb.version), which takes precedence for the org.glassfish.jaxb artifacts. -->
         <version.saxon>12.10</version.saxon>
         <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
-        <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.15.1</version.commonsConfiguration>
         <version.commonsText>1.15.0</version.commonsText>
         <version.pekko>1.7.1</version.pekko>
