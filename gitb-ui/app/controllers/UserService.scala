@@ -206,13 +206,29 @@ class UserService @Inject() (authorizedAction: AuthorizedAction,
         Future.successful {
           ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_UPDATE, "Cannot update the role of the configured demo account.")
         }
+      } else if (!isOrganisationUserRole(roleId)) {
+        Future.successful {
+          ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Invalid user role.")
+        }
       } else {
         val password = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
-        userManager.updateUserProfile(userId, name, roleId, password).map { _ =>
-          ResponseConstructor.constructEmptyResponse
+        userManager.getUserByIdAsync(userId).flatMap { user =>
+          if (user.exists(x => isOrganisationUserRole(x.role))) {
+            userManager.updateUserProfile(userId, name, roleId, password).map { _ =>
+              ResponseConstructor.constructEmptyResponse
+            }
+          } else {
+            Future.successful {
+              ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only organisation users can be updated.")
+            }
+          }
         }
       }
     }
+  }
+
+  private def isOrganisationUserRole(roleId: Short): Boolean = {
+    roleId == UserRole.VendorAdmin.id || roleId == UserRole.VendorUser.id
   }
 
   /**
