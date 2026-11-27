@@ -12,12 +12,11 @@ is being used, is of utmost importance to us.
 ## Reporting a Vulnerability
 
 Please do not report security vulnerabilities through public GitHub issues, pull requests, or discussions. If you
-believe you have found a security vulnerability in the Solution, please report it privately by sending an
-email to:
+believe you have found a security vulnerability in the Solution, please report it privately by sending an email to:
 
-- [EC-DIGIT-SECURITY-ASSURANCE@ec.europa.eu](mailto:EC-DIGIT-SECURITY-ASSURANCE@ec.europa.eu): DIGIT's security assurance team.
-- [DIGIT-ITB@ec.europa.eu](mailto:DIGIT-ITB@ec.europa.eu): DIGIT's ITB support team.
- 
+- [EC-VULNERABILITY-DISCLOSURE@ec.europa.eu](mailto:EC-VULNERABILITY-DISCLOSURE@ec.europa.eu): DIGIT's vulnerability disclosure mailbox (added as TO).
+- [DIGIT-ITB@ec.europa.eu](mailto:DIGIT-ITB@ec.europa.eu): DIGIT's ITB support team (added in CC).
+
 Please include as much information as possible, including:
 
 - A description of the vulnerability.
@@ -27,6 +26,10 @@ Please include as much information as possible, including:
 - The potential impact.
 - Any relevant logs or error messages.
 - A suggested mitigation or fix, if available.
+
+The above information should be encrypted using [this PGP key](https://ec.europa.eu/assets/digit/pgpkey/ec-vulnerability-disclosure-pgp.txt) 
+to prevent critical information from falling into the wrong hands. As part of your request please also specify 
+whether you agree to your name or pseudonym being made publicly available as the discoverer of the problem.
 
 Please do not publicly disclose the vulnerability until the maintainers have had an opportunity to investigate it.
 
