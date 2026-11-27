@@ -30,10 +30,18 @@ export class HealthCheckService {
   // The minimum delay (in ms) between the health check's two server-sent events for the response to be considered as streamed.
   private static readonly MIN_STREAMING_DELAY = 1500
 
+  private refreshRequestedSubject = new Subject<void>()
+  // Emitted for the service health dashboard (if displayed) to refresh the status of the core services.
+  refreshRequested$ = this.refreshRequestedSubject.asObservable()
+
   constructor(
     private readonly restService: RestService,
     private readonly dataService: DataService
   ) { }
+
+  requestRefresh() {
+    this.refreshRequestedSubject.next()
+  }
 
   getTestServicesForHealthCheck(domainId: number|undefined): Observable<TestServiceBasicInfo[]> {
     return this.restService.get<TestServiceBasicInfo[]>({

@@ -111,6 +111,9 @@ export class IndexComponent implements OnInit, OnDestroy {
         // call is a safe no-op afterwards, but this keeps the stashed id from lingering regardless.
         this.dataService.unreadMessagesNotificationId = null
       }
+      if (notificationId != null && this.dataService.healthNotificationId != null && notificationId === this.dataService.healthNotificationId) {
+        this.dataService.healthNotificationId = null
+      }
     })
     if (sessionStorage) {
       window.addEventListener("beforeunload", () => {
@@ -151,10 +154,43 @@ export class IndexComponent implements OnInit, OnDestroy {
     return {
       target: this.routingService.linkToMyMessages(),
       handler: () => {
-        this.messageComposeService.minimise()
+        this.closeModalsForNavigation()
         // Navigating to the page already displayed does nothing, so this is also needed for it to react.
         this.messageService.requestReceivedMessageDisplay(messageId)
       }
+    }
+  }
+
+  private healthNotificationAction(): PopupNotificationAction {
+    return {
+      target: this.routingService.linkToServiceHealthDashboard(),
+      handler: () => {
+        this.closeModalsForNavigation()
+        // Navigating to the page already displayed does nothing, so this is also needed for it to react.
+        this.healthCheckService.requestRefresh()
+      }
+    }
+  }
+
+  /** Used when a notification is clicked to navigate elsewhere, so that no modal remains over the target screen. */
+  private closeModalsForNavigation() {
+    // A message draft is minimised first (simply dismissing it would leave it without a way to resume it).
+    this.messageComposeService.minimise()
+    this.modalService.dismissAll()
+  }
+
+  private handlePostLoginHealthStatus(health: HealthStatus) {
+    if (health == HealthStatus.ERROR || health == HealthStatus.WARNING) {
+      const isError = health == HealthStatus.ERROR
+      this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, isError ? MenuItemStatus.Error : MenuItemStatus.Warning)
+      const action = this.healthNotificationAction()
+      this.dataService.healthNotificationId = isError
+        ? this.popupService.error("Service health errors reported.<br/>Check the health dashboard for details.", true, action)
+        : this.popupService.warning("Service health warnings reported.<br/>Check the health dashboard for details.", true, action)
+      // Done after the badge is raised: a displayed dashboard refreshes its checks, the result of which sets the badge.
+      this.healthCheckService.requestRefresh()
+    } else {
+      this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.None)
     }
   }
 
@@ -190,18 +226,7 @@ export class IndexComponent implements OnInit, OnDestroy {
       const unread$: Observable<{ unread: boolean }> = this.dataService.isDemoAccount() ? of({ unread: false }) : this.messageService.hasUnreadMessages()
       forkJoin([health$, unread$]).subscribe(([health, unread]) => {
         if (health != undefined) {
-          switch (health) {
-            case HealthStatus.ERROR:
-              this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Error)
-              this.popupService.error("Service health errors reported.<br/>Check the health dashboard for details.", true)
-              break;
-            case HealthStatus.WARNING:
-              this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Warning)
-              this.popupService.warning("Service health warnings reported.<br/>Check the health dashboard for details.", true)
-              break;
-            default:
-              this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.None)
-          }
+          this.handlePostLoginHealthStatus(health)
         }
         if (unread.unread) {
           this.dataService.updateMenuItemStatus(MenuItem.myMessages, MenuItemStatus.Info)

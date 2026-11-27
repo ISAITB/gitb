@@ -37,12 +37,12 @@ export class PopupService {
     return this.add(message, 'success', persistent)
   }
 
-  warning(message: string, persistent?: boolean): string|null {
-    return this.add(message, 'warning', persistent)
+  warning(message: string, persistent?: boolean, action?: PopupNotificationAction): string|null {
+    return this.add(message, 'warning', persistent, undefined, action)
   }
 
-  error(message: string, persistent?: boolean): string|null {
-    return this.add(message, 'error', persistent)
+  error(message: string, persistent?: boolean, action?: PopupNotificationAction): string|null {
+    return this.add(message, 'error', persistent, undefined, action)
   }
 
   info(message: string, persistent?: boolean, action?: PopupNotificationAction): string|null {

@@ -97,6 +97,8 @@ export class DataService {
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
   // ID of the unread-messages popup notification so that MessagesComponent can close it
   public unreadMessagesNotificationId: string|null = null
+  // ID of the service health popup notification so that ServiceHealthDashboardComponent can close it
+  public healthNotificationId: string|null = null
 
   private onBannerChangeSource = new Subject<string>()
   public onBannerChange$ = this.onBannerChangeSource.asObservable()

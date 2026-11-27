@@ -13,13 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {RoutingService} from '../../services/routing.service';
 import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
 import {HealthCardService} from '../../types/health-card-service';
 import {HealthCheckService} from '../../services/health-check.service';
-import {finalize, forkJoin, Observable} from 'rxjs';
+import {finalize, forkJoin, Observable, Subscription} from 'rxjs';
+import {PopupService} from '../../services/popup.service';
 import {ServiceHealthCardComponentApi} from '../../components/service-health-card/service-health-card-component-api';
 import {DataService} from '../../services/data.service';
 import {MenuItem} from '../../types/menu-item.enum';
@@ -42,7 +43,9 @@ import {UsageTipService} from '../../services/usage-tip.service';
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './service-health-dashboard.component.less'
 })
-export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
+export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  private refreshRequestedSubscription?: Subscription
 
   @ViewChildren("serviceCard") serviceCards?: QueryList<ServiceHealthCardComponentApi>;
   @ViewChildren("testServiceCard") testServiceCards?: QueryList<ServiceHealthCardComponentApi>;
@@ -65,11 +68,21 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
     private readonly healthCheckService: HealthCheckService,
     private readonly conformanceService: ConformanceService,
     protected readonly dataService: DataService,
-    private readonly usageTipService: UsageTipService
+    private readonly usageTipService: UsageTipService,
+    private readonly popupService: PopupService
   ) {
   }
 
   ngOnInit(): void {
+    // Opening the dashboard closes the service health notification (if still displayed).
+    if (this.dataService.healthNotificationId != null) {
+      this.popupService.close(this.dataService.healthNotificationId)
+      this.dataService.healthNotificationId = null
+    }
+    // Only the core services are refreshed (these are what the notification refers to).
+    this.refreshRequestedSubscription = this.healthCheckService.refreshRequested$.subscribe(() => {
+      if (this.dataService.isSystemAdmin) this.checkAllCoreServices()
+    })
     this.domainSelectConfig = {
       name: 'domains',
       textField: 'fname',
@@ -145,16 +158,20 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
     this.routingService.serviceHealthDashboardBreadcrumbs()
   }
 
+  ngOnDestroy(): void {
+    this.refreshRequestedSubscription?.unsubscribe()
+  }
+
   ngAfterViewInit(): void {
     if (this.dataService.isSystemAdmin) {
-      this.checkAllCoreServices()
       this.usageTipService.showUsageTip(Constants.USAGE_TIP.HEALTH_DASHBOARD)
     }
   }
 
   checkAllCoreServices() {
     setTimeout(() => {
-      if (this.serviceCards) {
+      // Checks already in progress will provide an up to date result.
+      if (this.serviceCards && !this.checkAllPending) {
         const tasks = this.serviceCards.map(serviceCard => {
           return serviceCard.checkStatus()
         })

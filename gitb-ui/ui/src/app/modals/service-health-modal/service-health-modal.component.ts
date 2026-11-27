@@ -13,7 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, DoCheck, EventEmitter, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {HealthInfo} from '../../types/health-info';
 import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
 import {BaseComponent} from '../../pages/base-component.component';
@@ -30,12 +31,14 @@ import Parser = marked.Parser;
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './service-health-modal.component.less'
 })
-export class ServiceHealthModalComponent extends BaseComponent implements OnInit {
+export class ServiceHealthModalComponent extends BaseComponent implements OnInit, DoCheck {
 
   @Input() serviceInfo!: HealthCardInfo
   @Input() updated!: EventEmitter<void>
 
   checkPending = false
+  // The displayed result. This is retained if the service is checked again in the background (while the modal is open).
+  shownInfo!: HealthInfo
 
   constructor(
     private readonly modalRef: NgbActiveModal,
@@ -48,18 +51,30 @@ export class ServiceHealthModalComponent extends BaseComponent implements OnInit
     this.markdownService.renderer.link = ({ href, title, tokens }) => {
       return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${Parser.parseInline(tokens)}</a>`;
     }
+    this.show(this.serviceInfo.info)
+  }
+
+  ngDoCheck() {
+    // If opened while a check was in progress, there is no result to retain yet: display it once received.
+    if (this.shownInfo?.status == HealthStatus.PENDING && this.serviceInfo.info.status != HealthStatus.PENDING) {
+      this.show(this.serviceInfo.info)
+    }
+  }
+
+  private show(info: HealthInfo) {
+    this.shownInfo = info
     this.updateSummaryAlert()
   }
 
   private updateSummaryAlert() {
     this.clearAlerts()
-    if (this.serviceInfo.info) {
-      switch (this.serviceInfo.info.status) {
-        case HealthStatus.OK: this.addAlertSuccess(this.serviceInfo.info.summary); break;
-        case HealthStatus.WARNING: this.addAlertWarning(this.serviceInfo.info.summary); break;
-        case HealthStatus.ERROR: this.addAlertError(this.serviceInfo.info.summary); break;
-        case HealthStatus.INFO: this.addAlertInfo(this.serviceInfo.info.summary); break;
-        case HealthStatus.UNKNOWN: this.addAlertInfo(this.serviceInfo.info.summary); break;
+    if (this.shownInfo) {
+      switch (this.shownInfo.status) {
+        case HealthStatus.OK: this.addAlertSuccess(this.shownInfo.summary); break;
+        case HealthStatus.WARNING: this.addAlertWarning(this.shownInfo.summary); break;
+        case HealthStatus.ERROR: this.addAlertError(this.shownInfo.summary); break;
+        case HealthStatus.INFO: this.addAlertInfo(this.shownInfo.summary); break;
+        case HealthStatus.UNKNOWN: this.addAlertInfo(this.shownInfo.summary); break;
       }
     }
   }
@@ -73,7 +88,7 @@ export class ServiceHealthModalComponent extends BaseComponent implements OnInit
     this.serviceInfo.checkFunction().subscribe((result) => {
       this.serviceInfo.info = result
     }).add(() => {
-      this.updateSummaryAlert()
+      this.show(this.serviceInfo.info)
       this.checkPending = false
       this.updated.emit()
     })

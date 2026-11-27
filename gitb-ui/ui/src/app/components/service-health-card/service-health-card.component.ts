@@ -53,7 +53,8 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
 
   checkStatus() {
     if (this.info.info) {
-      this.info.info.status = HealthStatus.PENDING
+      // Replaced rather than modified: a details modal may be displaying the current result.
+      this.info.info = { ...this.info.info, status: HealthStatus.PENDING }
     }
     const finished$ = new Subject<void>();
     this.info.checkFunction().pipe(
