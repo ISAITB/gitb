@@ -339,16 +339,19 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
   def logout: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canLogout(request).map { _ =>
       val isFullLogout = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL).toBoolean
-      val authzHeader = request.headers.get(AUTHORIZATION)
-      if (authzHeader.isDefined){
-        val list = authzHeader.get.split(BEARER + " ")
-        if(list.length == 2) {
-          val accessToken = list(1)
-          TokenCache.deleteOAthToken(accessToken)
-          serverEventManager.closeChannelsForToken(accessToken, ServerEventManager.CLOSE_REASON_LOGOUT)
-        }
+      val accessToken = request.headers.get(AUTHORIZATION).map(_.split(BEARER + " ")).collect {
+        case list if list.length == 2 => list(1)
       }
-      if (isFullLogout) {
+      accessToken.foreach { token =>
+        TokenCache.deleteOAthToken(token)
+        serverEventManager.closeChannelsForToken(token, ServerEventManager.CLOSE_REASON_LOGOUT)
+      }
+      /*
+       * The browser session may meanwhile belong to a newer login (e.g. made in another tab). In this case a logout
+       * for an older access token must not end the newer session.
+       */
+      val sessionOfOtherLogin = accessToken.exists(token => request.session.get(Constants.AccessTokenKey).exists(_ != token))
+      if (isFullLogout && !sessionOfOtherLogin) {
         val webContext = new PlayWebContext(request)
         val profileManager = new ProfileManager(webContext, playSessionStore)
         /*

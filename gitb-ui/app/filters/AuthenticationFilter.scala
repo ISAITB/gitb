@@ -19,7 +19,7 @@ import com.gitb.utils.HmacUtils
 import config.Configurations
 import config.Configurations.{API_ROOT, WEB_CONTEXT_ROOT, WEB_CONTEXT_ROOT_WITH_SLASH}
 import controllers.util.ResponseConstructor.NotFound
-import controllers.util.{ParameterExtractor, ParameterNames, ResponseConstructor}
+import controllers.util.{ParameterExtractor, ParameterNames, RequestAttributes, ResponseConstructor}
 import exceptions._
 import models.Constants
 import org.apache.pekko.stream.Materializer
@@ -40,24 +40,32 @@ class AuthenticationFilter @Inject() (router: Router)
 
   val BEARER = "Bearer"
 
-  private def downstreamHeaderFromAccessToken(accessToken: String, originalRequest: RequestHeader): RequestHeader = {
+  private def downstreamRequestFromAccessToken(accessToken: String, originalRequest: RequestHeader): RequestHeader = {
     // Check if access token exists for any user
     val tokenInfo = TokenCache.checkAccessTokenInfo(accessToken)
     if (tokenInfo.isEmpty) {
       throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Invalid access token")
     }
-    // A workaround of customizing request headers to add our userId data, so that controllers can process it.
-    // Any client-provided demo session header is dropped: it is only set from the server-side token record.
-    var customHeaders = originalRequest.headers.remove(ParameterNames.DEMO_SESSION).add((ParameterNames.USER_ID, "" + tokenInfo.get._1))
-    if (tokenInfo.get._2) {
-      customHeaders = customHeaders.add((ParameterNames.DEMO_SESSION, "true"))
+    val (userId, demoSession) = tokenInfo.get
+    // Record the user ID and demo session flag as request attributes, so that controllers can process them
+    originalRequest
+      .addAttr(RequestAttributes.UserId, userId)
+      .addAttr(RequestAttributes.DemoSession, demoSession)
+  }
+
+  private def checkAccessTokenMatchesSession(accessToken: String, request: RequestHeader): Unit = {
+    // A bearer token is only accepted when presented along with the session cookie it was issued with
+    if (!request.session.get(Constants.AccessTokenKey).contains(accessToken)) {
+      throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Access token does not match the session")
     }
-    val customRequestHeader = originalRequest.withHeaders(customHeaders)
-    customRequestHeader
   }
 
   def apply(next: (RequestHeader) => Future[Result])
-           (requestHeader: RequestHeader): Future[Result] = {
+           (originalRequestHeader: RequestHeader): Future[Result] = {
+    // Never allow a client to provide the user ID or demo session headers
+    val requestHeader = originalRequestHeader.withHeaders(
+      originalRequestHeader.headers.remove(ParameterNames.USER_ID, ParameterNames.DEMO_SESSION)
+    )
     if (router.handlerFor(requestHeader).isEmpty) {
       if (requestHeader.path == Configurations.WEB_CONTEXT_ROOT_WITH_SLASH) {
         next(requestHeader)
@@ -80,7 +88,8 @@ class AuthenticationFilter @Inject() (router: Router)
             // Parse access token info
             val list = authHeader.get.split(BEARER + " ")
             if (list.length == 2){
-              next(downstreamHeaderFromAccessToken(list(1), requestHeader))
+              checkAccessTokenMatchesSession(list(1), requestHeader)
+              next(downstreamRequestFromAccessToken(list(1), requestHeader))
             } else{
               //There is a problem with the authorization header
               Future{
@@ -99,7 +108,7 @@ class AuthenticationFilter @Inject() (router: Router)
           if (isAuthenticatedHttpAccessAllowed(requestHeader)) {
             val sessionIdentifier = requestHeader.session.get(Constants.AccessTokenKey)
             if (sessionIdentifier.isDefined) {
-              next(downstreamHeaderFromAccessToken(sessionIdentifier.get, requestHeader))
+              next(downstreamRequestFromAccessToken(sessionIdentifier.get, requestHeader))
             } else {
               Future.successful { Unauthorized }
             }
@@ -170,7 +179,10 @@ class AuthenticationFilter @Inject() (router: Router)
   }
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {
-    request.path.startsWith("%s/repository/".formatted(API_ROOT))
+    // Only the services called by the test engine (see also the paths excluded from the security filter in SecurityModule)
+    request.path.equals("%s/repository/healthCheck".formatted(API_ROOT)) ||
+      request.path.startsWith("%s/repository/resource/".formatted(API_ROOT)) ||
+      (request.path.startsWith("%s/repository/tests/".formatted(API_ROOT)) && request.path.endsWith("/definition"))
   }
 
   def isAuthenticatedHttpAccessAllowed(request:RequestHeader): Boolean = {

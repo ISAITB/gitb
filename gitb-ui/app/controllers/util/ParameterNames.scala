@@ -17,7 +17,9 @@ package controllers.util
 
 object ParameterNames {
 
+  // Not used to identify users (see RequestAttributes.UserId). Any such header received from clients is removed.
   val USER_ID = "GITB-USER-ID"
+  // Not used to identify demo sessions (see RequestAttributes.DemoSession). Any such header received from clients is removed.
   val DEMO_SESSION = "GITB-DEMO-SESSION"
   val DEMO = "demo"
   val ID      = "id"
