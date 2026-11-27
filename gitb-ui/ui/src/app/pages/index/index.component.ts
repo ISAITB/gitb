@@ -33,7 +33,6 @@ import {Constants} from '../../common/constants';
 import {NavigationTarget} from 'src/app/types/navigation-target';
 import {MessageComposeService} from '../../services/message-compose.service';
 import {ServerEventService} from '../../services/server-event.service';
-import {Router} from '@angular/router';
 import {PopupNotificationAction} from '../../types/popup-notification-action';
 
 @Component({
@@ -72,8 +71,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     private readonly healthCheckService: HealthCheckService,
     private readonly messageService: MessageService,
     private readonly messageComposeService: MessageComposeService,
-    private readonly serverEventService: ServerEventService,
-    private readonly router: Router
+    private readonly serverEventService: ServerEventService
   ) {}
 
   ngOnInit(): void {
@@ -101,7 +99,7 @@ export class IndexComponent implements OnInit, OnDestroy {
       this.handlePrepareForShutdown()
     })
     this.newMessageSubscription = this.serverEventService.newMessage$.subscribe((message) => {
-      this.handleNewMessage(message.subject)
+      this.handleNewMessage(message.id, message.subject)
     })
     this.closedNotificationsSubscription = this.popupService.closedNotifications$.subscribe((notificationId) => {
       if (notificationId != null && this.prepareForShutdownNotificationId != null && notificationId === this.prepareForShutdownNotificationId) {
@@ -131,31 +129,31 @@ export class IndexComponent implements OnInit, OnDestroy {
     if (this.newMessageSubscription) this.newMessageSubscription.unsubscribe()
   }
 
-  private handleNewMessage(subject?: string): void {
+  private handleNewMessage(messageId: number, subject?: string): void {
     // My messages is unavailable to the demo account (see handlePostUserLoad).
     if (this.dataService.isDemoAccount()) return
     const title = 'New message received.'
     const subtitle = subject?.length ? subject : undefined
-    const action = this.messagesNotificationAction()
+    const action = this.messagesNotificationAction(messageId)
     // A message notification that is still displayed is replaced rather than adding another notification.
     const existingId = this.dataService.unreadMessagesNotificationId
     if (existingId == null || !this.popupService.update(existingId, { message: title, subtitle: subtitle, action: action })) {
       this.dataService.unreadMessagesNotificationId = this.popupService.infoWithSubtitle(title, subtitle, true, action)
     }
-    // Also raised if the user is on "My messages" as the displayed messages are not refreshed automatically
-    // (the badge is cleared once they are reloaded - see MessagesComponent.load).
+    // The badge is raised before "My messages" is notified: if it is displaying the received messages it refreshes
+    // them, which clears the badge (see MessagesComponent.load).
     this.dataService.updateMenuItemStatus(MenuItem.myMessages, MenuItemStatus.Info)
+    this.messageService.notifyNewMessage()
   }
 
 
-  private messagesNotificationAction(): PopupNotificationAction {
+  private messagesNotificationAction(messageId?: number): PopupNotificationAction {
     return {
       target: this.routingService.linkToMyMessages(),
       handler: () => {
-        // Navigating to the page already displayed does nothing, so ask it to refresh instead.
-        if (this.router.url.startsWith('/settings/messages')) {
-          this.messageService.requestReload()
-        }
+        this.messageComposeService.minimise()
+        // Navigating to the page already displayed does nothing, so this is also needed for it to react.
+        this.messageService.requestReceivedMessageDisplay(messageId)
       }
     }
   }

@@ -100,6 +100,14 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   splitView = false
   private static readonly FALLBACK_MIN_TABLE_HEIGHT = 120
 
+  // Used to discard the results of a load that has since been superseded by another one.
+  private loadSequence = 0
+  private loadInProgress = false
+  // The text filter of the latest search (filterText also reflects text that is typed but not yet applied).
+  private appliedFilterText?: string
+  // A message to select once the ongoing load completes, if listed.
+  private messageIdToSelect?: number
+
   @ViewChild('showMessagesFilter') showMessagesFilter?: CheckboxOptionPanelComponent
   @ViewChild('messageTable') messageTable?: MessageTableComponent
   @ViewChild('messagesPage') messagesPage?: ElementRef
@@ -110,7 +118,8 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
   @ViewChild('splitViewComponent') splitViewComponent?: SplitViewComponent
 
   private messageSentSubscription?: Subscription
-  private reloadRequestedSubscription?: Subscription
+  private newMessageReceivedSubscription?: Subscription
+  private displayRequestedSubscription?: Subscription
   private resizeObserver!: ResizeObserver
 
   constructor(
@@ -163,7 +172,16 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     }
     this.setupPeerFilter()
     this.messageSentSubscription = this.messageComposeService.onMessageSent.subscribe(() => this.load(1))
-    this.reloadRequestedSubscription = this.messageService.reloadRequested$.subscribe(() => this.load(1))
+    this.newMessageReceivedSubscription = this.messageService.newMessageReceived$.subscribe(() => {
+      if (!this.sentView) this.refreshInBackground()
+    })
+    this.displayRequestedSubscription = this.messageService.displayRequested$.subscribe(() => this.handleDisplayRequest())
+    // A request made while this screen was not yet displayed.
+    const displayRequest = this.messageService.consumeDisplayRequest()
+    if (displayRequest != undefined) {
+      this.sentView = false
+      this.messageIdToSelect = displayRequest.messageId
+    }
     this.load(1)
   }
 
@@ -184,7 +202,8 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
 
   ngOnDestroy(): void {
     this.messageSentSubscription?.unsubscribe()
-    this.reloadRequestedSubscription?.unsubscribe()
+    this.newMessageReceivedSubscription?.unsubscribe()
+    this.displayRequestedSubscription?.unsubscribe()
     if (this.resizeObserver && this.messagesPage) {
       this.resizeObserver.unobserve(this.messagesPage.nativeElement)
     }
@@ -443,11 +462,60 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     this.load(event.targetPage, event.targetPageSize)
   }
 
-  private load(page: number, pageSize?: number) {
+  private handleDisplayRequest() {
+    const request = this.messageService.consumeDisplayRequest()
+    if (request == undefined) return
+    this.messageIdToSelect = request.messageId
+    if (this.sentView) {
+      this.sentView = false
+      this.toggleView()
+    } else if (!this.loadInProgress) {
+      this.applyMessageSelection()
+    }
+  }
+
+  private applyMessageSelection() {
+    const row = this.messageIdToSelect == undefined ? undefined : this.messages.find((m) => m.id == this.messageIdToSelect)
+    this.messageIdToSelect = undefined
+    // Selecting the already selected message would deselect it.
+    if (row != undefined && this.selectedDetail?.id != row.id) {
+      this.selectMessage(row)
+    }
+  }
+
+  /** Reloads the current page of the current search, retaining the displayed message and the checked ones. */
+  private refreshInBackground() {
+    this.load(this.currentPage, undefined, true)
+  }
+
+  private showRows(rows: MessageRowView[], background: boolean) {
+    if (background) {
+      const previousRows = new Map(this.messages.map((m) => [m.id, m]))
+      rows.forEach((row) => {
+        const previousRow = previousRows.get(row.id)
+        if (previousRow != undefined) {
+          row.checked = previousRow.checked
+          row.actionPending = previousRow.actionPending
+        }
+      })
+      if (this.selectedDetail != undefined && !rows.some((m) => m.id == this.selectedDetail!.id)) {
+        this.selectedDetail = undefined
+      }
+    }
+    this.messages = rows
+  }
+
+  private load(page: number, pageSize?: number, background: boolean = false) {
     // Whenever the table's data is (re)loaded - paging, sorting, filtering, view toggle, refresh, or a
     // post-delete reload - the selected message may no longer be among the results, so the detail panel
-    // is always cleared here rather than only when it's known to be affected.
-    this.selectedDetail = undefined
+    // is always cleared here rather than only when it's known to be affected. A background refresh (not
+    // requested by the user) is the exception - see showRows.
+    if (!background) {
+      this.selectedDetail = undefined
+      this.appliedFilterText = this.filterText
+    }
+    const sequence = ++this.loadSequence
+    this.loadInProgress = true
     if (this.loadingStatus.status == Constants.STATUS.FINISHED) {
       this.contentRefreshing = true
     } else {
@@ -458,25 +526,27 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
     const dateAfter = this.dateRange.start ? this.serializeDate(this.dateRange.start) : undefined
     const dateBefore = this.dateRange.end ? this.serializeDate(this.dateRange.end) : undefined
     const finish = () => {
+      if (sequence != this.loadSequence) return
+      this.loadInProgress = false
       this.loadingStatus.status = Constants.STATUS.FINISHED
       this.contentRefreshing = false
       setTimeout(() => this.calculateWrapping())
       this.updateMinTableHeightAndRefresh()
+      this.applyMessageSelection()
     }
+    const rows$: Observable<{ rows: MessageRowView[], count?: number }> = this.sentView
+      ? this.messageService.getSentMessages(page, limit, this.appliedFilterText, this.showImportant, dateAfter, dateBefore, this.sortColumn, this.sortOrder, this.peerFilterTargets)
+        .pipe(map((result) => ({ rows: result.data.map((m) => this.toSentRow(m)), count: result.count })))
+      : this.messageService.getReceivedMessages(page, limit, this.appliedFilterText, this.showRead, this.showUnread, this.showImportant, dateAfter, dateBefore, this.sortColumn, this.sortOrder, this.peerFilterTargets)
+        .pipe(map((result) => ({ rows: result.data.map((m) => this.toReceivedRow(m)), count: result.count })))
     if (!this.sentView) {
       this.dataService.updateMenuItemStatus(MenuItem.myMessages, MenuItemStatus.None)
-      this.messageService.getReceivedMessages(page, limit, this.filterText, this.showRead, this.showUnread, this.showImportant, dateAfter, dateBefore, this.sortColumn, this.sortOrder, this.peerFilterTargets)
-        .subscribe((result) => {
-          this.messages = result.data.map((m) => this.toReceivedRow(m))
-          this.messageTable?.pagingControls?.updateStatus(page, result.count)
-        }).add(finish)
-    } else {
-      this.messageService.getSentMessages(page, limit, this.filterText, this.showImportant, dateAfter, dateBefore, this.sortColumn, this.sortOrder, this.peerFilterTargets)
-        .subscribe((result) => {
-          this.messages = result.data.map((m) => this.toSentRow(m))
-          this.messageTable?.pagingControls?.updateStatus(page, result.count)
-        }).add(finish)
     }
+    rows$.subscribe((result) => {
+      if (sequence != this.loadSequence) return
+      this.showRows(result.rows, background)
+      this.messageTable?.pagingControls?.updateStatus(page, result.count)
+    }).add(finish)
   }
 
   private serializeDate(d: Date): string {
@@ -504,8 +574,10 @@ export class MessagesComponent extends BaseComponent implements OnInit, AfterVie
       : this.messageService.getReceivedMessage(row.id).pipe(map((detail) => ({ id: detail.id, subject: detail.subject, body: detail.body, peerName: detail.senderName, senderUserName: detail.senderUserName, peerCount: 1, date: detail.date, important: detail.important, parentMessageId: detail.parentMessageId, read: true, chain: detail.chain })))
     detail$.subscribe((detail) => {
       this.selectedDetail = detail
-      if (!this.sentView && row.read === false) {
-        row.read = true
+      // The rows may have been refreshed while the message was being loaded.
+      const currentRow = this.messages.find((m) => m.id == detail.id) ?? row
+      if (!this.sentView && currentRow.read === false) {
+        currentRow.read = true
       }
     }).add(() => { this.detailLoading = false })
   }

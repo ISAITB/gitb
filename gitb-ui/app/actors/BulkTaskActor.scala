@@ -92,7 +92,7 @@ class BulkTaskActor @Inject() (testResultManager: TestResultManager, messageMana
   private def handleCreateMessageUnreadStatus(msg: CreateMessageUnreadStatus): Future[Unit] = {
     messageManager.createUnreadStatusRows(msg.messageId, msg.excludeUserId).map { case (subject, userIds) =>
       // Notify connected recipients now that their unread rows exist.
-      val data = subject.map(s => Json.obj("subject" -> s)).getOrElse(Json.obj()).toString()
+      val data = (Json.obj("id" -> msg.messageId) ++ subject.map(s => Json.obj("subject" -> s)).getOrElse(Json.obj())).toString()
       userIds.foreach(serverEventManager.sendToUser(_, "message", data))
     }
   }

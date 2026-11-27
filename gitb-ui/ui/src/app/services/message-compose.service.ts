@@ -36,6 +36,8 @@ export class MessageComposeService {
 
   minimised = false
   draft?: MessageDraft
+  // Set only while the compose modal is open.
+  private openModalInstance?: ComposeMessageModalComponent
   // Fires whenever minimised/draft presence changes - the minimised bar uses this to know when to show/hide.
   onStateChange = new EventEmitter<void>()
   // Fires only once a message has actually been sent - pages showing message listings use this to refresh.
@@ -76,6 +78,11 @@ export class MessageComposeService {
       chain: chain,
       pristineRecipientCount: recipients.length
     }))
+  }
+
+  /** Minimises the compose modal, if it is currently open. */
+  minimise() {
+    this.openModalInstance?.minimise()
   }
 
   openDraft() {
@@ -150,7 +157,9 @@ export class MessageComposeService {
     const modalRef = this.modalService.open(ComposeMessageModalComponent, { size: 'lg', backdrop: 'static' })
     const instance = modalRef.componentInstance as ComposeMessageModalComponent
     instance.draft = this.draft!
+    this.openModalInstance = instance
     instance.sent.subscribe(() => {
+      this.openModalInstance = undefined
       this.draft = undefined
       this.minimised = false
       this.persist()
@@ -158,12 +167,14 @@ export class MessageComposeService {
       this.onMessageSent.emit()
     })
     instance.cancelled.subscribe(() => {
+      this.openModalInstance = undefined
       this.draft = undefined
       this.minimised = false
       this.persist()
       this.onStateChange.emit()
     })
     instance.minimiseRequested.subscribe(() => {
+      this.openModalInstance = undefined
       this.minimised = true
       this.persist()
       this.onStateChange.emit()

@@ -60,10 +60,10 @@ export class ServerEventService {
   private readonly channelResetSubject = new Subject<void>()
   private readonly sessionMessageSubject = new Subject<{ session: string, message: TestSessionUpdateMessage }>()
 
-  private readonly newMessageSubject = new Subject<{ subject?: string }>()
+  private readonly newMessageSubject = new Subject<{ id: number, subject?: string }>()
 
   /**
-   * Emits when a new internal message has been received by the user (carrying the message's subject, if any).
+   * Emits when a new internal message has been received by the user (carrying the message's ID and subject, if any).
    */
   public readonly newMessage$ = this.newMessageSubject.asObservable()
 

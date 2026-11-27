@@ -32,17 +32,35 @@ import {DataService} from './data.service';
 })
 export class MessageService {
 
-  private reloadRequestedSubject = new Subject<void>()
-  // Emitted when something (e.g. a notification action) asks the "My messages" screen, if displayed, to reload.
-  reloadRequested$ = this.reloadRequestedSubject.asObservable()
+  private newMessageReceivedSubject = new Subject<void>()
+  // Emitted when a new message arrives, for the "My messages" screen (if displayed) to refresh its listing.
+  newMessageReceived$ = this.newMessageReceivedSubject.asObservable()
+
+  private displayRequestedSubject = new Subject<void>()
+  // Emitted when the received messages are to be displayed (see requestReceivedMessageDisplay).
+  displayRequested$ = this.displayRequestedSubject.asObservable()
+  private displayRequest?: { messageId?: number }
 
   constructor(
     private readonly restService: RestService,
     private readonly dataService: DataService
   ) { }
 
-  requestReload() {
-    this.reloadRequestedSubject.next()
+  notifyNewMessage() {
+    this.newMessageReceivedSubject.next()
+  }
+
+  /** Asks for the received messages to be displayed, selecting the identified message if it is listed. The request
+   * is retained until consumed, so that it also applies if the "My messages" screen is only about to be displayed. */
+  requestReceivedMessageDisplay(messageId?: number) {
+    this.displayRequest = { messageId: messageId }
+    this.displayRequestedSubject.next()
+  }
+
+  consumeDisplayRequest(): { messageId?: number }|undefined {
+    const request = this.displayRequest
+    this.displayRequest = undefined
+    return request
   }
 
   getReceivedMessages(page: number, limit: number, filterText: string|undefined, showRead: boolean, showUnread: boolean,
