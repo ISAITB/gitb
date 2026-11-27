@@ -55,7 +55,8 @@ class StartupWizardManager @Inject() (systemConfigurationManager: SystemConfigur
         Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("other/samples.zip")) { stream =>
           Files.copy(stream, samplesArchive)
         }
-        importCompleteManager.importSandboxData(samplesArchive.toFile, "samples", checkArchiveHash = false).map { result =>
+        // The samples may be installed again: existing data that is not part of them must be retained.
+        importCompleteManager.importSandboxData(samplesArchive.toFile, "samples", checkArchiveHash = false, deleteUnmatchedData = false).map { result =>
           if (!result.processingComplete) {
             throw new IllegalStateException("Unexpected error occurred while importing the samples")
           }

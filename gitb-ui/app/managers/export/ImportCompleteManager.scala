@@ -3362,7 +3362,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     DB.run(PersistenceSchema.processedArchives.filter(_.hash === archiveHash).result.headOption)
   }
 
-  def importSandboxData(archive: File, archiveKey: String, checkArchiveHash: Boolean = true): Future[SandboxImportResult] = {
+  def importSandboxData(archive: File, archiveKey: String, checkArchiveHash: Boolean = true, deleteUnmatchedData: Boolean = true): Future[SandboxImportResult] = {
     val task = for {
       resultWithHash <- {
         if (checkArchiveHash) {
@@ -3418,8 +3418,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       items += previewResult._3.get
                     }
                     importItems = items.toList
-                    // Set all import items to proceed.
-                    approveImportItems(importItems)
+                    // Set the choice of all import items.
+                    approveImportItems(importItems, deleteUnmatchedData)
                     // Step 2 - Import.
                     importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
                     completeCommunityImport(exportData, importSettings, importItems, targetCommunityId, canDoAdminOperations = true, None).map { _ =>
@@ -3437,8 +3437,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   val targetDomainId = domain.map(_.id)
                   importPreviewManager.previewDomainImport(exportedDomain, targetDomainId, canDoAdminOperations = true, new ImportSettings).flatMap { previewResult =>
                     val importItems = List(previewResult)
-                    // Set all import items to proceed.
-                    approveImportItems(importItems)
+                    // Set the choice of all import items.
+                    approveImportItems(importItems, deleteUnmatchedData)
                     // Step 2 - Import.
                     importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
                     completeDomainImport(exportedDomain, importSettings, importItems, targetDomainId, canAddOrDeleteDomain = true).map { _ =>
@@ -3453,8 +3453,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 // Step 1 - prepare import.
                 importPreviewManager.previewSystemSettingsImport(exportedSettings).flatMap { previewResult =>
                   val importItems = List(previewResult._1)
-                  // Set all import items to proceed.
-                  approveImportItems(importItems)
+                  // Set the choice of all import items.
+                  approveImportItems(importItems, deleteUnmatchedData)
                   // Step 2 - Import.
                   importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
                   completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true, None).map { _ =>
@@ -3467,8 +3467,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 val exportedDeletions = preparationResult._2.get.getDeletions
                 // Step 1 - prepare import.
                 importPreviewManager.previewDeletionsImport(exportedDeletions).flatMap { previewResult =>
-                  // Set all import items to proceed.
-                  approveImportItems(previewResult)
+                  // Set all import items to proceed (deletions are the sole purpose of such an archive).
+                  approveImportItems(previewResult, deleteUnmatchedData = true)
                   // Step 2 - Import.
                   importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
                   completeDeletionsImport(exportedDeletions, importSettings, previewResult).map { _ =>
@@ -3508,12 +3508,17 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
-  private def approveImportItems(items: List[ImportItem]): Unit = {
+  private def approveImportItems(items: List[ImportItem], deleteUnmatchedData: Boolean): Unit = {
     items.foreach { item =>
       if (item.itemChoice.isEmpty) {
-        item.itemChoice = Some(ImportItemChoice.Proceed)
+        // Items existing only in the DB are the ones that would be deleted.
+        if (!deleteUnmatchedData && item.itemMatch == ImportItemMatch.DBOnly) {
+          item.itemChoice = Some(ImportItemChoice.Skip)
+        } else {
+          item.itemChoice = Some(ImportItemChoice.Proceed)
+        }
         if (item.childrenItems.nonEmpty) {
-          approveImportItems(item.childrenItems.toList)
+          approveImportItems(item.childrenItems.toList, deleteUnmatchedData)
         }
       }
     }
