@@ -333,18 +333,24 @@ class UserManager @Inject() (accountManager: AccountManager,
   }
 
   /**
+   * Deletes users along with all records referring to them.
+   */
+  private[managers] def deleteUsersInternal(userIds: Iterable[Long]): DBIO[Unit] = {
+    for {
+      // Delete preferences.
+      _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+      // Clear message references (sender name/id snapshot and unread status) - must run before the users are deleted.
+      _ <- messageManager.clearUserReferences(userIds.toSeq)
+      // Delete user entries.
+      _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
+    } yield ()
+  }
+
+  /**
    * Deletes user
    */
   def deleteUser(userId: Long): Future[Unit] = {
-    DB.run {
-      {
-        for {
-          _ <- userPreferenceManager.deletePreferencesForUser(userId)
-          _ <- messageManager.clearUserReferences(Seq(userId))
-          _ <- PersistenceSchema.users.filter(_.id === userId).delete
-        } yield ()
-      }.transactionally
-    }
+    DB.run(deleteUsersInternal(Seq(userId)).transactionally)
   }
 
   def deleteUsersByUidExceptTestBedAdmin(ssoUid: String, ssoEmail: String): Future[Unit] = {
@@ -363,12 +369,7 @@ class UserManager @Inject() (accountManager: AccountManager,
         .map(_.id)
         .result
       userIds <- DBIO.successful(activeUserIds.toSet ++ inactiveUserIds.toSet)
-      // Delete preferences.
-      _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
-      // Clear message references (sender name/id snapshot and unread status) - must run before the users are deleted.
-      _ <- messageManager.clearUserReferences(userIds.toSeq)
-      // Delete user entries.
-      _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
+      _ <- deleteUsersInternal(userIds)
     } yield ()
     DB.run(dbAction.transactionally)
   }
@@ -385,12 +386,7 @@ class UserManager @Inject() (accountManager: AccountManager,
             .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
             .map(_.id)
             .result
-          // Delete preferences.
-          _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
-          // Clear message references (sender name/id snapshot and unread status) - must run before the users are deleted.
-          _ <- messageManager.clearUserReferences(userIds)
-          // Delete user entries.
-          _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
+          _ <- deleteUsersInternal(userIds)
         } yield ()
       }.transactionally
     }

@@ -73,7 +73,6 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       repositoryUtils: RepositoryUtils,
                                       reportManager: ReportManager,
                                       userManager: UserManager,
-                                      messageManager: MessageManager,
                                       dbConfigProvider: DatabaseConfigProvider)
                                      (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -1415,7 +1414,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 val userId = targetKey.toLong
                 if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
                   // Avoid deleting self
-                  messageManager.clearUserReferences(Seq(userId)).andThen(PersistenceSchema.users.filter(_.id === userId).delete)
+                  userManager.deleteUsersInternal(Seq(userId))
                 } else {
                   DBIO.successful(())
                 }
@@ -2920,7 +2919,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   val userId = targetKey.toLong
                   if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
                     // Avoid deleting self
-                    messageManager.clearUserReferences(Seq(userId)).andThen(PersistenceSchema.users.filter(_.id === userId).delete)
+                    userManager.deleteUsersInternal(Seq(userId))
                   } else {
                     DBIO.successful(())
                   }
@@ -3027,7 +3026,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               processRemaining(ImportItemType.OrganisationUser, ctx,
                 (targetKey: String, _: ImportItem) => {
                   val userId = targetKey.toLong
-                  messageManager.clearUserReferences(Seq(userId)).andThen(PersistenceSchema.users.filter(_.id === userId).delete)
+                  userManager.deleteUsersInternal(Seq(userId))
                 }
               )
             } else {
